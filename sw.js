@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1051";
+const CACHE = "hh-identity-portal-v1052";
+// Previous release: hh-identity-portal-v1051; ./performance-loader.js?v=713; ./all-tool-state.js?v=1; ./feature-lab.js?v=7; ./platform-tools.css?v=2; ./platform-tools.js?v=2; ./tool-workspace-pro.css?v=2; ./tool-workspace-pro.js?v=2; ./utility-lab-tools.css?v=10; ./utility-lab-tools.js?v=11.
 // Previous release: hh-identity-portal-v1050; ./performance-loader.js?v=712; ./script.js?v=289; ./tool-manifests.js?v=1; ./tool-runtime.js?v=1; ./feature-lab.css?v=5; ./feature-lab.js?v=6; ./platform-tools.css?v=1; ./platform-tools.js?v=1; ./tool-workspace-pro.css?v=1; ./tool-workspace-pro.js?v=1; ./utility-lab-tools.css?v=9; ./utility-lab-tools.js?v=10.
 // Previous release: hh-identity-portal-v1049; ./performance-loader.js?v=711; ./chat-ai-hub.css?v=20; ./chat-ai-hub.js?v=18.
 // Previous release: hh-identity-portal-v1048; ./performance-loader.js?v=710; ./patin-data.js?v=5; ./patin-core.js?v=7; ./patin-video.js?v=2.
@@ -190,9 +191,9 @@ const RUNTIME_ASSETS = [
   "./dev-code-git.css?v=1",
   "./dev-diagnostics-ai.css?v=1",
   "./feature-lab.css?v=6",
-  "./platform-tools.css?v=2",
-  "./tool-workspace-pro.css?v=2",
-  "./utility-lab-tools.css?v=10",
+  "./platform-tools.css?v=3",
+  "./tool-workspace-pro.css?v=3",
+  "./utility-lab-tools.css?v=11",
   "./media-design-pro.css?v=1",
   "./media-design-page.css?v=22",
   "./media-cosmos.css?v=3",
@@ -685,13 +686,13 @@ const RUNTIME_ASSETS = [
   "./chat-ai-media.js?v=1",
   "./chat-ai-hub.js?v=19",
   "./media-design-page.js?v=23",
-  "./all-tool-state.js?v=1",
+  "./all-tool-state.js?v=2",
   "./tool-manifests.js?v=2",
   "./tool-runtime.js?v=2",
-  "./feature-lab.js?v=7",
-  "./platform-tools.js?v=2",
-  "./tool-workspace-pro.js?v=2",
-  "./utility-lab-tools.js?v=11",
+  "./feature-lab.js?v=8",
+  "./platform-tools.js?v=3",
+  "./tool-workspace-pro.js?v=3",
+  "./utility-lab-tools.js?v=12",
   "./feature-engines.js?v=2",
   "./hh-school-curriculum.js?v=3",
   "./hh-school-core.js?v=4",
@@ -794,7 +795,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=713",
+  "./performance-loader.js?v=714",
   "./auth-platform.js?v=22",
   "./auth-neon-gateway.js?v=35",
   "./script.js?v=290"
@@ -809,7 +810,7 @@ self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).the
 self.addEventListener("message", event => {
   if (event.data?.type === "HH_APPLY_UPDATE") self.skipWaiting();
 });
-self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE && key !== EONWILD_CINEMATIC_CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));
+self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE && key !== EONWILD_CINEMATIC_CACHE && key !== "hh-alltools-offline-v2").map(key => caches.delete(key)))).then(() => self.clients.claim())));
 
 const HH_SCHOOL_DB = "hh-school-offline-v1";
 const HH_SCHOOL_QUEUE = "syncQueue";

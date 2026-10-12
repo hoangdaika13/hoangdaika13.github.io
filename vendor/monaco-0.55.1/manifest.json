@@ -1,0 +1,177 @@
+{
+  "version": "0.55.1",
+  "source": "https://registry.npmjs.org/monaco-editor/-/monaco-editor-0.55.1.tgz",
+  "integrity": "sha512-jz4x+TJNFHwHtwuV9vA9rMujcZRb0CEilTEwG2rRSpe/A7Jdkuj8xPKttCgOh+v/lkHy7HsZ64oj+q3xoAFl9A==",
+  "files": [
+    {
+      "path": "LICENSE",
+      "bytes": 1098,
+      "sha256": "33e4ff1a06ef62ba21788ea162564ee8165269a24a9ce6ef301837447eab0ac6"
+    },
+    {
+      "path": "min/vs/editor/editor.main.css",
+      "bytes": 308989,
+      "sha256": "db6c1cd607943a861b47c7660d0ef02ef64f7173194d7c4b8bce5c988156e5f8"
+    },
+    {
+      "path": "min/vs/_commonjsHelpers-CT9FvmAN.js",
+      "bytes": 208,
+      "sha256": "f413b79b9dea49bcd875fdcf6977447aa34372bded8ec4d6a11bdeef1f0d4759"
+    },
+    {
+      "path": "min/vs/css-CaeNmE3S.js",
+      "bytes": 4489,
+      "sha256": "7e23b396ebf63139c3e8a490d4d0cee72070be0cbcc16751e21e76e77725ba1d"
+    },
+    {
+      "path": "min/vs/assets/css.worker-HnVq6Ewq.js",
+      "bytes": 1030368,
+      "sha256": "c0536e22820ddf18d2dacb1e11c6e78c25ae8854352fc991a39e2270013012d0"
+    },
+    {
+      "path": "min/vs/cssMode-CjiAH6dQ.js",
+      "bytes": 3748,
+      "sha256": "33c8cc090616f7f93761810ca7844d9c5a911fc8adc4d9feef7191bf438a2f4d"
+    },
+    {
+      "path": "min/vs/editor.api-CalNCsUg.js",
+      "bytes": 3669759,
+      "sha256": "c10d0058fe0ee5d2c46c3b6cbb28474407be5d45ada35973f3230561f82c4de5"
+    },
+    {
+      "path": "min/vs/editor/editor.main.js",
+      "bytes": 79052,
+      "sha256": "e8cd8b34b0cc10759ad5419d6253bcb2b91b539580ab857e46f2af9096d8e348"
+    },
+    {
+      "path": "min/vs/assets/editor.worker-Be8ye1pW.js",
+      "bytes": 251818,
+      "sha256": "816b0b9a5aa5626cbd29b19cf74a792829badeb8292316b88b1046dc0ecf2b4c"
+    },
+    {
+      "path": "min/vs/html-Pa1xEWsY.js",
+      "bytes": 4654,
+      "sha256": "f80bca7696c004015b72129827fb7c695b6e8cd453f3c8199d37059a49fb7629"
+    },
+    {
+      "path": "min/vs/assets/html.worker-B51mlPHg.js",
+      "bytes": 693169,
+      "sha256": "efb6741a754df829f23e3a26f5370b10fd21b364d9d1c4e84c237ad0c9e38b8b"
+    },
+    {
+      "path": "min/vs/htmlMode-Bz67EXwp.js",
+      "bytes": 4435,
+      "sha256": "c4117bf0e6a1c16b531466d03f2092e4f4373051be022b87319d737b34ee1910"
+    },
+    {
+      "path": "min/vs/javascript-PczUCGdz.js",
+      "bytes": 957,
+      "sha256": "f6015a196031b3ef8f1768a59d3833351ed0840098eb589921d541cc50a09853"
+    },
+    {
+      "path": "min/vs/assets/json.worker-DKiEKt88.js",
+      "bytes": 383078,
+      "sha256": "68228c40cff14f5e5d40d40e2bdca4fcac53bd69d53a0420a3f770a03c2c51d6"
+    },
+    {
+      "path": "min/vs/jsonMode-DULH5oaX.js",
+      "bytes": 13005,
+      "sha256": "4ac90cde50ebf5dbb7a43b6d10539551060fd7ea6c9d23ecf92348c334f8dffe"
+    },
+    {
+      "path": "min/vs/loader.js",
+      "bytes": 39848,
+      "sha256": "35b59df80b41a8b73bf1ceb159b44f040567c2ab53f4e77a3d002d9dc39d55d1"
+    },
+    {
+      "path": "min/vs/lspLanguageFeatures-kM9O9rjY.js",
+      "bytes": 29247,
+      "sha256": "e55cd5adcc0b09f738104bd7dc39f5e5865bb722dcbfafa03db7af9e4bb021ad"
+    },
+    {
+      "path": "min/vs/markdown-C_rD0bIw.js",
+      "bytes": 3772,
+      "sha256": "daab8a5150c09dd393aca1ab782bd6a1bf13c12b2f961a33a8420932c6be32c5"
+    },
+    {
+      "path": "min/vs/monaco.contribution-D2OdxNBt.js",
+      "bytes": 4785,
+      "sha256": "9854389d8ed1583fd75083a65a150c7e2aef0c79b6b62672a03b91254d3b79fa"
+    },
+    {
+      "path": "min/vs/monaco.contribution-DO3azKX8.js",
+      "bytes": 2151,
+      "sha256": "32adc5eb62986fbb20851a31e75a997d2c730ca44ee3f42c07d7e5d0cfaec049"
+    },
+    {
+      "path": "min/vs/monaco.contribution-EcChJV6a.js",
+      "bytes": 1552,
+      "sha256": "77b367e4e813d719e8ec5419d91ed257b3ae730a64a02e901830b020b7bf4737"
+    },
+    {
+      "path": "min/vs/monaco.contribution-qLAYrEOP.js",
+      "bytes": 2157,
+      "sha256": "0759e165aae34b2f742da203a2c1eb66d0cc08a307a54bd76be357f40e48a201"
+    },
+    {
+      "path": "min/vs/basic-languages/monaco.contribution.js",
+      "bytes": 15037,
+      "sha256": "2708bba6aadd30d53cd558be678b96298a9c96eb5faf21486387c03905f21fa9"
+    },
+    {
+      "path": "min/vs/language/css/monaco.contribution.js",
+      "bytes": 305,
+      "sha256": "f711d4fa266ea9796679d7743f620e9eb70360f466c1c4acb5964d525dab6025"
+    },
+    {
+      "path": "min/vs/language/html/monaco.contribution.js",
+      "bytes": 524,
+      "sha256": "0229bd25b8f63e5b79dc533db62bbedd895bcc41448d8e2ee3a1150ad5318062"
+    },
+    {
+      "path": "min/vs/language/json/monaco.contribution.js",
+      "bytes": 272,
+      "sha256": "9ff482386830d3d60d6b41d52da2892dbac07ad61fbd221b19b629e8290095f5"
+    },
+    {
+      "path": "min/vs/language/typescript/monaco.contribution.js",
+      "bytes": 586,
+      "sha256": "03ff25f5b050061347b4de45287f78143de121031a822202766a56ecb5e839ef"
+    },
+    {
+      "path": "min/vs/nls.messages-loader.js",
+      "bytes": 270,
+      "sha256": "b67653b8b150c0193c1f7c46ca73e97226b26e793499ba853b3e1f4e7b215f65"
+    },
+    {
+      "path": "min/vs/nls.messages.js.js",
+      "bytes": 104018,
+      "sha256": "6fdd397e5ab73115c0475c80af97422e744b31741faf1fcfa5589a1d853796c7"
+    },
+    {
+      "path": "min/vs/assets/ts.worker-CMbG-7ft.js",
+      "bytes": 7011550,
+      "sha256": "0c3d32b72815bd20267f55707956295f8c400923d9a91f25268b0dee34812e47"
+    },
+    {
+      "path": "min/vs/tsMode-CZz1Umrk.js",
+      "bytes": 22849,
+      "sha256": "e05f7aa27e204369c3738d40ae560c9d94b2d436ee46d47a34b0b65fdb0bda26"
+    },
+    {
+      "path": "min/vs/typescript-DfOrAzoV.js",
+      "bytes": 5053,
+      "sha256": "0bb2dfd5100abf8b983f0bd7c1b904682f0f26142626f04152a0ea8406117c0a"
+    },
+    {
+      "path": "min/vs/workers-DcJshg-q.js",
+      "bytes": 1300,
+      "sha256": "b7200463bdfe7c5876a0adcb42b55d1e6c3b0f856d40f32bf6fbfa70d1040105"
+    },
+    {
+      "path": "ThirdPartyNotices.txt",
+      "bytes": 63064,
+      "sha256": "790537262fc78a764e121e6b92b959bcd3f5c310b47d9d9b9e92e17fe0af5336"
+    }
+  ]
+}

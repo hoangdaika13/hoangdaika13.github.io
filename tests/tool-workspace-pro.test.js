@@ -88,7 +88,7 @@ test("OCR, speech, Monaco and plugin systems provide real capability gates", () 
   assert.match(source, /navigator\.mediaDevices\?\.getUserMedia/);
   assert.match(source, /new MediaRecorder\(stream\)/);
   assert.match(source, /Chép file chưa khả dụng/);
-  assert.match(source, /không có diarization\/timestamp chính xác/);
+  assert.match(source, /không có diarization\/timestamp chính xác/i);
   assert.match(source, /formatSegments\(active\.transcriptSegments/);
   assert.match(source, /globalThis\.TextDetector/);
   assert.match(source, /loadLocalOcr\(\)/);

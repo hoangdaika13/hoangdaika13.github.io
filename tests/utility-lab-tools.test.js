@@ -49,6 +49,10 @@ test("source is UTF-8, responsive and keyboard accessible", () => {
   assert.match(css, /prefers-reduced-motion:reduce/);
   assert.match(css, /forced-colors:active/);
   assert.doesNotMatch(css, /body\.ut-focus-active/);
+  assert.match(css, /container-type:inline-size/);
+  assert.match(css, /@container\(max-width:700px\)/);
+  assert.match(css, /select,textarea\)\{min-width:0;max-width:100%\}/);
+  assert.match(css, /\.ut-kanban article\{grid-template-columns:minmax\(0,1fr\)\}/);
 });
 
 test("unit and timestamp converters accept useful explicit formats and reject mismatched values", () => {
@@ -88,4 +92,54 @@ test("timer snapshots use anchored time and preserve paused state without drift"
   assert.equal(api.timerSnapshot({ ...timer, status: "paused", anchor: null }, false, 100000).remainingMs, 10000);
   assert.equal(api.timerSnapshot(timer, true, 12000).elapsedMs, 13000);
   assert.equal(api.formatDuration(3661000), "01:01:01");
+});
+
+test("JSON viewer has RFC 6901 paths, typed values and bounded searchable nodes", () => {
+  const api = load(), data = { "a/b": { "~x": [false, null, 42] }, "<img onerror=alert(1)>": "<script>" };
+  assert.equal(api.jsonPointerValue(data, "/a~1b/~0x/2"), 42);
+  assert.equal(api.jsonPointerValue(data, ""), data);
+  assert.throws(() => api.jsonPointerValue(data, "/constructor"));
+  assert.throws(() => api.jsonPointerValue(data, "/a~1b/not-here"));
+  const tree = api.jsonTree(data, { query: "42" });
+  assert.match(tree.html, /data-ut-json-path="\/a~1b\/~0x\/2"/);
+  assert.match(tree.html, /data-type="number"/);
+  assert.doesNotMatch(tree.html, /<img|<script>/);
+  assert.doesNotMatch(tree.html, /data-type="boolean"/);
+  const bounded = api.jsonTree(Array.from({ length: 2500 }, (_, index) => index));
+  assert.ok(bounded.visited <= 2000); assert.equal(bounded.truncated, true);
+  assert.match(api.jsonTree({ a: 1 }, { query: "missing" }).html, /Không có nhánh khớp/);
+});
+
+test("Markdown handles useful blocks without scripts, image requests or unsafe URLs", () => {
+  const api = load();
+  const html = api.markdownHTML("# Đề cương\n\n- [ ] Học\n- [x] Làm\n\n1. Một\n2. Hai\n\n> Trích dẫn\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\n```js\n<script>alert(1)</script>\n```\n\n**Đậm** *Nghiêng* ~~Bỏ~~ [Liên kết](https://example.com)\n\n[Độc](javascript:alert) ![Ảnh](https://external.test/image.png)\n<img src=x onerror=alert(1)>");
+  for (const token of ["<h1>", "<ul>", "<ol>", "<blockquote>", "<table>", "<pre><code>", "<strong>", "<em>", "<del>", 'target="_blank"', "checked", "&lt;script&gt;"]) assert.ok(html.includes(token), token);
+  assert.doesNotMatch(html, /<script|<img|href="javascript:|onerror="/);
+  assert.throws(() => api.markdownHTML("a".repeat(100001)));
+  assert.throws(() => api.markdownHTML("x\n".repeat(5001)));
+});
+
+test("calendar range starts Monday and preserves month/week lengths across boundaries", () => {
+  const api = load(); const month = api.calendarDays("2026-02-01T10:00:00", "month"), week = api.calendarDays("2026-12-31T12:00:00", "week");
+  assert.equal(month.length, 42); assert.equal(month[0].getDay(), 1);
+  assert.equal(month[0].getDate(), 26); assert.equal(month[0].getMonth(), 0);
+  assert.equal(week.length, 7); assert.equal(week[0].getDay(), 1); assert.equal(week[6].getFullYear(), 2027);
+  const ics = api.calendarICS([{ id: "duration-test", title: "Một buổi học", date: "2026-10-12T10:30:00Z", at: "2026-10-12T09:00:00Z", duration: 90, location: "Phòng; A" }]);
+  assert.match(ics, /DTEND:20261012T120000Z/); assert.match(ics, /LOCATION:Phòng\\; A/);
+});
+
+test("backup normalization rejects unsafe keys, malformed records and excessive sizes", () => {
+  const api = load(), valid = { version: 1, data: { notes: [{ id: "one", title: "Ghi chú", meta: "Nội dung", tags: [], date: "", priority: "normal", column: "backlog", done: false, revision: 1, at: "2026-10-12T00:00:00Z" }] } };
+  assert.equal(api.backupAdapter.normalize(valid, { owner: "guest" }).data.notes[0].meta, "Nội dung");
+  assert.throws(() => api.backupAdapter.normalize(valid, { owner: "account:else" }));
+  assert.throws(() => api.backupAdapter.normalize(JSON.parse('{"version":1,"data":{"__proto__":{}}}')));
+  assert.throws(() => api.backupAdapter.normalize({ version: 1, data: { clipboard: [] } }));
+  assert.throws(() => api.backupAdapter.normalize({ version: 1, data: { notes: [...valid.data.notes, ...valid.data.notes] } }));
+  assert.throws(() => api.backupAdapter.normalize({ version: 1, data: { notes: [{ id: "x", title: "n", date: "not-a-date" }] } }));
+  assert.throws(() => api.backupAdapter.normalize({ version: 1, data: { bookmark: [{ id: "x", title: "b", meta: "javascript:alert(1)" }] } }));
+  assert.throws(() => api.backupAdapter.normalize({ version: 1, data: { preferences: { reducedMotion: "false" } } }));
+  assert.throws(() => api.backupAdapter.normalize({ version: 1, data: { todo: [{ id: "x", title: "t", column: "constructor" }] } }));
+  const ics = api.calendarICS([{ id: "folded", title: "Tiếng Việt 🌌 ".repeat(15), date: "2026-10-12T10:00:00Z" }]);
+  assert.ok(ics.split("\r\n").every((line) => Buffer.byteLength(line, "utf8") <= 75));
+  assert.match(ics, /\r\n /);
 });

@@ -11,12 +11,12 @@
     "command-palette": "Bộ lệnh có thể tìm bằng bàn phím, điều hướng rõ ràng trong HH Platform.",
     "dark-light-auto": "Xem trước sáng/tối độc lập; chỉ thay đổi website khi bạn chọn Áp dụng.",
     "theme-switcher": "Phối màu, cỡ chữ và tương phản trong vùng xem trước trước khi lưu.",
-    "realtime-notifications": "Tạo và quản lý thông báo cục bộ; không giả lập thông báo từ máy chủ.",
+    "realtime-notifications": "Thông báo cục bộ cập nhật giữa các tab cùng tài khoản; không giả lập thông báo máy chủ.",
     "loading-skeleton": "Thử các mẫu tải nội dung trong sandbox, không che hoặc khóa website.",
     "page-progress": "Đọc phần trăm cuộn thật hoặc thử mẫu tiến trình, không giả báo tải API.",
     "fps-monitor": "Đo tốc độ khung hình thực, frame time và tác vụ dài trên thiết bị này.",
     "history-manager": "Tìm, mở lại, xuất hoặc xóa lịch sử thao tác All Tools của tài khoản hiện tại.",
-    "favorite-manager": "Thư viện liên kết riêng cho All Tools, sắp xếp bằng nút hoặc kéo thả.",
+    "favorite-manager": "Quản lý yêu thích, ghim trong toàn bộ danh mục All Tools và liên kết riêng.",
     "export-data": "Xuất dữ liệu All Tools của tài khoản hiện tại, không xuất dữ liệu workspace khác.",
     "import-data": "Kiểm tra từng bản ghi trước khi nhập dữ liệu vào kho All Tools riêng.",
     "pwa": "Đọc Service Worker, dung lượng cache và yêu cầu kiểm tra cập nhật thật.",
@@ -30,6 +30,7 @@
     active: "Global Search",
     cleanup: [],
     progressFrame: 0,
+    progressDetach: null,
     fpsFrame: 0,
     fps: { running: false, samples: [], last: 0, longTasks: 0 },
     generatedExport: "",
@@ -46,6 +47,7 @@
     importFile: null,
     searchVersion: 0,
     shortcutCache: null,
+    offlineController: null,
     progress: { value: 0, elapsed: 0, duration: 4000, running: false, mode: "demo" }
   };
 
@@ -91,7 +93,7 @@
     if (document.querySelector('link[data-platform-tools-style]')) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = new URL("/platform-tools.css?v=2", location.href).href;
+    link.href = new URL("/platform-tools.css?v=3", location.href).href;
     link.dataset.platformToolsStyle = "true";
     document.head.append(link);
   }
@@ -162,7 +164,7 @@
   function publishAppearance(settings, owner = activeOwner()) {
     const fields = ["lightStart", "darkStart", "accent", "highlight", "fontScale", "contrast"];
     const appearance = { mode: settings.mode || settings.colorMode || "system" };
-    fields.forEach((key) => { if (settings[key] !== undefined) appearance[key] = settings[key]; });
+    fields.forEach((key) => { if (settings[key] !== undefined) appearance[key] = key === "fontScale" ? validateSetting(key, settings[key]) : settings[key]; });
     assertAccount(owner);
     window.HHAllToolState?.writeJSON?.("hh.all-tools.appearance.v1", appearance, owner);
     dispatchEvent(new CustomEvent("hh:alltools-appearance-change", { detail: appearance }));
@@ -216,7 +218,7 @@
 
   const commandMarkup = () => `<div class="pt-layout"><section class="pt-card">
     ${field("Command Palette", '<div class="pt-searchbox"><input name="query" autocomplete="off" placeholder="Tìm lệnh hoặc trang..."><kbd>Ctrl K</kbd></div>')}
-    <div class="pt-results" data-pt-results></div>
+    <p class="pt-help">↑ ↓ chọn lệnh · Home/End đến đầu/cuối · Enter mở · Escape trở lại tìm kiếm. Chỉ xử lý khi All Tools đang mở.</p><div class="pt-results" data-pt-results aria-label="Lệnh và công cụ"></div>
   </section><aside class="pt-card pt-card--compact"><strong>Lệnh nhanh</strong><div class="pt-command-grid">
     ${button("command-theme", "Mở thiết lập sáng/tối")}${button("command-home", "Mở Trang chủ")}${button("command-tools", "Mở All Tools")}${button("command-notify", "Mở thông báo cục bộ")}
   </div><p class="pt-help">Lệnh điều hướng dùng router hiện tại và giữ nguyên phiên làm việc.</p></aside></div>`;
@@ -232,32 +234,67 @@
 
   const notificationsMarkup = async () => {
     const rows = (await dbAll("notifications")).sort((a, b) => b.createdAt - a.createdAt);
-    return `<div class="pt-layout"><section class="pt-card"><div class="pt-grid-2">${field("Tiêu đề", '<input name="title" maxlength="80" value="HH Platform">')}${field("Mức ưu tiên", select("priority", [["normal", "Bình thường"], ["high", "Cao"], ["silent", "Im lặng"]]))}</div>${field("Nội dung", '<textarea name="message" maxlength="240" placeholder="Nội dung thông báo trên thiết bị..."></textarea>')}<div class="pt-actions">${button("notification-permission", "Cấp quyền trình duyệt")}${button("notification-send", "Tạo thông báo", true)}${button("notification-read", "Đánh dấu đã đọc")}${button("notification-clear", "Xóa thông báo")}</div><p class="pt-help">Thông báo cục bộ trong All Tools. Không có nguồn realtime máy chủ; thông báo hệ thống chỉ gửi khi đã được cấp quyền.</p></section><section class="pt-card"><header><strong>Thông báo của bạn</strong><span>${rows.filter((row) => !row.read).length} chưa đọc</span></header><div class="pt-timeline" data-pt-notifications>${rows.length ? rows.map((row) => `<article class="${row.read ? "" : "is-unread"}"><div><b>${esc(row.title)}</b><p>${esc(row.message)}</p><small>${new Date(row.createdAt).toLocaleString("vi-VN")}</small></div><button type="button" data-pt-delete-notification="${esc(row.id)}" aria-label="Xóa">×</button></article>`).join("") : '<div class="pt-empty">Chưa có thông báo.</div>'}</div></section></div>`;
+    return `<div class="pt-layout"><section class="pt-card"><div class="pt-grid-2">${field("Tiêu đề", '<input name="title" maxlength="80" value="HH Platform">')}${field("Mức ưu tiên", select("priority", [["normal", "Bình thường"], ["high", "Cao"], ["silent", "Im lặng"]]))}</div>${field("Nội dung", '<textarea name="message" maxlength="240" placeholder="Nội dung thông báo trên thiết bị..."></textarea>')}<label class="pt-choice"><input type="checkbox" name="listenLocal" checked><span><b>Cập nhật giữa các tab cùng tài khoản</b><small>Chỉ đọc kho All Tools trên thiết bị này, không gửi ra ngoài.</small></span></label><div class="pt-actions">${button("notification-permission", "Cấp quyền trình duyệt")}${button("notification-send", "Tạo thông báo", true)}${button("notification-read", "Đánh dấu đã đọc")}${button("notification-clear", "Xóa thông báo")}</div><p class="pt-help">Thông báo cục bộ cập nhật qua sự kiện storage giữa các tab. Không có nguồn realtime máy chủ; không gửi push khi website đã đóng. Thông báo hệ thống chỉ gửi khi đã được cấp quyền.</p></section><section class="pt-card"><header><strong>Thông báo của bạn</strong><span>${rows.filter((row) => !row.read).length} chưa đọc</span></header><div class="pt-timeline" data-pt-notifications>${rows.length ? rows.map((row) => `<article class="${row.read ? "" : "is-unread"}"><div><b>${esc(row.title)}</b><p>${esc(row.message)}</p><small>${new Date(row.createdAt).toLocaleString("vi-VN")}</small></div><button type="button" data-pt-delete-notification="${esc(row.id)}" aria-label="Xóa">×</button></article>`).join("") : '<div class="pt-empty">Chưa có thông báo.</div>'}</div></section></div>`;
   };
 
-  const skeletonMarkup = () => `<div class="pt-layout"><section class="pt-card"><div class="pt-grid-2">${field("Mẫu skeleton", select("pattern", [["cards", "Danh sách thẻ"], ["article", "Bài viết"], ["dashboard", "Dashboard"]]))}${field("Thời gian kiểm thử", '<input type="number" name="duration" min="500" max="10000" step="250" value="1800">', "500–10.000 ms")}</div>${field("Số phần tử", '<input type="range" name="count" min="1" max="12" value="6"><output data-pt-count>6</output>')}<div class="pt-actions">${button("skeleton-start", "Chạy kiểm thử", true)}${button("skeleton-stop", "Dừng")}</div></section><section class="pt-card"><header><strong>Preview có phạm vi</strong><span data-pt-skeleton-state>Chưa chạy</span></header><div class="pt-skeleton-stage" data-pt-skeleton-stage aria-live="polite"><div class="pt-demo-content"><h4>Nội dung thật</h4><p>Skeleton chỉ phủ khu vực thử nghiệm này và không khóa toàn website.</p></div></div></section></div>`;
+  const skeletonMarkup = () => `<div class="pt-layout"><section class="pt-card"><div class="pt-grid-2">${field("Mẫu skeleton", select("pattern", [["cards", "Danh sách thẻ"], ["article", "Bài viết"], ["dashboard", "Dashboard"]]))}${field("Thời gian kiểm thử", '<input type="number" name="duration" min="500" max="10000" step="250" value="1800">', "500–10.000 ms")}</div>${field("Số phần tử", '<input type="range" name="count" min="1" max="12" value="6"><output data-pt-count>6</output>')}<div class="pt-actions">${button("skeleton-start", "Chạy kiểm thử", true)}${button("skeleton-stop", "Dừng")}${button("skeleton-code", "Xem mã HTML/CSS")}${button("skeleton-export", "Tải mẫu .html")}</div><p class="pt-help">Mã mẫu độc lập, có aria-busy, reduced motion và responsive. Thay skeleton bằng nội dung của ứng dụng khi tác vụ thực hoàn tất; không dùng timeout mô phỏng trong production.</p><pre class="pt-code" data-pt-output>Mẫu HTML/CSS chưa tạo.</pre></section><section class="pt-card"><header><strong>Preview có phạm vi</strong><span data-pt-skeleton-state>Chưa chạy</span></header><div class="pt-skeleton-stage" data-pt-skeleton-stage aria-live="polite"><div class="pt-demo-content"><h4>Nội dung thật</h4><p>Skeleton chỉ phủ khu vực thử nghiệm này và không khóa toàn website.</p></div></div></section></div>`;
 
-  const progressMarkup = () => `<div class="pt-layout"><section class="pt-card"><div class="pt-grid-2">${field("Nguồn tiến trình", select("progressType", [["scroll", "Cuộn nội dung thật"], ["demo", "Sandbox mô phỏng"]]))}${field("Thời lượng mô phỏng", '<input type="number" name="duration" min="500" max="15000" step="500" value="4000">')}</div><div class="pt-actions">${button("progress-start", "Bắt đầu / tiếp tục", true)}${button("progress-pause", "Tạm dừng")}${button("progress-reset", "Đặt lại")}</div><p class="pt-help">Mô phỏng chỉ nằm trong công cụ này, không báo trạng thái tải trang hoặc API thật.</p></section><section class="pt-card pt-progress-card"><header><strong>Tiến trình</strong><span data-pt-progress-label>0%</span></header><progress data-pt-progress max="100" value="0">0%</progress><p data-pt-progress-detail>Chưa có nguồn theo dõi.</p><div class="pt-scroll-sample" tabindex="0" aria-label="Nội dung cuộn thử nghiệm" data-pt-scroll-sample>${Array.from({ length: 12 }, (_, index) => `<article><b>Phần ${index + 1}</b><p>Cuộn vùng nội dung này để đo vị trí thực tế. Dùng phím Page Down hoặc mũi tên khi vùng được focus.</p></article>`).join("")}</div></section></div>`;
+  const progressMarkup = () => `<div class="pt-layout"><section class="pt-card"><div class="pt-grid-2">${field("Nguồn tiến trình", select("progressType", [["page", "Vị trí cuộn trang All Tools"], ["scroll", "Cuộn nội dung thử nghiệm"], ["events", "Tác vụ phát sự kiện hh:progress"], ["demo", "Sandbox mô phỏng"]]))}${field("Thời lượng mô phỏng", '<input type="number" name="duration" min="500" max="15000" step="500" value="4000">')}</div><div class="pt-actions">${button("progress-start", "Bắt đầu / tiếp tục", true)}${button("progress-pause", "Tạm dừng")}${button("progress-reset", "Đặt lại")}</div><p class="pt-help">Nguồn trang đọc scrollTop thật; nguồn sự kiện chỉ cập nhật khi ứng dụng cung cấp tiến trình thật. Mô phỏng chỉ nằm trong công cụ này, không báo trạng thái tải trang hoặc API thật.</p></section><section class="pt-card pt-progress-card"><header><strong>Tiến trình</strong><span data-pt-progress-label>0%</span></header><progress data-pt-progress max="100" value="0">0%</progress><p data-pt-progress-detail>Chưa có nguồn theo dõi.</p><div class="pt-scroll-sample" tabindex="0" aria-label="Nội dung cuộn thử nghiệm" data-pt-scroll-sample>${Array.from({ length: 12 }, (_, index) => `<article><b>Phần ${index + 1}</b><p>Cuộn vùng nội dung này để đo vị trí thực tế. Dùng phím Page Down hoặc mũi tên khi vùng được focus.</p></article>`).join("")}</div></section></div>`;
 
   const fpsMarkup = () => `<div class="pt-layout"><section class="pt-card"><div class="pt-metrics"><article><span>FPS hiện tại</span><strong data-pt-fps>—</strong></article><article><span>Frame time</span><strong data-pt-frame>—</strong></article><article><span>P95</span><strong data-pt-p95>—</strong></article><article><span>Long tasks</span><strong data-pt-long>0</strong></article></div><canvas class="pt-chart" data-pt-fps-chart width="900" height="260" aria-label="Biểu đồ FPS 60 giây"></canvas><div class="pt-actions">${button("fps-start", "Bắt đầu đo", true)}${button("fps-pause", "Tạm dừng")}${button("fps-reset", "Đặt lại")}${button("fps-export", "Xuất JSON")}</div></section><aside class="pt-card"><strong>Khả năng đo</strong><ul class="pt-capabilities">${capability("requestAnimationFrame", true, "Đo FPS và frame time thực")}${capability("Long Tasks API", "PerformanceObserver" in window, "Ghi nhận tác vụ chặn main thread")}${capability("GPU telemetry", false, "Trình duyệt không cung cấp nhiệt độ/GPU load")}</ul></aside></div>`;
 
   const historyMarkup = async () => {
-    const rows = (await dbAll("history")).sort((a, b) => b.createdAt - a.createdAt);
-    return `<div class="pt-layout"><section class="pt-card"><div class="pt-filter-row"><input name="query" placeholder="Tìm tool hoặc hành động...">${button("history-filter", "Lọc", true)}${button("history-export", "Xuất JSON")}</div><div class="pt-timeline" data-pt-history>${historyRows(rows)}</div></section><aside class="pt-card pt-card--compact"><strong>${rows.length} hoạt động</strong><p class="pt-help">Lịch sử chỉ lưu tên thao tác và metadata an toàn trong IndexedDB; không lưu mật khẩu, token hoặc nội dung biểu mẫu.</p>${button("history-clear", "Xóa toàn bộ")}</aside></div>`;
+    const rows = await allHistory();
+    const recent = catalogPreferences().recent.map(id => toolCatalog().find(tool => tool.id === id)).filter(Boolean);
+    return `<div class="pt-layout"><section class="pt-card"><header><strong>Công cụ mở gần đây</strong><span>${recent.length} mục</span></header><div class="pt-results">${recent.length ? recent.map(tool => `<button type="button" class="pt-result" data-pt-catalog-open="${esc(tool.id)}"><span>↗</span><div><b>${esc(tool.name)}</b><small>${esc(tool.description || "Tiếp tục workspace đã mở")}</small></div></button>`).join("") : '<div class="pt-empty">Chưa mở công cụ nào.</div>'}</div><div class="pt-actions">${button("history-clear-recent", "Xóa danh sách gần đây")}</div><header><strong>Hoạt động thật của All Tools</strong><span>${rows.length} mục gần nhất · tối đa 500</span></header><div class="pt-filter-row"><input name="query" aria-label="Lọc lịch sử" placeholder="Tìm tool hoặc hành động...">${button("history-filter", "Lọc", true)}${button("history-export", "Xuất JSON")}</div><div class="pt-timeline" data-pt-history>${historyRows(rows)}</div></section><aside class="pt-card pt-card--compact"><p class="pt-help">Gần đây dùng cùng danh sách với All Tools. Lịch sử tổng hợp metadata thực từ Platform, workspace và tiện ích; không đọc nội dung ghi chú, mật khẩu, token hoặc nội dung công cụ khác. Xóa bên dưới chỉ xóa lịch sử Platform; hoạt động bộ khác được quản lý trong công cụ gốc.</p>${button("history-clear", "Xóa lịch sử Platform")}</aside></div>`;
   };
 
-  const historyRows = (rows) => rows.length ? rows.map((row) => `<article data-pt-history-row data-search="${esc(`${row.name} ${row.action}`.toLowerCase())}"><div><b>${esc(row.name)}</b><p>${esc(row.action)}</p><small>${new Date(row.createdAt).toLocaleString("vi-VN")}</small></div><button type="button" data-pt-history-open="${esc(row.tool)}">Mở</button><button type="button" data-pt-history-delete="${esc(row.id)}" aria-label="Xóa">×</button></article>`).join("") : '<div class="pt-empty">Chưa có hoạt động.</div>';
+  async function allHistory(owner = activeOwner()) {
+    const platform = (await dbAll("history", owner)).map(row => ({ ...row, source: "platform" }));
+    const workspace = window.HHAllToolState?.workspaceHistory ? await window.HHAllToolState.workspaceHistory(owner, 500) : [];
+    const catalog = toolCatalog();
+    const extra = workspace.map(row => {
+      const tool = catalog.find(item => item.id === row.tool || item.name === row.tool);
+      return { id: row.id, source: row.source, tool: tool?.id || row.tool, name: tool?.name || row.tool, action: row.action, createdAt: Date.parse(row.at) };
+    });
+    assertAccount(owner);
+    return [...platform, ...extra].sort((a, b) => b.createdAt - a.createdAt).slice(0, 500);
+  }
+
+  const toolCatalog = () => window.HHFeatureLab?.catalog?.() || manifests;
+  function catalogPreferences() {
+    const saved = window.HHAllToolState?.readCatalogPreferences?.(activeOwner()) || window.HHAllToolState?.readJSON?.("hh.all-tools.catalog.v1", {}, activeOwner()) || {};
+    const ids = new Set(toolCatalog().map(tool => tool.id));
+    return Object.fromEntries(["favorites", "pinned", "recent"].map(key => [key, Array.isArray(saved[key]) ? [...new Set(saved[key].filter(id => ids.has(id)))].slice(0, key === "recent" ? 12 : 86) : []]));
+  }
+  function updateCatalogPreferences(patch, owner = activeOwner()) {
+    assertAccount(owner);
+    const data = { ...catalogPreferences(), ...patch };
+    if (window.HHAllToolState?.updateCatalogPreferences) return window.HHAllToolState.updateCatalogPreferences(data, owner);
+    else if (window.HHAllToolState?.writeJSON) window.HHAllToolState.writeJSON("hh.all-tools.catalog.v1", data, owner);
+    else throw new Error("Kho danh mục All Tools chưa sẵn sàng; không thể lưu yêu thích.");
+    dispatchEvent(new CustomEvent("hh:alltools-catalog-change", { detail: { owner } }));
+    return data;
+  }
+
+  function catalogFavoriteRows() {
+    const preferences = catalogPreferences(), catalog = toolCatalog();
+    const selected = catalog.filter(tool => preferences.favorites.includes(tool.id) || preferences.pinned.includes(tool.id));
+    return `<header><strong>Yêu thích & ghim của danh mục</strong><span>${selected.length} công cụ</span></header>${field("Thêm từ danh mục", select("catalogTool", catalog.map(tool => [tool.id, tool.name])))}<div class="pt-actions">${button("favorite-catalog-add", "Thêm tool yêu thích", true)}${button("favorite-catalog-pin", "Ghim tool đã chọn")}</div><div class="pt-catalog-favorites">${selected.length ? selected.map(tool => `<article><div><b>${esc(tool.name)}</b><small>${esc(tool.group || "Platform")} · ${preferences.pinned.includes(tool.id) ? "Đã ghim" : "Chưa ghim"}</small></div><button type="button" data-pt-catalog-open="${esc(tool.id)}">Mở</button><button type="button" data-pt-catalog-toggle="pinned" data-pt-catalog-id="${esc(tool.id)}" aria-pressed="${preferences.pinned.includes(tool.id)}">◇ Ghim</button><button type="button" data-pt-catalog-toggle="favorites" data-pt-catalog-id="${esc(tool.id)}" aria-pressed="${preferences.favorites.includes(tool.id)}">★ Yêu thích</button></article>`).join("") : '<div class="pt-empty">Dùng nút Yêu thích/Ghim trong catalog hoặc chọn một tool ở trên.</div>'}</div>`;
+  }
+
+  const historyRows = (rows) => rows.length ? rows.map((row) => `<article data-pt-history-row data-search="${esc(`${row.name} ${row.action} ${row.source || "platform"}`.toLowerCase())}"><div><b>${esc(row.name)}</b><p>${esc(row.action)}</p><small>${new Date(row.createdAt).toLocaleString("vi-VN")} · ${esc(row.source || "platform")}</small></div><button type="button" data-pt-catalog-open="${esc(row.tool)}" ${toolCatalog().some(tool => tool.id === row.tool) ? "" : "disabled"}>Mở</button>${!row.source || row.source === "platform" ? `<button type="button" data-pt-history-delete="${esc(row.id)}" aria-label="Xóa hoạt động Platform">×</button>` : ""}</article>`).join("") : '<div class="pt-empty">Chưa có hoạt động.</div>';
 
   const favoritesMarkup = async () => {
     const rows = (await dbAll("favorites")).sort((a, b) => a.order - b.order);
-    return `<div class="pt-layout"><section class="pt-card"><div class="pt-grid-3">${field("Tên", '<input name="title" maxlength="160" placeholder="Ví dụ: Bộ đổi màu">')}${field("Route", '<input name="route" maxlength="240" placeholder="/tools/platform/theme-switcher">')}${field("Thư mục / tag", '<input name="folder" maxlength="80" placeholder="Công việc">')}</div><div class="pt-actions">${button("favorite-add", "Thêm yêu thích", true)}${button("favorite-current", "Thêm công cụ hiện tại")}</div><p class="pt-help">Danh sách riêng All Tools; chỉ chấp nhận đường dẫn nội bộ. Kéo thả hoặc dùng nút lên/xuống để sắp xếp.</p><div class="pt-favorites" data-pt-favorites>${rows.length ? rows.map((row, index) => `<article draggable="true" data-pt-favorite="${esc(row.id)}"><span>★</span><div><b>${esc(row.title)}</b><small>${esc(row.folder || "Chưa phân loại")} · ${esc(row.route)}</small></div><button type="button" data-pt-favorite-up="${esc(row.id)}" aria-label="Đưa lên" ${index === 0 ? "disabled" : ""}>↑</button><button type="button" data-pt-favorite-down="${esc(row.id)}" aria-label="Đưa xuống" ${index === rows.length - 1 ? "disabled" : ""}>↓</button><button type="button" data-pt-favorite-open="${esc(row.id)}">Mở</button><button type="button" data-pt-favorite-delete="${esc(row.id)}" aria-label="Xóa">×</button></article>`).join("") : '<div class="pt-empty">Chưa có mục yêu thích.</div>'}</div></section></div>`;
+    return `<div class="pt-layout"><section class="pt-card">${catalogFavoriteRows()}</section><section class="pt-card"><strong>Liên kết nội bộ cá nhân</strong><div class="pt-grid-3">${field("Tên", '<input name="title" maxlength="160" placeholder="Ví dụ: Bộ đổi màu">')}${field("Route", '<input name="route" maxlength="240" placeholder="/tools/platform/theme-switcher">')}${field("Thư mục / tag", '<input name="folder" maxlength="80" placeholder="Công việc">')}</div><div class="pt-actions">${button("favorite-add", "Thêm liên kết", true)}${button("favorite-current", "Thêm công cụ hiện tại")}</div><p class="pt-help">Liên kết cá nhân giữ nguyên dữ liệu cũ. Chỉ chấp nhận đường dẫn nội bộ. Kéo thả hoặc dùng nút lên/xuống để sắp xếp.</p><div class="pt-favorites" data-pt-favorites>${rows.length ? rows.map((row, index) => `<article draggable="true" data-pt-favorite="${esc(row.id)}"><span>★</span><div><b>${esc(row.title)}</b><small>${esc(row.folder || "Chưa phân loại")} · ${esc(row.route)}</small></div><button type="button" data-pt-favorite-up="${esc(row.id)}" aria-label="Đưa lên" ${index === 0 ? "disabled" : ""}>↑</button><button type="button" data-pt-favorite-down="${esc(row.id)}" aria-label="Đưa xuống" ${index === rows.length - 1 ? "disabled" : ""}>↓</button><button type="button" data-pt-favorite-open="${esc(row.id)}">Mở</button><button type="button" data-pt-favorite-delete="${esc(row.id)}" aria-label="Xóa">×</button></article>`).join("") : '<div class="pt-empty">Chưa có liên kết cá nhân.</div>'}</div></section></div>`;
   };
 
-  const exportMarkup = () => `<div class="pt-layout"><section class="pt-card"><fieldset><legend>Phạm vi dữ liệu riêng All Tools</legend><div class="pt-check-grid">${["Thiết lập All Tools", "Lịch sử thao tác", "Yêu thích", "Thông báo", "Bản nháp All Tools"].map((label, index) => `<label><input type="checkbox" name="scope" value="${index}" ${index < 4 ? "checked" : ""}><span>${label}</span></label>`).join("")}</div></fieldset>${field("Định dạng", select("format", [["json", "JSON"], ["csv", "CSV (lịch sử)"]]))}<p class="pt-help">Chỉ xuất tài khoản hiện tại. Không đọc khóa đăng nhập, token hoặc dữ liệu của workspace khác. Tệp thông báo có thể chứa nội dung bạn đã nhập.</p><div class="pt-actions">${button("export-preview", "Tạo bản xem trước", true)}${button("export-download", "Tải xuống", false, "disabled")}</div></section><section class="pt-card"><header><strong>Bản xem trước</strong><span data-pt-export-size>0 B</span></header><pre class="pt-code" data-pt-output>Chọn phạm vi rồi tạo bản xem trước.</pre></section></div>`;
+  const exportMarkup = () => `<div class="pt-layout"><section class="pt-card"><fieldset><legend>Phạm vi dữ liệu riêng All Tools</legend><div class="pt-check-grid">${["Thiết lập All Tools", "Lịch sử thao tác", "Liên kết yêu thích", "Thông báo", "Bản nháp Platform Tools", "Workspace, tiện ích & danh mục", "Nội dung tệp workspace (cần chọn workspace)"].map((label, index) => `<label><input type="checkbox" name="scope" value="${index}" ${index < 4 ? "checked" : ""}><span>${label}</span></label>`).join("")}</div></fieldset>${field("Định dạng", select("format", [["json", "JSON (sao lưu)"], ["csv", "CSV (chỉ lịch sử Platform)"]]))}<p class="pt-help">Chỉ xuất tài khoản hiện tại, tổng tối đa 5 MB. Các phạm vi nội dung do bạn chọn có thể chứa ghi chú, chat hoặc tài liệu riêng; giữ tệp sao lưu an toàn. Không đọc khóa đăng nhập/token; không xuất nội dung công cụ Password/API/Clipboard. Tệp workspace tùy chọn, tối đa 1 MB/tệp và 2 MB tổng.</p><div class="pt-actions">${button("export-preview", "Tạo bản xem trước", true)}${button("export-download", "Tải xuống", false, "disabled")}</div></section><section class="pt-card"><header><strong>Bản xem trước</strong><span data-pt-export-size>0 B</span></header><pre class="pt-code" data-pt-output>Chọn phạm vi rồi tạo bản xem trước.</pre></section></div>`;
 
-  const importMarkup = () => `<div class="pt-layout"><section class="pt-card"><label class="pt-dropzone"><input type="file" name="importFile" accept="application/json,.json"><span>Chọn hoặc kéo tệp JSON vào đây</span><small>Tệp được phân tích cục bộ, chưa ghi dữ liệu cho tới khi bạn xác nhận.</small></label><div class="pt-grid-2">${field("Xử lý trùng", select("strategy", [["merge", "Gộp, ưu tiên dữ liệu mới"], ["skip", "Bỏ qua mục đã có"], ["replace", "Thay thế phạm vi đã chọn"]]))}${field("Giới hạn kích thước", '<output>5 MB</output>')}</div><div class="pt-actions">${button("import-validate", "Kiểm tra tệp", true)}${button("import-commit", "Xác nhận nhập", false, "disabled")}${button("import-cancel", "Hủy")}</div></section><section class="pt-card"><header><strong>Kiểm tra schema</strong><span data-pt-import-status>Chưa có tệp</span></header><pre class="pt-code" data-pt-output>Chưa có dữ liệu xem trước.</pre></section></div>`;
+  const importMarkup = () => `<div class="pt-layout"><section class="pt-card"><label class="pt-dropzone"><input type="file" name="importFile" accept="application/json,.json"><span>Chọn hoặc kéo tệp JSON vào đây</span><small>Tệp được phân tích cục bộ, chưa ghi dữ liệu cho tới khi bạn xác nhận.</small></label><div class="pt-grid-2">${field("Xử lý trùng", select("strategy", [["merge", "Gộp, ưu tiên dữ liệu mới"], ["skip", "Bỏ qua mục đã có"], ["replace", "Thay thế phạm vi có trong tệp"]]))}${field("Giới hạn kích thước", '<output>5 MB · v1 tương thích / v2 đúng tài khoản</output>')}</div><p class="pt-help">Kiểm tra toàn bộ schema trước khi lưu. Nhập nhiều kho không phải transaction duy nhất: công cụ tạo bản chụp để hoàn tác nếu có lỗi và báo rõ nếu hoàn tác không đầy đủ. Tệp v2 của tài khoản khác sẽ bị từ chối.</p><div class="pt-actions">${button("import-validate", "Kiểm tra tệp", true)}${button("import-commit", "Xác nhận nhập", false, "disabled")}${button("import-cancel", "Hủy")}</div></section><section class="pt-card"><header><strong>Kiểm tra schema</strong><span data-pt-import-status>Chưa có tệp</span></header><pre class="pt-code" data-pt-output>Chưa có dữ liệu xem trước.</pre></section></div>`;
 
-  const pwaMarkup = (kind) => `<div class="pt-layout"><section class="pt-card"><div class="pt-actions">${kind === "PWA" ? `${button("pwa-inspect", "Kiểm tra PWA", true)}${button("pwa-update", "Tìm bản cập nhật")}` : kind === "Offline Mode" ? `${button("offline-inspect", "Kiểm tra offline", true)}${button("offline-retry", "Kiểm tra kết nối thật")}` : `${button("install-run", "Cài ứng dụng", true, state.installPrompt ? "" : "disabled")}${button("install-help", "Xem hướng dẫn")}`}</div><div class="pt-pwa-report" data-pt-pwa-report><div class="pt-empty">Nhấn kiểm tra để đọc trạng thái thật của trình duyệt.</div></div></section><aside class="pt-card"><strong>Khả năng trình duyệt</strong><ul class="pt-capabilities">${capability("Service Worker", "serviceWorker" in navigator, "Cache và cập nhật ứng dụng")}${capability("Cache Storage", "caches" in window, "Chỉ đọc tài nguyên đã lưu; không xóa cache của website")}${capability("Install Prompt", Boolean(state.installPrompt), state.installPrompt ? "Có thể hiển thị ngay" : "Phụ thuộc trình duyệt và tiêu chí PWA")}</ul></aside></div>`;
+  const pwaMarkup = (kind) => `<div class="pt-layout"><section class="pt-card"><div class="pt-actions">${kind === "PWA" ? `${button("pwa-inspect", "Kiểm tra PWA", true)}${button("pwa-update", "Tìm bản cập nhật")}` : kind === "Offline Mode" ? `${button("offline-inspect", "Kiểm tra offline", true)}${button("offline-retry", "Kiểm tra truy cập tệp")}` : `${button("install-run", "Cài ứng dụng", true, state.installPrompt ? "" : "disabled")}${button("install-inspect", "Kiểm tra khả năng cài")}${button("install-help", "Xem hướng dẫn")}`}</div>${kind === "Offline Mode" ? `<fieldset><legend>Tải riêng bộ công cụ để dùng offline</legend><div class="pt-check-grid">${[["platform", "Platform & danh mục"], ["workspace", "Ghi chú, Kanban & tệp"], ["utility", "Chuyển đổi & xử lý dữ liệu"]].map(([value, label]) => `<label><input type="checkbox" name="offlineSuite" value="${value}" checked><span>${label}</span></label>`).join("")}</div><p class="pt-help">Chỉ tải JS/CSS công khai của bộ đã chọn, tối đa 15 MB. Không lưu API, tài khoản, tệp người dùng hoặc nội dung AI. Khả năng offline phụ thuộc Service Worker hiện có; các tính năng cần mạng vẫn không chạy offline.</p><div class="pt-actions">${button("offline-prepare", "Tải tài nguyên đã chọn")}${button("offline-cancel", "Dừng tải")}</div><progress data-pt-offline-progress value="0" max="100" aria-label="Tiến trình lưu tài nguyên"></progress></fieldset>` : ""}<div class="pt-pwa-report" data-pt-pwa-report><div class="pt-empty">Nhấn kiểm tra để đọc trạng thái thật của trình duyệt.</div></div></section><aside class="pt-card"><strong>Khả năng trình duyệt</strong><ul class="pt-capabilities">${capability("Service Worker", "serviceWorker" in navigator, "Cache và cập nhật ứng dụng")}${capability("Cache Storage", "caches" in window, "Chỉ thêm cache riêng All Tools; không xóa cache của website")}${capability("Install Prompt", Boolean(state.installPrompt), state.installPrompt ? "Có thể hiển thị ngay" : "Phụ thuộc trình duyệt và tiêu chí PWA")}</ul></aside></div>`;
 
   const shortcutsMarkup = async () => {
     const settings = await readSettings();
@@ -318,7 +355,7 @@
     applyToolAppearance(settings);
     await getShortcuts();
     if (version !== state.renderVersion || owner !== accountOwner() || state.root !== root) return false;
-    if (name === "Theme Color Switcher") previewTheme(values());
+    if (name === "Theme Color Switcher") { previewTheme(values()); root.querySelector('[data-pt-action="theme-undo"]').disabled = !settings.themeUndo; }
     if (["Global Search", "Command Palette++"].includes(name)) await runSearch(name === "Command Palette++");
     if (!window.indexedDB) status("IndexedDB không hỗ trợ: dữ liệu chỉ nằm trong bộ nhớ tạm, sẽ mất khi tải lại.", "warning");
     else if (!["Global Search", "Command Palette++"].includes(name)) status("Sẵn sàng. Dữ liệu riêng cho tài khoản trên thiết bị này.");
@@ -331,6 +368,7 @@
     state.renderVersion++;
     state.searchVersion++;
     cancelAnimationFrame(state.progressFrame);
+    state.progressDetach?.(); state.progressDetach = null;
     cancelAnimationFrame(state.fpsFrame);
     clearTimeout(state.skeletonTimer);
     state.longTaskObserver?.disconnect();
@@ -340,7 +378,9 @@
     state.fps.running = false;
     state.progress.running = false;
     state.generatedExport = "";
+    state.offlineController?.abort(); state.offlineController = null;
     state.importPayload = null;
+    state.confirmedImport = null;
     state.importFile = null;
     state.themeUndo = null;
     state.cleanup.splice(0).forEach((fn) => { try { fn(); } catch {} });
@@ -374,15 +414,15 @@
   }
 
   function scanWorkspace(query = "", kind = "all", limit = 50) {
-    const normalized = query.trim().toLowerCase();
+    const normalized = normalizeSearch(query);
     const map = new Map();
     const add = (entry) => {
       const key = `${entry.kind}:${entry.route || entry.label}`;
-      if (!map.has(key) && (!normalized || `${entry.label} ${entry.description || ""}`.toLowerCase().includes(normalized))) map.set(key, entry);
+      if (!map.has(key) && (!normalized || normalizeSearch(`${entry.label} ${entry.description || ""}`).includes(normalized))) map.set(key, entry);
     };
     if (["all", "route"].includes(kind)) {
       document.querySelectorAll("[data-app-route]").forEach((node) => add({ kind: "route", label: node.textContent.trim().replace(/\s+/g, " ") || node.dataset.appRoute, route: node.dataset.appRoute, description: "Điều hướng trong HH Platform" }));
-      manifests.forEach((manifest) => add({ kind: "route", label: manifest.name, route: manifest.route, description: "Platform Tool" }));
+      toolCatalog().forEach((manifest) => add({ kind: "route", label: manifest.name, route: manifest.route || `/tools/${manifest.id}`, description: manifest.description || `${manifest.group || "Platform"} · All Tool` }));
     }
     if (["all", "heading"].includes(kind)) document.querySelectorAll("main h1,main h2,main h3,[data-module-id]").forEach((node) => {
       if (node.closest(".feature-lab") || node.closest(".pt-workspace")) return;
@@ -395,28 +435,42 @@
     const root = state.root, owner = state.owner, version = ++state.searchVersion;
     const data = values();
     const kind = command ? "route" : data.kind || "all";
-    const rows = scanWorkspace(data.query || "", kind, data.limit || 30);
+    const rows = scanWorkspace(data.query || "", kind, command ? 150 : data.limit || 30);
+    if (command) {
+      const query = normalizeSearch(data.query || "");
+      const commands = [["command-theme", "Thiết lập sáng/tối", "Xem trước và áp dụng riêng All Tools"], ["command-home", "Mở Trang chủ", "HH Platform"], ["command-tools", "Mở danh mục All Tools", "Danh mục công cụ"], ["command-notify", "Thông báo cục bộ", "Quản lý thông báo trên thiết bị"]];
+      rows.unshift(...commands.filter(([, label, description]) => !query || normalizeSearch(`${label} ${description}`).includes(query)).map(([action, label, description]) => ({ kind: "command", action, label, description })));
+      rows.sort((a, b) => searchScore(b.label, query) - searchScore(a.label, query));
+    }
     if (["all", "history"].includes(kind)) {
-      const normalized = (data.query || "").trim().toLowerCase();
-      const history = (await dbAll("history"))
+      const normalized = normalizeSearch(data.query || "");
+      const history = (await allHistory(owner))
         .sort((a, b) => b.createdAt - a.createdAt)
-        .filter((row) => !normalized || `${row.name} ${row.action}`.toLowerCase().includes(normalized))
+        .filter((row) => !normalized || normalizeSearch(`${row.name} ${row.action}`).includes(normalized))
         .slice(0, Number(data.limit) || 30)
-        .map((row) => ({ kind: "history", label: row.name, route: byId.get(row.tool)?.route || "", description: `${row.action} · ${new Date(row.createdAt).toLocaleString("vi-VN")}` }));
+        .map((row) => ({ kind: "history", label: row.name, route: toolCatalog().some(tool => tool.id === row.tool) ? `/tools/${row.tool}` : "", description: `${row.action} · ${new Date(row.createdAt).toLocaleString("vi-VN")}` }));
       rows.push(...history.slice(0, Math.max(0, (Number(data.limit) || 30) - rows.length)));
     }
     if (version !== state.searchVersion || root !== state.root || owner !== accountOwner()) return;
     const target = root.querySelector("[data-pt-results]");
     if (!target) return;
-    target.innerHTML = rows.length ? rows.map((row) => `<button type="button" class="pt-result" data-pt-open-route="${esc(row.route || "")}"><span>${row.kind === "route" ? "↗" : "⌕"}</span><div><b>${esc(row.label)}</b><small>${esc(row.description || row.route || "")}</small></div><kbd>Enter</kbd></button>`).join("") : '<div class="pt-empty">Không tìm thấy kết quả phù hợp.</div>';
+    target.innerHTML = rows.length ? rows.map((row) => `<button type="button" class="pt-result" ${row.action ? `data-pt-action="${esc(row.action)}"` : `data-pt-open-route="${esc(row.route || "")}"`}><span>${row.kind === "command" ? "⌘" : row.kind === "route" ? "↗" : "⌕"}</span><div><b>${esc(row.label)}</b><small>${esc(row.description || row.route || "")}</small></div><kbd>Enter</kbd></button>`).join("") : '<div class="pt-empty">Không tìm thấy kết quả phù hợp.</div>';
     const count = state.root.querySelector("[data-pt-result-count]");
     if (count) count.textContent = `${rows.length} mục`;
     status(`Tìm thấy ${rows.length} kết quả.`, "success");
   }
 
+  function searchScore(label, query) {
+    const normalized = normalizeSearch(label);
+    if (!query) return 0;
+    return normalized === query ? 3 : normalized.startsWith(query) ? 2 : normalized.includes(query) ? 1 : 0;
+  }
+  const normalizeSearch = value => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/gi, "d").trim().toLowerCase();
+
   function navigate(route) {
     if (!route) return;
     route = validRoute(route);
+    if (route.startsWith("/tools/") && window.HHFeatureLab?.getTool?.(route)) { window.HHFeatureLab.select(route); return; }
     if (route.startsWith("/tools/platform/")) {
       const manifest = byId.get(route.split("/").pop());
       if (!manifest) throw new Error("Công cụ không tồn tại.");
@@ -488,6 +542,7 @@
     if (!title || !message) throw new Error("Hãy nhập tiêu đề và nội dung thông báo.");
     const row = { id: uid(), title, message, priority: data.priority, read: false, createdAt: Date.now() };
     await dbPut("notifications", row, owner);
+    publishNotificationSignal(owner);
     assertAccount(owner);
     let systemWarning = "";
     if (data.priority !== "silent" && "Notification" in window && Notification.permission === "granted") {
@@ -500,6 +555,12 @@
     if (systemWarning) status(systemWarning, "warning");
   }
 
+  function publishNotificationSignal(owner = activeOwner()) {
+    assertAccount(owner);
+    try { localStorage.setItem(`hh.all-tools.notification-signal.v1.${owner}`, JSON.stringify({ changedAt: Date.now(), id: uid() })); }
+    catch { /* Primary IndexedDB write remains valid even if optional cross-tab signalling is unavailable. */ }
+  }
+
   function startSkeleton() {
     clearTimeout(state.skeletonTimer);
     const data = values(), stage = state.root.querySelector("[data-pt-skeleton-stage]"), count = Math.max(1, Math.min(12, Number(data.count) || 6));
@@ -509,6 +570,11 @@
     state.root.querySelector("[data-pt-skeleton-state]").textContent = "Đang kiểm thử";
     state.skeletonTimer = setTimeout(stopSkeleton, Math.max(500, Math.min(10000, Number(data.duration) || 1800)));
     status("Skeleton đang chạy trong preview.", "running");
+  }
+
+  function skeletonDocument(config) {
+    const pattern = ["cards", "article", "dashboard"].includes(config.pattern) ? config.pattern : "cards", count = Math.max(1, Math.min(12, Number(config.count) || 6));
+    return `<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Skeleton ${pattern}</title><style>body{margin:24px;background:#0b1020;color:#eaf4ff;font-family:system-ui,sans-serif}.skeleton{display:grid;grid-template-columns:repeat(${pattern === "article" ? 1 : pattern === "dashboard" ? 3 : 2},minmax(0,1fr));gap:16px}.skeleton article{padding:16px;border:1px solid #425674;border-radius:14px;background:#111b2e}.skeleton span{display:block;height:14px;margin:10px 0;border-radius:6px;background:linear-gradient(90deg,#263753,#456284,#263753);background-size:200% 100%;animation:shimmer 1.6s ease-in-out infinite}.skeleton .media{height:110px}.skeleton .short{width:60%}@keyframes shimmer{to{background-position:-200% 0}}@media(max-width:600px){.skeleton{grid-template-columns:1fr}}@media(prefers-reduced-motion:reduce){.skeleton span{animation:none}}@media(forced-colors:active){.skeleton article{border:1px solid CanvasText}.skeleton span{background:GrayText}}</style><h1>Đang tải nội dung</h1><p role="status">Vui lòng chờ tác vụ hoàn tất.</p><section class="skeleton" aria-busy="true" aria-label="Nội dung đang tải">${Array.from({ length: count }, () => '<article aria-hidden="true"><span class="media"></span><span class="short"></span><span></span><span class="short"></span></article>').join("")}</section><!-- Replace this section with your real content and set aria-busy=false once the real task finishes. --></html>`;
   }
 
   function stopSkeleton() {
@@ -524,6 +590,7 @@
 
   function startProgress() {
     cancelAnimationFrame(state.progressFrame);
+    state.progressDetach?.(); state.progressDetach = null;
     const data = values(), root = state.root;
     const progress = root.querySelector("[data-pt-progress]"), model = state.progress;
     model.mode = data.progressType; model.running = true;
@@ -534,13 +601,28 @@
       root.querySelector("[data-pt-progress-label]").textContent = `${Math.round(model.value)}%`;
       root.querySelector("[data-pt-progress-detail]").textContent = detail;
     };
+    if (model.mode === "page") {
+      let container = root.parentElement;
+      while (container && container !== document.body && container.scrollHeight <= container.clientHeight + 1) container = container.parentElement;
+      const page = container && container !== document.body ? container : document.scrollingElement;
+      if (!page) throw new Error("Chưa có vùng cuộn trang để đo.");
+      const onScroll = () => { if (model.mode === "page") paint(page.scrollTop / Math.max(1, page.scrollHeight - page.clientHeight) * 100, "Vị trí cuộn thực của vùng chứa trang All Tools."); };
+      const eventTarget = page === document.scrollingElement ? document : page;
+      eventTarget.addEventListener("scroll", onScroll, { passive: true }); state.progressDetach = () => eventTarget.removeEventListener("scroll", onScroll);
+      onScroll(); return status("Đang theo dõi vị trí cuộn trang thực.", "running");
+    }
+    if (model.mode === "events") {
+      const onProgress = event => {
+        if (model.mode !== "events" || !Number.isFinite(Number(event.detail?.value))) return;
+        paint(Number(event.detail.value), `${String(event.detail.label || "Tác vụ đang phát sự kiện").slice(0, 160)} · ${String(event.detail.state || "running").slice(0, 30)}`);
+      };
+      addEventListener("hh:progress", onProgress); state.progressDetach = () => removeEventListener("hh:progress", onProgress);
+      return status("Đang chờ sự kiện tiến trình; chưa có tác vụ nào được giả lập.", "running");
+    }
     if (model.mode === "scroll") {
       const sample = root.querySelector("[data-pt-scroll-sample]");
-      if (!sample.dataset.progressBound) {
-        const onScroll = () => { if (model.mode === "scroll") paint(sample.scrollTop / Math.max(1, sample.scrollHeight - sample.clientHeight) * 100, "Vị trí cuộn thực trong sandbox."); };
-        sample.addEventListener("scroll", onScroll, { passive: true }); sample.dataset.progressBound = "true";
-        state.cleanup.push(() => sample.removeEventListener("scroll", onScroll));
-      }
+      const onScroll = () => { if (model.mode === "scroll") paint(sample.scrollTop / Math.max(1, sample.scrollHeight - sample.clientHeight) * 100, "Vị trí cuộn thực trong sandbox."); };
+      sample.addEventListener("scroll", onScroll, { passive: true }); state.progressDetach = () => sample.removeEventListener("scroll", onScroll);
       paint(sample.scrollTop / Math.max(1, sample.scrollHeight - sample.clientHeight) * 100, "Cuộn vùng nội dung để theo dõi tiến trình thật.");
       return status("Đang đo vị trí cuộn, không mô phỏng tải trang.", "running");
     }
@@ -620,22 +702,30 @@
     state.root?.querySelector(`[data-pt-favorite-open="${CSS.escape(id)}"]`)?.focus();
   }
 
-  const safeKey = (key) => key.startsWith(localPrefix(activeOwner())) && !/(token|secret|password|credential|session)/i.test(key);
+  const safeKey = (key) => key.startsWith(`${localPrefix(activeOwner())}draft:`) && !/(token|secret|password|credential|session)/i.test(key);
   async function buildExport() {
     const owner = state.owner, root = state.root;
-    const data = values(), scopes = [...root.querySelectorAll('input[name="scope"]')].map((node) => node.checked), payload = { format: "HH Platform Tools Export", version: 1, exportedAt: new Date().toISOString(), data: {} };
+    const data = values(), scopes = Object.fromEntries([...root.querySelectorAll('input[name="scope"]')].filter(node => node.name === "scope").map(node => [node.value, node.checked])), payload = { format: "HH Platform Tools Export", version: 2, owner, exportedAt: new Date().toISOString(), data: {} };
+    if (!Object.values(scopes).some(Boolean)) throw new Error("Chọn ít nhất một phạm vi để xuất.");
+    if (scopes[6] && !scopes[5]) throw new Error("Chọn phạm vi workspace trước khi xuất nội dung tệp.");
     if (scopes[0]) payload.data.settings = await dbAll("settings", owner);
     if (scopes[1]) payload.data.history = await dbAll("history", owner);
     if (scopes[2]) payload.data.favorites = await dbAll("favorites", owner);
     if (scopes[3]) payload.data.notifications = await dbAll("notifications", owner);
     assertAccount(owner); if (root !== state.root) return;
     if (scopes[4]) payload.data.local = Object.fromEntries(Object.keys(localStorage).filter(safeKey).map((key) => [key, localStorage.getItem(key)]));
+    if (scopes[5] && data.format !== "csv") {
+      if (!window.HHAllToolState?.exportWorkspaceBackup) throw new Error("Bộ sao lưu workspace chưa sẵn sàng; hãy mở lại All Tools.");
+      payload.data.workspace = await window.HHAllToolState.exportWorkspaceBackup(owner, { includeFiles: Boolean(scopes[6]), maxBytes: 4 * 1024 * 1024 });
+      assertAccount(owner); if (root !== state.root) return;
+    }
     if (data.format === "csv") {
       const rows = payload.data.history || [];
       state.generatedExport = ["id,tool,action,createdAt", ...rows.map((row) => [row.id, row.name, row.action, new Date(row.createdAt).toISOString()].map((value) => {
         const text = String(value); return `"${(/^[=+@\-\t\r]/.test(text) ? "'" : "") + text.replace(/"/g, '""')}"`;
       }).join(","))].join("\n");
     } else state.generatedExport = JSON.stringify(payload, null, 2);
+    if (new Blob([state.generatedExport]).size > 5 * 1024 * 1024) { state.generatedExport = ""; throw new Error("Tệp sao lưu vượt 5 MB; giảm phạm vi hoặc bỏ nội dung tệp."); }
     output(state.generatedExport);
     state.exportFormat = data.format;
     state.root.querySelector("[data-pt-export-size]").textContent = formatBytes(new Blob([state.generatedExport]).size);
@@ -661,14 +751,20 @@
   }
 
   function normalizeImport(payload) {
-    if (!payload || payload.format !== "HH Platform Tools Export" || payload.version !== 1 || !payload.data || typeof payload.data !== "object") throw new Error("Schema không đúng định dạng HH Platform Tools Export v1.");
+    if (!payload || payload.format !== "HH Platform Tools Export" || ![1, 2].includes(payload.version) || !payload.data || typeof payload.data !== "object") throw new Error("Schema không đúng định dạng HH Platform Tools Export v1/v2.");
+    if (payload.version === 2 && payload.owner !== activeOwner()) throw new Error("Tệp sao lưu thuộc tài khoản khác; không nhập hoặc trộn dữ liệu.");
     if (Array.isArray(payload.data)) throw new Error("Phạm vi dữ liệu phải là một object.");
-    const allowed = ["settings", "history", "favorites", "notifications", "local"], unknown = Object.keys(payload.data).filter((key) => !allowed.includes(key));
+    const allowed = ["settings", "history", "favorites", "notifications", "local", "workspace"], unknown = Object.keys(payload.data).filter((key) => !allowed.includes(key));
     if (unknown.length) throw new Error(`Phạm vi không được hỗ trợ: ${unknown.join(", ")}`);
     const text = (value, max, label) => { if (typeof value !== "string" || !value.trim() || value.length > max) throw new Error(`${label} không hợp lệ.`); return value; };
     const timestamp = (value) => { if (!Number.isFinite(value) || value < 0 || value > 8640000000000000) throw new Error("Thời gian bản ghi không hợp lệ."); return value; };
-    const normalized = { format: payload.format, version: 1, exportedAt: payload.exportedAt, data: {} };
+    const normalized = { format: payload.format, version: payload.version, owner: payload.owner, exportedAt: payload.exportedAt, data: {} };
     Object.entries(payload.data).forEach(([name, rows]) => {
+      if (name === "workspace") {
+        if (payload.version !== 2 || !window.HHAllToolState?.normalizeWorkspaceBackup) throw new Error("Bản sao workspace cần định dạng v2 và bộ kiểm tra đã tải.");
+        normalized.data.workspace = window.HHAllToolState.normalizeWorkspaceBackup(rows, activeOwner());
+        return;
+      }
       if (name === "local") {
         if (!rows || typeof rows !== "object" || Array.isArray(rows)) throw new Error("Bản nháp local không hợp lệ.");
         normalized.data.local = Object.fromEntries(Object.entries(rows).map(([key, value]) => {
@@ -698,6 +794,10 @@
   }
 
   function validateSetting(key, value) {
+    if (key === "themeUndo" && value && typeof value === "object" && !Array.isArray(value)) {
+      const allowed = ["colorMode", "mode", "lightStart", "darkStart", "accent", "highlight", "fontScale", "contrast", "density", "historyEnabled", "autosave", "reducedMotion"];
+      return Object.fromEntries(Object.entries(value).filter(([name]) => allowed.includes(name)).map(([name, entry]) => [name, validateSetting(name === "mode" ? "colorMode" : name, entry)]));
+    }
     if (["historyEnabled", "autosave", "reducedMotion"].includes(key) && typeof value === "boolean") return value;
     const enums = { colorMode: ["system", "light", "dark", "schedule"], density: ["comfortable", "compact"], contrast: ["normal", "high"] };
     if (enums[key]?.includes(value)) return value;
@@ -719,42 +819,71 @@
   async function commitImport() {
     if (!state.importPayload) throw new Error("Chưa có tệp đã được kiểm tra.");
     const root = state.root, owner = state.owner, strategy = values().strategy, data = normalizeImport(state.importPayload).data;
+    if (!["merge", "skip", "replace"].includes(strategy)) throw new Error("Chiến lược nhập không hợp lệ.");
+    if (strategy === "replace" && state.confirmedImport !== state.importPayload) {
+      state.confirmedImport = state.importPayload;
+      return askConfirmation("import-commit", "Thay thế các phạm vi có trong tệp sẽ ghi đè dữ liệu hiện tại. Dữ liệu các phạm vi khác không thay đổi. Tiếp tục?");
+    }
     assertAccount(owner);
-    const db = await openDb(owner), names = ["settings", "history", "favorites", "notifications"].filter((name) => Array.isArray(data[name]));
-    if (db && names.length) {
-      const existing = Object.fromEntries(await Promise.all(names.map(async (name) => [name, new Set((await dbAll(name, owner)).map((row) => row.id))])));
+    const names = ["settings", "history", "favorites", "notifications"].filter(name => Array.isArray(data[name]));
+    const snapshots = Object.fromEntries(await Promise.all(names.map(async name => [name, await dbAll(name, owner)])));
+    const appearanceKey = window.HHAllToolState?.key?.("hh.all-tools.appearance.v1", owner);
+    const localKeys = new Set([...Object.keys(localStorage).filter(safeKey), ...Object.keys(data.local || {}), ...(appearanceKey ? [appearanceKey] : [])]);
+    const localSnapshot = Object.fromEntries([...localKeys].map(key => [key, localStorage.getItem(key)]));
+    const workspacePlan = data.workspace ? await window.HHAllToolState.prepareWorkspaceImport(data.workspace, { owner, strategy }) : null;
+    let ownAttempted = false, workspaceAttempted = false;
+    try {
       assertAccount(owner);
-      await new Promise((resolve, reject) => {
-        const transaction = db.transaction(names, "readwrite");
-        names.forEach((name) => { const store = transaction.objectStore(name); if (strategy === "replace") store.clear(); data[name].forEach((row) => { if (strategy !== "skip" || !existing[name].has(row.id)) store.put(row); }); });
-        transaction.oncomplete = () => { db.close(); resolve(); };
-        transaction.onabort = () => { db.close(); reject(transaction.error || new Error("Nhập dữ liệu thất bại; transaction đã hoàn tác.")); };
-        transaction.onerror = () => reject(transaction.error);
-      });
-    } else {
-      db?.close();
-    for (const storeName of ["settings", "history", "favorites", "notifications"]) {
-      const rows = data[storeName]; if (!Array.isArray(rows)) continue;
-      if (strategy === "replace") await dbClear(storeName, owner);
-      const existing = new Set((await dbAll(storeName, owner)).map((row) => row.id));
-      for (const row of rows) if (row?.id && (strategy !== "skip" || !existing.has(row.id))) await dbPut(storeName, row, owner);
+      if (data.local) {
+        if (strategy === "replace") Object.keys(localStorage).filter(safeKey).forEach(key => localStorage.removeItem(key));
+        for (const [key, value] of Object.entries(data.local)) if (strategy !== "skip" || localStorage.getItem(key) === null) localStorage.setItem(key, value);
+      }
+      ownAttempted = true;
+      await applyStoreBatch(data, strategy, owner);
+      assertAccount(owner);
+      if (workspacePlan) { workspaceAttempted = true; await workspacePlan.apply(); }
+      if (names.includes("settings")) {
+        const importedSettings = Object.fromEntries((await dbAll("settings", owner)).map(row => [row.id.replace(/^setting:/, ""), row.value]));
+        publishAppearance(importedSettings, owner); state.shortcutCache = importedSettings.shortcuts || null;
+      }
+    } catch (error) {
+      const rollbackErrors = [];
+      if (workspaceAttempted) try { await workspacePlan.rollback(); } catch (rollbackError) { rollbackErrors.push(`workspace: ${rollbackError.message}`); }
+      if (ownAttempted) try { await applyStoreBatch(snapshots, "replace", owner); } catch (rollbackError) { rollbackErrors.push(`Platform: ${rollbackError.message}`); }
+      for (const [key, value] of Object.entries(localSnapshot)) try { if (value === null) localStorage.removeItem(key); else localStorage.setItem(key, value); } catch (rollbackError) { rollbackErrors.push(`local: ${rollbackError.message}`); }
+      if (rollbackErrors.length) throw new Error(`Nhập thất bại (${error.message}). Hoàn tác CHƯA đầy đủ: ${rollbackErrors.join("; ")}. Giữ tệp sao lưu và kiểm tra lại dữ liệu.`);
+      throw new Error(`Nhập thất bại (${error.message}). Đã hoàn tác các phạm vi vừa thay đổi.`);
     }
-    }
-    assertAccount(owner);
-    if (data.local && typeof data.local === "object") Object.entries(data.local).filter(([key]) => safeKey(key)).forEach(([key, value]) => {
-      if (strategy !== "skip" || localStorage.getItem(key) === null) localStorage.setItem(key, String(value));
-    });
-    if (names.includes("settings")) {
-      const importedSettings = Object.fromEntries((await dbAll("settings", owner)).map((row) => [row.id.replace(/^setting:/, ""), row.value]));
-      publishAppearance(importedSettings, owner);
-      state.shortcutCache = importedSettings.shortcuts || null;
-    }
-    await dbPut("imports", { id: uid(), strategy, scopes: Object.keys(data), createdAt: Date.now() }, owner);
-    await record("import.commit", { strategy, scopes: Object.keys(data) }, "Import Data", owner);
+    let auditWarning = "";
+    try { await dbPut("imports", { id: uid(), strategy, scopes: Object.keys(data), createdAt: Date.now() }, owner); await record("import.commit", { strategy, scopes: Object.keys(data) }, "Import Data", owner); }
+    catch { auditWarning = " Dữ liệu đã nhập nhưng chưa ghi được lịch sử nhập."; }
     if (root !== state.root || owner !== accountOwner()) return;
     state.importPayload = null;
+    state.confirmedImport = null; state.drafts.clear();
     state.root.querySelector('[data-pt-action="import-commit"]').disabled = true;
-    status(db ? "Đã nhập và lưu dữ liệu All Tools; các workspace khác không thay đổi." : "Đã nhập vào bộ nhớ tạm; không thể lưu lâu dài vì IndexedDB chưa khả dụng.", db ? "success" : "warning");
+    output({ imported: Object.keys(data), strategy, workspace: workspacePlan?.report || null });
+    status(`${state.storageTemporary ? "Đã nhập; kho IndexedDB không khả dụng nên phần Platform chỉ ở bộ nhớ tạm." : "Đã nhập và lưu các phạm vi All Tools đã chọn."} Các chức năng ngoài All Tools không thay đổi.${auditWarning}`, state.storageTemporary || auditWarning ? "warning" : "success");
+  }
+
+  async function applyStoreBatch(data, strategy, owner) {
+    const names = ["settings", "history", "favorites", "notifications"].filter(name => Array.isArray(data[name]));
+    if (!names.length) return;
+    const existing = Object.fromEntries(await Promise.all(names.map(async name => [name, new Set((await dbAll(name, owner)).map(row => row.id))])));
+    assertAccount(owner); const db = await openDb(owner);
+    try { assertAccount(owner); } catch (error) { db?.close(); throw error; }
+    if (!db) {
+      if (!memory.has(owner)) memory.set(owner, Object.fromEntries(STORE_NAMES.map(name => [name, new Map()])));
+      const staged = Object.fromEntries(names.map(name => [name, strategy === "replace" ? new Map() : new Map(memory.get(owner)[name])]));
+      names.forEach(name => data[name].forEach(row => { if (strategy !== "skip" || !existing[name].has(row.id)) staged[name].set(row.id, structuredClone(row)); }));
+      names.forEach(name => { memory.get(owner)[name] = staged[name]; }); state.storageTemporary = true; return;
+    }
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(names, "readwrite");
+      names.forEach(name => { const store = transaction.objectStore(name); if (strategy === "replace") store.clear(); data[name].forEach(row => { if (strategy !== "skip" || !existing[name].has(row.id)) store.put(row); }); });
+      transaction.oncomplete = () => { db.close(); resolve(); };
+      transaction.onabort = () => { db.close(); reject(transaction.error || new Error("Transaction IndexedDB đã hoàn tác.")); };
+      transaction.onerror = () => { /* onabort handles transaction-level rollback and closes the database. */ };
+    });
   }
 
   async function inspectPwa(kind) {
@@ -764,27 +893,81 @@
     const estimate = await navigator.storage?.estimate?.();
     const report = [
       ["Kết nối", navigator.onLine ? "Online" : "Offline"],
+      ["Ngữ cảnh an toàn", window.isSecureContext ? "HTTPS hoặc localhost an toàn" : "Không an toàn; PWA có thể bị chặn"],
       ["Service Worker", registration?.active ? `Active · ${registration.scope}` : registration ? "Đã đăng ký, chưa active" : "Chưa đăng ký"],
       ["Cache", `${cacheNames.length} kho`],
       ["Lưu trữ", estimate ? `${formatBytes(estimate.usage)} / ${formatBytes(estimate.quota)}` : "Không hỗ trợ"],
       ["Cài đặt", typeof matchMedia === "function" && matchMedia("(display-mode: standalone)").matches ? "Đang chạy standalone" : state.installPrompt ? "Có thể cài" : "Chưa đủ tiêu chí / không hỗ trợ"]
     ];
     if (kind === "Offline Mode" && "caches" in window) {
-      const assetPaths = ["platform-tools.js", "platform-tools.css", "feature-lab.js", "index.html"];
+      const assetPaths = Object.values(OFFLINE_SUITES).flat();
+      const currentUrls = new Map(assetPaths.map(asset => [asset, new URL(offlineAssetUrl(asset), location.href).href]));
       const cached = new Set();
       for (const name of cacheNames) {
         const cache = await caches.open(name);
         for (const request of await cache.keys()) {
           const url = new URL(request.url, location.href);
-          assetPaths.forEach((asset) => { if (url.origin === location.origin && url.pathname.endsWith(`/${asset}`)) cached.add(asset); });
+          assetPaths.forEach((asset) => { if (url.origin === location.origin && url.href === currentUrls.get(asset)) cached.add(asset); });
         }
       }
-      assetPaths.forEach((asset) => report.push([asset, cached.has(asset) ? "Đã có trong cache" : "Chưa lưu offline"]));
+      assetPaths.forEach((asset) => report.push([asset, cached.has(asset) ? "Đã có bản đang dùng trong cache" : "Chưa lưu bản đang dùng offline"]));
       report.push(["Giới hạn", "API/máy chủ không hoạt động khi offline. Không có hàng đợi đồng bộ trong công cụ này."]);
     }
     if (root !== state.root || owner !== accountOwner()) return;
     state.root.querySelector("[data-pt-pwa-report]").innerHTML = report.map(([label, value]) => `<article><span>${esc(label)}</span><b>${esc(value)}</b></article>`).join("");
     status(`Đã kiểm tra ${kind} bằng API trình duyệt.`, "success");
+  }
+
+  const OFFLINE_SUITES = Object.freeze({
+    platform: ["all-tool-state.js", "tool-manifests.js", "tool-runtime.js", "feature-lab.js", "feature-lab.css", "platform-tools.js", "platform-tools.css"],
+    workspace: ["tool-workspace-pro.js", "tool-workspace-pro.css"],
+    utility: ["utility-lab-tools.js", "utility-lab-tools.css"]
+  });
+  function offlineAssetUrl(asset) {
+    if (!Object.values(OFFLINE_SUITES).flat().includes(asset)) throw new Error("Tài nguyên không thuộc danh sách public All Tools.");
+    const source = [...document.querySelectorAll("script[src],link[href]")].map(node => node.src || node.href).find(value => {
+      const url = new URL(value, location.href); return url.origin === location.origin && url.pathname === `/${asset}`;
+    });
+    return source || new URL(`/${asset}`, location.href).href;
+  }
+  async function readBoundedAsset(response, limit = 8 * 1024 * 1024) {
+    if (Number(response.headers.get("content-length")) > limit) throw new Error("Tệp vượt giới hạn 8 MB.");
+    if (!response.body?.getReader) { const bytes = await response.arrayBuffer(); if (bytes.byteLength > limit) throw new Error("Tệp vượt giới hạn 8 MB."); return bytes; }
+    const reader = response.body.getReader(), chunks = []; let length = 0;
+    try {
+      while (true) { const { done, value } = await reader.read(); if (done) break; length += value.byteLength; if (length > limit) { await reader.cancel(); throw new Error("Tệp vượt giới hạn 8 MB."); } chunks.push(value); }
+    } finally { reader.releaseLock(); }
+    const bytes = new Uint8Array(length); let offset = 0; chunks.forEach(chunk => { bytes.set(chunk, offset); offset += chunk.length; }); return bytes;
+  }
+  async function prepareOffline() {
+    const root = state.root, owner = state.owner;
+    if (!("caches" in window) || !window.isSecureContext) throw new Error("Cần HTTPS/localhost và Cache Storage để lưu offline.");
+    if (!navigator.onLine) throw new Error("Cần kết nối mạng để tải lần đầu.");
+    const suites = [...root.querySelectorAll('input[name="offlineSuite"]:checked')].map(node => node.value);
+    const assets = [...new Set(suites.flatMap(suite => OFFLINE_SUITES[suite] || []))];
+    if (!assets.length) throw new Error("Chọn ít nhất một bộ công cụ.");
+    state.offlineController?.abort(); const controller = new AbortController(); state.offlineController = controller;
+    const cache = await caches.open("hh-alltools-offline-v2"), saved = [], failed = []; let bytes = 0;
+    for (let index = 0; index < assets.length; index++) {
+      assertAccount(owner); if (root !== state.root) return; if (controller.signal.aborted) break;
+      const asset = assets[index], url = offlineAssetUrl(asset), timeout = setTimeout(() => controller.abort(), 12000);
+      try {
+        const response = await fetch(url, { cache: "no-store", credentials: "omit", redirect: "error", signal: controller.signal });
+        if (!response.ok || new URL(response.url || url).origin !== location.origin) throw new Error(`HTTP ${response.status}`);
+        const type = response.headers.get("content-type") || "";
+        if (!/(?:javascript|css)/i.test(type)) throw new Error("Không phải JS/CSS public hợp lệ.");
+        const content = await readBoundedAsset(response); bytes += content.byteLength;
+        if (bytes > 15 * 1024 * 1024) throw new Error("Tổng tài nguyên vượt giới hạn 15 MB.");
+        assertAccount(owner); if (root !== state.root || controller.signal.aborted) throw new Error("Đã dừng tải tài nguyên.");
+        await cache.put(url, new Response(content, { status: 200, headers: { "Content-Type": type } })); saved.push(asset);
+      } catch (error) { failed.push(`${asset}: ${error.message}`); if (controller.signal.aborted || bytes > 15 * 1024 * 1024) break; }
+      finally { clearTimeout(timeout); }
+      if (root === state.root) root.querySelector("[data-pt-offline-progress]").value = Math.round((index + 1) / assets.length * 100);
+    }
+    if (state.offlineController === controller) state.offlineController = null;
+    if (root !== state.root || owner !== accountOwner()) return;
+    root.querySelector("[data-pt-pwa-report]").innerHTML = `<article><span>Đã lưu</span><b>${saved.length}/${assets.length} tệp · ${formatBytes(bytes)}</b></article>${saved.map(asset => `<article><span>${esc(asset)}</span><b>Đã lưu cache riêng</b></article>`).join("")}${failed.map(message => `<article><span>Lỗi tải</span><b>${esc(message)}</b></article>`).join("")}`;
+    status(`Đã lưu ${saved.length}/${assets.length} tài nguyên. Đây không phải bản sao toàn website; backend/AI vẫn cần mạng.`, saved.length === assets.length ? "success" : "warning");
   }
 
   const normalizeCombo = (event) => [event.ctrlKey && "Ctrl", event.altKey && "Alt", event.shiftKey && "Shift", event.metaKey && "Meta", event.key === " " ? "Space" : event.key.length === 1 ? event.key.toUpperCase() : event.key].filter(Boolean).join("+");
@@ -816,7 +999,7 @@
   async function handleAction(action, target) {
     const owner = state.owner, root = state.root, tool = state.active;
     assertAccount(owner);
-    if (["history-clear", "notification-clear", "settings-reset"].includes(action) && state.confirmedAction !== action) return askConfirmation(action, "Thao tác này chỉ xóa dữ liệu All Tools của tài khoản hiện tại. Bạn muốn tiếp tục?");
+    if (["history-clear", "history-clear-recent", "notification-clear", "settings-reset"].includes(action) && state.confirmedAction !== action) return askConfirmation(action, "Thao tác này chỉ xóa dữ liệu All Tools của tài khoản hiện tại. Bạn muốn tiếp tục?");
     state.confirmedAction = null;
     if (action === "search") return runSearch(false);
     if (action === "appearance-preview" || action === "appearance-apply") {
@@ -829,35 +1012,49 @@
     if (action === "appearance-reset") { await saveSetting("colorMode", "system", owner); publishAppearance({ ...await readSettings(owner), mode: "system" }, owner); if (root !== state.root) return; keepColorModeSynced({ mode: "system" }); return render(root.parentElement, tool); }
     if (action === "theme-preview") { previewTheme(values()); return status("Đang xem trước, website chưa thay đổi.", "running"); }
     if (action === "theme-apply") {
-      const data = values(); ["accent", "highlight", "fontScale", "contrast"].forEach((key) => validateSetting(key, data[key]));
+      const data = values(); ["accent", "highlight", "fontScale", "contrast"].forEach((key) => { data[key] = validateSetting(key, data[key]); });
       const previous = await readSettings(owner); assertAccount(owner); if (root !== state.root) return;
       state.themeUndo = { settings: previous };
+      await saveSetting("themeUndo", { ...previous, themeUndo: undefined }, owner);
       const appearance = { ...state.themeUndo.settings, ...data };
       await Promise.all(["accent", "highlight", "fontScale", "contrast"].map((key) => saveSetting(key, data[key], owner))); publishAppearance(appearance, owner); if (root !== state.root) return; applyToolAppearance(appearance); root.querySelector('[data-pt-action="theme-undo"]').disabled = false; await record("theme.apply", { contrast: data.contrast }, tool, owner); return status("Đã áp dụng và lưu giao diện riêng All Tools.", "success");
     }
-    if (action === "theme-undo" && state.themeUndo) {
-      const undo = state.themeUndo;
+    if (action === "theme-undo") {
+      const savedUndo = (await readSettings(owner)).themeUndo;
+      const undo = state.themeUndo || (savedUndo ? { settings: savedUndo } : null);
+      if (!undo) throw new Error("Chưa có giao diện trước đó để hoàn tác.");
       state.root.style.removeProperty("--pt-cyan"); state.root.style.removeProperty("--pt-pink"); state.root.style.fontSize = "";
       await Promise.all(["accent", "highlight", "fontScale", "contrast"].map((key) => undo.settings[key] === undefined ? dbDelete("settings", settingId(key), owner) : saveSetting(key, undo.settings[key], owner)));
       publishAppearance(undo.settings, owner); if (root !== state.root) return; applyToolAppearance(undo.settings);
       state.themeUndo = null; state.root.querySelector('[data-pt-action="theme-undo"]').disabled = true;
+      await dbDelete("settings", settingId("themeUndo"), owner);
       return status("Đã hoàn tác giao diện và dữ liệu đã lưu.", "success");
     }
     if (action === "notification-permission") { if (!("Notification" in window)) throw new Error("Trình duyệt không hỗ trợ Notification API."); const permission = await Notification.requestPermission(); return status(`Quyền thông báo: ${permission}.`, permission === "granted" ? "success" : "warning"); }
     if (action === "notification-send") return addNotification();
-    if (action === "notification-read") { for (const row of await dbAll("notifications", owner)) await dbPut("notifications", { ...row, read: true }, owner); if (root === state.root) return render(root.parentElement, tool); return; }
-    if (action === "notification-clear") { await dbClear("notifications", owner); if (root === state.root) return render(root.parentElement, tool); return; }
+    if (action === "notification-read") { for (const row of await dbAll("notifications", owner)) await dbPut("notifications", { ...row, read: true }, owner); publishNotificationSignal(owner); if (root === state.root) return render(root.parentElement, tool); return; }
+    if (action === "notification-clear") { await dbClear("notifications", owner); publishNotificationSignal(owner); if (root === state.root) return render(root.parentElement, tool); return; }
     if (action === "skeleton-start") return startSkeleton();
     if (action === "skeleton-stop") return stopSkeleton();
+    if (action === "skeleton-code") { output(skeletonDocument(values())); return status("Đã tạo HTML/CSS mẫu độc lập.", "success"); }
+    if (action === "skeleton-export") { download(skeletonDocument(values()), "hh-loading-skeleton.html", "text/html;charset=utf-8"); return; }
     if (action === "progress-start") return startProgress();
-    if (action === "progress-pause") { state.progress.running = false; cancelAnimationFrame(state.progressFrame); return status("Đã tạm dừng tiến trình.", "warning"); }
-    if (action === "progress-reset") { state.progress.running = false; state.progress.elapsed = 0; state.progress.value = 0; cancelAnimationFrame(state.progressFrame); state.root.querySelector("[data-pt-progress]").value = 0; state.root.querySelector("[data-pt-progress-label]").textContent = "0%"; return status("Đã đặt lại."); }
+    if (action === "progress-pause") { state.progress.running = false; cancelAnimationFrame(state.progressFrame); state.progressDetach?.(); state.progressDetach = null; return status("Đã tạm dừng tiến trình.", "warning"); }
+    if (action === "progress-reset") { state.progress.running = false; state.progress.elapsed = 0; state.progress.value = 0; cancelAnimationFrame(state.progressFrame); state.progressDetach?.(); state.progressDetach = null; state.root.querySelector("[data-pt-progress]").value = 0; state.root.querySelector("[data-pt-progress-label]").textContent = "0%"; return status("Đã đặt lại."); }
     if (action === "fps-start") return startFps();
     if (action === "fps-pause") { state.fps.running = false; cancelAnimationFrame(state.fpsFrame); state.longTaskObserver?.disconnect(); state.longTaskObserver = null; paintFps(); return status("Đã tạm dừng đo FPS.", "warning"); }
     if (action === "fps-reset") { state.fps.samples = []; state.fps.longTasks = 0; state.fps.last = performance.now(); ["fps", "frame", "p95"].forEach((key) => { const node = state.root.querySelector(`[data-pt-${key}]`); if (node) node.textContent = "—"; }); state.root.querySelector("[data-pt-long]").textContent = "0"; const canvas = state.root.querySelector("[data-pt-fps-chart]"); canvas.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height); return status("Đã đặt lại số liệu."); }
     if (action === "fps-export") { const report = JSON.stringify({ format: "HH FPS Report", exportedAt: new Date().toISOString(), longTasks: state.fps.longTasks, samples: state.fps.samples }, null, 2); download(report, `hh-fps-${Date.now()}.json`); return record("fps.export", { samples: state.fps.samples.length }); }
     if (action === "history-filter") { const query = values().query.toLowerCase(); state.root.querySelectorAll("[data-pt-history-row]").forEach((row) => { row.hidden = !row.dataset.search.includes(query); }); return; }
-    if (action === "history-export") { const rows = await dbAll("history", owner); assertAccount(owner); download(JSON.stringify(rows, null, 2), "hh-platform-history.json"); return; }
+    if (action === "history-clear-recent") { updateCatalogPreferences({ recent: [] }, owner); return render(root.parentElement, tool); }
+    if (["favorite-catalog-add", "favorite-catalog-pin"].includes(action)) {
+      const id = values().catalogTool;
+      if (!toolCatalog().some(tool => tool.id === id)) throw new Error("Công cụ không tồn tại trong danh mục.");
+      const collection = action.endsWith("pin") ? "pinned" : "favorites", prefs = catalogPreferences();
+      updateCatalogPreferences({ [collection]: [...new Set([...prefs[collection], id])] }, owner);
+      return render(root.parentElement, tool);
+    }
+    if (action === "history-export") { const rows = await allHistory(owner); assertAccount(owner); download(JSON.stringify({ format: "HH All Tool Activity", version: 1, owner, exportedAt: new Date().toISOString(), rows }, null, 2), "hh-all-tools-history.json"); return; }
     if (action === "history-clear") { await dbClear("history", owner); if (root === state.root) return render(root.parentElement, tool); return; }
     if (action === "favorite-add" || action === "favorite-current") { const data = values(), rows = await dbAll("favorites", owner), route = validRoute(action.endsWith("current") ? byName.get(tool).route : data.route), title = action.endsWith("current") ? tool : data.title.trim(); if (!title || title.length > 160) throw new Error("Hãy nhập tên tối đa 160 ký tự."); if (rows.some((row) => row.route === route)) throw new Error("Đường dẫn đã có trong danh sách yêu thích."); await dbPut("favorites", { id: uid(), title, route, folder: data.folder?.trim().slice(0, 80) || "Chưa phân loại", order: rows.length, createdAt: Date.now() }, owner); await record("favorite.add", { route }, tool, owner); if (root === state.root) return render(root.parentElement, tool); return; }
     if (action === "export-preview") return buildExport();
@@ -866,6 +1063,9 @@
     if (action === "import-commit") return commitImport();
     if (action === "import-cancel") { state.importPayload = null; return render(state.root.parentElement, state.active); }
     if (action === "pwa-inspect" || action === "offline-inspect") return inspectPwa(state.active);
+    if (action === "install-inspect") return inspectPwa("Install App");
+    if (action === "offline-prepare") return prepareOffline();
+    if (action === "offline-cancel") { state.offlineController?.abort(); return status("Đã yêu cầu dừng tải; những tệp đã lưu vẫn còn trong cache riêng.", "warning"); }
     if (action === "pwa-update") { const registration = await navigator.serviceWorker?.getRegistration?.(); if (!registration) throw new Error("Chưa có Service Worker để cập nhật."); await registration.update(); return status("Đã yêu cầu kiểm tra bản cập nhật.", "success"); }
     if (action === "offline-retry") {
       if (!navigator.onLine) return status("Thiết bị báo offline. Chưa có kết nối mạng để kiểm tra.", "warning");
@@ -904,14 +1104,23 @@
         const confirmation = event.target.closest("[data-pt-confirm-accept]");
         if (confirmation) { const action = confirmation.dataset.ptConfirmAccept; confirmation.closest("[data-pt-confirm]").remove(); state.confirmedAction = action; await handleAction(action); return; }
         const cancel = event.target.closest("[data-pt-confirm-cancel]");
-        if (cancel) { cancel.closest("[data-pt-confirm]").remove(); state.confirmedAction = null; return; }
+        if (cancel) { cancel.closest("[data-pt-confirm]").remove(); state.confirmedAction = null; state.confirmedImport = null; return; }
         if (target) { target.dataset.ptBusy = "true"; target.setAttribute("aria-busy", "true"); }
         const action = event.target.closest("[data-pt-action]")?.dataset.ptAction;
         if (action) { event.preventDefault(); await handleAction(action, event.target); return; }
         const route = event.target.closest("[data-pt-open-route]")?.dataset.ptOpenRoute;
         if (route !== undefined) { navigate(route); await record("route.open", { route }, tool, owner); return; }
+        const catalogOpen = event.target.closest("[data-pt-catalog-open]")?.dataset.ptCatalogOpen;
+        if (catalogOpen) { window.HHFeatureLab?.select?.(catalogOpen); return; }
+        const catalogToggle = event.target.closest("[data-pt-catalog-toggle]");
+        if (catalogToggle) {
+          const collection = catalogToggle.dataset.ptCatalogToggle, id = catalogToggle.dataset.ptCatalogId;
+          if (!["favorites", "pinned"].includes(collection) || !toolCatalog().some(tool => tool.id === id)) throw new Error("Mục danh mục không hợp lệ.");
+          const prefs = catalogPreferences(); updateCatalogPreferences({ [collection]: prefs[collection].includes(id) ? prefs[collection].filter(value => value !== id) : [...prefs[collection], id] }, owner);
+          if (root === state.root) await render(root.parentElement, tool); return;
+        }
         const notificationId = event.target.closest("[data-pt-delete-notification]")?.dataset.ptDeleteNotification;
-        if (notificationId) { await dbDelete("notifications", notificationId, owner); if (root === state.root) await render(root.parentElement, tool); return; }
+        if (notificationId) { await dbDelete("notifications", notificationId, owner); publishNotificationSignal(owner); if (root === state.root) await render(root.parentElement, tool); return; }
         const historyDelete = event.target.closest("[data-pt-history-delete]")?.dataset.ptHistoryDelete;
         if (historyDelete) { await dbDelete("history", historyDelete, owner); if (root === state.root) await render(root.parentElement, tool); return; }
         const historyOpen = event.target.closest("[data-pt-history-open]")?.dataset.ptHistoryOpen;
@@ -942,10 +1151,10 @@
       saveDraft();
     };
     const onKey = (event) => {
-      if (event.key === "Escape") { root.querySelector("[data-pt-confirm]")?.remove(); state.confirmedAction = null; }
-      if (event.key === "ArrowDown" && event.target.name === "query") { event.preventDefault(); root.querySelector("[data-pt-results] [data-pt-open-route]")?.focus(); }
-      if (["ArrowDown", "ArrowUp"].includes(event.key) && event.target.matches("[data-pt-open-route]")) { event.preventDefault(); const rows = [...root.querySelectorAll("[data-pt-open-route]")], index = rows.indexOf(event.target); rows[(index + (event.key === "ArrowDown" ? 1 : -1) + rows.length) % rows.length]?.focus(); }
-      if (event.key === "Enter" && event.target.name === "query") { event.preventDefault(); const result = root.querySelector("[data-pt-results] [data-pt-open-route]"); if (result) result.click(); else if (state.active === "History Manager") handleAction("history-filter").catch((error) => status(error.message, "error")); }
+      if (event.key === "Escape") { root.querySelector("[data-pt-confirm]")?.remove(); state.confirmedAction = null; state.confirmedImport = null; if (state.active === "Command Palette++") root.querySelector('input[name="query"]')?.focus(); }
+      if (["ArrowDown", "ArrowUp"].includes(event.key) && event.target.name === "query") { event.preventDefault(); const rows = [...root.querySelectorAll("[data-pt-results] .pt-result")]; rows[event.key === "ArrowUp" ? rows.length - 1 : 0]?.focus(); }
+      if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key) && event.target.matches("[data-pt-results] .pt-result")) { event.preventDefault(); const rows = [...root.querySelectorAll("[data-pt-results] .pt-result")], index = rows.indexOf(event.target), next = event.key === "Home" ? 0 : event.key === "End" ? rows.length - 1 : (index + (event.key === "ArrowDown" ? 1 : -1) + rows.length) % rows.length; rows[next]?.focus(); }
+      if (event.key === "Enter" && event.target.name === "query") { event.preventDefault(); const result = root.querySelector("[data-pt-results] .pt-result"); if (result) result.click(); else if (state.active === "History Manager") handleAction("history-filter").catch((error) => status(error.message, "error")); }
       globalShortcut(event);
     };
     root.addEventListener("click", onClick); root.addEventListener("input", onInput); root.addEventListener("keydown", onKey);
@@ -970,8 +1179,13 @@
     const favoriteDrop = (event) => { if (!draggedFavorite) return; event.preventDefault(); const to = event.target.closest("[data-pt-favorite]")?.dataset.ptFavorite; if (to) moveFavorite(draggedFavorite, 0, to).catch((error) => status(error.message, "error")); draggedFavorite = ""; };
     const favoriteEnd = () => { draggedFavorite = ""; };
     favoriteList?.addEventListener("dragstart", favoriteStart); favoriteList?.addEventListener("dragover", favoriteOver); favoriteList?.addEventListener("drop", favoriteDrop); favoriteList?.addEventListener("dragend", favoriteEnd);
-    const visibility = () => { if (!document.hidden) return; cancelAnimationFrame(state.progressFrame); state.progress.running = false; cancelAnimationFrame(state.fpsFrame); state.fps.running = false; state.longTaskObserver?.disconnect(); state.longTaskObserver = null; stopSkeleton(); status("Tab bị ẩn: đã tạm dừng đo/hiệu ứng. Nhấn bắt đầu để tiếp tục.", "warning"); };
+    const visibility = () => { if (!document.hidden) return; cancelAnimationFrame(state.progressFrame); state.progress.running = false; state.progressDetach?.(); state.progressDetach = null; cancelAnimationFrame(state.fpsFrame); state.fps.running = false; state.longTaskObserver?.disconnect(); state.longTaskObserver = null; stopSkeleton(); status("Tab bị ẩn: đã tạm dừng đo/hiệu ứng. Nhấn bắt đầu để tiếp tục.", "warning"); };
     document.addEventListener("visibilitychange", visibility);
+    const notificationSync = event => {
+      if (tool !== "Realtime Notification" || root !== state.root || document.hidden || state.owner !== accountOwner() || !root.querySelector('input[name="listenLocal"]')?.checked || event.key !== `hh.all-tools.notification-signal.v1.${state.owner}`) return;
+      render(root.parentElement, tool).catch(error => { if (root === state.root) status(error.message, "error"); });
+    };
+    addEventListener("storage", notificationSync); state.cleanup.push(() => removeEventListener("storage", notificationSync));
     state.cleanup.push(() => { document.removeEventListener("visibilitychange", visibility); favoriteList?.removeEventListener("dragstart", favoriteStart); favoriteList?.removeEventListener("dragover", favoriteOver); favoriteList?.removeEventListener("drop", favoriteDrop); favoriteList?.removeEventListener("dragend", favoriteEnd); });
     state.cleanup.push(() => { root.removeEventListener("click", onClick); root.removeEventListener("input", onInput); root.removeEventListener("keydown", onKey); dropzone?.removeEventListener("dragover", onDragOver); dropzone?.removeEventListener("dragleave", onDragLeave); dropzone?.removeEventListener("drop", onDrop); });
   }

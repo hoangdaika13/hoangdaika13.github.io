@@ -78,10 +78,10 @@
   });
 
   const readState = () => {
-    try { return global.HHAllToolState?.readJSON(STORAGE_KEY, {}) || {}; }
+    try { return global.HHAllToolState?.readCatalogPreferences?.() || global.HHAllToolState?.readJSON(STORAGE_KEY, {}) || {}; }
     catch { return {}; }
   };
-  const writeState = (state, owner) => global.HHAllToolState.writeJSON(STORAGE_KEY, state, owner);
+  const writeState = (state, owner) => global.HHAllToolState.updateCatalogPreferences ? global.HHAllToolState.updateCatalogPreferences(state, owner) : global.HHAllToolState.writeJSON(STORAGE_KEY, state, owner);
 
   function manifestMap() {
     const manifests = [...(global.HHToolManifests?.TOOL_MANIFESTS || []),
@@ -299,6 +299,12 @@
       root.dataset.catalogCollapsed = String(!expanded);
       root.querySelector("[data-lab-toggle]").setAttribute("aria-expanded", String(expanded));
     };
+    const syncCatalog = () => {
+      if (lifecycle.disposed || owner !== (global.HHAllToolState?.accountScope() || "guest")) return;
+      const state = readState();
+      for (const collection of ["favorites", "pinned", "recent"]) preferences[collection] = cleanIds(state[collection]).slice(0, collection === "recent" ? 12 : 86);
+      filter();
+    };
     const render = () => {
       const tool = currentTool;
       lifecycle.revision++;
@@ -358,6 +364,7 @@
     };
     root.addEventListener("click", onClick); root.addEventListener("input", onInput); root.addEventListener("change", onChange); root.addEventListener("keydown", onKey);
     global.addEventListener("hh:alltools-appearance-change", syncAppearanceTimer);
+    global.addEventListener("hh:alltools-catalog-change", syncCatalog);
     document.addEventListener("visibilitychange", syncAppearanceTimer);
     colorMedia?.addEventListener?.("change", refreshAppearance);
     syncAppearanceTimer();
@@ -374,6 +381,7 @@
       if (lifecycle.disposed) return;
       lifecycle.disposed = true; lifecycle.revision++; lifecycle.cleanup?.(); lifecycle.cleanup = null;
       clearInterval(appearanceTimer); global.removeEventListener("hh:alltools-appearance-change", syncAppearanceTimer); document.removeEventListener("visibilitychange", syncAppearanceTimer); colorMedia?.removeEventListener?.("change", refreshAppearance);
+      global.removeEventListener("hh:alltools-catalog-change", syncCatalog);
       observer?.disconnect(); global.removeEventListener("hh:auth-change", onAuth);
       global.removeEventListener("hh:alltools-account-change", onExternalAccount);
       root.removeEventListener("click", onClick); root.removeEventListener("input", onInput); root.removeEventListener("change", onChange); root.removeEventListener("keydown", onKey);

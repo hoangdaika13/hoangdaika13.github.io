@@ -10,6 +10,7 @@ const TOOL_POLICIES = Object.freeze({
   "widget-marketplace": { runtime: "server", actions: ["list", "install", "disable", "remove", "rate"], auth: true },
   "plugin-system": { runtime: "server", actions: ["inspect", "install", "enable", "disable", "remove"], auth: true },
   "speech-to-text": { runtime: "ai", actions: ["transcribe"], auth: true, provider: "speech" },
+  "text-to-speech": { runtime: "ai", actions: ["synthesize"], auth: true, provider: "tts" },
   "ai-chat": { runtime: "ai", actions: ["send", "retry"], auth: true, provider: "gemini" },
   "prompt-optimizer": { runtime: "ai", actions: ["optimize", "compare"], auth: true, provider: "gemini" },
   "image-prompt-generator": { runtime: "ai", actions: ["generate", "variation"], auth: true, provider: "gemini" },
@@ -154,7 +155,8 @@ async function executeServerTool(db, user, policy, input = {}) {
 function configuredProviders() {
   return {
     gemini: Boolean(process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY),
-    speech: Boolean(process.env.SPEECH_API_URL && process.env.SPEECH_API_KEY),
+    speech: Boolean(process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY),
+    tts: Boolean(process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY),
     vision: Boolean(process.env.VISION_API_URL && process.env.VISION_API_KEY),
     "web-push": Boolean(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY)
   };

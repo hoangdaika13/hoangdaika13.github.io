@@ -4,11 +4,13 @@ const assert = require("node:assert/strict"), fs = require("node:fs"), path = re
 const { chromium } = require(process.env.HH_QA_PLAYWRIGHT || "playwright");
 const { execFileSync } = require("node:child_process");
 const repo = path.resolve(__dirname, ".."), output = path.join(repo, ".study-local/all-tools-qa"), results = [];
+const productionCSP = JSON.parse(execFileSync("git", ["show", "HEAD:vercel.json"], { cwd: repo, encoding: "utf8" })).headers.flatMap(row => row.headers).find(row => row.key === "Content-Security-Policy").value;
 const server = http.createServer((req, res) => {
   const name = decodeURIComponent(new URL(req.url, "http://localhost").pathname), file = path.resolve(repo, "." + name);
   if (!file.startsWith(repo + path.sep) || name.split("/").some(part => part.startsWith(".") || ["api", "utils", "node_modules"].includes(part))) return res.writeHead(403).end();
   if (!fs.existsSync(file) || !fs.statSync(file).isFile()) return res.writeHead(404).end();
   res.setHeader("Content-Type", ({ ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".svg": "image/svg+xml" })[path.extname(file)] || "application/octet-stream");
+  if (name.startsWith("/tests/fixtures/all-tools")) res.setHeader("Content-Security-Policy", productionCSP);
   const relative = name.slice(1);
   if (process.env.HH_QA_STAGED_RELEASE === "1" && ["index.html", "sw.js", "auth-platform.js", "auth-neon-gateway.css"].includes(relative)) {
     // Verify the selected release, not another unfinished authentication draft.
@@ -25,12 +27,22 @@ async function main() {
   try {
     browser = await chromium.launch({ headless: true, executablePath: process.env.HH_QA_CHROMIUM });
     const context = await browser.newContext({ serviceWorkers: "block", reducedMotion: "reduce", viewport: { width: 1440, height: 1000 }, acceptDownloads: true });
-    const page = await context.newPage(), errors = [], external = [];
+    const page = await context.newPage(), errors = [], external = [], speechCalls = [], publicAssetErrors = [], cspErrors = [];
+    let speechDoubles = false;
+    const wavFixture = require("../services/allToolSpeech").pcmToWav(Buffer.alloc(480));
     page.on("pageerror", error => errors.push(error.message));
+    page.on("response", response => { if (response.url().startsWith(origin) && !response.url().includes("/api/") && response.status() >= 400) publicAssetErrors.push({ url: response.url(), status: response.status() }); });
+    page.on("console", message => { if (message.type() === "error" && /Content Security Policy|Refused to (?:load|execute|create)/i.test(message.text())) cspErrors.push(message.text()); });
     await context.route("**/*", route => {
       const url = route.request().url();
       if (url.startsWith(origin) && !url.includes("/api/")) return route.continue();
       if (/^(data|blob):/.test(url)) return route.continue();
+      if (url === origin + "/api/ai" && route.request().method() === "GET") return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ providers: [{ provider: "speech", configured: true }, { provider: "tts", configured: true }] }) });
+      if (speechDoubles && url === origin + "/api/ai" && route.request().method() === "POST") {
+        const payload = route.request().postDataJSON(); assert.equal(payload.consent?.paidProcessing, true); speechCalls.push(payload.toolId);
+        const result = payload.toolId === "text-to-speech" ? { audio: { data: wavFixture.toString("base64"), mimeType: "audio/wav" }, voice: payload.input.voice } : { text: "QA chép file bằng response double", language: "vi-VN" };
+        return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ result }) });
+      }
       external.push(url);
       return route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: "QA: dịch vụ chưa cấu hình", code: "QA_UNAVAILABLE" }) });
     });
@@ -45,7 +57,20 @@ async function main() {
       assert.equal(await page.locator("[data-lab-route]").getAttribute("data-active-tool"), id, "Selected tool: " + id);
       assert.equal(await page.locator("[data-lab-work] > .pt-workspace, [data-lab-work] > .ut-workspace, [data-lab-work] > [data-hh-tool]").count(), 1, "One independent studio: " + id);
     };
-    for (const width of [1440, 768, 375]) {
+    const waitForWorkspaceDraft = async (id, field, expected) => {
+      // Await the IndexedDB read itself: a Promise is not a completed save.
+      const deadline = Date.now() + 10000;
+      do {
+        const saved = await page.evaluate(async ({ id, field }) => {
+          const backup = await HHAllToolState.exportWorkspaceBackup(HHAllToolState.accountScope(), { scopes: ["workspace"] });
+          return backup.scopes.workspace.records.find(row => row.id === id)?.values?.[field];
+        }, { id, field });
+        if (saved === expected) return;
+        await page.waitForTimeout(75);
+      } while (Date.now() < deadline);
+      assert.fail("IndexedDB draft did not finish saving: " + id);
+    };
+    for (const width of process.env.HH_QA_RAPID === "1" ? [] : [1440, 768, 375]) {
       await page.setViewportSize({ width, height: 1000 });
       for (const tool of catalog) {
         await go(tool.id);
@@ -57,6 +82,27 @@ async function main() {
       pass(`All 86 studios mount independently at ${width}px with no horizontal overflow or generic fallback`);
     }
     await page.setViewportSize({ width: 1440, height: 1000 });
+    await go("monaco-code-editor");
+    await page.waitForFunction(() => Boolean(document.querySelector("[data-tool-editor]")?._editor), { timeout: 20000 });
+    await page.locator('[data-tool-input="language"]').selectOption("json");
+    await page.evaluate(() => document.querySelector("[data-tool-editor]")._editor.setValue('{"hello":"world","count":2}'));
+    await page.waitForFunction(() => document.querySelector("[data-tool-editor]")._editor.getAction("editor.action.formatDocument").isSupported());
+    await page.locator('[data-tool-action="format-code"]').click();
+    await page.waitForFunction(() => document.querySelector("[data-tool-editor]")._editor.getValue().includes("\n"));
+    await page.locator('[data-tool-action="save-code"]').click();
+    await page.waitForFunction(() => document.querySelector("[data-tool-editor-status]").textContent.includes("Đã lưu"));
+    await page.evaluate(() => document.querySelector("[data-tool-editor]")._editor.setValue('{"hello":"changed","count":2}'));
+    await page.locator('[data-tool-action="diff-code"]').click();
+    await page.waitForFunction(() => Boolean(document.querySelector("[data-lab-work]")?._diffEditor));
+    assert.equal(await page.evaluate(() => monaco.editor.getModels().length), 3);
+    await page.locator('[data-tool-action="close-code-diff"]').click();
+    await page.evaluate(() => document.querySelector("[data-tool-editor]")._editor.setValue('{"oops":}'));
+    await page.waitForFunction(() => document.querySelector("[data-tool-code-problems]").textContent.includes("Dòng"));
+    await go("json-viewer"); assert.equal(await page.evaluate(() => monaco.editor.getModels().length), 0);
+    await go("monaco-code-editor"); await page.waitForFunction(() => Boolean(document.querySelector("[data-tool-editor]")?._editor));
+    assert.equal(await page.evaluate(() => monaco.editor.getModels().length), 1);
+    await page.screenshot({ path: path.join(output, "all-tools-monaco.png"), fullPage: true });
+    pass("Actual local Monaco under production CSP: JSON formatting, diagnostics, diff models and cleanup/reopen");
     await go("global-search");
     if (await page.locator("[data-lab-toggle]").getAttribute("aria-expanded") === "false") await page.locator("[data-lab-toggle]").click();
     await page.locator("[data-lab-favorite]").click(); await page.locator("[data-lab-pin]").click();
@@ -106,6 +152,11 @@ async function main() {
     await page.locator('[data-tool-action="new-tab"]').click(); await page.waitForTimeout(100); await page.locator('[data-tool-action="select-tab"]').first().click();
     await page.waitForFunction(() => document.querySelector('[data-tool-input="document"]').value === "Bản nháp trước khi chuyển tool");
     pass("Workspace Tabs flush unsaved content on tool/tab switch and restore from real IndexedDB");
+    await page.locator('[data-tool-input="document"]').fill("Bản nháp QA cần giữ sau hard reload");
+    await waitForWorkspaceDraft("draft-workspace-tabs", "document", "Bản nháp QA cần giữ sau hard reload");
+    await page.reload(); await page.evaluate(() => HHFeatureLab.ready()); await go("workspace-tabs");
+    assert.equal(await page.locator('[data-tool-input="document"]').inputValue(), "Bản nháp QA cần giữ sau hard reload");
+    pass("Workspace Tabs restores the actual latest IndexedDB draft after hard reload without relying on cleanup");
     await go("drag-drop-dashboard"); await page.locator('[data-tool-input="widget-kind"]').selectOption("counter"); await page.locator('[data-tool-action="add-widget"]').click();
     await page.locator('[data-tool-action="counter-up"]').click(); await page.waitForTimeout(80);
     await go("json-viewer"); await go("drag-drop-dashboard"); assert.match(await page.locator("[data-tool-dashboard]").innerText(), /1/);
@@ -118,6 +169,20 @@ async function main() {
     await page.locator('[data-tool-action="preview-file"]').click(); await page.waitForFunction(() => document.querySelector("[data-tool-preview]").textContent.includes("Nội dung file riêng QA"));
     await go("json-viewer"); await go("file-explorer"); assert.equal(await page.getByText("qa-notes.txt", { exact: true }).count(), 1);
     pass("File Explorer stores actual file bytes and reopens local text preview");
+    await page.locator('[data-tool-action="preview-file"]').click();
+    await page.waitForFunction(() => document.querySelector("[data-tool-state]")?.dataset.toolState === "done");
+    await page.locator('[data-tool-input="file-content"]').fill("Nội dung file riêng QA · bản nháp trước reload");
+    await page.locator('[data-tool-input="rename"]').fill("qa-notes-renamed.txt");
+    await page.locator('[data-tool-action="rename-file"]').click();
+    await page.waitForFunction(() => document.querySelector("[data-tool-state]")?.dataset.toolState === "done");
+    assert.equal(await page.locator('[data-tool-input="file-content"]').inputValue(), "Nội dung file riêng QA · bản nháp trước reload");
+    await waitForWorkspaceDraft("draft-file-explorer", "file-content", "Nội dung file riêng QA · bản nháp trước reload");
+    await page.reload(); await page.evaluate(() => HHFeatureLab.ready()); await go("file-explorer");
+    assert.equal(await page.locator('[data-tool-input="file-content"]').inputValue(), "Nội dung file riêng QA · bản nháp trước reload");
+    await page.locator('[data-tool-action="save-file"]').click();
+    await page.waitForFunction(() => document.querySelector("[data-tool-state]")?.dataset.toolState === "done");
+    await page.waitForFunction(() => document.querySelector("[data-tool-file-state]").textContent.includes("Đang xem bản lưu"));
+    pass("File Explorer keeps unsaved edits across rename and hard reload, then saves the actual file safely");
     await go("favorite-manager"); await page.locator('[name="title"]').fill("JSON của tôi"); await page.locator('[name="route"]').fill("/tools/json-formatter"); await page.locator('[data-pt-action="favorite-add"]').click();
     await page.getByText("JSON của tôi", { exact: true }).waitFor();
     await go("export-data"); await page.locator('[data-pt-action="export-preview"]').click(); await page.waitForFunction(() => document.querySelector("[data-pt-output]").textContent.includes("HH Platform Tools Export"));
@@ -126,6 +191,61 @@ async function main() {
     await page.locator('[data-pt-action="import-validate"]').click(); await page.locator('[data-pt-action="import-commit"]:enabled').waitFor(); await page.locator('[data-pt-action="import-commit"]').click();
     await page.waitForFunction(() => document.querySelector("[data-pt-status]").textContent.includes("Đã nhập"));
     pass("Platform favorites, actual scoped export, validate-preview and import transaction");
+    await go("favorite-manager"); await page.locator('[name="catalogTool"]').selectOption("markdown-editor");
+    await page.locator('[data-pt-action="favorite-catalog-add"]').click();
+    await page.waitForFunction(() => HHAllToolState.readCatalogPreferences().favorites.includes("markdown-editor"));
+    if (await page.locator("[data-lab-toggle]").getAttribute("aria-expanded") === "false") await page.locator("[data-lab-toggle]").click();
+    await page.locator("[data-lab-collection]").selectOption("favorites");
+    assert.equal(await page.locator('[data-lab-feature="markdown-editor"]').isVisible(), true);
+    await page.locator("[data-lab-collection]").selectOption("all");
+    pass("Favorite Manager updates the actual All Tool catalog immediately without remounting the active tool");
+    await go("json-viewer"); await page.locator('[name="source"]').fill('{"a/b":{"~key":"needle"},"other":42}');
+    await page.locator('[data-ut-action="json-tree"]').click(); await page.locator('[name="json-search"]').fill("needle");
+    await page.locator('[data-ut-json-path="/a~1b/~0key"]').waitFor();
+    assert.equal(await page.locator("[data-ut-output]").innerText().then(text => text.includes("other")), false);
+    await page.locator('[name="json-search"]').fill("absent-field"); await page.getByText("Không có nhánh khớp", { exact: false }).waitFor();
+    await go("markdown-editor"); await page.locator('[name="source"]').fill('# Preview\n\n- [x] Done\n- [ ] Todo\n\n| A | B |\n|---|---|\n| One | Two |\n\n<script>window.QAXSS=1</script>\n[unsafe](javascript:alert(1))');
+    await page.locator('[data-ut-action="render-markdown"]').click();
+    assert.equal(await page.locator("[data-ut-output] h1").innerText(), "Preview"); assert.equal(await page.locator("[data-ut-output] table").count(), 1);
+    assert.equal(await page.locator("[data-ut-output] script,[data-ut-output] a[href^='javascript:']").count(), 0);
+    const htmlDownload = page.waitForEvent("download"); await page.locator('[data-ut-action="export-markdown-html"]').click(); assert.ok((await htmlDownload).suggestedFilename().endsWith(".html"));
+    pass("JSON search/RFC6901 tree and Markdown table/checklist/HTML export execute safely, not a static preview");
+    await go("calendar"); await page.locator('[name="title"]').fill("QA calendar lesson");
+    const day = new Date().toISOString().slice(0, 10); await page.locator('[name="date"]').fill(day + "T15:00");
+    await page.locator('[name="duration"]').fill("90"); await page.locator('[name="location"]').fill("QA local classroom");
+    await page.locator('[data-ut-action="record-add"]').click(); await page.getByText("QA calendar lesson", { exact: true }).first().waitFor();
+    for (const view of ["week", "list", "month"]) { await page.locator('[name="calendar-view"]').selectOption(view); assert.ok(await page.locator("[data-ut-list]").innerText()); }
+    const icsDownload = page.waitForEvent("download"); await page.locator('[data-ut-action="calendar-export"]').click(); assert.ok((await icsDownload).suggestedFilename().endsWith(".ics"));
+    await page.reload(); await page.evaluate(() => HHFeatureLab.ready()); await go("calendar"); await page.locator('[name="calendar-view"]').selectOption("list"); await page.getByText("QA local classroom", { exact: false }).waitFor();
+    pass("Calendar month/week/list, duration/location, real ICS export and reload persistence");
+    await go("ai-prompt-library"); await page.locator('[data-tool-input="title"]').fill("QA reusable prompt");
+    await page.locator('[data-tool-input="content"]').fill("Teach {{topic}} to {{audience}}"); await page.locator('[data-tool-input="tags"]').fill("qa, learning");
+    await page.locator('[data-tool-action="save-prompt"]').click(); await page.locator('[data-prompt-variable="topic"]').fill("JSON"); await page.locator('[data-prompt-variable="audience"]').fill("beginners");
+    await page.locator('[data-tool-action="render-prompt"]').click(); assert.match(await page.locator("[data-tool-output]").innerText(), /Teach JSON to beginners/);
+    await page.locator('[data-tool-input="prompt-filter"]').fill("no-match-qa"); await page.getByText("Không có prompt khớp", { exact: false }).waitFor();
+    await page.locator('[data-tool-input="prompt-filter"]').fill("learning"); await page.getByText("QA reusable prompt", { exact: true }).waitFor();
+    await page.reload(); await page.evaluate(() => HHFeatureLab.ready()); await go("ai-prompt-library"); await page.getByText("QA reusable prompt", { exact: true }).waitFor();
+    pass("Prompt Library saves real reusable variables, searches tags and restores after reload without an AI request");
+    const crossBackup = await page.evaluate(async () => HHAllToolState.exportWorkspaceBackup(HHAllToolState.accountScope(), { includeFiles: true }));
+    assert.equal(crossBackup.scopes.workspace.filesIncluded, true); assert.ok(crossBackup.scopes.utility.data.notes.length);
+    await page.evaluate(async payload => { const plan = await HHAllToolState.prepareWorkspaceImport(payload, { strategy: "replace" }); await plan.apply(); }, crossBackup);
+    await go("file-explorer"); await page.getByText("qa-notes-renamed.txt", { exact: true }).waitFor(); await page.locator('[data-tool-action="preview-file"]').first().click();
+    await page.waitForFunction(() => document.querySelector("[data-tool-preview]").textContent.includes("Nội dung file riêng QA"));
+    await go("notes"); await page.getByText("Ghi chú QA", { exact: true }).waitFor();
+    pass("All Tool multi-suite backup validates and restores actual notes, workspace records and opt-in file bytes");
+    await go("api-tester"); await page.locator('[name="url"]').fill(origin + "/tests/fixtures/all-tools-response.json");
+    await page.locator('[name="query-params"]').fill('{"lesson":"qa"}'); await page.locator('[data-ut-action="api-run"]').click();
+    await page.waitForFunction(() => document.querySelector("[data-ut-api-summary]").textContent.includes("HTTP 200"));
+    assert.match(await page.locator("[data-ut-output]").innerText(), /Real static HTTP response/);
+    await page.locator('[data-ut-api-tab="headers"]').click(); assert.match(await page.locator("[data-ut-output]").innerText(), /content-type/);
+    await page.locator('[name="method"]').selectOption("HEAD"); await page.locator('[data-ut-action="api-run"]').click();
+    await page.waitForFunction(() => document.querySelector("[data-ut-api-summary]").textContent.includes("0 byte"));
+    pass("API Tester uses actual localhost HTTP transport, query/body/headers tabs and HEAD without stored tokens");
+    await go("offline-mode"); await page.locator('[data-pt-action="offline-prepare"]').click();
+    await page.waitForFunction(() => document.querySelector("[data-pt-status]").textContent.includes("Đã lưu"));
+    const offlineURLs = await page.evaluate(async () => (await (await caches.open("hh-alltools-offline-v2")).keys()).map(row => row.url));
+    assert.ok(offlineURLs.length >= 8); assert.ok(offlineURLs.every(url => /\.(?:js|css)(?:\?|$)/.test(url) && !url.includes("/api/") && !url.includes("auth")));
+    pass("Offline Mode actually writes only selected public JS/CSS assets into its isolated browser cache");
     await go("ocr");
     const imageData = await page.evaluate(() => { const canvas = document.createElement("canvas"); canvas.width = 900; canvas.height = 180; const ctx = canvas.getContext("2d"); ctx.fillStyle = "white"; ctx.fillRect(0, 0, 900, 180); ctx.fillStyle = "black"; ctx.font = "bold 48px Arial"; ctx.fillText("HH TOOLS STUDY 123", 35, 105); return canvas.toDataURL("image/png").split(",")[1]; });
     await page.locator("[data-tool-ocr-file]").setInputFiles({ name: "qa-ocr.png", mimeType: "image/png", buffer: Buffer.from(imageData, "base64") });
@@ -146,6 +266,12 @@ async function main() {
     await go("dark-light-auto"); await page.locator('input[name="mode"][value="dark"]').check(); await page.locator('[data-pt-action="appearance-apply"]').click();
     await page.waitForFunction(() => document.querySelector("[data-lab-route]").dataset.colorMode === "dark");
     pass("All Tool appearance persists across studio switch/reload and never changes the outer document theme");
+    await go("theme-switcher"); await page.locator('[name="fontScale"]').evaluate(node => { node.value = "108"; node.dispatchEvent(new Event("input", { bubbles: true })); });
+    await page.locator('[data-pt-action="theme-apply"]').click();
+    await page.waitForFunction(() => document.querySelector("[data-pt-status]").textContent.includes("Đã áp dụng"));
+    const appearanceBackup = await page.evaluate(async () => HHAllToolState.exportWorkspaceBackup(HHAllToolState.accountScope(), { scopes: ["appearance"] }));
+    assert.equal(appearanceBackup.scopes.appearance.fontScale, 108);
+    pass("Theme Color Switcher stores numeric font scale and a real cross-suite backup succeeds after apply");
     assert.deepEqual(external, []);
     await go("ai-chat-assistant"); await page.locator('[data-tool-input="message"]').fill("Yêu cầu QA không được tính phí");
     await page.locator('[data-tool-action="send-ai"]').click(); assert.deepEqual(external, []);
@@ -154,6 +280,27 @@ async function main() {
     assert.equal(await page.locator('[data-tool-input="message"]').inputValue(), "Yêu cầu QA không được tính phí");
     assert.deepEqual(external, [origin + "/api/ai"]);
     pass("AI consent prevents submission; one explicit backend-error double keeps prompt and never retries/creates fake output");
+    speechDoubles = true;
+    await page.evaluate(() => { window.qaRevokedUrls = []; const revoke = URL.revokeObjectURL.bind(URL); URL.revokeObjectURL = value => { qaRevokedUrls.push(value); return revoke(value); }; });
+    await go("text-to-speech"); await page.locator('[data-tool-input="text"]').fill("Nội dung giọng đọc QA");
+    await page.waitForFunction(() => document.querySelector("[data-tool-speech-capability]").textContent.includes("có cấu hình"));
+    await page.locator('[data-tool-action="export-tts"]').click(); assert.equal(speechCalls.length, 0);
+    await page.locator("[data-tool-paid-consent]").check(); await page.locator('[data-tool-action="export-tts"]').click();
+    await page.waitForFunction(() => document.querySelector("[data-tool-output]").textContent.includes("Đã tạo WAV"));
+    assert.equal(await page.locator("[data-tool-paid-consent]").isChecked(), false);
+    const wavURL = await page.locator("[data-tool-tts-preview]").getAttribute("src");
+    await page.evaluate(() => window.qaPreviousAudio = document.querySelector("[data-tool-tts-preview]"));
+    assert.ok(wavURL.startsWith("blob:")); assert.equal(await page.locator("[data-tool-tts-preview]").evaluate(node => node.paused), true);
+    const wavDownload = page.waitForEvent("download"); await page.locator('[data-tool-action="download-tts"]').click(); assert.equal((await wavDownload).suggestedFilename(), "hh-tool-voice.wav");
+    await go("speech-to-text");
+    assert.equal(await page.evaluate(url => qaRevokedUrls.includes(url) && !qaPreviousAudio.getAttribute("src") && qaPreviousAudio.paused, wavURL), true);
+    await page.locator("[data-tool-media-file]").setInputFiles({ name: "qa-speech.wav", mimeType: "audio/wav", buffer: wavFixture });
+    await page.locator('[data-tool-action="transcribe-media"]').click(); assert.equal(speechCalls.length, 1);
+    await page.locator("[data-tool-paid-consent]").check(); await page.locator('[data-tool-action="transcribe-media"]').click();
+    await page.waitForFunction(() => document.querySelector('[data-tool-input="transcript"]').value.includes("QA chép file"));
+    assert.equal(await page.locator("[data-tool-paid-consent]").isChecked(), false); assert.deepEqual(speechCalls, ["text-to-speech", "speech-to-text"]);
+    speechDoubles = false;
+    pass("Speech/TTS HTTP response doubles prove per-request consent, one request, editable transcript, WAV download/no-autoplay and Blob cleanup; no paid provider called");
     await page.evaluate(async () => {
       const suite = HHPlatformTools, originalMount = suite.mountById, originalCleanup = suite.cleanup;
       const host = document.getElementById("host");
@@ -173,8 +320,14 @@ async function main() {
     });
     pass("Delayed engine-return double proves stale mount cleanup cannot cancel the newer studio");
     await page.evaluate(() => document.documentElement.style.zoom = "2");
-    for (const id of ["global-search", "kanban", "workspace-tabs", "json-formatter", "stopwatch"]) {
-      await go(id); assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), "200% " + id);
+    for (const id of ["global-search", "kanban", "workspace-tabs", "json-formatter", "json-viewer", "markdown-editor", "calendar", "api-tester", "ai-prompt-library", "monaco-code-editor", "speech-to-text", "text-to-speech", "stopwatch"]) {
+      await go(id);
+      const zoomFits = await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1);
+      if (!zoomFits) {
+        console.log(JSON.stringify(await page.evaluate(() => ({ tool: document.querySelector("[data-lab-route]").dataset.activeTool, viewport: innerWidth, scroll: document.documentElement.scrollWidth, overflow: [...document.querySelectorAll("[data-lab-work] *")].filter(node => node.getBoundingClientRect().right > innerWidth + 1).slice(0, 12).map(node => ({ tag: node.tagName, class: node.className, right: node.getBoundingClientRect().right, width: node.getBoundingClientRect().width })) }))));
+        await page.screenshot({ path: path.join(output, `overflow-${id}-200.png`), fullPage: true });
+      }
+      assert.ok(zoomFits, "200% " + id);
     }
     await page.emulateMedia({ forcedColors: "active", reducedMotion: "reduce" });
     await page.keyboard.press("Tab");
@@ -191,8 +344,8 @@ async function main() {
     assert.equal(await page.evaluate(() => HHAllToolState.accountScope()), "account:qa-owner-c");
     pass("Actual cross-tab profile change stops work and blocks remount until session reload; does not reassign account data");
     await page.evaluate(() => HHFeatureLab.cleanup()); assert.equal(await page.locator("[data-lab-route]").count(), 0);
-    assert.deepEqual(errors, []); assert.deepEqual(external, [origin + "/api/ai"]);
-    pass("No uncaught JavaScript errors or automatic remote calls; one opt-in API double only, teardown removes workspace");
+    assert.deepEqual(errors, []); assert.deepEqual(publicAssetErrors, []); assert.deepEqual(cspErrors, []); assert.deepEqual(external, [origin + "/api/ai"]);
+    pass("No uncaught JavaScript/CSP/public-asset errors or automatic paid calls; explicit API doubles only, teardown removes workspace");
     await context.close();
     const shellContext = await browser.newContext({ serviceWorkers: "block", reducedMotion: "reduce", viewport: { width: 1440, height: 1000 } });
     await shellContext.route("**/api/**", route => route.fulfill({ status: route.request().url().includes("/providers") ? 200 : 401, contentType: "application/json", body: JSON.stringify({ google: false, facebook: false, email: false, error: "Local QA backend double" }) }));

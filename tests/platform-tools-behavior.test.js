@@ -11,15 +11,15 @@ function runtime() {
   });
   const documentElement = { dataset: {}, style: { values: {}, setProperty(key, value) { this.values[key] = value; }, getPropertyValue(key) { return this.values[key] || ""; }, removeProperty(key) { delete this.values[key]; }, fontSize: "", colorScheme: "" } };
   const document = { hidden: false, documentElement, querySelector: selector => selector.startsWith("link[") ? {} : null, querySelectorAll: () => [], addEventListener: (type, listener) => listeners.set(type, listener), removeEventListener: type => listeners.delete(type), head: { append() {} } };
-  const context = { document, localStorage: storage, navigator: { onLine: true }, crypto: require("node:crypto").webcrypto, structuredClone, Blob, URL, CSS: { escape: value => value },
+  const context = { document, localStorage: storage, navigator: { onLine: true }, crypto: require("node:crypto").webcrypto, structuredClone, Blob, URL, Response, Headers, AbortController, CSS: { escape: value => value },
     location: { hash: "#/platform", href: "http://localhost/", origin: "http://localhost" },
     CustomEvent: class { constructor(type, options = {}) { this.type = type; this.detail = options.detail; } },
-    addEventListener: (type, listener) => listeners.set(type, listener), dispatchEvent() {}, setInterval: () => 1, clearInterval() {}, setTimeout: () => 1, clearTimeout() {},
+    addEventListener: (type, listener) => listeners.set(type, listener), removeEventListener: type => listeners.delete(type), dispatchEvent() {}, setInterval: () => 1, clearInterval() {}, setTimeout: () => 1, clearTimeout() {},
     requestAnimationFrame: () => 2, cancelAnimationFrame: id => cancelled.push(id), performance: { now: () => 1000 }, devicePixelRatio: 3,
     matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }), HHAuthz: { currentUser: () => user }
   };
   context.window = context;
-  vm.runInNewContext(source.replace("window.HHPlatformTools = {", "window.__test = { state, values, dbAll, dbPut, dbClear, readSettings, saveSetting, record, accountOwner, safeKey, localPrefix, normalizeImport, validRoute, canonicalCombo, normalizeCombo, applyColorMode, cleanupRuntime, setupLongTasks, handleAction, buildExport, globalShortcut }; window.HHPlatformTools = {"), context);
+  vm.runInNewContext(source.replace("window.HHPlatformTools = {", "window.__test = { state, values, dbAll, dbPut, dbClear, readSettings, saveSetting, record, accountOwner, safeKey, localPrefix, normalizeImport, validRoute, canonicalCombo, normalizeCombo, applyColorMode, cleanupRuntime, setupLongTasks, handleAction, buildExport, globalShortcut, catalogPreferences, updateCatalogPreferences, allHistory, scanWorkspace, runSearch, searchScore, normalizeSearch, skeletonDocument, prepareOffline, readBoundedAsset, offlineAssetUrl, startProgress, applyStoreBatch, commitImport, publishNotificationSignal, inspectPwa }; window.HHPlatformTools = {"), context);
   const api = context.__test;
   api.state.owner = api.accountOwner();
   return { api, context, storage, listeners, cancelled, setUser: next => { user = next; api.state.owner = api.accountOwner(); } };
@@ -135,4 +135,176 @@ test("an account switch between awaited reads and writes cannot attribute old hi
   setUser({ id: "owner-b" });
   await assert.rejects(pending, /Tài khoản đã thay đổi/);
   assert.equal((await api.dbAll("history")).length, 0);
+});
+
+test("search indexes every real catalog tool and derives canonical routes even when catalog has no route field", () => {
+  const { api, context } = runtime();
+  context.HHFeatureLab = { catalog: () => [{ id: "notes", name: "Notes", description: "Ghi chú độc lập", group: "Productivity" }, { id: "ocr", name: "OCR", description: "Nhận dạng ảnh" }] };
+  const results = api.scanWorkspace("ghi chu", "route", 50);
+  assert.equal(results.length, 1); assert.equal(results[0].route, "/tools/notes");
+  assert.equal(api.normalizeSearch("ĐIỀU KHIỂN"), "dieu khien");
+  assert.equal(api.searchScore("Notes", "notes"), 3); assert.equal(api.searchScore("Notes Tools", "notes"), 2);
+});
+
+test("command palette returns matching executable actions rather than only static quick buttons", async () => {
+  const { api } = runtime(); api.state.active = "Command Palette++";
+  api.state.root = root([{ name: "query", value: "thiet lap sang", type: "text" }]);
+  await api.runSearch(true);
+  assert.match(api.state.root.querySelector("[data-pt-results]").innerHTML, /data-pt-action="command-theme"/);
+  assert.doesNotMatch(api.state.root.querySelector("[data-pt-results]").innerHTML, /data-pt-action="command-home"/);
+});
+
+test("favorite and pinned manager share catalog preferences, filter stale IDs and stay scoped", () => {
+  const { api, context, setUser } = runtime(); const data = new Map();
+  context.HHFeatureLab = { catalog: () => [{ id: "notes", name: "Notes" }, { id: "json-viewer", name: "JSON Viewer" }] };
+  context.HHAllToolState = { readJSON: (base, fallback, owner) => data.get(`${base}:${owner}`) || fallback, writeJSON: (base, value, owner) => data.set(`${base}:${owner}`, value) };
+  api.updateCatalogPreferences({ favorites: ["notes"], pinned: ["notes", "not-a-tool"] });
+  assert.deepEqual(plain(api.catalogPreferences()), { favorites: ["notes"], pinned: ["notes"], recent: [] });
+  setUser({ id: "owner-b" }); assert.deepEqual(plain(api.catalogPreferences()), { favorites: [], pinned: [], recent: [] });
+  setUser({ id: "owner-a" }); assert.deepEqual(plain(api.catalogPreferences()).favorites, ["notes"]);
+});
+
+test("History Manager combines real action metadata from suites, not note contents", async () => {
+  const { api, context } = runtime();
+  context.HHFeatureLab = { catalog: () => [{ id: "notes", name: "Notes" }, { id: "global-search", name: "Global Search" }] };
+  context.HHAllToolState = { workspaceHistory: async () => [{ id: "note-history", source: "utility", tool: "notes", action: "save", at: "2026-10-12T08:00:00Z", detail: "private note content" }] };
+  await api.dbPut("history", { id: "platform-history", tool: "global-search", name: "Global Search", action: "search", createdAt: 1 });
+  const rows = plain(await api.allHistory());
+  assert.equal(rows.length, 2); assert.equal(rows[0].name, "Notes"); assert.equal(rows[0].source, "utility"); assert.equal(rows[0].detail, undefined);
+});
+
+test("skeleton generator produces independent accessible HTML/CSS and clamps untrusted settings", () => {
+  const { api } = runtime(); const html = api.skeletonDocument({ pattern: '<script>bad</script>', count: 100 });
+  assert.equal((html.match(/<article /g) || []).length, 12); assert.match(html, /aria-busy="true"/);
+  assert.match(html, /prefers-reduced-motion/); assert.match(html, /forced-colors/); assert.doesNotMatch(html, /<script>/);
+});
+
+test("theme undo snapshot is persistent and export/import strips recursive or unapproved fields", async () => {
+  const { api } = runtime();
+  await api.saveSetting("themeUndo", { accent: "#123456", fontScale: 100 });
+  assert.equal((await api.readSettings()).themeUndo.accent, "#123456");
+  const imported = api.normalizeImport(payload({ settings: [{ id: "setting:themeUndo", value: { accent: "#123456", token: "private", themeUndo: { accent: "#ffffff" } } }] }));
+  assert.deepEqual(plain(imported.data.settings[0].value), { accent: "#123456" });
+  assert.throws(() => api.normalizeImport(payload({ settings: [{ id: "setting:themeUndo", value: { accent: "not-color" } }] })), /Cài đặt/);
+});
+
+test("v2 backups explicitly bind current owner and require workspace adapter validation", () => {
+  const { api, context } = runtime(); const owner = api.accountOwner();
+  assert.throws(() => api.normalizeImport({ ...payload({}), version: 2, owner: "account:owner-b" }), /tài khoản khác/);
+  assert.throws(() => api.normalizeImport({ ...payload({ workspace: {} }), version: 2, owner }), /bộ kiểm tra/);
+  let checked = 0; context.HHAllToolState = { normalizeWorkspaceBackup(value, currentOwner) { checked++; assert.equal(currentOwner, owner); return { ...value, normalized: true }; } };
+  const normalized = api.normalizeImport({ ...payload({ workspace: { version: 1 } }), version: 2, owner });
+  assert.equal(normalized.data.workspace.normalized, true); assert.equal(checked, 1);
+});
+
+test("workspace backup export is explicitly selected and files are never implicitly included", async () => {
+  const { api, context } = runtime(); let included;
+  context.HHAllToolState = { exportWorkspaceBackup: async (owner, options) => { included = options.includeFiles; return { format: "HH All Tool Workspace Backup", version: 1, owner, scopes: { utility: { notes: [] } } }; } };
+  const scopes = Array.from({ length: 7 }, (_, index) => ({ name: "scope", type: "checkbox", value: String(index), checked: index === 5 }));
+  api.state.root = root([{ name: "format", value: "json", type: "select-one" }, ...scopes]); await api.buildExport();
+  const exported = JSON.parse(api.state.generatedExport); assert.equal(exported.version, 2); assert.equal(exported.owner, "account:owner-a"); assert.equal(included, false); assert.ok(exported.data.workspace);
+  scopes[5].checked = false; scopes[6].checked = true;
+  await assert.rejects(api.buildExport(), /phạm vi workspace/);
+});
+
+test("multi-store batch merge, skip and replace affect only listed stores", async () => {
+  const { api } = runtime(); const owner = api.accountOwner();
+  await api.dbPut("favorites", { id: "saved", title: "Before" }); await api.dbPut("notifications", { id: "untouched", title: "Untouched" });
+  await api.applyStoreBatch({ favorites: [{ id: "saved", title: "Skipped" }, { id: "new", title: "New" }] }, "skip", owner);
+  assert.equal((await api.dbAll("favorites")).find(row => row.id === "saved").title, "Before");
+  await api.applyStoreBatch({ favorites: [{ id: "saved", title: "Merged" }] }, "merge", owner);
+  assert.equal((await api.dbAll("favorites")).length, 2);
+  await api.applyStoreBatch({ favorites: [] }, "replace", owner); assert.equal((await api.dbAll("favorites")).length, 0); assert.equal((await api.dbAll("notifications")).length, 1);
+});
+
+test("failed multi-suite import restores Platform stores and local drafts; no false success", async () => {
+  const { api, context, storage } = runtime(); const owner = api.accountOwner(), key = `${api.localPrefix()}draft:global-search`;
+  await api.dbPut("favorites", { id: "before", title: "Before", route: "/platform", createdAt: 1 }); storage.setItem(key, "[]");
+  let applied = 0, rolledBack = 0;
+  context.HHAllToolState = { normalizeWorkspaceBackup: value => value, prepareWorkspaceImport: async () => ({ apply: async () => { applied++; throw new Error("Storage full"); }, rollback: async () => { rolledBack++; } }) };
+  api.state.root = root([{ name: "strategy", type: "select-one", value: "merge" }]);
+  api.state.importPayload = { ...payload({ favorites: [{ id: "after", title: "After", route: "/tools/notes", createdAt: 1 }], local: { [key]: '[{"name":"query","value":"new","type":"text"}]' }, workspace: {} }), version: 2, owner };
+  await assert.rejects(api.commitImport(), /Đã hoàn tác/);
+  assert.equal(applied, 1); assert.equal(rolledBack, 1); assert.deepEqual(plain((await api.dbAll("favorites")).map(row => row.id)), ["before"]); assert.equal(storage.getItem(key), "[]");
+});
+
+test("import reports partial rollback failure rather than claiming data fully restored", async () => {
+  const { api, context } = runtime(); const owner = api.accountOwner();
+  context.HHAllToolState = { normalizeWorkspaceBackup: value => value, prepareWorkspaceImport: async () => ({ apply: async () => { throw new Error("write failed"); }, rollback: async () => { throw new Error("rollback failed"); } }) };
+  api.state.root = root([{ name: "strategy", type: "select-one", value: "merge" }]); api.state.importPayload = { ...payload({ workspace: {} }), version: 2, owner };
+  await assert.rejects(api.commitImport(), /Hoàn tác CHƯA đầy đủ/);
+});
+
+test("selective offline preparation caches only public allowlisted assets with correct loaded queries", async () => {
+  const { api, context } = runtime(); const saved = [], fetched = [], suites = [{ name: "offlineSuite", value: "workspace", checked: true }];
+  context.isSecureContext = true;
+  context.document.querySelectorAll = () => [{ src: "http://localhost/tool-workspace-pro.js?v=3" }, { href: "http://localhost/tool-workspace-pro.css?v=3" }];
+  context.caches = { open: async name => { assert.equal(name, "hh-alltools-offline-v2"); return { put: async (url, response) => { saved.push(url); assert.equal(response.status, 200); } }; } };
+  context.fetch = async (url, options) => { fetched.push(url); assert.equal(options.credentials, "omit"); return new Response("/* public code */", { headers: { "Content-Type": url.includes(".css") ? "text/css" : "application/javascript" } }); };
+  api.state.root = root(suites); await api.prepareOffline();
+  assert.deepEqual(saved, ["http://localhost/tool-workspace-pro.js?v=3", "http://localhost/tool-workspace-pro.css?v=3"]); assert.equal(fetched.length, 2);
+  assert.throws(() => api.offlineAssetUrl("api/auth/providers"), /public All Tools/);
+});
+
+test("offline preparation rejects HTML login fallback and reports cached partial result honestly", async () => {
+  const { api, context } = runtime(); let writes = 0; context.isSecureContext = true;
+  context.caches = { open: async () => ({ put: async () => { writes++; } }) };
+  context.fetch = async () => new Response("<html>Login</html>", { headers: { "Content-Type": "text/html" } });
+  api.state.root = root([{ name: "offlineSuite", value: "workspace", checked: true }]); await api.prepareOffline();
+  assert.equal(writes, 0); assert.equal(api.state.root.querySelector("[data-pt-status]").dataset.state, "warning"); assert.match(api.state.root.querySelector("[data-pt-pwa-report]").innerHTML, /Không phải JS\/CSS/);
+});
+
+test("bounded public-asset reader rejects oversized payloads before caching", async () => {
+  const { api } = runtime();
+  await assert.rejects(api.readBoundedAsset(new Response("abc", { headers: { "Content-Length": "100" } }), 2), /8 MB/);
+  await assert.rejects(api.readBoundedAsset(new Response("abc"), 2), /8 MB/);
+  assert.equal((await api.readBoundedAsset(new Response("ab"), 2)).byteLength, 2);
+});
+
+test("live Page Progress listens only to real application events and cleanup detaches it", () => {
+  const { api, context, listeners } = runtime(); api.state.root = root([{ name: "progressType", type: "select-one", value: "events" }]);
+  api.startProgress(); assert.equal(api.state.root.querySelector("[data-pt-progress]").value, 0);
+  listeners.get("hh:progress")({ detail: { value: 42, label: "Upload", state: "running" } });
+  assert.equal(api.state.root.querySelector("[data-pt-progress]").value, 42); assert.match(api.state.root.querySelector("[data-pt-progress-detail]").textContent, /Upload/);
+  api.cleanupRuntime(); assert.equal(listeners.has("hh:progress"), false);
+});
+
+test("cross-tab notification signal contains no title/message and cannot signal another account", () => {
+  const { api, context, storage } = runtime(); api.publishNotificationSignal();
+  const key = "hh.all-tools.notification-signal.v1.account:owner-a", value = JSON.parse(storage.getItem(key));
+  assert.deepEqual(Object.keys(value).sort(), ["changedAt", "id"]); assert.equal(api.safeKey(key), false);
+  context.HHAuthz.currentUser = () => ({ id: "owner-b" }); assert.throws(() => api.publishNotificationSignal("account:owner-a"), /Tài khoản đã thay đổi/);
+});
+
+test("restarting Page Progress detaches the prior event source instead of accumulating listeners", () => {
+  const { api, context } = runtime(); let added = 0, removed = 0;
+  context.addEventListener = type => { if (type === "hh:progress") added++; }; context.removeEventListener = type => { if (type === "hh:progress") removed++; };
+  api.state.root = root([{ name: "progressType", type: "select-one", value: "events" }]);
+  api.startProgress(); api.startProgress(); api.startProgress(); assert.equal(added, 3); assert.equal(removed, 2);
+  api.cleanupRuntime(); assert.equal(removed, 3);
+});
+
+test("applying theme from real form string values stores numeric scale and immediately supports cross-suite backup", async () => {
+  const { api, context, storage } = runtime();
+  storage.setItem("hh-auth-user", JSON.stringify({ id: "owner-a" }));
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, "..", "all-tool-state.js"), "utf8"), context);
+  api.state.active = "Theme Color Switcher";
+  api.state.root = root([{ name: "accent", type: "color", value: "#123456" }, { name: "highlight", type: "color", value: "#abcdef" }, { name: "fontScale", type: "range", value: "108" }, { name: "contrast", type: "select-one", value: "normal" }]);
+  api.state.root.style = { setProperty() {}, removeProperty() {} };
+  await api.handleAction("theme-apply");
+  const settings = await api.readSettings(); assert.equal(settings.fontScale, 108);
+  const saved = context.HHAllToolState.readJSON("hh.all-tools.appearance.v1", null); assert.equal(typeof saved.fontScale, "number");
+  const backup = await context.HHAllToolState.exportWorkspaceBackup(); assert.equal(backup.scopes.appearance.fontScale, 108);
+  context.HHAllToolState.normalizeWorkspaceBackup(backup);
+});
+
+test("offline capability inspection requires the exact loaded asset URL including version query", async () => {
+  const { api, context } = runtime();
+  const requests = [{ url: "http://localhost/platform-tools.js?v=2" }];
+  context.document.querySelectorAll = () => [{ src: "http://localhost/platform-tools.js?v=3" }];
+  context.caches = { keys: async () => ["hh-alltools-offline-v2"], open: async () => ({ keys: async () => requests }) };
+  api.state.root = root(); await api.inspectPwa("Offline Mode");
+  assert.match(api.state.root.querySelector("[data-pt-pwa-report]").innerHTML, /<span>platform-tools\.js<\/span><b>Chưa lưu bản đang dùng offline/);
+  requests.push({ url: "http://localhost/platform-tools.js?v=3" }); await api.inspectPwa("Offline Mode");
+  assert.match(api.state.root.querySelector("[data-pt-pwa-report]").innerHTML, /<span>platform-tools\.js<\/span><b>Đã có bản đang dùng trong cache/);
 });

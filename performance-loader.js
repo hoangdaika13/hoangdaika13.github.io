@@ -97,12 +97,12 @@
     platform: {
       styles: [
         "professional-tools.css?v=3", "feature-lab.css?v=6", "extension-suite.css?v=1",
-        "platform-tools.css?v=2", "tool-workspace-pro.css?v=2", "utility-lab-tools.css?v=10", "ai-center-pro.css?v=1",
+        "platform-tools.css?v=3", "tool-workspace-pro.css?v=3", "utility-lab-tools.css?v=11", "ai-center-pro.css?v=1",
         "ai-center-advanced.css?v=1", "platform-p0.css?v=1", "system-platform.css?v=3"
       ],
       scripts: [
-        "extension-suite.js?v=2", "professional-tools.js?v=4", "all-tool-state.js?v=1", "tool-manifests.js?v=2", "tool-runtime.js?v=2",
-        "feature-lab.js?v=7", "platform-tools.js?v=2", "tool-workspace-pro.js?v=2", "utility-lab-tools.js?v=11", "feature-engines.js?v=2",
+        "extension-suite.js?v=2", "professional-tools.js?v=4", "all-tool-state.js?v=2", "tool-manifests.js?v=2", "tool-runtime.js?v=2",
+        "feature-lab.js?v=8", "platform-tools.js?v=3", "tool-workspace-pro.js?v=3", "utility-lab-tools.js?v=12", "feature-engines.js?v=2",
         "ai-center-advanced.js?v=2", "platform-p0.js?v=1", "vendor/jszip.min.js?v=3.10.1", "system-platform.js?v=8"
       ]
     },

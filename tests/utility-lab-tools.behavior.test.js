@@ -131,3 +131,65 @@ test("QR fallback decodes a real QR pixel buffer and releases image/canvas resou
   let closed = false; const canvas = { width: 0, height: 0, getContext: () => ({ drawImage() {}, getImageData: () => ({ data: pixels, width, height: width }) }) };
   const env = harness({ window: { jsQR }, bitmap: async () => ({ width, height: width, close() { closed = true; } }), canvas: () => canvas }); env.mount("qr-scanner"); env.root.fields.get("qr-file").files = [{ size: 1000, type: "image/png" }]; await env.click("qr-scan"); assert.equal(env.output(), content); assert.equal(closed, true); assert.equal(canvas.width, 0); assert.equal(canvas.height, 0); env.api.cleanup();
 });
+
+test("JSON Viewer searches real source, copies pointer/value and exports complete JSON", async () => {
+  const copies = [], env = harness({ navigator: { clipboard: { async writeText(text) { copies.push(text); } } } }); env.mount("json-viewer");
+  env.field("source", '{"a/b":{"~name":"Tiếng Việt"},"other":true}'); await env.click("json-tree");
+  env.field("json-search", "Tiếng Việt"); env.root.events.get("input")({ target: env.root.fields.get("json-search") });
+  assert.match(env.root.elements.get("data-ut-output").innerHTML, /a~1b\/~0name/); assert.doesNotMatch(env.root.elements.get("data-ut-output").innerHTML, /data-type="boolean"/);
+  await env.click(null, { utJsonPath: "/a~1b/~0name" }); await env.click(null, { utJsonValue: "/a~1b/~0name" }); await env.click(null, { utJsonPath: "" });
+  assert.deepEqual(copies, ["/a~1b/~0name", '"Tiếng Việt"', ""]); await env.click("export-json"); assert.equal(env.downloads[0].name, "data.json"); assert.equal(JSON.parse(await env.downloads[0].blob.text()).other, true); env.api.cleanup();
+});
+
+test("Markdown toolbar and HTML/Markdown export work without storing source implicitly", async () => {
+  const env = harness(); env.mount("markdown-editor"); env.field("source", "# Bài học\n\n- [x] Học xong"); env.field("filename", "bai-hoc"); await env.click("render-markdown");
+  assert.match(env.root.elements.get("data-ut-output").innerHTML, /<h1>Bài học<\/h1>/);
+  await env.click(null, { utMdInsert: "bold" }); assert.match(env.root.fields.get("source").value, /\*\*nội dung\*\*/);
+  await env.click("export-markdown"); await env.click("export-markdown-html"); assert.equal(env.downloads[0].name, "bai-hoc.md"); assert.equal(env.downloads[1].name, "bai-hoc.html");
+  const html = await env.downloads[1].blob.text(); assert.match(html, /Content-Security-Policy/); assert.match(html, /default-src 'none'/); assert.match(html, /<h1>Bài học<\/h1>/); assert.doesNotMatch(JSON.stringify(env.store()), /Học xong/); env.api.cleanup();
+});
+
+test("API Tester separates body/headers/raw, appends query and bounds request/response", async () => {
+  let request, calls = 0; const env = harness({ fetch: async (url, init) => { request = { url, init }; calls++; return new Response('{"b":true}', { status: 201, headers: { "x-safe": "yes", "x-api-key": "MUST_HIDE" } }); } });
+  env.mount("api-tester"); env.field("url", "https://example.com/api?keep=yes"); env.field("query-params", '{"page":2,"draft":false}'); await env.click("api-run");
+  assert.equal(new URL(request.url).searchParams.get("page"), "2"); assert.equal(new URL(request.url).searchParams.get("keep"), "yes"); assert.match(env.output(), /HTTP 201/);
+  await env.click(null, { utApiTab: "headers" }); assert.match(env.output(), /x-safe: yes/); assert.doesNotMatch(env.output(), /MUST_HIDE/);
+  await env.click(null, { utApiTab: "raw" }); assert.equal(env.output(), '{"b":true}');
+  env.field("body", "x".repeat(1048577)); await env.click("api-run"); assert.equal(calls, 1); assert.equal(env.status().dataset.state, "error"); env.api.cleanup();
+  const huge = harness({ fetch: async () => new Response("x", { status: 200, headers: { "content-length": "1048577" } }) }); huge.mount("api-tester"); huge.field("url", "https://example.com"); await huge.click("api-run"); assert.match(huge.output(), /Response vượt giới hạn/); huge.api.cleanup();
+});
+
+test("Calendar renders month/week/list, selects a day, edits duration/location and exports ICS", async () => {
+  const env = harness(); env.mount("calendar"); assert.match(env.root.elements.get("data-ut-list").innerHTML, /ut-calendar-grid--month/);
+  await env.click(null, { utCalendarDay: "2026-10-15" }); assert.equal(env.root.fields.get("date").value, "2026-10-15T09:00"); env.field("title", "Buổi học"); env.field("duration", "90"); env.field("location", "Phòng A"); await env.click("record-add");
+  const item = env.store().calendar[0]; assert.equal(item.duration, 90); assert.equal(item.location, "Phòng A"); assert.match(env.root.elements.get("data-ut-list").innerHTML, /Buổi học/);
+  env.field("calendar-view", "week"); env.root.events.get("change")({ target: env.root.fields.get("calendar-view") }); assert.match(env.root.elements.get("data-ut-list").innerHTML, /ut-calendar-grid--week/);
+  await env.click("calendar-next"); assert.match(env.root.elements.get("data-ut-calendar-period").textContent, /Tuần/);
+  env.field("calendar-view", "list"); env.root.events.get("change")({ target: env.root.fields.get("calendar-view") }); assert.match(env.root.elements.get("data-ut-list").innerHTML, /Phòng A/);
+  await env.click(null, { utRecordEdit: item.id }); assert.equal(env.root.fields.get("duration").value, 90); await env.click("calendar-export"); assert.match(await env.downloads[0].blob.text(), /DTEND:/); env.api.cleanup();
+});
+
+test("Tasks have priority/tags/due filters, note conflicts preserve drafts and cap prevents silent loss", async () => {
+  const env = harness(); env.mount("todo"); env.field("title", "Việc gấp"); env.field("tags", "thiết kế, học"); env.field("priority", "high"); env.field("date", "2026-10-11T08:00"); await env.click("record-add");
+  assert.equal(env.store().todo[0].priority, "high"); assert.deepEqual(env.store().todo[0].tags, ["thiết kế", "học"]);
+  env.field("record-state", "overdue"); env.root.events.get("change")({ target: env.root.fields.get("record-state") }); assert.match(env.root.elements.get("data-ut-list").innerHTML, /Việc gấp/);
+  env.mount("notes"); env.field("title", "Original"); env.field("meta", "Original text"); await env.click("record-add"); const note = env.store().notes[0]; await env.click(null, { utRecordEdit: note.id }); env.field("meta", "Draft survives");
+  const changed = env.store(); changed.notes[0].revision++; changed.notes[0].meta = "Other tab version"; env.storage.set("hh.utility-tools.v2.account:A", JSON.stringify(changed)); env.globals.get("storage")({ key: "hh.utility-tools.v2.account:A" }); assert.match(env.status().textContent, /tab khác/);
+  await env.click("record-add"); assert.equal(env.status().dataset.state, "error"); assert.equal(env.root.fields.get("meta").value, "Draft survives"); assert.equal(env.store().notes[0].meta, "Other tab version");
+  await env.click("record-cancel"); const full = env.store(); full.notes = Array.from({ length: 250 }, (_, i) => ({ id: String(i), title: "Existing" })); env.storage.set("hh.utility-tools.v2.account:A", JSON.stringify(full)); env.field("title", "New"); await env.click("record-add"); assert.match(env.status().textContent, /250 mục/); assert.equal(env.store().notes.length, 250); env.api.cleanup();
+});
+
+test("Reminder snoozes, toggles completed and requests notifications only explicitly", async () => {
+  let permissions = 0, notifications = 0; class FakeNotification { constructor() { notifications++; } close() {} static permission = "granted"; static async requestPermission() { permissions++; return "granted"; } }
+  const env = harness({ window: { Notification: FakeNotification } }); env.mount("reminder"); env.field("title", "Nhắc học"); env.field("date", "2026-10-11T08:00"); await env.click("record-add"); const id = env.store().reminder[0].id; assert.equal(permissions, 0); assert.equal(notifications, 0);
+  await env.click("reminder-notifications"); assert.equal(permissions, 1); assert.equal(notifications, 1); env.advance(30000); assert.equal(notifications, 1);
+  await env.click(null, { utReminderSnooze: id }); assert.ok(new Date(env.store().reminder[0].date).getTime() > Date.parse("2026-10-12T00:00:00Z"));
+  await env.click(null, { utRecordToggle: id }); assert.equal(env.store().reminder[0].done, true); await env.click("reminder-notifications"); assert.equal(env.store().reminderNotifications, false); assert.equal(permissions, 1); env.api.cleanup(); assert.equal(env.intervals.size, 0);
+});
+
+test("utility backup export/import filters private content, respects owner, and merges safely", async () => {
+  const env = harness(); env.mount("notes"); env.field("title", "Saved"); env.field("meta", "Work content"); await env.click("record-add"); const stored = env.store(); stored.clipboard = [{ id: "secret", text: "SECRET_CLIP" }]; stored.terminal = [{ command: "echo SECRET" }]; env.storage.set("hh.utility-tools.v2.account:A", JSON.stringify(stored));
+  const adapter = env.api.backupAdapter, exported = adapter.export({ owner: "account:A", maxBytes: 4194304 }); assert.doesNotMatch(JSON.stringify(exported), /SECRET|clipboard|terminal/); assert.ok(adapter.history({ owner: "account:A" }).length); assert.throws(() => adapter.export({ owner: "account:B" }));
+  const incoming = JSON.parse(JSON.stringify(exported)); incoming.data.notes[0].meta = "Imported edit"; adapter.import(incoming, { owner: "account:A", strategy: "skip" }); assert.equal(env.store().notes[0].meta, "Work content"); adapter.import(incoming, { owner: "account:A", strategy: "merge" }); assert.equal(env.store().notes[0].meta, "Imported edit");
+  adapter.import({ version: 1, data: { notes: [] } }, { owner: "account:A", strategy: "replace" }); assert.equal(env.store().notes.length, 0); assert.equal(env.store().clipboard[0].text, "SECRET_CLIP"); env.api.cleanup();
+});
