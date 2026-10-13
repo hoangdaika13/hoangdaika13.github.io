@@ -48,6 +48,9 @@
     searchVersion: 0,
     shortcutCache: null,
     offlineController: null,
+    themePresetId: "",
+    historyRows: [],
+    historyFiltered: [],
     progress: { value: 0, elapsed: 0, duration: 4000, running: false, mode: "demo" }
   };
 
@@ -93,7 +96,7 @@
     if (document.querySelector('link[data-platform-tools-style]')) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = new URL("/platform-tools.css?v=3", location.href).href;
+    link.href = new URL("/platform-tools.css?v=4", location.href).href;
     link.dataset.platformToolsStyle = "true";
     document.head.append(link);
   }
@@ -227,10 +230,44 @@
     ${[["system", "Theo hệ điều hành", "Đồng bộ prefers-color-scheme"], ["light", "Luôn sáng", "Áp dụng trên thiết bị này"], ["dark", "Luôn tối", "Áp dụng trên thiết bị này"], ["schedule", "Theo giờ", "Tự đổi theo lịch"]].map(([value, title, desc]) => `<label class="pt-choice"><input type="radio" name="mode" value="${value}" ${(settings.colorMode || "system") === value ? "checked" : ""}><span><b>${title}</b><small>${desc}</small></span></label>`).join("")}
   </div><div class="pt-grid-2">${field("Bắt đầu chế độ sáng", '<input type="time" name="lightStart" value="' + esc(settings.lightStart || "06:00") + '">')}${field("Bắt đầu chế độ tối", '<input type="time" name="darkStart" value="' + esc(settings.darkStart || "18:00") + '">')}</div><div class="pt-theme-preview" data-pt-mode-preview><h4>Xem trước độc lập</h4><p>Giao diện chính chưa thay đổi.</p></div><div class="pt-actions">${button("appearance-preview", "Xem trước")}${button("appearance-apply", "Áp dụng cho All Tools", true)}${button("appearance-reset", "Theo hệ thống")}</div></section><aside class="pt-card"><strong>Trạng thái</strong><ul class="pt-capabilities">${capability("Media query", typeof matchMedia === "function", "Theo dõi thay đổi giao diện hệ điều hành")}${capability("Lịch theo thiết bị", true, "Tính toán cục bộ, không cần API")}${capability("Đồng bộ tài khoản", false, "Chỉ lưu cho tài khoản trên thiết bị này")}</ul></aside></div>`;
 
-  const themeMarkup = (settings) => `<div class="pt-layout"><section class="pt-card"><div class="pt-grid-2">
+  const COSMIC_PRESETS = Object.freeze([
+    { id: "nebula", name: "Nebula", description: "Tím tinh vân · hồng sáng", accent: "#c4a5ff", highlight: "#ff92d0", fontScale: 100, contrast: "normal" },
+    { id: "aurora", name: "Aurora", description: "Ngọc cực quang · xanh trời", accent: "#6ef2c4", highlight: "#83c9ff", fontScale: 100, contrast: "normal" },
+    { id: "solar", name: "Solar", description: "Vàng mặt trời · san hô", accent: "#ffd075", highlight: "#ff9ea7", fontScale: 100, contrast: "normal" },
+    { id: "ocean", name: "Ocean", description: "Cyan đại dương · xanh lam", accent: "#78e5ed", highlight: "#92adff", fontScale: 100, contrast: "normal" },
+    { id: "minimal", name: "Minimal", description: "Bạc dịu · ít phân tâm", accent: "#c9d5e8", highlight: "#abbcd6", fontScale: 100, contrast: "high" }
+  ].map(preset => Object.freeze(preset)));
+  function themeConfig(values) {
+    if (!values || !(typeof values.fontScale === "number" || typeof values.fontScale === "string" && /^\d{2,3}(?:\.\d+)?$/.test(values.fontScale))) throw new Error("Cài đặt cỡ chữ preset không hợp lệ.");
+    return Object.fromEntries(["accent", "highlight", "fontScale", "contrast"].map(key => [key, validateSetting(key, values[key])]));
+  }
+  function themePresetStore(value = { version: 1, items: [] }) {
+    if (!value || value.version !== 1 || !Array.isArray(value.items) || value.items.length > 12 || Object.keys(value).some(key => !["version", "items"].includes(key))) throw new Error("Kho preset không hợp lệ; tối đa 12 preset cá nhân.");
+    const ids = new Set(), names = new Set();
+    const items = value.items.map(item => {
+      if (!item || Object.keys(item).some(key => !["id", "name", "accent", "highlight", "fontScale", "contrast", "createdAt", "updatedAt"].includes(key)) || typeof item.id !== "string" || !/^preset-[a-z0-9-]{1,100}$/i.test(item.id) || ids.has(item.id)) throw new Error("ID preset không hợp lệ hoặc bị trùng.");
+      const name = presetName(item.name), key = normalizeSearch(name);
+      if (names.has(key)) throw new Error("Tên preset cá nhân bị trùng."); ids.add(item.id); names.add(key);
+      if (![item.createdAt, item.updatedAt].every(time => Number.isFinite(time) && time >= 0 && time <= Date.now() + 86400000)) throw new Error("Thời gian preset không hợp lệ.");
+      return { id: item.id, name, ...themeConfig(item), createdAt: item.createdAt, updatedAt: item.updatedAt };
+    });
+    return { version: 1, items };
+  }
+  function presetName(value) {
+    if (typeof value !== "string" || !value.trim() || value.trim().length > 60 || /[\u0000-\u001f]/.test(value)) throw new Error("Tên preset cần 1–60 ký tự, không chứa ký tự điều khiển.");
+    return value.trim();
+  }
+  function presetCards(settings) {
+    let personal, warning = "";
+    try { personal = themePresetStore(settings.themePresets).items; }
+    catch (error) { personal = []; warning = `<p class="pt-help" role="status">${esc(error.message)} Xuất bản sao thiết lập trước khi khôi phục kho preset.</p>${button("theme-presets-clear", "Khôi phục riêng kho preset")}`; }
+    const card = (preset, custom) => `<article class="pt-theme-preset" data-pt-theme-card="${esc(preset.id)}"><span class="pt-preset-swatch" aria-hidden="true" style="--pt-swatch-a:${esc(preset.accent)};--pt-swatch-b:${esc(preset.highlight)}"></span><div><strong>${esc(preset.name)}</strong><small>${custom ? `${preset.fontScale}% · ${preset.contrast === "high" ? "Tương phản cao" : "Tiêu chuẩn"}` : esc(preset.description)}</small></div><div class="pt-actions">${button(`theme-preset-preview:${preset.id}`, "Xem trước", false, `aria-pressed="false" aria-label="Xem trước ${esc(preset.name)}" data-pt-preset-preview="${esc(preset.id)}"`)}${button(`theme-preset-apply:${preset.id}`, "Áp dụng", false, `aria-label="Áp dụng ${esc(preset.name)} cho All Tools"`)}</div>${custom ? `<label class="pt-field"><span>Đổi tên ${esc(preset.name)}</span><input name="renamePreset-${esc(preset.id)}" data-pt-preset-name="${esc(preset.id)}" value="${esc(preset.name)}" maxlength="60"></label><div class="pt-actions">${button(`theme-preset-rename:${preset.id}`, "Lưu tên mới")}${button(`theme-preset-delete:${preset.id}`, "Xóa preset")}</div>` : ""}</article>`;
+    return `<section class="pt-card"><header><strong>Bảng màu Cosmic</strong><span>5 preset có sẵn</span></header><p class="pt-help">Tên và màu giúp phân biệt, không dựa riêng vào màu sắc. Xem trước không đổi giao diện; Áp dụng chỉ thay All Tools.</p><div class="pt-theme-presets">${COSMIC_PRESETS.map(preset => card(preset, false)).join("")}</div><header><strong>Preset cá nhân</strong><span>${personal.length}/12 · tài khoản hiện tại</span></header>${field("Tên preset mới", '<input name="presetName" maxlength="60" placeholder="Ví dụ: Không gian học của tôi">')}${button("theme-preset-save", "Lưu màu đang chỉnh thành preset", true)}${warning}<div class="pt-theme-presets" data-pt-personal-presets>${personal.length ? personal.map(preset => card(preset, true)).join("") : '<div class="pt-empty">Chưa có preset cá nhân. Chỉnh màu/cỡ chữ ở bên cạnh rồi đặt tên và lưu.</div>'}</div><p class="pt-help">Lưu trên thiết bị theo tài khoản, không đồng bộ đám mây. Preset được đưa vào phạm vi Thiết lập All Tools khi sao lưu.</p></section>`;
+  }
+  const themeMarkup = (settings) => `<div class="pt-layout pt-layout--themes"><section class="pt-card"><div class="pt-grid-2">
     ${field("Màu chủ đạo", `<input type="color" name="accent" value="${esc(settings.accent || "#55d9e2")}">`)}${field("Màu nhấn", `<input type="color" name="highlight" value="${esc(settings.highlight || "#ff63bf")}">`)}
     ${field("Cỡ chữ", `<input type="range" name="fontScale" min="85" max="125" value="${esc(settings.fontScale || 100)}"><output data-pt-font-value>${esc(settings.fontScale || 100)}%</output>`)}${field("Độ tương phản", select("contrast", [["normal", "Tiêu chuẩn"], ["high", "Tương phản cao"]], settings.contrast || "normal"))}
-  </div><div class="pt-theme-preview"><span></span><h4>All Tools Studio</h4><p>Xem trước bảng màu và khả năng đọc trước khi áp dụng.</p><span class="pt-preview-action">Mẫu nút hành động</span></div><div class="pt-actions">${button("theme-preview", "Xem trước")}${button("theme-apply", "Áp dụng cho All Tools", true)}${button("theme-undo", "Hoàn tác", false, "disabled")}</div></section></div>`;
+  </div><div class="pt-theme-preview"><span></span><h4>All Tools Studio</h4><p>Xem trước bảng màu và khả năng đọc trước khi áp dụng.</p><span class="pt-preview-action">Mẫu nút hành động</span></div><p class="pt-help" data-pt-preset-state role="status">Màu tùy chỉnh.</p><div class="pt-actions">${button("theme-preview", "Xem trước")}${button("theme-apply", "Áp dụng cho All Tools", true)}${button("theme-undo", "Hoàn tác", false, "disabled")}</div></section>${presetCards(settings)}</div>`;
 
   const notificationsMarkup = async () => {
     const rows = (await dbAll("notifications")).sort((a, b) => b.createdAt - a.createdAt);
@@ -244,10 +281,71 @@
   const fpsMarkup = () => `<div class="pt-layout"><section class="pt-card"><div class="pt-metrics"><article><span>FPS hiện tại</span><strong data-pt-fps>—</strong></article><article><span>Frame time</span><strong data-pt-frame>—</strong></article><article><span>P95</span><strong data-pt-p95>—</strong></article><article><span>Long tasks</span><strong data-pt-long>0</strong></article></div><canvas class="pt-chart" data-pt-fps-chart width="900" height="260" aria-label="Biểu đồ FPS 60 giây"></canvas><div class="pt-actions">${button("fps-start", "Bắt đầu đo", true)}${button("fps-pause", "Tạm dừng")}${button("fps-reset", "Đặt lại")}${button("fps-export", "Xuất JSON")}</div></section><aside class="pt-card"><strong>Khả năng đo</strong><ul class="pt-capabilities">${capability("requestAnimationFrame", true, "Đo FPS và frame time thực")}${capability("Long Tasks API", "PerformanceObserver" in window, "Ghi nhận tác vụ chặn main thread")}${capability("GPU telemetry", false, "Trình duyệt không cung cấp nhiệt độ/GPU load")}</ul></aside></div>`;
 
   const historyMarkup = async () => {
-    const rows = await allHistory();
+    const root = state.root, owner = state.owner, rows = historyMetadata(await allHistory(owner));
+    if (root === state.root && owner === accountOwner()) { state.historyRows = rows; state.historyFiltered = rows; }
     const recent = catalogPreferences().recent.map(id => toolCatalog().find(tool => tool.id === id)).filter(Boolean);
-    return `<div class="pt-layout"><section class="pt-card"><header><strong>Công cụ mở gần đây</strong><span>${recent.length} mục</span></header><div class="pt-results">${recent.length ? recent.map(tool => `<button type="button" class="pt-result" data-pt-catalog-open="${esc(tool.id)}"><span>↗</span><div><b>${esc(tool.name)}</b><small>${esc(tool.description || "Tiếp tục workspace đã mở")}</small></div></button>`).join("") : '<div class="pt-empty">Chưa mở công cụ nào.</div>'}</div><div class="pt-actions">${button("history-clear-recent", "Xóa danh sách gần đây")}</div><header><strong>Hoạt động thật của All Tools</strong><span>${rows.length} mục gần nhất · tối đa 500</span></header><div class="pt-filter-row"><input name="query" aria-label="Lọc lịch sử" placeholder="Tìm tool hoặc hành động...">${button("history-filter", "Lọc", true)}${button("history-export", "Xuất JSON")}</div><div class="pt-timeline" data-pt-history>${historyRows(rows)}</div></section><aside class="pt-card pt-card--compact"><p class="pt-help">Gần đây dùng cùng danh sách với All Tools. Lịch sử tổng hợp metadata thực từ Platform, workspace và tiện ích; không đọc nội dung ghi chú, mật khẩu, token hoặc nội dung công cụ khác. Xóa bên dưới chỉ xóa lịch sử Platform; hoạt động bộ khác được quản lý trong công cụ gốc.</p>${button("history-clear", "Xóa lịch sử Platform")}</aside></div>`;
+    const tools = [...new Set(rows.map(row => row.tool))].map(id => [id, toolCatalog().find(tool => tool.id === id)?.name || id]);
+    const actions = [...new Set(rows.map(row => row.action))].sort();
+    return `<div class="pt-layout"><section class="pt-card"><header><strong>Hoạt động thật của All Tools</strong><span data-pt-history-count>${rows.length}/${rows.length} mục · tối đa 500</span></header><div class="pt-history-filters">${field("Tìm metadata", '<input name="query" maxlength="200" placeholder="Tên tool hoặc hành động...">')}${field("Công cụ", select("historyTool", [["all", "Tất cả công cụ"], ...tools]))}${field("Hành động", select("historyAction", [["all", "Tất cả hành động"], ...actions.map(action => [action, action])]))}${field("Nguồn", select("historySource", [["all", "Toàn bộ All Tools"], ["platform", "Platform"], ["workspace", "Workspace"], ["utility", "Tiện ích"]]))}${field("Từ ngày", '<input name="historyFrom" type="date">')}${field("Đến hết ngày", '<input name="historyTo" type="date">')}</div><div class="pt-actions">${button("history-filter", "Lọc", true)}${button("history-filter-reset", "Bỏ bộ lọc")}${button("history-refresh", "Đọc hoạt động mới")}</div><p class="pt-help" data-pt-history-summary role="status">Ngày theo múi giờ thiết bị. Không có dữ liệu hoạt động giả.</p><div class="pt-actions">${button("history-export", "Xuất JSON đang lọc", false, !rows.length ? "disabled" : "")}${button("history-export-csv", "Xuất CSV đang lọc", false, !rows.length ? "disabled" : "")}</div><p class="pt-help">Xuất chỉ metadata đang khớp bộ lọc, không có nội dung công cụ. CSV có bảo vệ công thức khi mở lần đầu; không bật công thức và không coi CSV đã lưu lại trong bảng tính là tệp tin cậy. JSON giữ giá trị gốc.</p><div class="pt-timeline" data-pt-history>${historyRows(rows)}</div></section><aside class="pt-card pt-card--compact"><header><strong>Công cụ mở gần đây</strong><span>${recent.length} mục</span></header><div class="pt-results">${recent.length ? recent.map(tool => `<button type="button" class="pt-result" data-pt-catalog-open="${esc(tool.id)}"><span>↗</span><div><b>${esc(tool.name)}</b><small>${esc(tool.description || "Tiếp tục workspace đã mở")}</small></div></button>`).join("") : '<div class="pt-empty">Chưa mở công cụ nào.</div>'}</div><div class="pt-actions">${button("history-clear-recent", "Xóa danh sách gần đây")}</div><p class="pt-help">Lịch sử chỉ tổng hợp metadata từ các kho All Tools của tài khoản hiện tại. Nút xóa chỉ xóa lịch sử Platform; hoạt động bộ khác được quản lý trong công cụ gốc.</p>${button("history-clear", "Xóa lịch sử Platform")}</aside></div>`;
   };
+
+  function historyMetadata(rows) {
+    return rows.filter(row => row && Number.isFinite(row.createdAt) && row.createdAt >= 0 && row.createdAt <= 8640000000000000).map(row => ({ id: String(row.id || "").slice(0, 180), source: ["platform", "workspace", "utility"].includes(row.source) ? row.source : "platform", tool: String(row.tool || "").slice(0, 80), name: String(row.name || row.tool || "").slice(0, 160), action: String(row.action || "").slice(0, 100), createdAt: row.createdAt }));
+  }
+  function filterHistory(rows, filters = {}) {
+    const dateBoundary = (value, end) => {
+      if (!value) return null;
+      if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new Error("Ngày lọc cần định dạng YYYY-MM-DD.");
+      const [year, month, day] = value.split("-").map(Number), date = new Date(`${value}T00:00:00`);
+      if (!Number.isFinite(date.getTime()) || date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) throw new Error("Ngày lọc không tồn tại.");
+      if (end) date.setDate(date.getDate() + 1); return date.getTime();
+    };
+    const from = dateBoundary(filters.historyFrom, false), to = dateBoundary(filters.historyTo, true);
+    if (from !== null && to !== null && from >= to) throw new Error("Ngày bắt đầu không được sau ngày kết thúc.");
+    const query = normalizeSearch(filters.query).slice(0, 200);
+    return historyMetadata(rows).filter(row => (!query || normalizeSearch(`${row.name} ${row.tool} ${row.action} ${row.source}`).includes(query)) && (!filters.historyTool || filters.historyTool === "all" || row.tool === filters.historyTool) && (!filters.historyAction || filters.historyAction === "all" || row.action === filters.historyAction) && (!filters.historySource || filters.historySource === "all" || row.source === filters.historySource) && (from === null || row.createdAt >= from) && (to === null || row.createdAt < to));
+  }
+  function refreshHistoryView() {
+    try {
+      for (const name of ["historyFrom", "historyTo"]) {
+        const input = state.root.querySelector(`[name="${name}"]`);
+        if (input?.validity?.badInput) throw new Error("Ngày lọc chưa hoàn chỉnh hoặc không hợp lệ.");
+        input?.setAttribute?.("aria-invalid", "false");
+      }
+      state.historyFiltered = filterHistory(state.historyRows, values());
+      state.root.querySelector("[data-pt-history]").innerHTML = state.historyFiltered.length ? historyRows(state.historyFiltered) : '<div class="pt-empty" role="status">Không có hoạt động khớp bộ lọc. Bỏ bộ lọc hoặc chọn khoảng ngày khác.</div>';
+      state.root.querySelector("[data-pt-history-count]").textContent = `${state.historyFiltered.length}/${state.historyRows.length} mục · tối đa 500`;
+      state.root.querySelector("[data-pt-history-summary]").textContent = `Đang hiển thị ${state.historyFiltered.length} hoạt động thật. Ngày theo múi giờ thiết bị; chưa xuất dữ liệu.`;
+      for (const action of ["history-export", "history-export-csv"]) state.root.querySelector(`[data-pt-action="${action}"]`).disabled = !state.historyFiltered.length;
+      status(`Đang hiển thị ${state.historyFiltered.length}/${state.historyRows.length} hoạt động thật.${state.storageTemporary ? " Kho Platform chỉ có trong bộ nhớ tạm ở trình duyệt này." : ""}`, state.storageTemporary ? "warning" : "ready");
+      return state.historyFiltered;
+    } catch (error) {
+      state.historyFiltered = [];
+      for (const action of ["history-export", "history-export-csv"]) state.root.querySelector(`[data-pt-action="${action}"]`).disabled = true;
+      for (const name of ["historyFrom", "historyTo"]) state.root.querySelector(`[name="${name}"]`)?.setAttribute?.("aria-invalid", "true");
+      state.root.querySelector("[data-pt-history]").innerHTML = `<div class="pt-empty" role="status">${esc(error.message)} Sửa bộ lọc để xem và xuất hoạt động.</div>`;
+      state.root.querySelector("[data-pt-history-count]").textContent = `Bộ lọc không hợp lệ · ${state.historyRows.length} mục được giữ nguyên`;
+      state.root.querySelector("[data-pt-history-summary]").textContent = error.message; status(error.message, "error");
+      throw error;
+    }
+  }
+  function refreshHistoryOptions() {
+    const tools = [...new Map([...toolCatalog().map(tool => [tool.id, tool.name]), ...state.historyRows.map(row => [row.tool, row.name])]).entries()], actions = [...new Set(state.historyRows.map(row => row.action))].sort();
+    for (const [name, options, label] of [["historyTool", tools, "Tất cả công cụ"], ["historyAction", actions.map(action => [action, action]), "Tất cả hành động"]]) {
+      const node = state.root.querySelector(`[name="${name}"]`), selected = String(node?.value || "all"); if (!node) continue;
+      const items = [["all", label], ...options]; if (!items.some(([id]) => id === selected)) items.push([selected, `${selected} (không có hoạt động mới)`]);
+      node.innerHTML = items.map(([id, title]) => `<option value="${esc(id)}" ${id === selected ? "selected" : ""}>${esc(title)}</option>`).join(""); node.value = selected;
+    }
+  }
+  function csvCell(value) {
+    const text = String(value ?? ""), unsafe = /^[\s\u0000-\u001f]*[=+@\-＝＋＠－]/.test(text) || /^[\t\r\n]/.test(text);
+    return `"${(unsafe ? "'" : "") + text.replace(/"/g, '""')}"`;
+  }
+  function historyExport(rows, format, owner = activeOwner()) {
+    const metadata = historyMetadata(rows);
+    if (format === "csv") return "\ufeff" + [["id", "source", "tool", "name", "action", "createdAt"], ...metadata.map(row => [row.id, row.source, row.tool, row.name, row.action, new Date(row.createdAt).toISOString()])].map(row => row.map(csvCell).join(",")).join("\r\n");
+    return JSON.stringify({ format: "HH All Tool Activity", version: 1, owner, exportedAt: new Date().toISOString(), count: metadata.length, rows: metadata }, null, 2);
+  }
 
   async function allHistory(owner = activeOwner()) {
     const platform = (await dbAll("history", owner)).map(row => ({ ...row, source: "platform" }));
@@ -355,10 +453,11 @@
     applyToolAppearance(settings);
     await getShortcuts();
     if (version !== state.renderVersion || owner !== accountOwner() || state.root !== root) return false;
-    if (name === "Theme Color Switcher") { previewTheme(values()); root.querySelector('[data-pt-action="theme-undo"]').disabled = !settings.themeUndo; }
+    if (name === "Theme Color Switcher") { previewTheme(values()); refreshPresetSelection(values()); root.querySelector('[data-pt-action="theme-undo"]').disabled = !settings.themeUndo; }
     if (["Global Search", "Command Palette++"].includes(name)) await runSearch(name === "Command Palette++");
     if (!window.indexedDB) status("IndexedDB không hỗ trợ: dữ liệu chỉ nằm trong bộ nhớ tạm, sẽ mất khi tải lại.", "warning");
     else if (!["Global Search", "Command Palette++"].includes(name)) status("Sẵn sàng. Dữ liệu riêng cho tài khoản trên thiết bị này.");
+    if (name === "History Manager") try { refreshHistoryView(); } catch { /* Filter error is shown in its own status and export stays disabled. */ }
     dispatchEvent(new CustomEvent("hh:platform-tool-mounted", { detail: { manifest: { ...manifest } } }));
     return true;
   }
@@ -383,6 +482,7 @@
     state.confirmedImport = null;
     state.importFile = null;
     state.themeUndo = null;
+    state.themePresetId = ""; state.historyRows = []; state.historyFiltered = [];
     state.cleanup.splice(0).forEach((fn) => { try { fn(); } catch {} });
     state.root = null;
     state.owner = "";
@@ -534,6 +634,46 @@
     preview.style.setProperty("--pt-preview-highlight", config.highlight);
     preview.style.fontSize = `${Number(config.fontScale) / 100}rem`;
     preview.classList.toggle("is-high-contrast", config.contrast === "high");
+  }
+
+  async function getThemePresets(owner = activeOwner()) { return themePresetStore((await readSettings(owner)).themePresets).items; }
+  async function saveThemePreset(name, config, owner = activeOwner()) {
+    name = presetName(name); config = themeConfig(config);
+    const items = await getThemePresets(owner);
+    if (items.length >= 12) throw new Error("Đã có 12 preset cá nhân. Xóa một preset trước khi thêm.");
+    if (items.some(item => normalizeSearch(item.name) === normalizeSearch(name))) throw new Error("Tên preset đã tồn tại. Chọn tên khác hoặc đổi tên preset cũ.");
+    const now = Date.now(), item = { id: `preset-${uid()}`, name, ...config, createdAt: now, updatedAt: now };
+    assertAccount(owner); await saveSetting("themePresets", themePresetStore({ version: 1, items: [...items, item] }), owner); return item;
+  }
+  async function renameThemePreset(id, name, owner = activeOwner()) {
+    name = presetName(name); const items = await getThemePresets(owner), item = items.find(item => item.id === id);
+    if (!item) throw new Error("Preset không còn tồn tại. Mở lại công cụ để đọc danh sách mới.");
+    if (items.some(other => other.id !== id && normalizeSearch(other.name) === normalizeSearch(name))) throw new Error("Tên preset đã tồn tại.");
+    const next = { ...item, name, updatedAt: Date.now() }; assertAccount(owner);
+    await saveSetting("themePresets", themePresetStore({ version: 1, items: items.map(other => other.id === id ? next : other) }), owner); return next;
+  }
+  async function deleteThemePreset(id, owner = activeOwner()) {
+    const items = await getThemePresets(owner);
+    if (!items.some(item => item.id === id)) throw new Error("Preset không còn tồn tại.");
+    assertAccount(owner); await saveSetting("themePresets", { version: 1, items: items.filter(item => item.id !== id) }, owner);
+  }
+  async function useThemePreset(id, owner = activeOwner()) {
+    const root = state.root, builtin = COSMIC_PRESETS.find(item => item.id === id), presets = builtin ? [...COSMIC_PRESETS] : [...COSMIC_PRESETS, ...await getThemePresets(owner)], preset = presets.find(item => item.id === id);
+    if (!preset) throw new Error("Preset không tồn tại."); assertAccount(owner); if (root !== state.root) return null;
+    const config = themeConfig(preset);
+    for (const [key, value] of Object.entries(config)) root.querySelector(`[name="${key}"]`).value = String(value);
+    root.querySelector("[data-pt-font-value]").textContent = `${config.fontScale}%`;
+    state.themePresetId = id; previewTheme(config); refreshPresetSelection(config, presets); saveDraft(); return preset;
+  }
+  function refreshPresetSelection(config, presets) {
+    if (!state.root) return;
+    try { presets ||= [...COSMIC_PRESETS, ...themePresetStore(state.settings.themePresets).items]; } catch { presets = [...COSMIC_PRESETS]; }
+    const matches = item => ["accent", "highlight", "fontScale", "contrast"].every(key => String(item[key]).toLowerCase() === String(config[key]).toLowerCase());
+    let preset = presets.find(item => item.id === state.themePresetId && matches(item));
+    if (!preset) preset = [...presets].reverse().find(matches);
+    state.themePresetId = preset?.id || "";
+    state.root.querySelectorAll("[data-pt-preset-preview]").forEach(button => button.setAttribute?.("aria-pressed", String(button.dataset?.ptPresetPreview === state.themePresetId)));
+    const message = state.root.querySelector("[data-pt-preset-state]"); if (message) message.textContent = preset ? `Đang chọn ${preset.name}. Xem trước không đổi giao diện; dùng Áp dụng để lưu.` : "Màu tùy chỉnh. Bạn có thể đặt tên để lưu preset.";
   }
 
   async function addNotification() {
@@ -721,9 +861,7 @@
     }
     if (data.format === "csv") {
       const rows = payload.data.history || [];
-      state.generatedExport = ["id,tool,action,createdAt", ...rows.map((row) => [row.id, row.name, row.action, new Date(row.createdAt).toISOString()].map((value) => {
-        const text = String(value); return `"${(/^[=+@\-\t\r]/.test(text) ? "'" : "") + text.replace(/"/g, '""')}"`;
-      }).join(","))].join("\n");
+      state.generatedExport = ["id,tool,action,createdAt", ...rows.map((row) => [row.id, row.name, row.action, new Date(row.createdAt).toISOString()].map(csvCell).join(","))].join("\n");
     } else state.generatedExport = JSON.stringify(payload, null, 2);
     if (new Blob([state.generatedExport]).size > 5 * 1024 * 1024) { state.generatedExport = ""; throw new Error("Tệp sao lưu vượt 5 MB; giảm phạm vi hoặc bỏ nội dung tệp."); }
     output(state.generatedExport);
@@ -794,6 +932,7 @@
   }
 
   function validateSetting(key, value) {
+    if (key === "themePresets") return themePresetStore(value);
     if (key === "themeUndo" && value && typeof value === "object" && !Array.isArray(value)) {
       const allowed = ["colorMode", "mode", "lightStart", "darkStart", "accent", "highlight", "fontScale", "contrast", "density", "historyEnabled", "autosave", "reducedMotion"];
       return Object.fromEntries(Object.entries(value).filter(([name]) => allowed.includes(name)).map(([name, entry]) => [name, validateSetting(name === "mode" ? "colorMode" : name, entry)]));
@@ -999,9 +1138,34 @@
   async function handleAction(action, target) {
     const owner = state.owner, root = state.root, tool = state.active;
     assertAccount(owner);
-    if (["history-clear", "history-clear-recent", "notification-clear", "settings-reset"].includes(action) && state.confirmedAction !== action) return askConfirmation(action, "Thao tác này chỉ xóa dữ liệu All Tools của tài khoản hiện tại. Bạn muốn tiếp tục?");
+    if (action.startsWith("theme-preset-delete:") && state.confirmedAction !== action) return askConfirmation(action, "Xóa preset cá nhân này? Giao diện đang dùng và các preset khác được giữ nguyên.");
+    if (["history-clear", "history-clear-recent", "notification-clear", "settings-reset", "theme-presets-clear"].includes(action) && state.confirmedAction !== action) return askConfirmation(action, "Thao tác này chỉ xóa phạm vi đã chọn trong All Tools của tài khoản hiện tại. Bạn muốn tiếp tục?");
     state.confirmedAction = null;
     if (action === "search") return runSearch(false);
+    if (action === "theme-preset-save") {
+      const item = await saveThemePreset(values().presetName, values(), owner); assertAccount(owner); if (root !== state.root) return;
+      root.querySelector('[name="presetName"]').value = ""; await record("theme.preset.save", { preset: item.id }, tool, owner);
+      if (root !== state.root || owner !== accountOwner()) return;
+      await render(root.parentElement, tool); if (state.owner !== owner || state.active !== tool) return;
+      state.root?.querySelector(`[data-pt-preset-preview="${CSS.escape(item.id)}"]`)?.focus(); status("Đã lưu preset cá nhân; chưa áp dụng giao diện.", "success"); return;
+    }
+    if (action === "theme-presets-clear") { await dbDelete("settings", settingId("themePresets"), owner); if (root === state.root) await render(root.parentElement, tool); return; }
+    if (/^theme-preset-(preview|apply|rename|delete):/.test(action)) {
+      const [command, id] = action.split(":");
+      if (command === "theme-preset-preview" || command === "theme-preset-apply") {
+        const preset = await useThemePreset(id, owner); if (!preset || root !== state.root) return;
+        if (command === "theme-preset-apply") { await handleAction("theme-apply"); if (root === state.root) status(`Đã áp dụng và lưu ${preset.name} cho All Tools. Giao diện website bên ngoài không thay đổi.`, "success"); }
+        else status(`Đang xem trước ${preset.name}; chưa áp dụng hoặc lưu giao diện.`, "ready"); return;
+      }
+      if (command === "theme-preset-rename") await renameThemePreset(id, root.querySelector(`[data-pt-preset-name="${CSS.escape(id)}"]`)?.value, owner);
+      else await deleteThemePreset(id, owner);
+      assertAccount(owner); if (root !== state.root) return;
+      await record(command === "theme-preset-rename" ? "theme.preset.rename" : "theme.preset.delete", { preset: id }, tool, owner);
+      if (root !== state.root || owner !== accountOwner()) return;
+      await render(root.parentElement, tool); if (state.owner !== owner || state.active !== tool) return;
+      state.root?.querySelector(command === "theme-preset-rename" ? `[data-pt-preset-preview="${CSS.escape(id)}"]` : '[name="presetName"]')?.focus();
+      status(command === "theme-preset-rename" ? "Đã lưu tên preset mới." : "Đã xóa preset cá nhân; giao diện đang dùng không thay đổi.", "success"); return;
+    }
     if (action === "appearance-preview" || action === "appearance-apply") {
       const data = values(); validateSetting("colorMode", data.mode);
       if (data.mode === "schedule") { validateSetting("lightStart", data.lightStart); validateSetting("darkStart", data.darkStart); if (data.lightStart === data.darkStart) throw new Error("Giờ bắt đầu sáng và tối phải khác nhau."); }
@@ -1010,7 +1174,7 @@
       return status(`${action.endsWith("apply") ? "Đã lưu" : "Đang xem trước"} chế độ ${mode}.`, "success");
     }
     if (action === "appearance-reset") { await saveSetting("colorMode", "system", owner); publishAppearance({ ...await readSettings(owner), mode: "system" }, owner); if (root !== state.root) return; keepColorModeSynced({ mode: "system" }); return render(root.parentElement, tool); }
-    if (action === "theme-preview") { previewTheme(values()); return status("Đang xem trước, website chưa thay đổi.", "running"); }
+    if (action === "theme-preview") { previewTheme(values()); refreshPresetSelection(values()); return status("Đang xem trước, website chưa thay đổi.", "running"); }
     if (action === "theme-apply") {
       const data = values(); ["accent", "highlight", "fontScale", "contrast"].forEach((key) => { data[key] = validateSetting(key, data[key]); });
       const previous = await readSettings(owner); assertAccount(owner); if (root !== state.root) return;
@@ -1045,7 +1209,15 @@
     if (action === "fps-pause") { state.fps.running = false; cancelAnimationFrame(state.fpsFrame); state.longTaskObserver?.disconnect(); state.longTaskObserver = null; paintFps(); return status("Đã tạm dừng đo FPS.", "warning"); }
     if (action === "fps-reset") { state.fps.samples = []; state.fps.longTasks = 0; state.fps.last = performance.now(); ["fps", "frame", "p95"].forEach((key) => { const node = state.root.querySelector(`[data-pt-${key}]`); if (node) node.textContent = "—"; }); state.root.querySelector("[data-pt-long]").textContent = "0"; const canvas = state.root.querySelector("[data-pt-fps-chart]"); canvas.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height); return status("Đã đặt lại số liệu."); }
     if (action === "fps-export") { const report = JSON.stringify({ format: "HH FPS Report", exportedAt: new Date().toISOString(), longTasks: state.fps.longTasks, samples: state.fps.samples }, null, 2); download(report, `hh-fps-${Date.now()}.json`); return record("fps.export", { samples: state.fps.samples.length }); }
-    if (action === "history-filter") { const query = values().query.toLowerCase(); state.root.querySelectorAll("[data-pt-history-row]").forEach((row) => { row.hidden = !row.dataset.search.includes(query); }); return; }
+    if (action === "history-filter") return refreshHistoryView();
+    if (action === "history-filter-reset") {
+      for (const name of ["query", "historyTool", "historyAction", "historySource", "historyFrom", "historyTo"]) root.querySelector(`[name="${name}"]`).value = ["historyTool", "historyAction", "historySource"].includes(name) ? "all" : "";
+      saveDraft(); return refreshHistoryView();
+    }
+    if (action === "history-refresh") {
+      const rows = historyMetadata(await allHistory(owner)); assertAccount(owner); if (root !== state.root) return;
+      state.historyRows = rows; refreshHistoryOptions(); return refreshHistoryView();
+    }
     if (action === "history-clear-recent") { updateCatalogPreferences({ recent: [] }, owner); return render(root.parentElement, tool); }
     if (["favorite-catalog-add", "favorite-catalog-pin"].includes(action)) {
       const id = values().catalogTool;
@@ -1054,7 +1226,13 @@
       updateCatalogPreferences({ [collection]: [...new Set([...prefs[collection], id])] }, owner);
       return render(root.parentElement, tool);
     }
-    if (action === "history-export") { const rows = await allHistory(owner); assertAccount(owner); download(JSON.stringify({ format: "HH All Tool Activity", version: 1, owner, exportedAt: new Date().toISOString(), rows }, null, 2), "hh-all-tools-history.json"); return; }
+    if (action === "history-export" || action === "history-export-csv") {
+      const rows = historyMetadata(await allHistory(owner)); assertAccount(owner); if (root !== state.root) return;
+      state.historyRows = rows; refreshHistoryOptions(); const filtered = refreshHistoryView(); if (!filtered.length) throw new Error("Không có hoạt động khớp bộ lọc để xuất.");
+      const format = action === "history-export-csv" ? "csv" : "json";
+      download(historyExport(filtered, format, owner), `hh-all-tools-history-filtered.${format}`, format === "csv" ? "text/csv;charset=utf-8" : "application/json");
+      status(`Đã tạo tệp ${format.toUpperCase()} gồm ${filtered.length} hoạt động đang lọc, chỉ chứa metadata.`, "success"); return;
+    }
     if (action === "history-clear") { await dbClear("history", owner); if (root === state.root) return render(root.parentElement, tool); return; }
     if (action === "favorite-add" || action === "favorite-current") { const data = values(), rows = await dbAll("favorites", owner), route = validRoute(action.endsWith("current") ? byName.get(tool).route : data.route), title = action.endsWith("current") ? tool : data.title.trim(); if (!title || title.length > 160) throw new Error("Hãy nhập tên tối đa 160 ký tự."); if (rows.some((row) => row.route === route)) throw new Error("Đường dẫn đã có trong danh sách yêu thích."); await dbPut("favorites", { id: uid(), title, route, folder: data.folder?.trim().slice(0, 80) || "Chưa phân loại", order: rows.length, createdAt: Date.now() }, owner); await record("favorite.add", { route }, tool, owner); if (root === state.root) return render(root.parentElement, tool); return; }
     if (action === "export-preview") return buildExport();
@@ -1142,8 +1320,9 @@
     };
     const onInput = (event) => {
       if (event.target.name === "query" && ["Global Search", "Command Palette++"].includes(state.active)) runSearch(state.active === "Command Palette++").catch((error) => { if (root === state.root) status(error.message, "error"); });
-      if (event.target.name === "fontScale") { root.querySelector("[data-pt-font-value]").textContent = `${event.target.value}%`; previewTheme(values()); }
-      if (["accent", "highlight", "contrast"].includes(event.target.name)) previewTheme(values());
+      if (event.target.name === "fontScale") { root.querySelector("[data-pt-font-value]").textContent = `${event.target.value}%`; previewTheme(values()); refreshPresetSelection(values()); }
+      if (["accent", "highlight", "contrast"].includes(event.target.name)) { previewTheme(values()); refreshPresetSelection(values()); }
+      if (tool === "History Manager" && ["query", "historyTool", "historyAction", "historySource", "historyFrom", "historyTo"].includes(event.target.name)) try { refreshHistoryView(); } catch { /* Preserve inputs and show the filter error. */ }
       if (event.target.name === "count") root.querySelector("[data-pt-count]").textContent = event.target.value;
       if (event.target.name === "settingSearch") { const query = event.target.value.toLowerCase(); root.querySelectorAll("[data-pt-settings] > label").forEach((row) => { row.hidden = !row.dataset.search.includes(query); }); }
       if (event.target.name === "importFile") { state.importFile = event.target.files?.[0] || null; state.importPayload = null; root.querySelector('[data-pt-action="import-commit"]').disabled = true; }
@@ -1157,7 +1336,8 @@
       if (event.key === "Enter" && event.target.name === "query") { event.preventDefault(); const result = root.querySelector("[data-pt-results] .pt-result"); if (result) result.click(); else if (state.active === "History Manager") handleAction("history-filter").catch((error) => status(error.message, "error")); }
       globalShortcut(event);
     };
-    root.addEventListener("click", onClick); root.addEventListener("input", onInput); root.addEventListener("keydown", onKey);
+    const onChange = event => { if (tool === "History Manager" && ["historyTool", "historyAction", "historySource", "historyFrom", "historyTo"].includes(event.target.name)) onInput(event); };
+    root.addEventListener("click", onClick); root.addEventListener("input", onInput); root.addEventListener("change", onChange); root.addEventListener("keydown", onKey);
     const dropzone = root.querySelector(".pt-dropzone");
     const onDragOver = (event) => { event.preventDefault(); dropzone?.classList.add("is-dragging"); };
     const onDragLeave = () => dropzone?.classList.remove("is-dragging");
@@ -1187,7 +1367,7 @@
     };
     addEventListener("storage", notificationSync); state.cleanup.push(() => removeEventListener("storage", notificationSync));
     state.cleanup.push(() => { document.removeEventListener("visibilitychange", visibility); favoriteList?.removeEventListener("dragstart", favoriteStart); favoriteList?.removeEventListener("dragover", favoriteOver); favoriteList?.removeEventListener("drop", favoriteDrop); favoriteList?.removeEventListener("dragend", favoriteEnd); });
-    state.cleanup.push(() => { root.removeEventListener("click", onClick); root.removeEventListener("input", onInput); root.removeEventListener("keydown", onKey); dropzone?.removeEventListener("dragover", onDragOver); dropzone?.removeEventListener("dragleave", onDragLeave); dropzone?.removeEventListener("drop", onDrop); });
+    state.cleanup.push(() => { root.removeEventListener("click", onClick); root.removeEventListener("input", onInput); root.removeEventListener("change", onChange); root.removeEventListener("keydown", onKey); dropzone?.removeEventListener("dragover", onDragOver); dropzone?.removeEventListener("dragleave", onDragLeave); dropzone?.removeEventListener("drop", onDrop); });
   }
 
   function globalShortcut(event) {

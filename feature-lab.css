@@ -83,6 +83,8 @@ body.app-all-tools-route .feature-lab-open { display:none; }
 .feature-lab__filters { display:grid; gap:12px; margin-bottom:12px; }
 .feature-lab__filters label { display:grid; gap:6px; color:#d3cae4; font-size:.85rem; }
 .feature-lab__filters select { min-width:0; width:100%; padding:8px; background:#17172d; color:#f7f5ff; border:1px solid #65557c; border-radius:10px; }
+.feature-lab__filters [data-lab-reset-filters] { padding:8px 12px; border:1px solid #807499; border-radius:10px; background:linear-gradient(110deg,#30213f,#152a3d); color:#f4edff; }
+.feature-lab__filters [data-lab-reset-filters]:hover { border-color:var(--lab-accent); }
 .feature-lab__count { font-size:.8rem; color:#a9e9f0; }
 .feature-lab__quick { display:grid; gap:6px; margin-bottom:16px; }
 .feature-lab__quick button { text-align:left; color:#ffe3a2; background:#30263a; border:1px solid #dab67650; border-radius:10px; padding:8px; font-size:.8rem!important; overflow-wrap:anywhere; }

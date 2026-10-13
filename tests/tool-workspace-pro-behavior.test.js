@@ -28,7 +28,7 @@ function hostDouble() {
   Object.defineProperty(host, "innerHTML", { set(html) {
     this.inputs.clear(); this.nodes.clear();
     parseInputs(this, html);
-    for (const attr of ["data-tool-state", "data-tool-notice", "data-tool-output", "data-tool-tabs", "data-tool-save-state", "data-tool-editor", "data-tool-editor-status", "data-tool-list", "data-tool-variables", "data-tool-prompt-state", "data-tool-code-problems", "data-tool-speech-capability", "data-tool-paid-consent", "data-tool-tts-preview", "data-tool-file-state"]) {
+    for (const attr of ["data-tool-state", "data-tool-notice", "data-tool-output", "data-tool-tabs", "data-tool-save-state", "data-tool-editor", "data-tool-editor-status", "data-tool-list", "data-tool-variables", "data-tool-prompt-state", "data-tool-code-problems", "data-tool-speech-capability", "data-tool-paid-consent", "data-tool-tts-preview", "data-tool-file-state", "data-tool-subtitle-origin", "data-tool-subtitle-validation", "data-tool-subtitle-cues", "data-tool-version-context", "data-tool-version-selection", "data-tool-version-page"]) {
       if (html.includes(attr)) this.nodes.set(`[${attr}]`, { dataset: { toolState: "idle" }, textContent: attr === "data-tool-output" ? "Chưa có kết quả." : "", innerHTML: "", className: "", checked: false, querySelectorAll: () => [], pause() {}, load() {}, removeAttribute() {} });
     }
     if (html.includes("data-tool-preview")) {
@@ -42,7 +42,8 @@ function click(host, tool, action, extra = {}) {
   return clickApi(api, host, tool, action, extra);
 }
 function clickApi(instance, host, tool, action, extra = {}) {
-  const node = { dataset: { toolAction: action, ...extra }, closest: () => node };
+  const { querySelector, ...data } = extra;
+  const node = { dataset: { toolAction: action, ...data }, closest: () => node, querySelector: querySelector || (() => null) };
   return instance.handleClick({ target: node, preventDefault() {} }, host, tool);
 }
 const tick = () => new Promise(resolve => setImmediate(resolve));
@@ -221,6 +222,104 @@ test("editing large supported text creates a full bounded snapshot that round tr
     const fresh = freshApi(); await fresh.importWorkspaceData(backup, { owner, strategy: "replace" }); assert.equal((await fresh.storage.get("records", snapshot.id, owner)).content, original); assert.equal(await (await fresh.storage.get("files", "large-editable-file", owner)).blob.text(), "updated");
     const tooLarge = structuredClone(backup); tooLarge.records.find(row => row.id === snapshot.id).content = "猫".repeat(200001); assert.throws(() => api.normalizeWorkspaceData(tooLarge), /500 KB UTF-8/);
   } finally { mounted.cleanup(); globalThis.HHToolWorkspace = api; await tick(); }
+});
+
+test("subtitle timeline imports, edits, validates before export and restores scoped cue data", async () => {
+  const originalFetch = globalThis.fetch, originalDocument = globalThis.document, downloads = []; let postCalls = 0;
+  globalThis.fetch = async (url, options) => { if (options?.method === "POST") postCalls += 1; return { ok: true, json: async () => ({ providers: [{ provider: "speech", configured: false }] }) }; };
+  globalThis.document = { createElement: () => ({ click() { downloads.push({ href: this.href, name: this.download }); } }) };
+  const host = hostDouble(), owner = "account:cue-edits"; let mounted = api.mount(host, { toolId: "speech-to-text", currentUser: { id: "cue-edits" } }); await mounted.ready;
+  try {
+    host.inputs.get("subtitle-source").value = "1\n00:00:01,001 --> 00:00:02,500\n<script>literal, not HTML</script>\n\n2\n00:00:03,000 --> 00:00:04,000\nSecond line";
+    await click(host, "speech-to-text", "subtitle-import"); let draft = await api.storage.get("records", "draft-speech-to-text", owner); assert.equal(draft.subtitle.cues.length, 2); assert.match(host.nodes.get("[data-tool-subtitle-cues]").innerHTML, /&lt;script&gt;/);
+    await click(host, "speech-to-text", "export-vtt"); assert.equal(downloads.length, 1); const vtt = await (await originalFetch(downloads[0].href)).text(); assert.match(vtt, /^WEBVTT/); assert.match(vtt, /00:00:01\.001 --> 00:00:02\.500/);
+    const cueId = draft.subtitle.cues[1].id;
+    const input = { value: "1.5", dataset: { subtitleField: "start" }, matches: selector => selector === "[data-subtitle-field]", closest: () => ({ dataset: { subtitleCue: cueId } }) };
+    api.handleInput({ target: input }, host, "speech-to-text"); await click(host, "speech-to-text", "export-srt"); assert.equal(downloads.length, 1); assert.match(host.nodes.get("[data-tool-notice]").textContent, /chồng lấn/);
+    input.value = "3"; api.handleInput({ target: input }, host, "speech-to-text"); await click(host, "speech-to-text", "subtitle-validate"); await click(host, "speech-to-text", "subtitle-up", { subtitleCue: cueId }); assert.match(host.nodes.get("[data-tool-subtitle-validation]").textContent, /sai thứ tự/);
+    await click(host, "speech-to-text", "subtitle-sort"); await click(host, "speech-to-text", "export-srt"); assert.equal(downloads.length, 2); assert.match(await (await originalFetch(downloads[1].href)).text(), /00:00:01,001 --> 00:00:02,500/);
+    const persisted = await api.exportWorkspaceData({ owner }), fresh = freshApi(); await fresh.importWorkspaceData(persisted, { owner, strategy: "replace" });
+    const nextHost = hostDouble(), next = fresh.mount(nextHost, { toolId: "speech-to-text", currentUser: { id: "cue-edits" } }); await next.ready;
+    assert.match(nextHost.nodes.get("[data-tool-subtitle-origin]").textContent, /Nhập SRT.*2 cue/); await clickApi(fresh, nextHost, "speech-to-text", "subtitle-delete", { subtitleCue: cueId }); assert.equal((await fresh.storage.get("records", "draft-speech-to-text", owner)).subtitle.cues.length, 1); next.cleanup(); await tick();
+    const isolatedHost = hostDouble(), isolated = fresh.mount(isolatedHost, { toolId: "speech-to-text", currentUser: { id: "cue-other" } }); await isolated.ready; assert.match(isolatedHost.nodes.get("[data-tool-subtitle-origin]").textContent, /0 cue/); isolated.cleanup();
+    assert.equal(postCalls, 0);
+  } finally { mounted.cleanup(); globalThis.fetch = originalFetch; globalThis.document = originalDocument; globalThis.HHToolWorkspace = api; await tick(); }
+});
+
+test("subtitle imports fail atomically on unsupported formats and estimated conversion remains explicit", async () => {
+  const original = globalThis.fetch; globalThis.fetch = async () => ({ ok: true, json: async () => ({ providers: [{ provider: "speech", configured: false }] }) });
+  const host = hostDouble(), mounted = api.mount(host, { toolId: "speech-to-text", currentUser: { id: "cue-file" } }); await mounted.ready;
+  try {
+    host.inputs.get("transcript").value = "Sentence one. Sentence two."; await click(host, "speech-to-text", "subtitle-from-transcript"); assert.match(host.nodes.get("[data-tool-subtitle-origin]").textContent, /Mốc ước lượng/);
+    const before = await api.storage.get("records", "draft-speech-to-text", "account:cue-file"), file = new Blob(["WEBVTT\n\nSTYLE\n::cue { color: red; }\n\n00:00.000 --> 00:01.000\nText"], { type: "text/vtt" }); file.name = "styles.vtt";
+    await assert.rejects(api.handleChange({ target: { files: [file], matches: selector => selector === "[data-tool-subtitle-file]" } }, host, "speech-to-text"), /STYLE\/REGION/);
+    assert.deepEqual((await api.storage.get("records", "draft-speech-to-text", "account:cue-file")).subtitle, before.subtitle);
+    await click(host, "speech-to-text", "clear-transcript"); assert.equal(host.inputs.get("transcript").value, ""); assert.match(host.nodes.get("[data-tool-subtitle-origin]").textContent, /2 cue/);
+  } finally { mounted.cleanup(); globalThis.fetch = original; await tick(); }
+});
+
+test("version pages, context filters and selected comparison use actual snapshots", async () => {
+  const owner = "account:version-browser";
+  for (let index = 0; index < 25; index += 1) await api.storage.put("records", { id: `paged-${index}`, type: "version", label: `Snapshot ${String(index).padStart(2, "0")}`, content: index === 2 ? "unique search content" : `content ${index}`, sourceDocument: index >= 22 ? "code-document" : "local", createdAt: new Date(Date.UTC(2026, 0, index + 1)).toISOString() }, owner);
+  const host = hostDouble(), mounted = api.mount(host, { toolId: "version-history", currentUser: { id: "version-browser" } }); await mounted.ready;
+  try {
+    assert.equal((host.nodes.get("[data-tool-list]").innerHTML.match(/<article /g) || []).length, 20); assert.match(host.nodes.get("[data-tool-version-page]").textContent, /Trang 1\/2/);
+    await click(host, "version-history", "version-next"); assert.equal((host.nodes.get("[data-tool-list]").innerHTML.match(/<article /g) || []).length, 5);
+    host.inputs.get("version-filter").value = "unique search"; await click(host, "version-history", "version-next"); assert.match(host.nodes.get("[data-tool-list]").innerHTML, /Snapshot 02/); assert.equal((host.nodes.get("[data-tool-list]").innerHTML.match(/<article /g) || []).length, 1);
+    host.inputs.get("version-filter").value = ""; const context = host.inputs.get("version-document"); context.value = "code-document"; await api.handleChange({ target: context }, host, "version-history"); assert.equal((host.nodes.get("[data-tool-list]").innerHTML.match(/<article /g) || []).length, 3);
+    for (const id of ["paged-22", "paged-23"]) await api.handleChange({ target: { checked: true, dataset: { versionSelect: id }, matches: selector => selector === "[data-version-select]" } }, host, "version-history");
+    await click(host, "version-history", "compare-selected-versions"); assert.match(host.nodes.get("[data-tool-output]").textContent, /Snapshot 22.*Snapshot 23/); assert.match(host.nodes.get("[data-tool-output]").textContent, /- content 22\n\+ content 23/);
+    await click(host, "version-history", "rename-version", { recordId: "paged-22", querySelector: () => ({ value: "Named revision" }) }); assert.equal((await api.storage.get("records", "paged-22", owner)).label, "Named revision");
+    host.inputs.get("document").value = "My local editing text"; await click(host, "version-history", "restore-version", { recordId: "paged-22" }); assert.equal(host.inputs.get("document").value, "My local editing text"); assert.match(host.nodes.get("[data-tool-notice]").textContent, /khác nhóm/);
+    await click(host, "version-history", "restore-version", { recordId: "paged-22", confirmContext: "paged-22" }); assert.equal(host.inputs.get("document").value, "content 22"); assert.equal(host.dataset.versionContext, "code-document"); assert.ok((await api.storage.list("records", row => row.type === "version", owner)).some(row => row.content === "My local editing text"));
+  } finally { mounted.cleanup(); await tick(); }
+});
+
+test("version restore never overwrites text typed during an asynchronous read", async () => {
+  const host = hostDouble(), mounted = api.mount(host, { toolId: "version-history", currentUser: { id: "version-race" } }); await mounted.ready;
+  const original = api.storage.get; let release; api.storage.get = (store, id, owner) => id === "delayed-version" ? new Promise(resolve => { release = resolve; }) : original.call(api.storage, store, id, owner);
+  try {
+    host.inputs.get("document").value = "Before read"; const pending = click(host, "version-history", "restore-version", { recordId: "delayed-version" }); await tick();
+    host.inputs.get("document").value = "New text while reading"; api.handleInput({ target: host.inputs.get("document") }, host, "version-history");
+    release({ id: "delayed-version", type: "version", label: "Older", content: "snapshot text", createdAt: new Date().toISOString() }); await pending;
+    assert.equal(host.inputs.get("document").value, "New text while reading"); assert.match(host.nodes.get("[data-tool-notice]").textContent, /vừa được sửa/);
+  } finally { api.storage.get = original; mounted.cleanup(); await tick(); }
+});
+
+test("large restored version drafts survive fresh reload without truncation", async () => {
+  const owner = "account:version-large-draft", content = "x".repeat(250001);
+  await api.storage.put("records", { id: "large-snapshot", type: "version", label: "Large", content, createdAt: new Date().toISOString() }, owner);
+  const host = hostDouble(), mounted = api.mount(host, { toolId: "version-history", currentUser: { id: "version-large-draft" } }); await mounted.ready;
+  try {
+    await click(host, "version-history", "restore-version", { recordId: "large-snapshot" }); const exported = await api.exportWorkspaceData({ owner }); assert.equal(exported.records.find(row => row.id === "draft-version-history").values.document, content);
+    const fresh = freshApi(); await fresh.importWorkspaceData(exported, { owner, strategy: "replace" }); const nextHost = hostDouble(), next = fresh.mount(nextHost, { toolId: "version-history", currentUser: { id: "version-large-draft" } }); await next.ready; assert.equal(nextHost.inputs.get("document").value, content); next.cleanup();
+  } finally { mounted.cleanup(); globalThis.HHToolWorkspace = api; await tick(); }
+});
+
+test("delayed selected-version comparison cannot display another account's content in a reused host", async () => {
+  const timestamp = new Date().toISOString(), host = hostDouble();
+  for (const [id, content] of [["compare-one", "Account A secret one"], ["compare-two", "Account A secret two"]]) await api.storage.put("records", { id, type: "version", label: id, content, createdAt: timestamp }, "account:compare-A");
+  await api.storage.put("records", { id: "compare-one", type: "version", label: "B version", content: "Account B content", createdAt: timestamp }, "account:compare-B");
+  let mounted = api.mount(host, { toolId: "version-history", currentUser: { id: "compare-A" } }); await mounted.ready; host._selectedVersions = new Set(["compare-one", "compare-two"]);
+  const original = api.storage.get; let release; api.storage.get = (store, id, owner) => id === "compare-one" && owner === "account:compare-A" ? new Promise(resolve => { release = resolve; }) : original.call(api.storage, store, id, owner);
+  try {
+    const pending = click(host, "version-history", "compare-selected-versions"); await tick(); assert.equal(typeof release, "function");
+    mounted.cleanup(); mounted = api.mount(host, { toolId: "version-history", currentUser: { id: "compare-B" } }); await mounted.ready;
+    release({ id: "compare-one", type: "version", label: "A secret", content: "Account A secret one", createdAt: timestamp }); await pending;
+    assert.doesNotMatch(host.nodes.get("[data-tool-output]").textContent, /Account A|A secret/); assert.equal((await original.call(api.storage, "records", "compare-one", "account:compare-B")).content, "Account B content");
+  } finally { api.storage.get = original; mounted.cleanup(); await tick(); }
+});
+
+test("delayed rename never copies an old account's snapshot into a newly mounted account", async () => {
+  const timestamp = new Date().toISOString(), host = hostDouble(); await api.storage.put("records", { id: "rename-private", type: "version", label: "Original A", content: "A private snapshot", createdAt: timestamp }, "account:rename-A");
+  let mounted = api.mount(host, { toolId: "version-history", currentUser: { id: "rename-A" } }); await mounted.ready;
+  const original = api.storage.get; let release; api.storage.get = (store, id, owner) => id === "rename-private" && owner === "account:rename-A" ? new Promise(resolve => { release = resolve; }) : original.call(api.storage, store, id, owner);
+  try {
+    const pending = click(host, "version-history", "rename-version", { recordId: "rename-private", querySelector: () => ({ value: "Renamed A" }) }); await tick();
+    mounted.cleanup(); mounted = api.mount(host, { toolId: "version-history", currentUser: { id: "rename-B" } }); await mounted.ready;
+    release({ id: "rename-private", type: "version", label: "Original A", content: "A private snapshot", createdAt: timestamp }); await pending;
+    assert.equal(await original.call(api.storage, "records", "rename-private", "account:rename-B"), null); assert.equal((await original.call(api.storage, "records", "rename-private", "account:rename-A")).label, "Original A"); assert.doesNotMatch(host.nodes.get("[data-tool-list]").innerHTML, /private snapshot|Renamed A/);
+  } finally { api.storage.get = original; mounted.cleanup(); await tick(); }
 });
 
 test("old cleanup cannot remove the new tool handlers or cancel its state", async () => {

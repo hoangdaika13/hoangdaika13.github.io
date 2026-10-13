@@ -5,7 +5,7 @@
   "scripts": {
     "build:favicons": "node scripts/build-galaxy-favicons.js",
     "start": "vercel dev",
-    "test:all-tools": "node --test tests/all-tool-state.test.js tests/all-tool-speech.test.js tests/feature-lab-route-contract.test.js tests/tool-runtime-contract.test.js tests/platform-tools-contract.test.js tests/platform-tools-behavior.test.js tests/tool-workspace-pro.test.js tests/tool-workspace-pro-upgrade.test.js tests/tool-workspace-pro-behavior.test.js tests/utility-lab-tools.test.js tests/utility-lab-tools.behavior.test.js tests/release-consistency.test.js tests/dynamic-navigation-contract.test.js tests/runtime-boundary.test.js tests/api-runtime-routing.test.js tests/galaxy-shell-contract.test.js",
+    "test:all-tools": "node --test tests/all-tool-state.test.js tests/all-tool-catalog-view.test.js tests/all-tool-speech.test.js tests/feature-lab-route-contract.test.js tests/tool-runtime-contract.test.js tests/platform-tools-contract.test.js tests/platform-tools-behavior.test.js tests/tool-workspace-pro.test.js tests/tool-workspace-pro-upgrade.test.js tests/tool-workspace-pro-behavior.test.js tests/utility-lab-tools.test.js tests/utility-lab-tools.behavior.test.js tests/release-consistency.test.js tests/dynamic-navigation-contract.test.js tests/runtime-boundary.test.js tests/api-runtime-routing.test.js tests/galaxy-shell-contract.test.js",
     "test:community": "node --test tests/community-contract.test.js",
     "test:ai": "node --test tests/ai-center-contract.test.js",
     "test:space": "node --test tests/cosmic-observatory-contract.test.js tests/cosmic-solar-system-3d.test.js tests/cosmic-api.test.js",

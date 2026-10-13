@@ -19,7 +19,7 @@ function runtime() {
     matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }), HHAuthz: { currentUser: () => user }
   };
   context.window = context;
-  vm.runInNewContext(source.replace("window.HHPlatformTools = {", "window.__test = { state, values, dbAll, dbPut, dbClear, readSettings, saveSetting, record, accountOwner, safeKey, localPrefix, normalizeImport, validRoute, canonicalCombo, normalizeCombo, applyColorMode, cleanupRuntime, setupLongTasks, handleAction, buildExport, globalShortcut, catalogPreferences, updateCatalogPreferences, allHistory, scanWorkspace, runSearch, searchScore, normalizeSearch, skeletonDocument, prepareOffline, readBoundedAsset, offlineAssetUrl, startProgress, applyStoreBatch, commitImport, publishNotificationSignal, inspectPwa }; window.HHPlatformTools = {"), context);
+  vm.runInNewContext(source.replace("window.HHPlatformTools = {", "window.__test = { state, values, dbAll, dbPut, dbClear, readSettings, saveSetting, record, accountOwner, safeKey, localPrefix, normalizeImport, validRoute, canonicalCombo, normalizeCombo, applyColorMode, cleanupRuntime, setupLongTasks, handleAction, buildExport, globalShortcut, catalogPreferences, updateCatalogPreferences, allHistory, scanWorkspace, runSearch, searchScore, normalizeSearch, skeletonDocument, prepareOffline, readBoundedAsset, offlineAssetUrl, startProgress, applyStoreBatch, commitImport, publishNotificationSignal, inspectPwa, COSMIC_PRESETS, themeConfig, themePresetStore, getThemePresets, saveThemePreset, renameThemePreset, deleteThemePreset, useThemePreset, historyMetadata, filterHistory, historyExport, csvCell, refreshHistoryView }; window.HHPlatformTools = {"), context);
   const api = context.__test;
   api.state.owner = api.accountOwner();
   return { api, context, storage, listeners, cancelled, setUser: next => { user = next; api.state.owner = api.accountOwner(); } };
@@ -307,4 +307,114 @@ test("offline capability inspection requires the exact loaded asset URL includin
   assert.match(api.state.root.querySelector("[data-pt-pwa-report]").innerHTML, /<span>platform-tools\.js<\/span><b>Chưa lưu bản đang dùng offline/);
   requests.push({ url: "http://localhost/platform-tools.js?v=3" }); await api.inspectPwa("Offline Mode");
   assert.match(api.state.root.querySelector("[data-pt-pwa-report]").innerHTML, /<span>platform-tools\.js<\/span><b>Đã có bản đang dùng trong cache/);
+});
+
+const palette = { accent: "#c4a5ff", highlight: "#ff92d0", fontScale: "108", contrast: "normal" };
+test("five named Cosmic palettes are validated original presets with distinct identifiers and colors", () => {
+  const { api } = runtime();
+  assert.equal(api.COSMIC_PRESETS.length, 5); assert.equal(new Set(api.COSMIC_PRESETS.map(item => item.id)).size, 5);
+  assert.equal(new Set(api.COSMIC_PRESETS.map(item => item.accent)).size, 5);
+  assert.deepEqual(plain(api.COSMIC_PRESETS.map(item => item.name)), ["Nebula", "Aurora", "Solar", "Ocean", "Minimal"]);
+  api.COSMIC_PRESETS.forEach(item => { assert.equal(typeof api.themeConfig(item).fontScale, "number"); assert.ok(Object.isFrozen(item)); });
+});
+
+test("custom palette save rename delete persist validated settings and leave applied appearance unchanged", async () => {
+  const { api } = runtime(); await api.saveSetting("accent", "#123456");
+  const saved = await api.saveThemePreset("  Góc học của tôi  ", palette);
+  assert.equal(saved.name, "Góc học của tôi"); assert.equal(saved.fontScale, 108); assert.match(saved.id, /^preset-/);
+  assert.equal((await api.getThemePresets())[0].name, saved.name);
+  const renamed = await api.renameThemePreset(saved.id, "Màu mới");
+  assert.equal(renamed.createdAt, saved.createdAt); assert.equal(renamed.accent, saved.accent); assert.equal((await api.getThemePresets())[0].name, "Màu mới");
+  await api.deleteThemePreset(saved.id); assert.equal((await api.getThemePresets()).length, 0); assert.equal((await api.readSettings()).accent, "#123456");
+});
+
+test("custom preset names and storage are account scoped and bounded without overwriting old entries", async () => {
+  const { api, setUser } = runtime(); const first = await api.saveThemePreset("Góc học", palette);
+  await assert.rejects(api.saveThemePreset("goc hoc", palette), /đã tồn tại/);
+  await assert.rejects(api.saveThemePreset("", palette), /1–60/); await assert.rejects(api.saveThemePreset("x".repeat(61), palette), /1–60/);
+  await assert.rejects(api.renameThemePreset(first.id, "bad\nname"), /1–60/);
+  for (let index = 1; index < 12; index++) await api.saveThemePreset(`Palette ${index}`, palette);
+  await assert.rejects(api.saveThemePreset("Palette 13", palette), /12 preset/); assert.equal((await api.getThemePresets()).length, 12);
+  setUser({ id: "owner-b" }); assert.equal((await api.getThemePresets()).length, 0); await api.saveThemePreset("B", palette);
+  setUser({ id: "owner-a" }); assert.equal((await api.getThemePresets()).length, 12);
+});
+
+test("preset schema rejects injected fields styles unsafe IDs duplicates and out-of-range font values", async () => {
+  const { api } = runtime(), item = await api.saveThemePreset("Valid", palette);
+  const store = value => ({ version: 1, items: [value] });
+  assert.throws(() => api.themePresetStore(store({ ...item, token: "private" })), /ID preset/);
+  assert.throws(() => api.themePresetStore(store({ ...item, id: 'preset-" onclick=bad' })), /ID preset/);
+  assert.throws(() => api.themePresetStore(store({ ...item, accent: "#fff;display:none" })), /Cài đặt/);
+  assert.throws(() => api.themePresetStore(store({ ...item, fontScale: "150" })), /Cài đặt/);
+  assert.throws(() => api.themePresetStore(store({ ...item, fontScale: [100] })), /Cài đặt/);
+  assert.throws(() => api.themePresetStore({ version: 1, items: [item, item] }), /bị trùng/);
+  assert.throws(() => api.themePresetStore({ version: 1, items: [], owner: "other" }), /Kho preset/);
+});
+
+test("personal themes round-trip existing Platform settings backup while retaining legacy setting rows", async () => {
+  const { api } = runtime(), item = await api.saveThemePreset("Backup theme", palette);
+  const old = { id: "setting:colorMode", value: "system", updatedAt: 1 };
+  const normalized = api.normalizeImport(payload({ settings: [old, { id: "setting:themePresets", value: { version: 1, items: [item] }, updatedAt: 1 }] }));
+  assert.equal(normalized.data.settings[0].value, "system"); assert.equal(normalized.data.settings[1].value.items[0].id, item.id);
+  await api.applyStoreBatch(normalized.data, "replace", api.accountOwner());
+  assert.equal((await api.getThemePresets())[0].name, "Backup theme");
+});
+
+test("preset preview and apply manipulate only the current All Tools workspace", async () => {
+  const { api, context } = runtime(); const fields = Object.entries(palette).map(([name, value]) => ({ name, value, type: name === "fontScale" ? "range" : "text" }));
+  const workspace = root(fields), originalQuery = workspace.querySelector.bind(workspace), styles = {};
+  workspace.querySelector = selector => fields.find(field => selector === `[name="${field.name}"]`) || originalQuery(selector);
+  workspace.style = { setProperty: (key, value) => { styles[key] = value; } };
+  const preview = workspace.querySelector(".pt-theme-preview"); preview.style = { setProperty() {} }; preview.classList = { toggle() {} };
+  api.state.root = workspace; api.state.active = "Theme Color Switcher";
+  await api.useThemePreset("aurora"); assert.equal(fields.find(field => field.name === "accent").value, "#6ef2c4"); assert.equal((await api.readSettings()).accent, undefined);
+  await api.handleAction("theme-preset-apply:aurora"); assert.equal((await api.readSettings()).accent, "#6ef2c4"); assert.equal(styles["--pt-cyan"], "#6ef2c4");
+  assert.deepEqual(context.document.documentElement.style.values, {}); assert.equal(context.document.documentElement.dataset.colorMode, undefined);
+});
+
+test("stale account cannot mutate or read the previous account's presets", async () => {
+  const { api, context } = runtime(), item = await api.saveThemePreset("Private", palette);
+  context.HHAuthz.currentUser = () => ({ id: "owner-b" });
+  await assert.rejects(api.renameThemePreset(item.id, "Leak"), /Tài khoản đã thay đổi/);
+  await assert.rejects(api.deleteThemePreset(item.id), /Tài khoản đã thay đổi/);
+});
+
+function activity(id, tool, action, source, date, extra = {}) { return { id, tool, name: tool === "notes" ? "Ghi chú" : tool, action, source, createdAt: new Date(date).getTime(), ...extra }; }
+test("history date tool action source and accent-insensitive search filters intersect correctly", () => {
+  const { api } = runtime(), rows = [activity("1", "notes", "save", "utility", "2026-10-13T00:00:00"), activity("2", "notes", "save", "utility", "2026-10-13T23:59:59.999"), activity("3", "notes", "save", "utility", "2026-10-14T00:00:00"), activity("4", "notes", "delete", "utility", "2026-10-13T12:00:00"), activity("5", "theme-switcher", "save", "platform", "2026-10-13T12:00:00")];
+  const selected = api.filterHistory(rows, { query: "ghi chu", historyTool: "notes", historyAction: "save", historySource: "utility", historyFrom: "2026-10-13", historyTo: "2026-10-13" });
+  assert.deepEqual(plain(selected.map(row => row.id)), ["1", "2"]);
+  assert.equal(api.filterHistory(rows, { historySource: "workspace" }).length, 0);
+});
+
+test("history rejects invalid calendar dates and reverse ranges without losing the input data", () => {
+  const { api } = runtime(), rows = [activity("1", "notes", "save", "utility", "2024-02-29T12:00:00")];
+  assert.throws(() => api.filterHistory(rows, { historyFrom: "2026-02-29" }), /không tồn tại/);
+  assert.throws(() => api.filterHistory(rows, { historyFrom: "2026-10-14", historyTo: "2026-10-13" }), /sau ngày/);
+  assert.throws(() => api.filterHistory(rows, { historyFrom: "invalid" }), /YYYY-MM-DD/);
+  assert.equal(api.filterHistory(rows, { historyFrom: "2024-02-29", historyTo: "2024-02-29" }).length, 1); assert.equal(rows.length, 1);
+});
+
+test("history export projects only filtered bounded action metadata, never stored details or private content", () => {
+  const { api } = runtime(), rows = [activity("1", "notes", "save", "utility", "2026-10-13", { token: "secret", detail: { note: "private source text" }, content: "private input", output: "private output" }), activity("2", "todo", "delete", "utility", "2026-10-13")];
+  const selected = api.filterHistory(rows, { historyTool: "notes" }), exported = JSON.parse(api.historyExport(selected, "json"));
+  assert.equal(exported.count, 1); assert.equal(exported.rows[0].id, "1"); assert.equal(exported.owner, "account:owner-a");
+  assert.doesNotMatch(JSON.stringify(exported), /secret|private|token|content|output|detail/);
+  assert.equal(api.historyMetadata([{ createdAt: NaN }]).length, 0);
+});
+
+test("filtered CSV wraps and escapes each field and protects ASCII full-width and whitespace-leading formulas", () => {
+  const { api } = runtime();
+  for (const value of ["=1+2", "+SUM(A1)", "-1+2", "@SUM(A1)", "  =HYPERLINK()", "\t@formula", "\r\n=1", "＝1+2", "＋1", "－1", "＠SUM()"] ) assert.ok(api.csvCell(value).startsWith('"\''), value);
+  assert.equal(api.csvCell('line "one",\nsecond'), '"line ""one"",\nsecond"');
+  const csv = api.historyExport([activity("1", "notes", "=1+2", "utility", "2026-10-13", { detail: "private" })], "csv");
+  assert.ok(csv.startsWith("\ufeff")); assert.match(csv, /"'=1\+2"/); assert.doesNotMatch(csv, /private/); assert.match(csv, /"createdAt"/);
+});
+
+test("history empty and invalid-filter states disable export and preserve the real stored rows", () => {
+  const { api } = runtime(), fields = [{ name: "query", value: "no-match", type: "text" }]; api.state.root = root(fields);
+  api.state.historyRows = [activity("1", "notes", "save", "utility", "2026-10-13")];
+  api.refreshHistoryView(); assert.equal(api.state.root.querySelector('[data-pt-action="history-export"]').disabled, true); assert.match(api.state.root.querySelector("[data-pt-history]").innerHTML, /Không có hoạt động khớp/);
+  fields.push({ name: "historyFrom", type: "date", value: "2026-02-31" }); assert.throws(() => api.refreshHistoryView(), /không tồn tại/);
+  assert.equal(api.state.root.querySelector('[data-pt-action="history-export-csv"]').disabled, true); assert.equal(api.state.historyRows.length, 1);
 });

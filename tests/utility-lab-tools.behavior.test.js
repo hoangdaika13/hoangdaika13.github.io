@@ -193,3 +193,49 @@ test("utility backup export/import filters private content, respects owner, and 
   const incoming = JSON.parse(JSON.stringify(exported)); incoming.data.notes[0].meta = "Imported edit"; adapter.import(incoming, { owner: "account:A", strategy: "skip" }); assert.equal(env.store().notes[0].meta, "Work content"); adapter.import(incoming, { owner: "account:A", strategy: "merge" }); assert.equal(env.store().notes[0].meta, "Imported edit");
   adapter.import({ version: 1, data: { notes: [] } }, { owner: "account:A", strategy: "replace" }); assert.equal(env.store().notes.length, 0); assert.equal(env.store().clipboard[0].text, "SECRET_CLIP"); env.api.cleanup();
 });
+
+test("Dev Utilities CSV preview filters/paginates real rows and safely exports CSV/JSON", async () => {
+  const env = harness(); env.mount("dev-utilities"); const csv = "Tên,Giá trị\n" + Array.from({ length: 120 }, (_, index) => `Người ${index},${index === 7 ? '"=SUM(1,2)"' : index === 8 ? "<img onerror=alert(1)>" : index}`).join("\n");
+  env.field("csv-source", csv); await env.click("csv-preview"); assert.match(env.root.elements.get("data-ut-csv-page").textContent, /Trang 1\/3/); assert.match(env.root.elements.get("data-ut-csv-table").innerHTML, /Người 0/); assert.doesNotMatch(env.root.elements.get("data-ut-csv-table").innerHTML, /<img/);
+  await env.click("csv-page-next"); assert.match(env.root.elements.get("data-ut-csv-page").textContent, /Trang 2\/3/); assert.match(env.root.elements.get("data-ut-csv-table").innerHTML, /Người 50/);
+  env.field("csv-search", "Người 119"); env.root.events.get("input")({ target: env.root.fields.get("csv-search") }); assert.match(env.root.elements.get("data-ut-csv-table").innerHTML, /Người 119/); assert.match(env.root.elements.get("data-ut-csv-page").textContent, /1 hàng khớp/);
+  await env.click("csv-export"); const exported = await env.downloads[0].blob.text(), rows = env.api.parseCSV(exported, ",").rows; assert.equal(rows.length, 121); assert.equal(rows[8][1], "'=SUM(1,2)"); assert.equal(env.root.fields.get("csv-source").value, csv);
+  await env.click("csv-export-json"); const json = JSON.parse(await env.downloads[1].blob.text()); assert.equal(json.length, 120); assert.equal(json[7]["Giá trị"], "=SUM(1,2)");
+  assert.doesNotMatch(JSON.stringify(env.store()), /SUM\(|Người|<img/); env.api.cleanup(); assert.equal(env.globals.size, 0);
+});
+
+test("CSV raw export needs opt-out consent and JSON conversion never loses ambiguous rows silently", async () => {
+  const env = harness(); env.mount("dev-utilities"); env.field("csv-source", "a,a\n1,2"); await env.click("csv-to-json"); assert.equal(env.status().dataset.state, "error"); assert.match(env.output(), /duy nhất/); env.field("csv-json-shape", "arrays"); await env.click("csv-to-json"); assert.deepEqual(JSON.parse(env.output()), [["a", "a"], ["1", "2"]]);
+  env.field("csv-source", "name,value\nSafe,=1+2"); env.field("csv-safe-formulas", false); await env.click("csv-export"); assert.equal(env.downloads.length, 0); assert.match(env.output(), /Xác nhận rủi ro/);
+  env.field("csv-unsafe-consent", true); await env.click("csv-export"); assert.equal(env.api.parseCSV(await env.downloads[0].blob.text(), ",").rows[1][1], "=1+2"); assert.equal(env.root.fields.get("csv-unsafe-consent").checked, false);
+  env.field("csv-json", '[{"name":"🌌","count":2},{"name":"Hoàng","count":null}]'); await env.click("csv-from-json"); assert.match(env.root.fields.get("csv-source").value, /🌌,2/); assert.equal(env.root.fields.get("csv-header").checked, true);
+  env.field("csv-delimiter", "auto"); env.field("csv-json", '[{"only":"one;two"}]'); await env.click("csv-from-json"); assert.equal(env.root.fields.get("csv-delimiter").value, ","); env.field("csv-json-shape", "records"); await env.click("csv-to-json"); assert.equal(JSON.parse(env.output())[0].only, "one;two");
+  await env.click("csv-clear"); assert.equal(env.root.fields.get("csv-source").value, ""); assert.equal(env.root.fields.get("csv-json").value, ""); assert.match(env.root.elements.get("data-ut-csv-table").innerHTML, /Đã xóa/); env.api.cleanup();
+});
+
+test("CSV imports selected local UTF-8/UTF-16 files and rejected/late imports leave source safe", async () => {
+  const env = harness(); env.mount("dev-utilities"); const bytes = new TextEncoder().encode("Tên\nHoàng 🌌"), file = { name: "lesson.csv", size: bytes.byteLength, async arrayBuffer() { return bytes.buffer; } }; env.root.fields.get("csv-file").files = [file]; await env.click("csv-import"); assert.match(env.root.fields.get("csv-source").value, /Hoàng 🌌/);
+  const wide = Buffer.from("Tên;Điểm\r\nHoàng;9", "utf16le"); env.field("csv-encoding", "utf-16le"); env.root.fields.get("csv-file").files = [{ name: "wide.csv", size: wide.byteLength, async arrayBuffer() { return wide.buffer.slice(wide.byteOffset, wide.byteOffset + wide.byteLength); } }]; await env.click("csv-import"); assert.match(env.root.fields.get("csv-source").value, /Hoàng;9/);
+  const before = env.root.fields.get("csv-source").value; env.field("csv-encoding", "utf-8"); env.root.fields.get("csv-file").files = [{ name: "broken.csv", size: 1, async arrayBuffer() { return Uint8Array.of(0xC3).buffer; } }]; await env.click("csv-import"); assert.equal(env.root.fields.get("csv-source").value, before); assert.match(env.output(), /Không giải mã/);
+  let canceledFile; env.root.fields.get("csv-file").files = [{ name: "cleared.csv", size: 10, arrayBuffer: () => new Promise((resolve) => { canceledFile = resolve; }) }]; const canceled = env.click("csv-import"); await env.click("csv-clear"); canceledFile(new TextEncoder().encode("private\nNEVER_APPLY").buffer); await canceled; assert.equal(env.root.fields.get("csv-source").value, ""); assert.match(env.output(), /Đã hủy áp dụng tệp/);
+  let finish; env.root.fields.get("csv-file").files = [{ name: "late.csv", size: 10, arrayBuffer: () => new Promise((resolve) => { finish = resolve; }) }]; const pending = env.click("csv-import"); env.setScope("account:B"); env.mount("dev-utilities"); finish(new TextEncoder().encode("secret\nACCOUNT_A_DATA").buffer); await pending; assert.doesNotMatch(env.root.fields.get("csv-source").value, /ACCOUNT_A_DATA/); assert.doesNotMatch(JSON.stringify(env.store()), /Hoàng|ACCOUNT_A_DATA/); env.api.cleanup();
+});
+
+test("CSV/text engines retain independent fields and private drafts are released on close", async () => {
+  const env = harness(); env.mount("dev-utilities"); env.field("csv-source", "PRIVATE_CSV\nrow"); env.field("source", "PRIVATE_TEXT"); await env.click(null, { utDevMode: "text" }); assert.equal(env.root.dataset.devMode, "text"); await env.click("text-stats"); assert.match(env.output(), /Ký tự: 12/); await env.click(null, { utDevMode: "csv" }); assert.equal(env.root.fields.get("csv-source").value, "PRIVATE_CSV\nrow");
+  env.mount("notes"); env.mount("dev-utilities"); assert.doesNotMatch(env.root.fields.get("csv-source").value, /PRIVATE_CSV/); assert.doesNotMatch(JSON.stringify(env.store()), /PRIVATE_TEXT|PRIVATE_CSV/); env.api.cleanup();
+});
+
+test("Regex UI renders structured escaped captures and preview copy/export without storing content", async () => {
+  const copies = []; let terminated = 0, calls = 0; class UIWorkerDouble { postMessage(input) { calls++; setTimeout(() => this.onmessage?.({ data: { result: { count: 1, matches: [{ value: "<img>", index: 0, end: 5, groupCount: 1, captures: ["<script>"], groups: { word: "<script>" }, indices: [[0, 5], [0, 5]] }], limited: false, captureLimited: false, replaced: input.replace, output: input.replace ? "REPLACED_PRIVATE_TEXT" : null } } }), 0); } terminate() { terminated++; } }
+  const env = harness({ window: { Worker: UIWorkerDouble }, navigator: { clipboard: { async writeText(text) { copies.push(text); } } } }); env.mount("regex-playground"); env.field("pattern", "(?<word>.+)"); env.field("source", "REGEX_PRIVATE_TEXT"); env.field("replacement", "X"); await env.click("regex-run");
+  assert.match(env.root.elements.get("data-ut-regex-match-list").innerHTML, /\[0, 5\)/); assert.match(env.root.elements.get("data-ut-regex-match-list").innerHTML, /&lt;script&gt;/); assert.doesNotMatch(env.root.elements.get("data-ut-regex-match-list").innerHTML, /<img>|<script>/);
+  await env.click("regex-replace"); assert.equal(env.output(), "REPLACED_PRIVATE_TEXT"); await env.click("regex-copy-replacement"); assert.deepEqual(copies, ["REPLACED_PRIVATE_TEXT"]); await env.click("regex-export"); assert.equal(JSON.parse(await env.downloads[0].blob.text()).positions, "UTF-16");
+  env.field("replacement", "Different"); env.root.events.get("input")({ target: env.root.fields.get("replacement") }); await env.click("regex-copy-replacement"); assert.equal(copies.length, 1); assert.equal(env.status().dataset.state, "error"); assert.doesNotMatch(JSON.stringify(env.store()), /REGEX_PRIVATE_TEXT|REPLACED_PRIVATE_TEXT/); env.api.cleanup(); assert.equal(calls, 2); assert.equal(terminated, 2);
+});
+
+test("Regex cancel and cleanup terminate the worker; unsupported browsers get truthful state", async () => {
+  let terminated = 0; class PendingWorker { postMessage() {} terminate() { terminated++; } }
+  const env = harness({ window: { Worker: PendingWorker } }); env.mount("regex-playground"); const pending = env.click("regex-run"); await env.click("cancel"); await pending; assert.equal(terminated, 1); assert.match(env.output(), /hủy/); assert.equal(env.status().dataset.state, "error"); env.api.cleanup();
+  const unsupported = harness(); unsupported.mount("regex-playground"); await unsupported.click("regex-run"); assert.equal(unsupported.status().dataset.state, "error"); assert.match(unsupported.output(), /Worker/); unsupported.api.cleanup();
+});

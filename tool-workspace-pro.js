@@ -37,7 +37,7 @@
     return byName.get(value) || byId.get(value) || byId.get(aliases.get(value)) || byId.get(clean) || byId.get(aliases.get(clean)) || null;
   };
   const memory = { records: new Map(), history: new Map(), files: new Map() };
-  const active = { recognition: null, utterance: null, request: null, ocrWorker: null, ocrRun: null, clockListener: null, timers: new Set(), host: null, manifest: null, scope: "guest", epoch: 0, detach: null, urls: new Set(), voicesListener: null, ocrImage: null, ocrFile: null, mediaFile: null, mediaRecorder: null, mediaStream: null, mediaChunks: [], transcriptSegments: [], aiAttachment: null, dashboardUndo: [] };
+  const active = { recognition: null, utterance: null, request: null, ocrWorker: null, ocrRun: null, clockListener: null, timers: new Set(), host: null, manifest: null, scope: "guest", epoch: 0, detach: null, urls: new Set(), voicesListener: null, ocrImage: null, ocrFile: null, mediaFile: null, mediaRecorder: null, mediaStream: null, mediaChunks: [], transcriptSegments: [], subtitleCues: [], subtitleOrigin: "manual", aiAttachment: null, dashboardUndo: [] };
 
   function accountScope(options = {}) {
     if (globalThis.HHAllToolState?.accountScope) return globalThis.HHAllToolState.accountScope();
@@ -62,7 +62,7 @@
     "widget-marketplace": "Danh mục widget cục bộ đã được duyệt; cài để dùng ngay, không tải mã bên ngoài.",
     "plugin-system": "Cài engine xử lý văn bản an toàn từ manifest JSON, bật/tắt và chạy trên dữ liệu của bạn.",
     "auto-save": "Tài liệu nháp tự lưu theo tài khoản, khôi phục và xuất trước khi đóng.",
-    "version-history": "Snapshot riêng có so sánh dòng, khôi phục an toàn và bản sao trước khi phục hồi; không ghi đè workspace khác.",
+    "version-history": "Snapshot riêng: tìm kiếm, nhóm tài liệu, phân trang, đổi nhãn, so sánh hai bản và khôi phục có bảo vệ bản đang nhập; không ghi đè workspace khác.",
     "file-explorer": "Kho tệp cục bộ theo tài khoản: thư mục, tìm kiếm, sửa văn bản, đổi tên, xem trước an toàn và tải xuống.",
     "monaco-code-editor": "Monaco thật tải từ website: nhiều tài liệu, định dạng, chẩn đoán và diff. Mobile dùng editor văn bản dễ nhập; không chạy code.",
     "ocr": "Crop ảnh, nhận dạng Việt/Anh bằng engine OCR cục bộ tải khi cần, sửa và xuất văn bản; không tải ảnh lên server."
@@ -176,6 +176,7 @@
 
   function shell(manifest, body) {
     const support = featureSupport(manifest);
+    if (manifest.id === "speech-to-text") body += subtitleMarkup();
     if (manifest.id === "text-to-speech") body += '<p class="hh-tool__help">Nên tạo đoạn ngắn khoảng 250 ký tự. WAV giới hạn 2 MB (khoảng 44 giây ở PCM 24 kHz mono 16-bit), không bảo đảm thời lượng theo số ký tự. Nội dung dài có thể bị từ chối sau khi nhà cung cấp đã tạo và vẫn tính phí. Không tự chia đoạn hoặc gọi API tiếp.</p>';
     return `<section class="hh-tool" data-hh-tool="${manifest.id}">
       <header class="hh-tool__header"><div><small>ALL TOOLS · WORKSPACE RIÊNG</small><h3>${esc(manifest.name)}</h3><p>${esc(PURPOSES[manifest.id])}</p></div><div class="hh-tool__badges"><span data-runtime="${manifest.runtime}">${esc(statusLabel(manifest.runtime))}</span><span class="${support.ok ? support.degraded ? "is-warning" : "is-ready" : "is-error"}">${support.ok ? support.degraded ? "Có giới hạn" : "Sẵn sàng" : "Không hỗ trợ"}</span></div></header>
@@ -211,7 +212,7 @@
     if (manifest.id === "widget-marketplace") return shell(manifest, `<header class="hh-tool__toolbar"><input data-tool-input="filter" placeholder="Tìm widget…"><select data-tool-input="category"><option value="all">Tất cả</option><option value="productivity">Công việc</option><option value="analytics">Phân tích</option><option value="media">Media</option></select></header><section class="hh-tool__market" data-tool-list></section>`);
     if (manifest.id === "plugin-system") return shell(manifest, `<div class="hh-tool__split"><section class="hh-tool__panel"><div class="hh-tool__form"><p class="hh-tool__help">Chỉ dùng engine văn bản được duyệt trong All Tools: text-uppercase, text-trim, line-sort. Không tải/chạy JavaScript từ manifest, không xin quyền thiết bị.</p>${field("Plugin manifest", textArea("manifest", '{\n  "id": "my-plugin",\n  "name": "Sắp xếp dòng",\n  "version": "1.0.0",\n  "engine": "line-sort",\n  "permissions": []\n}'))}${field("Văn bản thử plugin", textArea("plugin-source", "Nhập văn bản để chạy engine đã bật..."))}<div class="hh-tool__actions">${button("import-plugin", "Kiểm tra & cài", "is-primary")}</div></div></section><div><section class="hh-tool__collection" data-tool-list></section>${output("Kết quả plugin")}</div></div>`);
     if (manifest.id === "auto-save") return shell(manifest, `<div class="hh-tool__grid"><section class="hh-tool__panel"><div class="hh-tool__form">${field("Tài liệu", '<input data-tool-input="title" value="Bản nháp Auto Save">')}${field("Nội dung", textArea("document", "Mọi thay đổi được lưu sau 600 ms..."), "Lưu riêng tài khoản. Khi lỗi, giữ nội dung và dùng Lưu ngay để thử lại hoặc Xuất bản nháp.")}<div class="hh-tool__actions">${button("save-document", "Lưu ngay", "is-primary")}${button("restore-document", "Khôi phục")}${button("clear-document", "Xóa bản nháp")}${button("export-document", "Xuất bản nháp")}</div><div class="hh-tool__save-state" data-tool-save-state>Chưa có thay đổi.</div></div></section>${output("Nhật ký lưu")}</div>`);
-    if (manifest.id === "version-history") return shell(manifest, `<div class="hh-tool__split"><section class="hh-tool__panel"><div class="hh-tool__form">${field("Nhãn phiên bản", '<input data-tool-input="label" placeholder="Ví dụ: Trước khi chỉnh sửa">')}${field("Nội dung đang sửa", textArea("document", "Nội dung cần lưu phiên bản..."))}<div class="hh-tool__actions">${button("create-version", "Tạo phiên bản", "is-primary")}${button("export-versions", "Xuất lịch sử")}</div><p class="hh-tool__help">Khôi phục chỉ đổi nội dung ở đây; tự lưu snapshot nội dung hiện tại trước khi thay thế.</p></div>${output("So sánh snapshot với nội dung hiện tại")}</section><section class="hh-tool__collection" data-tool-list></section></div>`);
+    if (manifest.id === "version-history") return shell(manifest, `<div class="hh-tool__split"><section class="hh-tool__panel"><div class="hh-tool__form">${field("Nhãn phiên bản", '<input data-tool-input="label" maxlength="180" placeholder="Ví dụ: Trước khi chỉnh sửa">')}${field("Nội dung đang sửa", textArea("document", "Nội dung cần lưu phiên bản..."))}<p class="hh-tool__help" data-tool-version-context>Đang soạn tài liệu riêng; không chỉnh workspace khác.</p><div class="hh-tool__actions">${button("create-version", "Tạo phiên bản", "is-primary")}${button("export-version-draft", "Xuất bản đang sửa")}${button("export-versions", "Xuất lịch sử")}</div><p class="hh-tool__help">Khôi phục chỉ đổi nội dung ở đây; tự lưu snapshot nội dung hiện tại trước khi thay thế. Nếu chuyển nhóm tài liệu, cần xác nhận lần hai. Không ghi đè phần vừa nhập trong lúc đọc/lưu. Giữ nguyên snapshot đến 500 KB UTF-8 và định dạng cũ 200.000 ký tự.</p></div>${output("So sánh snapshot hoặc hai bản được chọn")}</section><div><header class="hh-tool__version-toolbar">${field("Tìm nhãn hoặc nội dung", '<input data-tool-input="version-filter" placeholder="Tìm snapshot…">')}${field("Nhóm tài liệu", '<select data-tool-input="version-document"><option value="all">Tất cả nhóm</option></select>')}${field("Sắp xếp", '<select data-tool-input="version-sort"><option value="newest">Mới nhất</option><option value="oldest">Cũ nhất</option><option value="label">Theo nhãn</option></select>')}${field("Mỗi trang", '<select data-tool-input="version-page-size"><option value="20">20 bản</option><option value="50">50 bản</option></select>')}</header><div class="hh-tool__actions">${button("compare-selected-versions", "So sánh hai bản đã chọn")}${button("clear-version-selection", "Bỏ chọn")}<span data-tool-version-selection role="status">Chưa chọn snapshot.</span></div><section class="hh-tool__collection" data-tool-list></section><footer class="hh-tool__version-pagination">${button("version-prev", "Trang trước")}<span data-tool-version-page role="status"></span>${button("version-next", "Trang sau")}</footer></div></div>`);
     if (manifest.id === "file-explorer") return shell(manifest, `<section class="hh-tool__files"><header><label class="hh-tool__file-button">Chọn tệp<input type="file" data-tool-file multiple></label>${field("Thư mục hiện tại", '<select data-tool-input="file-folder"><option value="">Gốc</option></select>')}<input data-tool-input="file-filter" aria-label="Tìm tệp" placeholder="Tên hoặc loại tệp…"><input data-tool-input="folder-name" aria-label="Tên thư mục mới" placeholder="Tên thư mục mới">${button("new-folder", "Tạo thư mục")}${button("delete-folder", "Xóa thư mục trống")}</header><p class="hh-tool__help">Tệp chỉ nằm trên thiết bị và tài khoản hiện tại. HTML/SVG không được chạy; sửa văn bản tối đa 500 KB, tải lên tối đa 20 MB/tệp.</p><div class="hh-tool__file-layout"><div data-tool-list class="hh-tool__file-list"></div><section class="hh-tool__preview" data-tool-preview><div class="hh-tool__empty">Chọn một tệp để xem trước.</div></section></div></section>`);
     if (manifest.id === "monaco-code-editor") return shell(manifest, `<section class="hh-tool__code"><header>${field("Tài liệu", '<select data-tool-input="code-document"><option value="code-document">Code chính</option></select>')}${button("new-code", "Tài liệu mới")}${field("Tên file", '<input data-tool-input="code-title" value="main.js">')}<select aria-label="Ngôn ngữ code" data-tool-input="language"><option value="javascript">JavaScript</option><option value="typescript">TypeScript</option><option value="json">JSON</option><option value="html">HTML</option><option value="css">CSS</option><option value="markdown">Markdown</option></select>${button("format-code", "Format")}${button("save-code", "Lưu")}${button("version-code", "Snapshot")}${button("diff-code", "So với bản lưu")}${button("export-code", "Xuất file")}</header><div data-tool-editor class="hh-tool__editor"><textarea aria-label="Mã nguồn · không thực thi" data-tool-input="code" spellcheck="false">function hello(name) {\n  return &quot;Xin chào &quot; + name;\n}</textarea></div><div data-tool-code-diff class="hh-tool__code-diff" hidden></div><section data-tool-code-problems class="hh-tool__code-problems" aria-label="Chẩn đoán cú pháp" aria-live="polite"></section><footer data-tool-editor-status>Editor văn bản sẵn sàng; đang tải Monaco cục bộ. Nội dung không được thực thi.</footer></section>`);
     return shell(manifest, `<div class="hh-tool__grid"><section class="hh-tool__panel"><div class="hh-tool__form"><label class="hh-tool__file-button">Chọn ảnh<input type="file" accept="image/*" data-tool-ocr-file></label><div class="hh-tool__ocr-stage"><canvas data-tool-ocr-canvas width="960" height="540"></canvas><div class="hh-tool__empty" data-tool-ocr-empty>Chọn ảnh để crop và nhận dạng.</div></div><div class="hh-tool__row">${field("Ngôn ngữ", '<select data-tool-input="ocr-language"><option value="vi">Tiếng Việt</option><option value="en">English</option><option value="vi+en">Việt + Anh</option></select>')}${field("Crop X / Y / W / H", '<div class="hh-tool__crop"><input type="number" data-tool-input="crop-x" value="0" min="0"><input type="number" data-tool-input="crop-y" value="0" min="0"><input type="number" data-tool-input="crop-w" value="0" min="0"><input type="number" data-tool-input="crop-h" value="0" min="0"></div>')}</div><div class="hh-tool__actions">${button("apply-crop", "Áp dụng crop")}${button("recognize-ocr", "Nhận dạng", "is-primary")}${button("export-ocr", "Xuất TXT")}</div></div></section><section class="hh-tool__output"><header><strong>Kết quả OCR</strong><span data-tool-confidence>Confidence: —</span></header><textarea data-tool-input="ocr-result" placeholder="Văn bản nhận dạng sẽ xuất hiện ở đây..."></textarea></section></div>`);
@@ -331,6 +332,20 @@
     const removed = oldLines.slice(start, endOld), added = newLines.slice(start, endNew);
     return { added: added.length, removed: removed.length, text: [`@@ từ dòng ${start + 1} · -${removed.length} / +${added.length} @@`, ...removed.map(line => `- ${line}`), ...added.map(line => `+ ${line}`)].join("\n") };
   }
+  function validateVersionContent(value) {
+    if (typeof value !== "string" || value.length > 200000 && (value.length > 500000 || new Blob([value]).size > 500000)) throw new Error("Nội dung vượt giới hạn snapshot: 500 KB UTF-8 hoặc định dạng cũ 200.000 ký tự. Hãy xuất bản đang sửa trước khi rời.");
+    return value;
+  }
+  function versionContext(row) { return String(row?.sourceDocument || "local").slice(0, 200); }
+  function renderVersionContext(host) { const node = host.querySelector("[data-tool-version-context]"); if (node) node.textContent = `Đang soạn nhóm: ${host.dataset.versionContext === "local" || !host.dataset.versionContext ? "Tài liệu riêng" : host.dataset.versionContext}. Khôi phục chỉ đổi nội dung ở đây, không mở/ghi workspace nguồn.`; }
+  function renderVersionSelection(host) { const node = host.querySelector("[data-tool-version-selection]"); if (node) node.textContent = host._selectedVersions?.size ? `Đã chọn ${host._selectedVersions.size}/2: ${[...host._selectedVersions].map(id => host._versionLabels?.get(id) || id).join(" → ")}` : "Chưa chọn snapshot."; }
+  function selectVersionPage(rows, { query = "", document = "all", sort = "newest", page = 0, size = 20 } = {}) {
+    const filter = String(query).trim().toLocaleLowerCase(), count = size === 50 ? 50 : 20;
+    const filtered = rows.filter(row => row?.type === "version" && (document === "all" || versionContext(row) === document) && (!filter || `${row.label || ""}\n${row.content || ""}`.toLocaleLowerCase().includes(filter)));
+    filtered.sort((a, b) => sort === "label" ? String(a.label).localeCompare(String(b.label), "vi") : sort === "oldest" ? String(a.createdAt).localeCompare(String(b.createdAt)) : String(b.createdAt).localeCompare(String(a.createdAt)));
+    const pages = Math.max(1, Math.ceil(filtered.length / count)), selected = Math.min(pages - 1, Math.max(0, Math.floor(Number(page) || 0)));
+    return { rows: filtered.slice(selected * count, (selected + 1) * count), count: filtered.length, total: rows.length, page: selected, pages };
+  }
   function renderVariables(host) {
     const panel = host.querySelector("[data-tool-variables]"); if (!panel) return;
     const previous = new Map([...panel.querySelectorAll("[data-prompt-variable]")].map(node => [node.dataset.promptVariable, node.value]));
@@ -346,17 +361,22 @@
     if (payload.records.length > 1000 || payload.history.length > 2000 || payload.files.length > 100 || payload.omittedFiles.length > 1000) throw new Error("Bản sao có quá nhiều mục.");
     const cleanRecord = row => {
       if (!row || !backupId(row.id) || !BACKUP_RECORD_TYPES.has(row.type) || Object.hasOwn(row, "owner") || Object.hasOwn(row, "localId") || Object.hasOwn(row, "schema")) throw new Error("Mục bản sao không hợp lệ hoặc chứa thông tin tài khoản nội bộ.");
-      const fields = new Set(["id", "type", "title", "content", "tags", "favorite", "updatedAt", "createdAt", "language", "label", "order", "pinned", "tool", "values", "output", "messages", "activeTab", "activeFile", "fileBaseUpdatedAt", "codeDocument", "sourceDocument", "promptId", "pluginId", "name", "version", "engine", "permissions", "enabled", "installedAt", "widgetId", "kind", "tasks", "count", "widgets"]);
+      const fields = new Set(["id", "type", "title", "content", "tags", "favorite", "updatedAt", "createdAt", "language", "label", "order", "pinned", "tool", "values", "output", "messages", "activeTab", "activeFile", "fileBaseUpdatedAt", "codeDocument", "sourceDocument", "promptId", "pluginId", "name", "version", "engine", "permissions", "enabled", "installedAt", "widgetId", "kind", "tasks", "count", "widgets", "subtitle", "versionPage", "versionContext"]);
       if (Object.keys(row).some(name => !fields.has(name))) throw new Error("Bản sao có trường workspace chưa được hỗ trợ.");
       for (const name of ["title", "label", "name"]) if (row[name] != null && (typeof row[name] !== "string" || row[name].length > 500)) throw new Error("Tên mục bản sao không hợp lệ.");
+      if (row.sourceDocument != null && (typeof row.sourceDocument !== "string" || row.sourceDocument.length > 200)) throw new Error("Nhóm tài liệu nguồn không hợp lệ.");
       for (const name of ["createdAt", "updatedAt", "installedAt"]) if (row[name] != null && !Number.isFinite(new Date(row[name]).getTime())) throw new Error("Thời gian mục bản sao không hợp lệ.");
       if (row.content != null && (typeof row.content !== "string" || row.content.length > 200000 && !(row.type === "version" && row.content.length <= 500000 && new Blob([row.content]).size <= 500000))) throw new Error("Nội dung bản sao vượt giới hạn: tài liệu 200.000 ký tự, snapshot tệp bổ sung tối đa 500 KB UTF-8.");
       if (["code", "version", "workspace-tab", "document"].includes(row.type) && typeof row.content !== "string") throw new Error("Tài liệu bản sao thiếu nội dung.");
       if (row.type === "prompt") validatePromptImport([row]);
       if (row.type === "plugin") validatePlugin({ id: row.pluginId, name: row.name, version: row.version, engine: row.engine, permissions: row.permissions });
-      if (row.type === "tool-draft" && (!byId.has(row.tool) || row.id !== `draft-${row.tool}` || !row.values || typeof row.values !== "object" || Array.isArray(row.values) || Object.entries(row.values).some(([name, value]) => !/^[a-z0-9-]{1,64}$/.test(name) || typeof value !== "string" || value.length > (row.tool === "file-explorer" && name === "file-content" ? 500000 : 200000)))) throw new Error("Bản nháp tool không hợp lệ.");
+      if (row.type === "tool-draft" && (!byId.has(row.tool) || row.id !== `draft-${row.tool}` || !row.values || typeof row.values !== "object" || Array.isArray(row.values) || Object.entries(row.values).some(([name, value]) => !/^[a-z0-9-]{1,64}$/.test(name) || typeof value !== "string" || value.length > ((row.tool === "file-explorer" && name === "file-content" || row.tool === "version-history" && name === "document") ? 500000 : row.tool === "speech-to-text" && name === "subtitle-source" ? 300000 : 200000)))) throw new Error("Bản nháp tool không hợp lệ.");
       if (row.type === "tool-draft" && row.activeFile && (!backupId(row.activeFile) || row.tool !== "file-explorer")) throw new Error("Tệp trong bản nháp không hợp lệ.");
       if (row.type === "tool-draft" && row.fileBaseUpdatedAt && !Number.isFinite(new Date(row.fileBaseUpdatedAt).getTime())) throw new Error("Mốc bản nháp tệp không hợp lệ.");
+      if (row.type === "tool-draft" && row.tool === "version-history" && row.values?.document != null) validateVersionContent(row.values.document);
+      if (row.subtitle != null && (row.type !== "tool-draft" || row.tool !== "speech-to-text")) throw new Error("Timeline không thuộc tool này.");
+      if (row.versionPage != null && (!Number.isInteger(row.versionPage) || row.versionPage < 0 || row.versionPage > 1000)) throw new Error("Trang lịch sử không hợp lệ.");
+      if (row.versionContext != null && (typeof row.versionContext !== "string" || row.versionContext.length > 200)) throw new Error("Ngữ cảnh lịch sử không hợp lệ.");
       if (row.type === "tool-folder" && (typeof row.name !== "string" || !row.name.trim() || row.name.length > 100 || /[\\/]/.test(row.name))) throw new Error("Thư mục không hợp lệ.");
       if (row.type === "code" && !["javascript", "typescript", "json", "html", "css", "markdown"].includes(row.language)) throw new Error("Ngôn ngữ code không hợp lệ.");
       if (row.type === "dashboard" && (!Array.isArray(row.widgets) || row.widgets.length > 24)) throw new Error("Dashboard vượt giới hạn.");
@@ -365,7 +385,7 @@
         if (widget.tasks != null && (!Array.isArray(widget.tasks) || widget.tasks.length > 100 || widget.tasks.some(task => !task || !backupId(task.id) || typeof task.text !== "string" || task.text.length > 500 || typeof task.done !== "boolean"))) throw new Error("Checklist trong bản sao không hợp lệ.");
       }
       if (row.type === "tool-draft" && row.messages != null && (!Array.isArray(row.messages) || row.messages.length > 100 || row.messages.some(item => !item || !["user", "assistant"].includes(item.role) || typeof item.content !== "string" || item.content.length > 16000))) throw new Error("Hội thoại nháp không hợp lệ.");
-      return JSON.parse(JSON.stringify(row));
+      const clean = JSON.parse(JSON.stringify(row)); if (row.subtitle != null) clean.subtitle = normalizeSubtitleDraft(row.subtitle); return clean;
     };
     const records = payload.records.map(cleanRecord), ids = new Set(records.map(row => row.id));
     if (ids.size !== records.length) throw new Error("Bản sao có ID mục trùng.");
@@ -442,10 +462,10 @@
 
   function draftSnapshot(host, manifest) {
     const values = {};
-    host.querySelectorAll("[data-tool-input]").forEach(node => { if (node.type !== "file" && node.type !== "password") { const name = node.dataset.toolInput, value = String(node.value || ""); if (manifest.id === "file-explorer" && name === "file-content") { if (new Blob([value]).size > 500000) throw new Error("Bản nháp tệp vượt 500 KB; chưa lưu. Xuất bản nháp trước khi rời."); values[name] = value; } else values[name] = value.slice(0, 200000); } });
+    host.querySelectorAll("[data-tool-input]").forEach(node => { if (node.type !== "file" && node.type !== "password") { const name = node.dataset.toolInput, value = String(node.value || ""); if (manifest.id === "file-explorer" && name === "file-content") { if (new Blob([value]).size > 500000) throw new Error("Bản nháp tệp vượt 500 KB; chưa lưu. Xuất bản nháp trước khi rời."); values[name] = value; } else if (manifest.id === "version-history" && name === "document") { validateVersionContent(value); values[name] = value; } else if (manifest.id === "speech-to-text" && name === "subtitle-source") { if (value.length > 300000 || new Blob([value]).size > 1048576) throw new Error("Nguồn phụ đề vượt 300.000 ký tự hoặc 1 MB; chưa lưu bản nháp nguồn."); values[name] = value; } else values[name] = value.slice(0, 200000); } });
     const result = host.querySelector("[data-tool-output]")?.textContent || "";
     const messages = host.querySelector("[data-tool-messages]") ? [...host.querySelectorAll("[data-tool-messages] > .is-user, [data-tool-messages] > .is-assistant")].slice(-100).map(node => ({ role: node.classList.contains("is-user") ? "user" : "assistant", content: node.textContent.slice(0, 16000) })) : [];
-    return { id: `draft-${manifest.id}`, type: "tool-draft", tool: manifest.id, values, output: result.slice(0, 200000), messages, activeTab: host.dataset.activeTab || "", activeFile: manifest.id === "file-explorer" ? host.dataset.activeFile || "" : "", fileBaseUpdatedAt: manifest.id === "file-explorer" ? host._fileBaseUpdatedAt || "" : "", codeDocument: host.dataset.codeDocument || "", promptId: host.dataset.promptId || "", updatedAt: new Date().toISOString() };
+    return { id: `draft-${manifest.id}`, type: "tool-draft", tool: manifest.id, values, output: result.slice(0, 200000), messages, activeTab: host.dataset.activeTab || "", activeFile: manifest.id === "file-explorer" ? host.dataset.activeFile || "" : "", fileBaseUpdatedAt: manifest.id === "file-explorer" ? host._fileBaseUpdatedAt || "" : "", codeDocument: host.dataset.codeDocument || "", promptId: host.dataset.promptId || "", ...(manifest.id === "speech-to-text" ? { subtitle: normalizeSubtitleDraft({ version: 1, origin: active.subtitleOrigin, cues: active.subtitleCues }) } : {}), ...(manifest.id === "version-history" ? { versionPage: host._versionPage || 0, versionContext: host.dataset.versionContext || "local" } : {}), updatedAt: new Date().toISOString() };
   }
   async function saveDraft(host, manifest, snapshot = draftSnapshot(host, manifest)) {
     return storage.put("records", snapshot, scopeFor(host));
@@ -513,17 +533,81 @@
       }
     }
     if (manifest.id === "ai-prompt-library" && draft.promptId) { const row = await storage.get("records", draft.promptId, scopeFor(host)); if (live(host, epoch) && row?.type === "prompt") host.dataset.promptId = row.id; }
+    if (manifest.id === "speech-to-text" && draft.subtitle) { const restored = normalizeSubtitleDraft(draft.subtitle); active.subtitleCues = restored.cues; active.subtitleOrigin = restored.origin; }
+    if (manifest.id === "version-history") { host._versionPage = Math.min(1000, Math.max(0, Number(draft.versionPage) || 0)); host.dataset.versionContext = draft.versionContext || "local"; }
     if (manifest.id === "monaco-code-editor" && draft.codeDocument) { const row = await storage.get("records", draft.codeDocument, scopeFor(host)); if (!live(host, epoch)) return; if (row?.type === "code") host.dataset.codeDocument = row.id; await renderCodeDocuments(host); }
   }
 
   function formatSegments(segments, kind) {
     if (!Array.isArray(segments) || !segments.length) return "";
     const stamp = seconds => {
-      const total = Math.max(0, Number(seconds) || 0), hours = Math.floor(total / 3600), minutes = Math.floor(total % 3600 / 60), secs = Math.floor(total % 60), millis = Math.floor((total % 1) * 1000);
+      const total = Math.round(Math.max(0, Number(seconds) || 0) * 1000), hours = Math.floor(total / 3600000), minutes = Math.floor(total % 3600000 / 60000), secs = Math.floor(total % 60000 / 1000), millis = total % 1000;
       return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}${kind === "vtt" ? "." : ","}${String(millis).padStart(3, "0")}`;
     };
     const rows = segments.map((segment, index) => `${kind === "srt" ? `${index + 1}\n` : ""}${stamp(segment.start)} --> ${stamp(segment.end)}\n${segment.speaker ? `[${segment.speaker}] ` : ""}${segment.text || ""}`).join("\n\n");
     return kind === "vtt" ? `WEBVTT\n\n${rows}` : rows;
+  }
+
+  function subtitleMarkup() {
+    return `<section class="hh-tool__timeline"><header><div><small>SUBTITLE STUDIO · XỬ LÝ CỤC BỘ</small><h4>Biên tập phụ đề theo thời gian</h4></div><span data-tool-subtitle-origin>Timeline thủ công · chưa có cue.</span></header><div class="hh-tool__form">${field("Dán SRT / WebVTT", textArea("subtitle-source", "Dán phụ đề có timestamp; không gửi lên máy chủ…"))}<div class="hh-tool__actions"><label class="hh-tool__file-button">Chọn SRT/VTT<input type="file" accept=".srt,.vtt,text/vtt,application/x-subrip,text/plain" data-tool-subtitle-file></label>${button("subtitle-import", "Nhập phụ đề đã dán")}${button("subtitle-from-transcript", "Chuyển bản chép → mốc ước lượng")}${button("subtitle-add", "Thêm cue")}${button("subtitle-sort", "Sắp theo thời gian")}${button("subtitle-validate", "Kiểm tra timeline")}${button("subtitle-clear", "Xóa timeline")}</div><p class="hh-tool__help">Tối đa 300 cue, tổng 200.000 ký tự, khoảng thời gian 0–24 giờ. Mốc chuyển từ bản chép là ước lượng 4 giây/câu, không phải timestamp đo từ audio. Engine hỗ trợ SRT và cue văn bản WebVTT cơ bản; STYLE/REGION và cue settings cần công cụ chuyên dụng. Timeline có thứ tự/không chồng lấn mới được xuất; các định dạng có chủ ý chồng lấn cần sửa hoặc dùng editor hỗ trợ riêng.</p><div data-tool-subtitle-validation role="status" aria-live="polite"></div><div data-tool-subtitle-cues></div></div></section>`;
+  }
+  function parseSubtitleTime(value) {
+    const match = String(value).match(/^(?:(\d{2,}):)?([0-5]\d):([0-5]\d)[.,](\d{3})$/);
+    if (!match) throw new Error(`Timestamp không hợp lệ: ${String(value).slice(0, 50)}.`);
+    const seconds = (Number(match[1]) || 0) * 3600 + Number(match[2]) * 60 + Number(match[3]) + Number(match[4]) / 1000;
+    if (seconds > 86400) throw new Error("Timestamp vượt 24 giờ."); return seconds;
+  }
+  function normalizeSubtitleDraft(value) {
+    if (!value || value.version !== 1 || !["manual", "srt", "vtt", "approximate"].includes(value.origin) || !Array.isArray(value.cues) || value.cues.length > 300) throw new Error("Bản nháp phụ đề không hợp lệ.");
+    let count = 0;
+    const cues = value.cues.map((row, index) => {
+      if (!row || !backupId(row.id) || !["string", "number"].includes(typeof row.start) || !["string", "number"].includes(typeof row.end) || String(row.start).length > 24 || String(row.end).length > 24 || typeof row.text !== "string" || row.text.length > 4000) throw new Error(`Cue ${index + 1} vượt giới hạn hoặc sai dữ liệu.`);
+      count += row.text.length; if (count > 200000) throw new Error("Phụ đề vượt tổng 200.000 ký tự.");
+      return { id: row.id, start: String(row.start), end: String(row.end), text: row.text };
+    });
+    if (new Set(cues.map(row => row.id)).size !== cues.length) throw new Error("ID cue trùng nhau.");
+    return { version: 1, origin: value.origin, cues };
+  }
+  function validateSubtitleCues(cues) {
+    const safe = normalizeSubtitleDraft({ version: 1, origin: "manual", cues }), errors = [], normalized = [];
+    let previousEnd = 0;
+    for (const [index, row] of safe.cues.entries()) {
+      const start = Number(row.start), end = Number(row.end), ordinal = index + 1;
+      if (!String(row.start).trim() || !String(row.end).trim() || !Number.isFinite(start) || !Number.isFinite(end) || start < 0 || end > 86400 || end <= start || Math.abs(start * 1000 - Math.round(start * 1000)) > 1e-6 || Math.abs(end * 1000 - Math.round(end * 1000)) > 1e-6) errors.push(`Cue ${ordinal}: bắt đầu/kết thúc cần nằm trong 0–24h, tối đa 3 chữ số thập phân và kết thúc lớn hơn bắt đầu.`);
+      else { if (start < previousEnd) errors.push(`Cue ${ordinal}: sai thứ tự hoặc chồng lấn cue trước (kết thúc ${previousEnd.toFixed(3)} giây).`); previousEnd = end; }
+      if (!row.text.trim() || /\n\s*\n/.test(row.text)) errors.push(`Cue ${ordinal}: cần nội dung và không có dòng trắng ngắt cue.`);
+      normalized.push({ ...row, start, end, text: row.text.trim() });
+    }
+    if (!safe.cues.length) errors.push("Timeline chưa có cue.");
+    return { ok: errors.length === 0, errors, cues: normalized };
+  }
+  function parseSubtitles(value) {
+    const source = String(value).replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n").trim();
+    if (!source || source.length > 300000 || new Blob([source]).size > 1048576) throw new Error("Nguồn phụ đề cần nội dung, tối đa 300.000 ký tự/1 MB; phần nội dung cue tối đa 200.000 ký tự.");
+    const blocks = source.split(/\n\s*\n/), kind = /^WEBVTT(?:\s|$)/.test(blocks[0]) ? "vtt" : "srt", cues = [], warnings = [];
+    if (kind === "vtt") { if (blocks[0].split("\n").length > 1 || blocks[0].includes("-->")) throw new Error("Header WebVTT không hợp lệ hoặc chứa metadata chưa hỗ trợ."); blocks.shift(); }
+    for (const block of blocks) {
+      const lines = block.trim().split("\n"); if (kind === "vtt" && /^NOTE(?:\s|$)/.test(lines[0])) { warnings.push("Bỏ comment NOTE khi xuất lại."); continue; }
+      if (kind === "vtt" && /^(STYLE|REGION)(?:\s|$)/.test(lines[0])) throw new Error("Chưa hỗ trợ STYLE/REGION; không nhập một phần hoặc âm thầm bỏ định dạng.");
+      const timingIndex = lines[0].includes("-->") ? 0 : 1, timing = lines[timingIndex]?.match(/^(\S+)\s+-->\s+(\S+)(.*)$/);
+      if (!timing || timing[3].trim()) throw new Error(`Cue ${cues.length + 1}: thiếu timestamp hoặc có cue settings chưa hỗ trợ.`);
+      if (kind === "srt" && timingIndex === 1 && !/^\d+$/.test(lines[0])) throw new Error(`Cue SRT ${cues.length + 1}: số thứ tự không hợp lệ.`);
+      cues.push({ id: uid("cue"), start: String(parseSubtitleTime(timing[1])), end: String(parseSubtitleTime(timing[2])), text: lines.slice(timingIndex + 1).join("\n") });
+      if (cues.length > 300) throw new Error("Phụ đề vượt 300 cue.");
+    }
+    const draft = normalizeSubtitleDraft({ version: 1, origin: kind, cues }); if (!cues.length) throw new Error("Không có cue phụ đề để nhập.");
+    return { ...draft, warnings: [...new Set(warnings)] };
+  }
+  function subtitleValidation(host) {
+    const result = validateSubtitleCues(active.subtitleCues), node = host.querySelector("[data-tool-subtitle-validation]");
+    if (node) { node.textContent = result.ok ? `Hợp lệ · ${result.cues.length} cue · thời gian do người dùng nhập/chỉnh.` : result.errors.join("\n"); node.className = result.ok ? "is-valid" : "is-invalid"; }
+    return result;
+  }
+  function renderSubtitleTimeline(host) {
+    const panel = host.querySelector("[data-tool-subtitle-cues]"); if (!panel) return;
+    panel.innerHTML = active.subtitleCues.map((row, index) => `<article data-subtitle-cue="${esc(row.id)}"><header><strong>Cue ${index + 1}</strong><div>${button("subtitle-up", "Trước")}${button("subtitle-down", "Sau")}${button("subtitle-delete", "Xóa cue")}</div></header><div class="hh-tool__cue-times"><label>Bắt đầu (giây)<input data-subtitle-field="start" type="number" min="0" max="86400" step="0.001" value="${esc(row.start)}" aria-label="Cue ${index + 1} bắt đầu"></label><label>Kết thúc (giây)<input data-subtitle-field="end" type="number" min="0" max="86400" step="0.001" value="${esc(row.end)}" aria-label="Cue ${index + 1} kết thúc"></label></div><label>Nội dung<textarea data-subtitle-field="text" maxlength="4000" aria-label="Cue ${index + 1} nội dung">${esc(row.text)}</textarea></label></article>`).join("") || '<div class="hh-tool__empty">Nhập SRT/VTT, thêm cue hoặc chuyển bản chép thành mốc ước lượng.</div>';
+    const origin = host.querySelector("[data-tool-subtitle-origin]"); if (origin) origin.textContent = `${({ manual: "Timeline thủ công", srt: "Nhập SRT", vtt: "Nhập WebVTT", approximate: "Mốc ước lượng · không đo audio" })[active.subtitleOrigin]} · ${active.subtitleCues.length} cue`;
+    subtitleValidation(host);
   }
 
   async function renderCollection(host, type) {
@@ -537,9 +621,18 @@
       list.innerHTML = rows.length ? rows.map(row => `<article data-record-id="${esc(row.id)}"><header><strong>${row.favorite ? "★ " : ""}${esc(row.title)}</strong><span>${esc((row.tags || []).join(" · "))}</span></header><p>${esc(row.content.slice(0, 500))}${row.content.length > 500 ? "…" : ""}</p><footer>${button("use-prompt", "Mở & sửa")}${button("favorite-prompt", row.favorite ? "Bỏ yêu thích" : "Yêu thích")}${button("duplicate-prompt", "Nhân bản")}${button("delete-record", "Xóa")}</footer></article>`).join("") : `<div class="hh-tool__empty">${query || favorites ? "Không có prompt khớp bộ lọc." : "Chưa có prompt. Tạo prompt đầu tiên ở bên trái."}</div>`;
     }
     if (type === "versions") {
-      const rows = (await storage.list("records", row => row.type === "version")).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-      if (!live(host, epoch)) return;
-      list.innerHTML = rows.length ? rows.map(row => `<article data-record-id="${esc(row.id)}"><header><strong>${esc(row.label)}</strong><span>${esc(nowLabel(row.createdAt))}</span></header><p>${esc(row.content.slice(0, 180))}</p><footer>${button("compare-version", "So sánh")}${button("restore-version", "Khôi phục")}${button("delete-record", "Xóa")}</footer></article>`).join("") : '<div class="hh-tool__empty">Chưa có phiên bản.</div>';
+      const revision = (host._versionRenderRevision || 0) + 1; host._versionRenderRevision = revision;
+      const rows = await storage.list("records", row => row.type === "version", scopeFor(host)); if (!live(host, epoch) || host._versionRenderRevision !== revision) return;
+      const contextSelect = getInput(host, "version-document"), current = contextSelect?.value || "all", contexts = [...new Set(rows.map(versionContext))].sort((a, b) => a.localeCompare(b));
+      if (contextSelect) { contextSelect.innerHTML = '<option value="all">Tất cả nhóm</option>' + contexts.map(id => `<option value="${esc(id)}">${esc(id === "local" ? "Tài liệu riêng" : id)}</option>`).join(""); contextSelect.value = contexts.includes(current) ? current : "all"; }
+      const result = selectVersionPage(rows, { query: getValue(host, "version-filter"), document: getValue(host, "version-document") || "all", sort: getValue(host, "version-sort"), page: host._versionPage, size: Number(getValue(host, "version-page-size")) }); host._versionPage = result.page; host._versionPages = result.pages;
+      host._selectedVersions ||= new Set(); for (const id of host._selectedVersions) if (!rows.some(row => row.id === id)) host._selectedVersions.delete(id);
+      host._versionLabels = new Map(rows.map(row => [row.id, row.label]));
+      list.innerHTML = result.rows.length ? result.rows.map(row => `<article data-record-id="${esc(row.id)}"><header><label class="hh-tool__version-check"><input type="checkbox" data-version-select="${esc(row.id)}" ${host._selectedVersions.has(row.id) ? "checked" : ""} aria-label="Chọn snapshot ${esc(row.label)}"><strong>${esc(row.label)}</strong></label><span>${esc(nowLabel(row.createdAt))}</span></header><small>${esc(versionContext(row) === "local" ? "Tài liệu riêng" : versionContext(row))} · ${row.content.length.toLocaleString("vi")} ký tự</small><p>${esc(row.content.slice(0, 180))}</p><label class="hh-tool__field"><span>Đổi nhãn snapshot</span><input data-version-label maxlength="180" value="${esc(host._versionLabelDrafts?.get(row.id) ?? row.label)}" aria-label="Nhãn snapshot ${esc(row.label)}"></label><footer>${button("rename-version", "Lưu nhãn")}${button("compare-version", "So với bản đang sửa")}${button("restore-version", "Khôi phục")}${button("delete-record", "Xóa")}</footer></article>`).join("") : `<div class="hh-tool__empty">${rows.length ? "Không có snapshot khớp bộ lọc." : "Chưa có phiên bản."}</div>`;
+      const pageNode = host.querySelector("[data-tool-version-page]"); if (pageNode) pageNode.textContent = `Trang ${result.page + 1}/${result.pages} · ${result.count}/${result.total} snapshot khớp`;
+      const previous = host.querySelector('[data-tool-action="version-prev"]'), next = host.querySelector('[data-tool-action="version-next"]'); if (previous) previous.disabled = result.page === 0; if (next) next.disabled = result.page >= result.pages - 1;
+      renderVersionSelection(host);
+      renderVersionContext(host);
     }
     if (type === "plugins") {
       const rows = await storage.list("records", row => row.type === "plugin");
@@ -671,6 +764,8 @@
       if (state) state.textContent = host.dataset.promptId ? `Đang sửa “${getValue(host, "title") || "Prompt đã mở"}”. Lưu sẽ cập nhật prompt này.` : "Đang tạo prompt mới.";
     }
     if (manifest.id === "file-explorer") await renderFiles(host);
+    if (manifest.id === "speech-to-text") renderSubtitleTimeline(host);
+    if (manifest.id === "version-history") { await renderCollection(host, "versions"); renderVersionContext(host); }
     if (!live(host, epoch)) return;
     if (manifest.id === "ocr") host.querySelector('[data-tool-action="recognize-ocr"]')?.insertAdjacentHTML("afterend", button("cancel-ocr", "Hủy nhận dạng"));
     if (["drag-drop-dashboard", "widget-marketplace"].includes(manifest.id)) {
@@ -716,7 +811,7 @@
       monacoWorkers.forEach(worker => worker.terminate()); monacoWorkers.clear();
     }
     active.urls.forEach(url => URL.revokeObjectURL(url)); active.urls.clear();
-    active.host = null; active.manifest = null; active.ocrImage = null; active.ocrFile = null; active.mediaFile = null; active.mediaRecorder = null; active.mediaStream = null; active.mediaChunks = []; active.transcriptSegments = []; active.aiAttachment = null; active.dashboardUndo = [];
+    active.host = null; active.manifest = null; active.ocrImage = null; active.ocrFile = null; active.mediaFile = null; active.mediaRecorder = null; active.mediaStream = null; active.mediaChunks = []; active.transcriptSegments = []; active.subtitleCues = []; active.subtitleOrigin = "manual"; active.aiAttachment = null; active.dashboardUndo = [];
   }
 
   function render(host, nameOrId, options = {}) {
@@ -725,21 +820,38 @@
     cleanup(); active.host = host; active.manifest = manifest; active.scope = accountScope(options); host._toolScope = active.scope; host._toolAccount = active.scope; host._toolOptions = options; host._toolEpoch = active.epoch;
     if (manifest.id === "ai-prompt-library") delete host.dataset.promptId;
     if (manifest.id === "file-explorer") { delete host.dataset.activeFile; host._fileSavedContent = null; host._fileSavedName = ""; host._fileSavedFolder = ""; host._fileBaseUpdatedAt = ""; }
+    if (manifest.id === "version-history") { host._versionPage = 0; host._versionEditRevision = 0; host._versionRenderRevision = 0; host._selectedVersions = new Set(); host._versionLabels = new Map(); host._versionLabelDrafts = new Map(); host.dataset.versionContext = "local"; }
     host.innerHTML = markup(manifest);
     host._toolReady = hydrate(host, manifest).catch(error => { if (live(host)) notice(host, error.message, "error"); });
     return true;
   }
 
   async function runAction(action, buttonNode, host, manifest) {
-    const epoch = active.epoch;
+    const epoch = active.epoch, owner = scopeFor(host);
     // Capture this mount: a delayed read must never populate another account/tool in the same host.
     const storage = Object.fromEntries(["get", "list", "put", "delete"].map(method => [method, async (...args) => {
+      if (!live(host, epoch)) { const error = new Error("Workspace đã đóng hoặc tài khoản đã đổi."); error.name = "AbortError"; throw error; }
+      if (args[2] == null) args[2] = owner;
       const result = await rawStorage[method](...args);
       if (!live(host, epoch)) { const error = new Error("Workspace đã đóng hoặc tài khoản đã đổi."); error.name = "AbortError"; throw error; }
       return result;
     }]));
     const outputNode = host.querySelector("[data-tool-output]");
     if (action === "copy-output") { await navigator.clipboard.writeText(outputNode?.textContent || getValue(host, "ocr-result")); return notice(host, "Đã sao chép kết quả."); }
+    if (["subtitle-import", "subtitle-from-transcript", "subtitle-add", "subtitle-sort", "subtitle-validate", "subtitle-clear", "subtitle-up", "subtitle-down", "subtitle-delete"].includes(action)) {
+      if (manifest.id !== "speech-to-text") throw new Error("Timeline chỉ thuộc Speech To Text.");
+      if (action === "subtitle-import" || action === "subtitle-from-transcript") {
+        const text = action === "subtitle-import" ? getValue(host, "subtitle-source") : getValue(host, "transcript"); if (!text.trim()) throw new Error("Nhập nội dung trước khi tạo timeline.");
+        const parsed = parseSubtitles(action === "subtitle-import" ? text : formatTranscript(text, "srt")); active.subtitleCues = parsed.cues; active.subtitleOrigin = action === "subtitle-import" ? parsed.origin : "approximate";
+        renderSubtitleTimeline(host); return notice(host, action === "subtitle-import" ? `Đã nhập ${parsed.cues.length} cue cục bộ. ${parsed.warnings.join(" ")}` : "Đã tạo mốc ước lượng 4 giây/câu. Hãy chỉnh theo audio thực; đây không phải timestamp được đo.", action === "subtitle-import" ? "" : "warning");
+      }
+      if (action === "subtitle-add") { if (active.subtitleCues.length >= 300) throw new Error("Timeline giới hạn 300 cue."); const previous = active.subtitleCues.at(-1), start = previous && Number.isFinite(Number(previous.end)) ? Number(previous.end) : 0; active.subtitleCues.push({ id: uid("cue"), start: String(start), end: String(start + 4), text: "" }); }
+      if (action === "subtitle-clear") { if (active.subtitleCues.length && buttonNode.dataset.confirmClear !== "yes") { buttonNode.dataset.confirmClear = "yes"; buttonNode.textContent = "Xác nhận xóa timeline"; return notice(host, "Bấm lại để xóa timeline. Bản chép lời vẫn được giữ.", "warning"); } active.subtitleCues = []; active.subtitleOrigin = "manual"; buttonNode.textContent = "Xóa timeline"; delete buttonNode.dataset.confirmClear; }
+      if (action === "subtitle-sort") active.subtitleCues.sort((a, b) => (a.start.trim() && Number.isFinite(Number(a.start)) ? Number(a.start) : Infinity) - (b.start.trim() && Number.isFinite(Number(b.start)) ? Number(b.start) : Infinity));
+      if (["subtitle-up", "subtitle-down", "subtitle-delete"].includes(action)) { const id = buttonNode.closest("[data-subtitle-cue]")?.dataset.subtitleCue, index = active.subtitleCues.findIndex(row => row.id === id); if (index < 0) throw new Error("Cue không còn tồn tại."); if (action === "subtitle-delete") active.subtitleCues.splice(index, 1); else { const to = index + (action === "subtitle-up" ? -1 : 1); if (to < 0 || to >= active.subtitleCues.length) throw new Error("Cue đã ở đầu/cuối danh sách."); [active.subtitleCues[index], active.subtitleCues[to]] = [active.subtitleCues[to], active.subtitleCues[index]]; } }
+      if (action === "subtitle-validate") { const result = subtitleValidation(host); if (!result.ok) throw new Error(result.errors.join("\n")); return notice(host, "Timeline hợp lệ. Các mốc là dữ liệu bạn đã nhập/chỉnh, không chứng minh thời gian audio."); }
+      renderSubtitleTimeline(host); return;
+    }
     if (action === "start-recognition") {
       if (active.recognition) throw new Error("Micro đang nhận dạng. Dừng phiên hiện tại trước.");
       const Recognition = getRecognition(); if (!Recognition) throw new Error(featureSupport(manifest).reason);
@@ -752,7 +864,7 @@
       recognition.start(); return;
     }
     if (action === "stop-recognition") { active.recognition?.stop?.(); return; }
-    if (action === "clear-transcript") { getInput(host, "transcript").value = ""; active.transcriptSegments = []; setOutput(host, "Đã xóa bản chép lời."); return; }
+    if (action === "clear-transcript") { getInput(host, "transcript").value = ""; active.transcriptSegments = []; setOutput(host, "Đã xóa bản chép lời. Timeline độc lập vẫn giữ; dùng Xóa timeline nếu cần."); return; }
     if (action === "start-media-record") {
       if (active.mediaRecorder?.state === "recording") throw new Error("Đang ghi âm. Dừng phiên hiện tại trước.");
       if (!navigator.mediaDevices?.getUserMedia || !globalThis.MediaRecorder) throw new Error("Trình duyệt chưa hỗ trợ ghi âm. Hãy chọn một file audio/video thay thế.");
@@ -782,8 +894,10 @@
       setOutput(host, rows.length ? rows.map(tool => `${tool.name}\n#/tools/${tool.id}`).join("\n\n") : `Không có tool khớp “${query}”.`); await record(manifest.id, "search", query); return;
     }
     if (["export-srt", "export-vtt"].includes(action)) {
-      const kind = action.endsWith("srt") ? "srt" : "vtt", text = getValue(host, "transcript"); if (!text.trim()) throw new Error("Chưa có bản chép lời để xuất.");
-      download(`transcript.${kind}`, formatSegments(active.transcriptSegments, kind) || formatTranscript(text, kind), kind === "vtt" ? "text/vtt" : "application/x-subrip"); notice(host, active.transcriptSegments.length ? "Đã xuất timestamp nhận dạng." : "Đã xuất mốc 4 giây/câu để chỉnh thủ công; không phải timestamp đo từ audio.", "warning"); return;
+      const kind = action.endsWith("srt") ? "srt" : "vtt", text = getValue(host, "transcript"); if (!text.trim() && !active.subtitleCues.length) throw new Error("Chưa có bản chép lời hoặc timeline để xuất.");
+      if (!active.subtitleCues.length) { const parsed = parseSubtitles(formatTranscript(text, "srt")); active.subtitleCues = parsed.cues; active.subtitleOrigin = "approximate"; renderSubtitleTimeline(host); }
+      const result = subtitleValidation(host); if (!result.ok) throw new Error(`Chưa xuất phụ đề: ${result.errors.join("\n")}`);
+      download(`transcript.${kind}`, formatSegments(result.cues, kind), kind === "vtt" ? "text/vtt" : "application/x-subrip"); notice(host, active.subtitleOrigin === "approximate" ? "Đã xuất mốc ước lượng; không phải timestamp đo từ audio." : "Đã xuất timeline nhập/chỉnh sau khi kiểm tra thời gian và chồng lấn.", active.subtitleOrigin === "approximate" ? "warning" : ""); return;
     }
     if (action === "speak") {
       if (!("speechSynthesis" in globalThis)) throw new Error("Trình duyệt không hỗ trợ Text-to-Speech."); const text = getValue(host, "text").trim(); if (!text) throw new Error("Nhập văn bản cần đọc.");
@@ -866,10 +980,25 @@
       else await saveAutoDocument(host, true);
       return;
     }
-    if (action === "create-version") { const content = getValue(host, "document"); if (!content.trim()) throw new Error("Không thể tạo phiên bản trống."); await storage.put("records", { id: uid("version"), type: "version", label: getValue(host, "label").trim() || `Phiên bản ${nowLabel()}`, content, createdAt: new Date().toISOString() }); await renderCollection(host, "versions"); return; }
+    if (action === "create-version") { const content = validateVersionContent(getValue(host, "document")); if (!content.trim()) throw new Error("Không thể tạo phiên bản trống."); await storage.put("records", { id: uid("version"), type: "version", label: getValue(host, "label").trim().slice(0, 180) || `Phiên bản ${nowLabel()}`, content, sourceDocument: host.dataset.versionContext || "local", createdAt: new Date().toISOString() }, owner); if (live(host, epoch)) await renderCollection(host, "versions"); return; }
+    if (action === "export-version-draft") return download("hh-version-draft.txt", getValue(host, "document"));
+    if (["version-prev", "version-next"].includes(action)) { host._versionPage = Math.max(0, (host._versionPage || 0) + (action === "version-prev" ? -1 : 1)); return renderCollection(host, "versions"); }
+    if (action === "clear-version-selection") { host._selectedVersions?.clear(); host.querySelectorAll("[data-version-select]").forEach(node => { node.checked = false; }); renderVersionSelection(host); return; }
+    if (action === "compare-selected-versions") { const ids = [...(host._selectedVersions || [])]; if (ids.length !== 2) throw new Error("Chọn đúng hai snapshot để so sánh."); const [first, second] = await Promise.all(ids.map(id => storage.get("records", id, owner))); if (!live(host, epoch)) return; if (first?.type !== "version" || second?.type !== "version") throw new Error("Snapshot đã bị xóa hoặc không đúng loại."); setOutput(host, `${first.label} [${versionContext(first)}] → ${second.label} [${versionContext(second)}]\n${compareLines(first.content, second.content).text}`); return; }
+    if (action === "rename-version") { const article = buttonNode.closest("[data-record-id]"), label = article?.querySelector("[data-version-label]")?.value.trim(); if (!label || label.length > 180) throw new Error("Nhãn snapshot cần 1–180 ký tự."); const row = await storage.get("records", article.dataset.recordId, owner); if (!live(host, epoch)) return; if (row?.type !== "version") throw new Error("Snapshot không tồn tại."); await storage.put("records", { ...row, label, updatedAt: new Date().toISOString() }, owner); if (!live(host, epoch)) return; host._versionLabelDrafts?.delete(row.id); return renderCollection(host, "versions"); }
     if (action === "export-document") return download("hh-autosave-draft.txt", getValue(host, "document"));
     if (action === "compare-version") { const row = await storage.get("records", buttonNode.closest("[data-record-id]").dataset.recordId); if (!row) throw new Error("Snapshot không tồn tại."); setOutput(host, compareLines(row.content, getValue(host, "document")).text); return; }
-    if (action === "restore-version") { const row = await storage.get("records", buttonNode.closest("[data-record-id]").dataset.recordId); if (!row) throw new Error("Snapshot không tồn tại."); const content = getValue(host, "document"); if (content !== row.content && content.trim()) await storage.put("records", { id: uid("version"), type: "version", label: `Bản an toàn trước khi khôi phục ${row.label}`, content, createdAt: new Date().toISOString() }); getInput(host, "document").value = row.content; await renderCollection(host, "versions"); return notice(host, `Đã khôi phục “${row.label}” ở đây; nội dung cũ đã lưu snapshot nếu có.`); }
+    if (action === "restore-version") {
+      const content = getValue(host, "document"), editRevision = host._versionEditRevision || 0, context = host.dataset.versionContext || "local";
+      const row = await storage.get("records", buttonNode.closest("[data-record-id]").dataset.recordId, owner); if (!live(host, epoch)) return; if (row?.type !== "version") throw new Error("Snapshot không tồn tại.");
+      if (getValue(host, "document") !== content || (host._versionEditRevision || 0) !== editRevision) throw new Error("Nội dung vừa được sửa trong lúc đọc snapshot. Chưa khôi phục; phần mới nhập được giữ.");
+      if (context !== versionContext(row) && content.trim() && buttonNode.dataset.confirmContext !== row.id) { buttonNode.dataset.confirmContext = row.id; buttonNode.textContent = "Xác nhận đổi nhóm & khôi phục"; return notice(host, `Snapshot thuộc nhóm ${versionContext(row)}, khác nhóm ${context} đang soạn. Bấm lại để chuyển ở đây; không đổi workspace nguồn.`, "warning"); }
+      validateVersionContent(row.content); validateVersionContent(content);
+      if (content !== row.content && content.trim()) await storage.put("records", { id: uid("version"), type: "version", label: `Bản an toàn trước khi khôi phục ${row.label}`.slice(0, 180), content, sourceDocument: context, createdAt: new Date().toISOString() }, owner);
+      if (!live(host, epoch)) return;
+      if (getValue(host, "document") !== content || (host._versionEditRevision || 0) !== editRevision) throw new Error("Bạn vừa nhập thêm khi lưu bản an toàn. Đã giữ bản hiện tại; chưa khôi phục.");
+      getInput(host, "document").value = row.content; host.dataset.versionContext = versionContext(row); host._versionEditRevision = editRevision + 1; await renderCollection(host, "versions"); return notice(host, `Đã khôi phục “${row.label}” ở đây; nội dung cũ đã lưu snapshot nếu có.`);
+    }
     if (action === "export-versions") { const rows = await storage.list("records", row => row.type === "version"); download("hh-version-history.json", JSON.stringify({ version: 1, items: rows }, null, 2), "application/json"); return; }
     if (action === "preview-file") { if (fileHasDirtyEdits(host)) throw new Error("Tệp đang có thay đổi chưa lưu. Lưu/áp dụng đổi tên/chuyển thư mục, hoặc Xuất bản nháp rồi dùng Bỏ thay đổi trước khi mở tệp khác."); return previewFile(host, buttonNode.dataset.recordId); }
     if (action === "export-file-draft") { if (!getInput(host, "file-content")) throw new Error("Tệp này không có bản nháp văn bản."); return download(`${slug(getValue(host, "rename") || host._fileSavedName)}-draft.txt`, getValue(host, "file-content")); }
@@ -1085,6 +1214,13 @@
     const epoch = active.epoch;
     const manifest = resolveManifest(name); if (!manifest || !live(work)) return false;
     const owner = scopeFor(work);
+    if (manifest.id === "speech-to-text" && event.target.matches("[data-tool-subtitle-file]")) {
+      const file = event.target.files?.[0]; if (!file) return true; if (file.size > 1048576) throw new Error("Phụ đề vượt 1 MB. Không đọc hoặc gửi file.");
+      const source = await file.text(), parsed = parseSubtitles(source); if (!live(work, epoch)) return true;
+      active.subtitleCues = parsed.cues; active.subtitleOrigin = parsed.origin; getInput(work, "subtitle-source").value = source; renderSubtitleTimeline(work); await saveDraft(work, manifest); if (!live(work, epoch)) return true; notice(work, `Đã nhập ${parsed.cues.length} cue từ ${file.name}. Không tải lên máy chủ. ${parsed.warnings.join(" ")}`); event.target.value = ""; return true;
+    }
+    if (manifest.id === "version-history" && event.target.matches("[data-version-select]")) { const id = event.target.dataset.versionSelect; work._selectedVersions ||= new Set(); if (event.target.checked) { if (work._selectedVersions.size >= 2 && !work._selectedVersions.has(id)) { event.target.checked = false; return notice(work, "Chỉ chọn hai snapshot để so sánh.", "warning"); } const row = await storage.get("records", id, owner); if (!live(work, epoch)) return true; if (row?.type !== "version") throw new Error("Snapshot không tồn tại."); if (work._selectedVersions.size >= 2 && !work._selectedVersions.has(id)) { event.target.checked = false; return notice(work, "Chỉ chọn hai snapshot để so sánh.", "warning"); } work._selectedVersions.add(id); work._versionLabels?.set(id, row.label); } else work._selectedVersions.delete(id); renderVersionSelection(work); return true; }
+    if (manifest.id === "version-history" && event.target.matches('[data-tool-input="version-document"],[data-tool-input="version-sort"],[data-tool-input="version-page-size"]')) { work._versionPage = 0; await renderCollection(work, "versions"); scheduleDraft(work, manifest); return true; }
     if (event.target.matches("[data-widget-task]")) { const target = event.target, taskId = target.dataset.widgetTask, checked = target.checked; await updateWidget(work, target.closest("article[data-widget-prefix]"), row => { const task = (row.tasks || []).find(item => item.id === taskId); if (task) task.done = checked; }, false); return true; }
     if (event.target.matches("[data-tool-file]")) {
       const files = [...event.target.files]; if (files.length > 20 || files.some(file => file.size > 20 * 1024 * 1024)) throw new Error("Mỗi lần tối đa 20 tệp, mỗi tệp 20 MB."); const folderId = getValue(work, "file-folder"); for (const file of files) { if (!live(work)) return true; await storage.put("files", { id: uid("file"), name: file.name, type: file.type || "application/octet-stream", size: file.size, folderId, blob: file, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, owner); } if (live(work)) { await renderFiles(work); await record(manifest.id, "upload", `${files.length} tệp`); } return true;
@@ -1108,8 +1244,17 @@
 
   function handleInput(event, work, name) {
     const manifest = resolveManifest(name); if (!manifest || !live(work)) return false;
+    if (manifest.id === "version-history" && event.target.matches("[data-version-label]")) { const id = event.target.closest("[data-record-id]")?.dataset.recordId; if (id) { work._versionLabelDrafts ||= new Map(); work._versionLabelDrafts.set(id, String(event.target.value).slice(0, 180)); } return true; }
+    if (manifest.id === "speech-to-text" && event.target.matches("[data-subtitle-field]")) {
+      const id = event.target.closest("[data-subtitle-cue]")?.dataset.subtitleCue, fieldName = event.target.dataset.subtitleField, index = active.subtitleCues.findIndex(row => row.id === id); if (index < 0 || !["start", "end", "text"].includes(fieldName)) return false;
+      const row = active.subtitleCues[index], candidate = active.subtitleCues.map((item, ordinal) => ordinal === index ? { ...item, [fieldName]: String(event.target.value) } : item);
+      try { active.subtitleCues = normalizeSubtitleDraft({ version: 1, origin: active.subtitleOrigin, cues: candidate }).cues; subtitleValidation(work); scheduleDraft(work, manifest); } catch (error) { event.target.value = row[fieldName]; notice(work, error.message, "error"); }
+      return true;
+    }
     if (event.target.matches("[data-widget-content]")) { const content = event.target.value.slice(0, 200000); updateWidget(work, event.target.closest("article[data-widget-prefix]"), row => { row.content = content; }, false).catch(error => notice(work, error.message, "error")); return true; }
     if (event.target.matches("[data-tool-input]")) scheduleDraft(work, manifest);
+    if (manifest.id === "version-history" && event.target.matches('[data-tool-input="document"]')) { work._versionEditRevision = (work._versionEditRevision || 0) + 1; return true; }
+    if (manifest.id === "version-history" && event.target.matches('[data-tool-input="version-filter"]')) { work._versionPage = 0; if (work._versionFilterTimer) { clearTimeout(work._versionFilterTimer); active.timers.delete(work._versionFilterTimer); } const epoch = active.epoch, timer = setTimeout(() => { active.timers.delete(timer); work._versionFilterTimer = null; if (live(work, epoch)) renderCollection(work, "versions").catch(error => notice(work, error.message, "error")); }, 160); work._versionFilterTimer = timer; active.timers.add(timer); return true; }
     if (manifest.id === "file-explorer" && event.target.matches('[data-tool-input="file-content"],[data-tool-input="rename"]')) { fileEditState(work); return true; }
     if (manifest.id === "workspace-tabs" && event.target.matches('[data-tool-input="document"],[data-tool-input="title"]')) { work._tabDirty = true; tabState(work, "Có thay đổi · nhấn Lưu hoặc chuyển tab để lưu tài liệu."); return true; }
     if (manifest.id === "ai-prompt-library" && event.target.matches('[data-tool-input="content"]')) { renderVariables(work); return true; }
@@ -1165,6 +1310,12 @@
     imagePrompt,
     formatTranscript,
     formatSegments,
+    parseSubtitleTime,
+    parseSubtitles,
+    validateSubtitleCues,
+    normalizeSubtitleDraft,
+    selectVersionPage,
+    validateVersionContent,
     validatePlugin,
     runPlugin,
     promptVariables,

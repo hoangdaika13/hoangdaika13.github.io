@@ -3,14 +3,15 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
+const { Worker: NodeWorker } = require("node:worker_threads");
 
 const root = path.resolve(__dirname, "..");
 const source = fs.readFileSync(path.join(root, "utility-lab-tools.js"), "utf8");
 const css = fs.readFileSync(path.join(root, "utility-lab-tools.css"), "utf8");
 
-function load() {
-  const window = { crypto: require("node:crypto").webcrypto };
-  const context = vm.createContext({ window, crypto: window.crypto, localStorage: { getItem: () => null, setItem() {}, removeItem() {} }, navigator: {}, performance: {}, document: {}, Blob, URL, TextEncoder, console, setTimeout, clearTimeout, setInterval, clearInterval });
+function load(options = {}) {
+  const window = { crypto: require("node:crypto").webcrypto, ...(options.window || {}) };
+  const context = vm.createContext({ window, crypto: window.crypto, localStorage: { getItem: () => null, setItem() {}, removeItem() {} }, navigator: {}, performance: {}, document: {}, Blob, URL: options.URL || URL, TextEncoder, console, setTimeout, clearTimeout, setInterval, clearInterval });
   vm.runInContext(source, context);
   return window.HHUtilityTools;
 }
@@ -19,6 +20,71 @@ test("publishes all remaining Developer, Productivity and System tools", () => {
   const api = load();
   assert.equal(api.manifests().length, 53);
   for (const name of ["Markdown Editor", "API Tester", "Terminal Simulator", "Productivity Dashboard", "Kanban", "Calculator", "Clipboard History", "User Preferences Center", "Weather Widget", "Network Speed", "QR Scanner"]) assert.equal(api.supports(name), true, name);
+});
+
+test("CSV parser preserves quotes, multiline Unicode, trailing empties and auto delimiters", () => {
+  const api = load(), source = '\uFEFFTên;Ghi chú;Trống\r\nHoàng;"Dòng 1\r\nDòng 2, có ""quote"" 🌌";\r\n\r\nDung;Thư viện;';
+  const parsed = api.parseCSV(source); assert.equal(parsed.delimiter, ";"); assert.equal(parsed.rows.length, 3); assert.equal(parsed.rows[1][1], 'Dòng 1\r\nDòng 2, có "quote" 🌌'); assert.equal(parsed.rows[2][2], "");
+  assert.deepEqual(JSON.parse(JSON.stringify(api.parseCSV(api.serializeCSV(parsed.rows, { delimiter: ";", protectFormulas: false }), ";").rows)), JSON.parse(JSON.stringify(parsed.rows)));
+  assert.equal(api.parseCSV('"one";"two"').delimiter, ";"); assert.equal(api.parseCSV("a\tb\n1\t2").delimiter, "\t");
+  assert.equal(api.parseCSV('""\n\n').rows.length, 1); assert.equal(api.parseCSV("").rows.length, 0);
+  for (const bad of ['a,"unclosed', 'a,"closed"tail', 'a,un"quoted', "a,\u0000"]) assert.throws(() => api.parseCSV(bad, ","), bad);
+  assert.throws(() => api.parseCSV("x".repeat(1048577))); assert.throws(() => api.parseCSV(Array(5001).fill("a").join("\n"))); assert.throws(() => api.parseCSV(Array(101).fill("a").join(","))); assert.throws(() => api.parseCSV("x".repeat(32769)));
+});
+
+test("CSV↔JSON rejects ambiguous loss and handles prototype-like headers as plain data", () => {
+  const api = load(), parsed = api.parseCSV("__proto__,constructor,Tên\nraw,field,Hoàng"); const records = api.csvToJSON(parsed.rows);
+  assert.equal(Object.getPrototypeOf(records[0]), null); assert.equal(records[0].__proto__, "raw"); assert.equal(records[0].constructor, "field");
+  assert.throws(() => api.csvToJSON([["a", "a"], ["1", "2"]])); assert.throws(() => api.csvToJSON([["a", "b"], ["1"]]));
+  assert.equal(api.csvToJSON([["a", "a"], ["1"]], "arrays")[1].length, 1);
+  const converted = api.jsonToCSV('[{"name":"🌌","score":9,"done":false},{"name":"Hoàng","note":null}]');
+  assert.equal(converted.hasHeader, true); assert.deepEqual(Array.from(converted.rows[0]), ["name", "score", "done", "note"]); assert.deepEqual(Array.from(converted.rows[1]), ["🌌", "9", "false", ""]);
+  assert.equal(api.jsonToCSV('[["a",1],["b",null]]').hasHeader, false);
+  for (const bad of ['{"a":1}', '[{"a":{"nested":true}}]', '[[1],{"a":2}]', '[1,2]']) assert.throws(() => api.jsonToCSV(bad));
+});
+
+test("CSV downloads default to formula protection and explicit raw serialization preserves source", () => {
+  const api = load(), rows = [["=SUM(1,2)", "+cmd", "-2", "@x", "\t=hidden", " \r=trick", "Plain 🌌"]];
+  const protectedCSV = api.serializeCSV(rows, { bom: true }); assert.ok(protectedCSV.startsWith("\uFEFF")); const protectedRows = api.parseCSV(protectedCSV, ",").rows[0];
+  assert.ok(protectedRows.slice(0, 6).every((value) => value.startsWith("'"))); assert.equal(protectedRows[6], "Plain 🌌");
+  assert.equal(rows[0][0], "=SUM(1,2)"); assert.equal(api.parseCSV(api.serializeCSV(rows, { protectFormulas: false }), ",").rows[0][0], "=SUM(1,2)");
+  assert.equal(api.parseCSV(api.serializeCSV([["＝SUM(1,2)"]]), ",").rows[0][0], "'＝SUM(1,2)");
+});
+
+function regexThreadHarness() {
+  const blobs = new Map(), counts = { created: 0, terminated: 0 }; let sequence = 0;
+  const TestURL = class extends URL {}; TestURL.createObjectURL = (blob) => { const key = `blob:regex-${++sequence}`; blobs.set(key, blob); return key; }; TestURL.revokeObjectURL = (key) => blobs.delete(key);
+  class BrowserWorker {
+    constructor(url) { counts.created++; this.ended = false; blobs.get(url).text().then((code) => { if (this.ended) return; this.worker = new NodeWorker(`const { parentPort } = require('node:worker_threads'); globalThis.postMessage = data => parentPort.postMessage(data); parentPort.on('message', data => globalThis.onmessage({ data })); ${code}`, { eval: true }); this.worker.on("message", (data) => { if (!this.ended) this.onmessage?.({ data }); }); this.worker.on("error", () => { if (!this.ended) this.onerror?.(); }); if (this.pending) this.worker.postMessage(this.pending); }); }
+    postMessage(data) { if (this.worker) this.worker.postMessage(data); else this.pending = data; }
+    terminate() { if (this.ended) return; this.ended = true; counts.terminated++; this.worker?.terminate(); }
+  }
+  return { api: load({ window: { Worker: BrowserWorker }, URL: TestURL }), blobs, counts };
+}
+
+test("Regex actual worker returns captures, named groups, indices and exact replacement tokens", async () => {
+  const env = regexThreadHarness(), input = "ab12 cd3", pattern = "(?<word>[a-z]+)(\\d+)?", replacement = "$<word>:$2:$&:$$";
+  const result = await env.api.evaluateRegex(pattern, "gd", input, replacement, true);
+  assert.equal(result.output, input.replace(new RegExp(pattern, "gd"), replacement)); assert.equal(result.count, 2); assert.deepEqual(result.matches[0].captures, ["ab", "12"]); assert.equal(result.matches[1].groups.word, "cd"); assert.deepEqual(result.matches[0].indices[1], [0, 2]);
+  for (const template of ["$`|$'|$&|$$", "$99 $10 $01 $0", "$<missing>-$1"]) { const actual = await env.api.evaluateRegex(pattern, "g", input, template, true); assert.equal(actual.output, input.replace(new RegExp(pattern, "g"), template)); }
+  const single = await env.api.evaluateRegex("[a-z]+", "", input, "X", true); assert.equal(single.count, 1); assert.equal(single.output, "X12 cd3"); assert.equal(env.blobs.size, 0); assert.equal(env.counts.created, env.counts.terminated);
+});
+
+test("Regex zero-length Unicode advances by code point and empty captures remain distinguishable", async () => {
+  const env = regexThreadHarness(), result = await env.api.evaluateRegex("(?=)", "gu", "😀a", "_", true);
+  assert.deepEqual(result.matches.map((item) => item.index), [0, 2, 3]); assert.equal(result.output, "😀a".replace(/(?=)/gu, "_"));
+  const optional = await env.api.evaluateRegex("(a)?()", "g", "b", "[$1][$2]", false); assert.equal(optional.matches[0].captures[0], null); assert.equal(optional.matches[0].captures[1], "");
+  assert.equal(env.blobs.size, 0); assert.equal(env.counts.created, env.counts.terminated);
+});
+
+test("Regex actual worker enforces capture/result budgets, count limits and catastrophic timeout", async () => {
+  const env = regexThreadHarness(), long = await env.api.evaluateRegex("(?=(.+))", "g", "a".repeat(1500), "", false); assert.equal(long.limited, true); assert.ok(JSON.stringify(long).length < 400000); assert.equal(long.captureLimited, true); assert.equal(long.count, 1000);
+  await assert.rejects(env.api.evaluateRegex("a", "g", "a".repeat(1001), "X", true), /1.000 match/);
+  await assert.rejects(env.api.evaluateRegex("a", "g", "a".repeat(1000), "$'".repeat(100), true), /2 triệu/);
+  await assert.rejects(env.api.evaluateRegex("a", "g", "a".repeat(1000), "\u0001".repeat(1000), true), /4 MiB/);
+  await assert.rejects(env.api.evaluateRegex("(a+)+$", "g", "a".repeat(25000) + "!", "", false), /1 giây/);
+  await assert.rejects(env.api.evaluateRegex("a", "gg", "a", "", false), /Flags/); await assert.rejects(env.api.evaluateRegex("(", "g", "a", "", false));
+  assert.equal(env.blobs.size, 0); assert.equal(env.counts.created, env.counts.terminated);
 });
 
 test("calculator uses a deterministic parser and rejects executable input", () => {

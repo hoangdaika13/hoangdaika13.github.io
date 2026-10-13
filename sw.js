@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1052";
+const CACHE = "hh-identity-portal-v1053";
+// Previous release: hh-identity-portal-v1052; ./performance-loader.js?v=714; ./feature-lab.css?v=6; ./feature-lab.js?v=8; ./platform-tools.css?v=3; ./platform-tools.js?v=3; ./tool-workspace-pro.css?v=3; ./tool-workspace-pro.js?v=3; ./utility-lab-tools.css?v=11; ./utility-lab-tools.js?v=12.
 // Previous release: hh-identity-portal-v1051; ./performance-loader.js?v=713; ./all-tool-state.js?v=1; ./feature-lab.js?v=7; ./platform-tools.css?v=2; ./platform-tools.js?v=2; ./tool-workspace-pro.css?v=2; ./tool-workspace-pro.js?v=2; ./utility-lab-tools.css?v=10; ./utility-lab-tools.js?v=11.
 // Previous release: hh-identity-portal-v1050; ./performance-loader.js?v=712; ./script.js?v=289; ./tool-manifests.js?v=1; ./tool-runtime.js?v=1; ./feature-lab.css?v=5; ./feature-lab.js?v=6; ./platform-tools.css?v=1; ./platform-tools.js?v=1; ./tool-workspace-pro.css?v=1; ./tool-workspace-pro.js?v=1; ./utility-lab-tools.css?v=9; ./utility-lab-tools.js?v=10.
 // Previous release: hh-identity-portal-v1049; ./performance-loader.js?v=711; ./chat-ai-hub.css?v=20; ./chat-ai-hub.js?v=18.
@@ -190,10 +191,10 @@ const RUNTIME_ASSETS = [
   "./dev-regex-database.css?v=1",
   "./dev-code-git.css?v=1",
   "./dev-diagnostics-ai.css?v=1",
-  "./feature-lab.css?v=6",
-  "./platform-tools.css?v=3",
-  "./tool-workspace-pro.css?v=3",
-  "./utility-lab-tools.css?v=11",
+  "./feature-lab.css?v=7",
+  "./platform-tools.css?v=4",
+  "./tool-workspace-pro.css?v=4",
+  "./utility-lab-tools.css?v=12",
   "./media-design-pro.css?v=1",
   "./media-design-page.css?v=22",
   "./media-cosmos.css?v=3",
@@ -689,10 +690,10 @@ const RUNTIME_ASSETS = [
   "./all-tool-state.js?v=2",
   "./tool-manifests.js?v=2",
   "./tool-runtime.js?v=2",
-  "./feature-lab.js?v=8",
-  "./platform-tools.js?v=3",
-  "./tool-workspace-pro.js?v=3",
-  "./utility-lab-tools.js?v=12",
+  "./feature-lab.js?v=9",
+  "./platform-tools.js?v=4",
+  "./tool-workspace-pro.js?v=4",
+  "./utility-lab-tools.js?v=13",
   "./feature-engines.js?v=2",
   "./hh-school-curriculum.js?v=3",
   "./hh-school-core.js?v=4",
@@ -795,7 +796,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=714",
+  "./performance-loader.js?v=715",
   "./auth-platform.js?v=22",
   "./auth-neon-gateway.js?v=35",
   "./script.js?v=290"

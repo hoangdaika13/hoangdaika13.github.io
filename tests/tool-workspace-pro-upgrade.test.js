@@ -68,3 +68,27 @@ test("new workspace controls are independent, actionable and describe engine lim
   assert.match(api.renderMarkup("monaco-code-editor"), /code-document/); assert.match(api.renderMarkup("monaco-code-editor"), /diff-code/);
   assert.match(api.renderMarkup("speech-to-text"), /data-tool-paid-consent/); assert.match(api.renderMarkup("text-to-speech"), /data-tool-tts-preview/); assert.doesNotMatch(api.renderMarkup("text-to-speech"), /autoplay/);
 });
+
+test("SRT and basic WebVTT parser preserves millisecond timestamps and literal multiline text", () => {
+  const srt = api.parseSubtitles("1\n00:00:01,001 --> 00:00:02,999\nFirst\nSecond\n\n2\n00:00:03,000 --> 00:00:04,000\nLast"); assert.equal(srt.origin, "srt"); assert.equal(srt.cues[0].start, "1.001"); assert.equal(srt.cues[0].text, "First\nSecond");
+  const vtt = api.parseSubtitles("\uFEFFWEBVTT\n\nNOTE private comment\nignored\n\nchapter-one\n01:01.500 --> 01:03.000\n<v Speaker>Literal text"); assert.equal(vtt.origin, "vtt"); assert.equal(vtt.cues[0].start, "61.5"); assert.equal(vtt.warnings.length, 1); assert.equal(vtt.cues[0].text, "<v Speaker>Literal text");
+  assert.match(api.formatSegments(srt.cues, "srt"), /00:00:01,001 --> 00:00:02,999/);
+  assert.throws(() => api.parseSubtitles("WEBVTT\n\n00:00.000 --> 00:01.000 align:center\nText"), /cue settings/);
+  assert.throws(() => api.parseSubtitles("1\n00:60:00,000 --> 00:61:00,000\nText"), /Timestamp/);
+  const large = Array.from({ length: 50 }, (_, index) => ({ id: `large-${index}`, start: index * 4, end: index * 4 + 4, text: "x".repeat(4000) })); const serialized = api.formatSegments(large, "srt"); assert.ok(serialized.length > 200000); assert.equal(api.parseSubtitles(serialized).cues.reduce((count, row) => count + row.text.length, 0), 200000);
+});
+
+test("subtitle export validation catches negative, reversed, overlapping, blank and submillisecond cues", () => {
+  const cue = (id, start, end, text = "text") => ({ id, start, end, text });
+  assert.equal(api.validateSubtitleCues([cue("one", "0", "1.001"), cue("two", "1.001", "2")]).ok, true);
+  for (const cues of [[cue("one", "-1", "2")], [cue("one", "2", "1")], [cue("one", "0", "3"), cue("two", "2", "4")], [cue("one", "0", "1", "")], [cue("one", "0.0001", "1")], [cue("one", "", "1")]]) assert.equal(api.validateSubtitleCues(cues).ok, false);
+  assert.throws(() => api.normalizeSubtitleDraft({ version: 1, origin: "manual", cues: Array.from({ length: 301 }, (_, i) => cue(`cue-${i}`, "0", "1")) }), /không hợp lệ/);
+  assert.equal(api.normalizeSubtitleDraft({ version: 1, origin: "manual", cues: [cue("blank-draft", "", "", "")] }).cues[0].start, "");
+});
+
+test("version search, context paging and large-content limits are deterministic", () => {
+  const rows = Array.from({ length: 43 }, (_, index) => ({ id: `v-${index}`, type: "version", label: `L${String(index).padStart(2, "0")}`, sourceDocument: index % 2 ? "code" : "local", content: index === 4 ? "needle" : "text", createdAt: new Date(Date.UTC(2026, 0, index + 1)).toISOString() }));
+  assert.equal(api.selectVersionPage(rows).rows.length, 20); assert.equal(api.selectVersionPage(rows, { page: 2 }).rows.length, 3); assert.equal(api.selectVersionPage(rows, { page: 100 }).page, 2);
+  assert.equal(api.selectVersionPage(rows, { query: "needle" }).rows[0].id, "v-4"); assert.equal(api.selectVersionPage(rows, { document: "code" }).count, 21); assert.equal(api.selectVersionPage(rows, { sort: "oldest" }).rows[0].id, "v-0");
+  assert.equal(api.validateVersionContent("x".repeat(500000)).length, 500000); assert.equal(api.validateVersionContent("猫".repeat(200000)).length, 200000); assert.throws(() => api.validateVersionContent("猫".repeat(200001)), /vượt giới hạn/);
+});

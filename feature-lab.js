@@ -43,10 +43,12 @@
     "page-progress": "Theo dõi sự kiện tiến trình được công bố; không suy đoán tiến độ tác vụ.",
     "fps-monitor": "Đo FPS, frame time, long task và độ ổn định trong 60 giây.",
     "voice-search": "Tìm kiếm bằng micro với transcript tạm thời và bước xác nhận.",
-    "speech-to-text": "Chép lời trực tiếp khi trình duyệt hỗ trợ; tệp audio cần adapter máy chủ thực tế.",
-    "text-to-speech": "Chọn giọng, ngôn ngữ, tốc độ và cao độ để đọc văn bản.",
+    "speech-to-text": "Chép lời trực tiếp, chép file qua backend có đồng ý chi phí; sửa từng mốc phụ đề và xuất SRT/VTT.",
+    "text-to-speech": "Nghe bằng giọng thiết bị; tạo WAV qua backend có đồng ý chi phí, không tự phát âm thanh.",
     "ai-chat": "Hội thoại nhiều phiên qua AI Gateway có quota và khả năng hủy.",
     "prompt-library": "Thư viện prompt có thư mục, tag, phiên bản và xuất dữ liệu.",
+    "ai-chat-assistant": "Soạn và lưu cuộc trò chuyện riêng; gửi AI qua backend sau đồng ý chi phí và có thể hủy chờ kết quả.",
+    "ai-prompt-library": "Thư viện prompt: sửa, tìm theo nhãn, yêu thích, biến tái sử dụng và nhập/xuất JSON.",
     "prompt-optimizer": "Tối ưu prompt theo mục tiêu và so sánh trước/sau.",
     "image-prompt-generator": "Tạo prompt hình ảnh có phong cách, camera và negative prompt.",
     "workspace-tabs": "Mở nhiều tài liệu, ghim tab và khôi phục phiên làm việc.",
@@ -54,9 +56,13 @@
     "widget-marketplace": "Bộ widget cục bộ được duyệt: cài, mở, vô hiệu hóa và gỡ trên thiết bị này.",
     "plugin-system": "Kiểm tra manifest và chạy plugin cục bộ trong danh sách được duyệt; không thực thi mã tải lên.",
     "auto-save": "Lưu có debounce, retry và phục hồi bản nháp sau sự cố.",
-    "version-history": "So sánh, gắn nhãn, tạo nhánh và khôi phục phiên bản.",
-    "file-explorer": "Quản lý file bằng IndexedDB/OPFS với tìm kiếm và xuất dữ liệu.",
+    "version-history": "Tìm, gắn nhãn, so sánh snapshot và khôi phục có bản sao an toàn; không ghi đè ngầm.",
+    "file-explorer": "Tệp lưu riêng trong IndexedDB: thư mục, tìm kiếm, sửa văn bản an toàn và xuất bản nháp.",
     "monaco-editor": "Editor văn bản và mã nguồn; Monaco nâng cao chỉ khả dụng khi runtime đã tải.",
+    "monaco-code-editor": "Monaco cục bộ: nhiều tài liệu, định dạng, báo lỗi và so bản lưu; mobile có editor văn bản, không chạy mã.",
+    "notes": "Ghi chú cá nhân, tìm kiếm, xem Markdown, lưu theo tài khoản và xuất dữ liệu.",
+    "dev-utilities": "CSV Workbench: đọc bảng, lọc, chuyển CSV/JSON, nhập và xuất tệp; tiện ích xử lý văn bản.",
+    "regex-playground": "Regex trong Worker: match, capture groups, vị trí và xem thay thế; giới hạn thời gian chạy.",
     ocr: "Crop ảnh và nhận dạng chữ cục bộ bằng Tesseract Việt/Anh; sửa và xuất TXT, không tải ảnh lên máy chủ."
   });
 
@@ -65,6 +71,7 @@
   })[char]);
   const slug = (value) => String(value || "").toLowerCase().replace(/\+\+/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const STORAGE_KEY = "hh.all-tools.catalog.v1";
+  const VIEW_KEY = "hh.all-tools.catalog-view.v1";
   const runtimeLabels = Object.freeze({ browser: "Trình duyệt", server: "Máy chủ", ai: "AI", integration: "Kết nối", legacy: "Cục bộ" });
   let activeMount = null;
   const runtimes = new Map();
@@ -76,6 +83,24 @@
     Productivity: { label: "Năng suất cá nhân", accent: "#6ee7b7", icon: "✓" },
     "System & UX": { label: "Hệ thống & Trải nghiệm", accent: "#ff8ece", icon: "◫" }
   });
+
+  function normalizeCatalogView(value) {
+    const allowed = { group: ["all", ...Object.keys(GROUPS)], collection: ["all", "favorites", "pinned", "recent"], runtime: ["all", "browser", "server", "ai", "integration"], sort: ["registry", "name", "recent", "pinned"] };
+    return Object.fromEntries(Object.entries(allowed).map(([field, values]) => [field, values.includes(value?.[field]) ? value[field] : values[0]]));
+  }
+  const searchText = value => String(value || "").normalize("NFD").replace(/\p{M}/gu, "").replace(/[đĐ]/g, "d").toLocaleLowerCase("vi");
+  function filterCatalog(catalog, view, preferences = {}, query = "") {
+    view = normalizeCatalogView(view);
+    const needle = searchText(String(query).slice(0, 160)).trim();
+    const positions = new Map(catalog.map((tool, index) => [tool.id, index]));
+    const rank = (collection, id) => { const index = (Array.isArray(preferences[collection]) ? preferences[collection] : []).indexOf(id); return index < 0 ? Number.MAX_SAFE_INTEGER : index; };
+    const tools = catalog.filter(tool => (view.group === "all" || tool.group === view.group) && (view.runtime === "all" || tool.runtime === view.runtime) && (view.collection === "all" || Array.isArray(preferences[view.collection]) && preferences[view.collection].includes(tool.id)) && (!needle || searchText(`${tool.name} ${tool.description || ""} ${GROUP_META[tool.group]?.label || tool.group} ${runtimeLabels[tool.runtime] || tool.runtime}`).includes(needle)));
+    return tools.sort((left, right) => {
+      if (view.sort === "name") return left.name.localeCompare(right.name, "vi", { numeric: true, sensitivity: "base" }) || positions.get(left.id) - positions.get(right.id);
+      if (["recent", "pinned"].includes(view.sort)) return rank(view.sort, left.id) - rank(view.sort, right.id) || positions.get(left.id) - positions.get(right.id);
+      return positions.get(left.id) - positions.get(right.id);
+    });
+  }
 
   const readState = () => {
     try { return global.HHAllToolState?.readCatalogPreferences?.() || global.HHAllToolState?.readJSON(STORAGE_KEY, {}) || {}; }
@@ -214,17 +239,18 @@
     const validIds = new Set(catalog.map(tool => tool.id));
     const cleanIds = values => Array.isArray(values) ? [...new Set(values.filter(id => validIds.has(id)))].slice(0, 86) : [];
     const preferences = { favorites: cleanIds(saved.favorites), pinned: cleanIds(saved.pinned), recent: cleanIds(saved.recent).slice(0, 12) };
+    const savedView = normalizeCatalogView(global.HHAllToolState?.readJSON(VIEW_KEY, {}, owner));
     host.innerHTML = `<section class="feature-lab feature-lab--route" data-lab-route>
       <div class="feature-lab__panel">
         <header class="feature-lab__head">
           <div><small>ALL TOOL · COSMIC TOOLKIT</small><h2>${catalog.length} công cụ · workspace riêng</h2></div>
-          <label class="feature-lab__search"><span aria-hidden="true">⌕</span><input type="search" data-lab-search aria-label="Tìm công cụ" placeholder="Tìm công cụ hoặc tác vụ…" autocomplete="off"></label>
+          <label class="feature-lab__search"><span aria-hidden="true">⌕</span><input type="search" data-lab-search aria-label="Tìm công cụ" placeholder="Tìm công cụ hoặc tác vụ…" autocomplete="off" maxlength="160"></label>
           <button type="button" data-lab-toggle aria-controls="all-tool-catalog" aria-expanded="true">Danh mục</button>
           <button type="button" data-app-route="/platform">Trang chủ</button>
         </header>
         <div class="feature-lab__body">
           <nav class="feature-lab__catalog" id="all-tool-catalog" aria-label="Danh sách công cụ">
-            <div class="feature-lab__filters"><label>Nhóm<select data-lab-group-filter><option value="all">Toàn bộ nhóm</option>${Object.entries(GROUP_META).map(([id, meta]) => `<option value="${esc(id)}">${esc(meta.label)}</option>`).join("")}</select></label><label>Bộ sưu tập<select data-lab-collection><option value="all">Tất cả</option><option value="favorites">Yêu thích</option><option value="pinned">Đã ghim</option><option value="recent">Gần đây</option></select></label></div>
+            <div class="feature-lab__filters"><label>Nhóm<select data-lab-group-filter><option value="all">Toàn bộ nhóm</option>${Object.entries(GROUP_META).map(([id, meta]) => `<option value="${esc(id)}">${esc(meta.label)}</option>`).join("")}</select></label><label>Bộ sưu tập<select data-lab-collection><option value="all">Tất cả</option><option value="favorites">Yêu thích</option><option value="pinned">Đã ghim</option><option value="recent">Gần đây</option></select></label><label>Engine công cụ<select data-lab-runtime-filter><option value="all">Tất cả engine</option>${Object.entries(runtimeLabels).filter(([id]) => id !== "legacy").map(([id, label]) => `<option value="${esc(id)}">${esc(label)}</option>`).join("")}</select></label><label>Sắp xếp trong nhóm<select data-lab-sort><option value="registry">Thứ tự danh mục</option><option value="name">Tên A–Z</option><option value="recent">Dùng gần đây trước</option><option value="pinned">Đã ghim trước</option></select></label><button type="button" data-lab-reset-filters>Xóa bộ lọc</button></div>
             <p class="feature-lab__count" data-lab-count role="status"></p>
             <div data-lab-quick class="feature-lab__quick"></div>
             ${catalogMarkup(initialTool.id)}
@@ -236,6 +262,7 @@
     </section>`;
 
     const root = host.querySelector("[data-lab-route]");
+    for (const [field, selector] of Object.entries({ group: "[data-lab-group-filter]", collection: "[data-lab-collection]", runtime: "[data-lab-runtime-filter]", sort: "[data-lab-sort]" })) root.querySelector(selector).value = savedView[field];
     const work = root.querySelector("[data-lab-work]");
     let currentTool = initialTool;
     let appearanceTimer = 0;
@@ -278,19 +305,30 @@
       try { writeState(preferences, owner); }
       catch (error) { root.querySelector("[data-lab-notice]").textContent = `Chưa lưu được tùy chọn: ${error.message}`; }
     };
+    const viewFromControls = () => normalizeCatalogView({ group: root.querySelector("[data-lab-group-filter]").value, collection: root.querySelector("[data-lab-collection]").value, runtime: root.querySelector("[data-lab-runtime-filter]").value, sort: root.querySelector("[data-lab-sort]").value });
+    const persistView = () => {
+      try { global.HHAllToolState?.writeJSON(VIEW_KEY, viewFromControls(), owner); }
+      catch (error) { root.querySelector("[data-lab-notice]").textContent = `Bộ lọc đang dùng nhưng chưa lưu được: ${error.message}`; }
+    };
     const filter = () => {
-      const query = root.querySelector("[data-lab-search]").value.trim().toLocaleLowerCase("vi");
-      const group = root.querySelector("[data-lab-group-filter]").value;
-      const collection = root.querySelector("[data-lab-collection]").value;
-      let count = 0;
+      const view = viewFromControls(), query = root.querySelector("[data-lab-search]").value;
+      const matches = filterCatalog(catalog, view, preferences, query), visible = new Set(matches.map(tool => tool.id));
+      const focused = document.activeElement?.matches?.("[data-lab-feature]") ? document.activeElement : null;
+      const buttons = new Map();
       root.querySelectorAll("[data-lab-feature]").forEach(button => {
-        const tool = catalog.find(item => item.id === button.dataset.labFeature);
-        button.hidden = !tool || (query && !button.dataset.labSearchValue.includes(query)) || (group !== "all" && tool.group !== group) || (collection !== "all" && !preferences[collection]?.includes(tool.id));
-        if (!button.hidden) count++;
+        buttons.set(button.dataset.labFeature, button);
+        button.hidden = !visible.has(button.dataset.labFeature);
       });
+      const ordered = filterCatalog(catalog, { ...view, group: "all", collection: "all", runtime: "all" }, preferences);
+      for (const group of Object.keys(GROUPS)) {
+        const rows = ordered.filter(tool => tool.group === group).map(tool => buttons.get(tool.id));
+        const parent = rows[0]?.parentElement;
+        if (parent && !rows.every((button, index) => parent.children[index] === button)) rows.forEach(button => parent.appendChild(button));
+      }
+      if (focused && !focused.hidden && document.activeElement !== focused) focused.focus({ preventScroll: true });
       root.querySelectorAll("[data-lab-group]").forEach(groupNode => { groupNode.hidden = !groupNode.querySelector("[data-lab-feature]:not([hidden])"); });
-      root.querySelector("[data-lab-count]").textContent = `${count} / ${catalog.length} công cụ`;
-      root.querySelector("[data-lab-empty]").hidden = count !== 0;
+      root.querySelector("[data-lab-count]").textContent = `${matches.length} / ${catalog.length} công cụ`;
+      root.querySelector("[data-lab-empty]").hidden = matches.length !== 0;
       root.querySelector("[data-lab-quick]").innerHTML = preferences.pinned.slice(0, 6).map(id => `<button type="button" data-lab-open="${esc(id)}">◇ ${esc(catalog.find(item => item.id === id).name)}</button>`).join("");
       root.querySelector("[data-lab-favorite]").setAttribute("aria-pressed", String(preferences.favorites.includes(currentTool.id)));
       root.querySelector("[data-lab-pin]").setAttribute("aria-pressed", String(preferences.pinned.includes(currentTool.id)));
@@ -342,6 +380,12 @@
       const quick = event.target.closest("[data-lab-open]");
       if (quick) { select(quick.dataset.labOpen, true); return; }
       if (event.target.closest("[data-lab-retry]")) { render(); return; }
+      if (event.target.closest("[data-lab-reset-filters]")) {
+        root.querySelector("[data-lab-search]").value = "";
+        for (const selector of ["[data-lab-group-filter]", "[data-lab-collection]", "[data-lab-runtime-filter]"]) root.querySelector(selector).value = "all";
+        root.querySelector("[data-lab-sort]").value = "registry";
+        persistView(); filter(); return;
+      }
       if (event.target.closest("[data-lab-toggle]")) { toggleCatalog(root.dataset.catalogCollapsed === "true"); return; }
       for (const [selector, collection] of [["[data-lab-favorite]", "favorites"], ["[data-lab-pin]", "pinned"]]) {
         if (!event.target.closest(selector)) continue;
@@ -354,7 +398,7 @@
       if (!event.target.matches("[data-lab-search]")) return;
       toggleCatalog(true); filter();
     };
-    const onChange = event => { if (event.target.matches("[data-lab-group-filter],[data-lab-collection]")) filter(); };
+    const onChange = event => { if (event.target.matches("[data-lab-group-filter],[data-lab-collection],[data-lab-runtime-filter],[data-lab-sort]")) { persistView(); filter(); } };
     const onKey = event => {
       if (!event.target.matches("[data-lab-feature]")) return;
       const buttons = [...root.querySelectorAll("[data-lab-feature]:not([hidden])")];
@@ -420,6 +464,8 @@
     groups: GROUPS,
     catalog: buildCatalog,
     getTool,
+    normalizeCatalogView,
+    filterCatalog,
     mount,
     select: (value, navigate = true) => activeMount?.select(value, navigate),
     ready: () => activeMount?.ready() || Promise.resolve(),
