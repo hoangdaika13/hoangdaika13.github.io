@@ -114,7 +114,7 @@ body.app-all-tools-route .feature-lab-open { display:none; }
 .feature-lab--route[data-color-mode=light] { --lab-text:#172640; --lab-muted:#40516c; --lab-line:#9aabc3; }
 .feature-lab--route[data-color-mode=light] .feature-lab__panel { background:linear-gradient(135deg,#eef1ff,#edf8fa); color:#172640; }
 .feature-lab--route[data-color-mode=light] :where(.feature-lab__head,.feature-lab__context,.feature-lab__item,.feature-lab__quick button) { background:#e6ecfa; color:#172640; border-color:#94a1bb; }
-.feature-lab--route[data-color-mode=light] :where(.feature-lab__head small,.feature-lab__item span,.feature-lab__group h3,.feature-lab__notice,.feature-lab__context span,.feature-lab__context p,.feature-lab__count,.feature-lab__filters label) { color:#334661; }
+.feature-lab--route[data-color-mode=light] :is(.feature-lab__head small,.feature-lab__item span,.feature-lab__group h3,.feature-lab__notice,.feature-lab__context span,.feature-lab__context p,.feature-lab__count,.feature-lab__filters label) { color:#334661; }
 .feature-lab--route[data-color-mode=light] :where(.feature-lab__search,.feature-lab__head>button,.feature-lab__context button,.feature-lab__filters select) { background:#f7faff; color:#172640; }
 .feature-lab--route[data-color-mode=light] .feature-lab__search input { color:#172640; }
 .feature-lab--route[data-color-mode=light] :where(.ut-workspace,.hh-tool) { --ut-text:#172640; --ut-muted:#40516c; --ut-line:#9aabc3; --ut-panel:#f4f7fc; --tw-text:#172640; --tw-muted:#40516c; --tw-line:#9aabc3; --tw-panel:#f4f7fc; background:#edf3fc; color:#172640; }

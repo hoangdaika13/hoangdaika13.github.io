@@ -18,8 +18,8 @@
     { id: "plugin-system", name: "Plugin System", runtime: "browser", permissions: ["explicit-plugin-permissions"], actions: ["import-plugin", "toggle-plugin", "remove-plugin"], history: true, offline: true },
     { id: "auto-save", name: "Auto Save", runtime: "browser", permissions: [], actions: ["save-document", "restore-document", "clear-document"], history: true, offline: true },
     { id: "version-history", name: "Version History", runtime: "browser", permissions: [], actions: ["create-version", "compare-version", "restore-version", "delete-record", "export-versions"], history: true, offline: true },
-    { id: "file-explorer", name: "File Explorer", runtime: "browser", permissions: ["selected-files"], actions: ["upload-file", "preview-file", "rename-file", "save-file", "move-file", "delete-file", "export-file", "new-folder", "delete-folder"], history: true, offline: true },
-    { id: "monaco-code-editor", name: "Monaco Code Editor", runtime: "hybrid", permissions: [], actions: ["format-code", "save-code", "version-code", "export-code", "new-code", "diff-code"], history: true, offline: true },
+    { id: "file-explorer", name: "File Explorer", runtime: "browser", permissions: ["selected-files"], actions: ["upload-file", "preview-file", "rename-file", "save-file", "move-file", "delete-file", "export-file", "new-folder", "delete-folder", "copy-file-code", "copy-file-draft-code"], history: true, offline: true },
+    { id: "monaco-code-editor", name: "Monaco Code Editor", runtime: "browser", permissions: ["selected-text-code"], actions: ["format-code", "save-code", "version-code", "export-code", "new-code", "diff-code", "import-code", "open-code-document", "rename-code", "delete-code", "duplicate-code", "cancel-code-import"], history: true, offline: true },
     { id: "ocr", name: "OCR", runtime: "hybrid", permissions: ["selected-image"], actions: ["select-image", "crop-image", "recognize", "copy", "export"], history: true, offline: false }
   ].map(item => Object.freeze({ inputs: [], ...item }));
 
@@ -64,7 +64,7 @@
     "auto-save": "Tài liệu nháp tự lưu theo tài khoản, khôi phục và xuất trước khi đóng.",
     "version-history": "Snapshot riêng: tìm kiếm, nhóm tài liệu, phân trang, đổi nhãn, so sánh hai bản và khôi phục có bảo vệ bản đang nhập; không ghi đè workspace khác.",
     "file-explorer": "Kho tệp cục bộ theo tài khoản: thư mục, tìm kiếm, sửa văn bản, đổi tên, xem trước an toàn và tải xuống.",
-    "monaco-code-editor": "Monaco thật tải từ website: nhiều tài liệu, định dạng, chẩn đoán và diff. Mobile dùng editor văn bản dễ nhập; không chạy code.",
+    "monaco-code-editor": "Editor cục bộ: nhập UTF-8, tìm/đổi tên/nhân bản/xóa tài liệu an toàn, định dạng và diff. Tách trạng thái bản nháp với bản lưu; không chạy code hoặc tải mã ra ngoài.",
     "ocr": "Crop ảnh, nhận dạng Việt/Anh bằng engine OCR cục bộ tải khi cần, sửa và xuất văn bản; không tải ảnh lên server."
   });
 
@@ -177,6 +177,7 @@
   function shell(manifest, body) {
     const support = featureSupport(manifest);
     if (manifest.id === "speech-to-text") body += subtitleMarkup();
+    if (manifest.id === "monaco-code-editor") body = body.replace('<div class="hh-tool__code-import">', `<div class="hh-tool__code-import">${button("cancel-code-import", "Hủy nhập đang đọc")}`);
     if (manifest.id === "text-to-speech") body += '<p class="hh-tool__help">Nên tạo đoạn ngắn khoảng 250 ký tự. WAV giới hạn 2 MB (khoảng 44 giây ở PCM 24 kHz mono 16-bit), không bảo đảm thời lượng theo số ký tự. Nội dung dài có thể bị từ chối sau khi nhà cung cấp đã tạo và vẫn tính phí. Không tự chia đoạn hoặc gọi API tiếp.</p>';
     return `<section class="hh-tool" data-hh-tool="${manifest.id}">
       <header class="hh-tool__header"><div><small>ALL TOOLS · WORKSPACE RIÊNG</small><h3>${esc(manifest.name)}</h3><p>${esc(PURPOSES[manifest.id])}</p></div><div class="hh-tool__badges"><span data-runtime="${manifest.runtime}">${esc(statusLabel(manifest.runtime))}</span><span class="${support.ok ? support.degraded ? "is-warning" : "is-ready" : "is-error"}">${support.ok ? support.degraded ? "Có giới hạn" : "Sẵn sàng" : "Không hỗ trợ"}</span></div></header>
@@ -214,7 +215,7 @@
     if (manifest.id === "auto-save") return shell(manifest, `<div class="hh-tool__grid"><section class="hh-tool__panel"><div class="hh-tool__form">${field("Tài liệu", '<input data-tool-input="title" value="Bản nháp Auto Save">')}${field("Nội dung", textArea("document", "Mọi thay đổi được lưu sau 600 ms..."), "Lưu riêng tài khoản. Khi lỗi, giữ nội dung và dùng Lưu ngay để thử lại hoặc Xuất bản nháp.")}<div class="hh-tool__actions">${button("save-document", "Lưu ngay", "is-primary")}${button("restore-document", "Khôi phục")}${button("clear-document", "Xóa bản nháp")}${button("export-document", "Xuất bản nháp")}</div><div class="hh-tool__save-state" data-tool-save-state>Chưa có thay đổi.</div></div></section>${output("Nhật ký lưu")}</div>`);
     if (manifest.id === "version-history") return shell(manifest, `<div class="hh-tool__split"><section class="hh-tool__panel"><div class="hh-tool__form">${field("Nhãn phiên bản", '<input data-tool-input="label" maxlength="180" placeholder="Ví dụ: Trước khi chỉnh sửa">')}${field("Nội dung đang sửa", textArea("document", "Nội dung cần lưu phiên bản..."))}<p class="hh-tool__help" data-tool-version-context>Đang soạn tài liệu riêng; không chỉnh workspace khác.</p><div class="hh-tool__actions">${button("create-version", "Tạo phiên bản", "is-primary")}${button("export-version-draft", "Xuất bản đang sửa")}${button("export-versions", "Xuất lịch sử")}</div><p class="hh-tool__help">Khôi phục chỉ đổi nội dung ở đây; tự lưu snapshot nội dung hiện tại trước khi thay thế. Nếu chuyển nhóm tài liệu, cần xác nhận lần hai. Không ghi đè phần vừa nhập trong lúc đọc/lưu. Giữ nguyên snapshot đến 500 KB UTF-8 và định dạng cũ 200.000 ký tự.</p></div>${output("So sánh snapshot hoặc hai bản được chọn")}</section><div><header class="hh-tool__version-toolbar">${field("Tìm nhãn hoặc nội dung", '<input data-tool-input="version-filter" placeholder="Tìm snapshot…">')}${field("Nhóm tài liệu", '<select data-tool-input="version-document"><option value="all">Tất cả nhóm</option></select>')}${field("Sắp xếp", '<select data-tool-input="version-sort"><option value="newest">Mới nhất</option><option value="oldest">Cũ nhất</option><option value="label">Theo nhãn</option></select>')}${field("Mỗi trang", '<select data-tool-input="version-page-size"><option value="20">20 bản</option><option value="50">50 bản</option></select>')}</header><div class="hh-tool__actions">${button("compare-selected-versions", "So sánh hai bản đã chọn")}${button("clear-version-selection", "Bỏ chọn")}<span data-tool-version-selection role="status">Chưa chọn snapshot.</span></div><section class="hh-tool__collection" data-tool-list></section><footer class="hh-tool__version-pagination">${button("version-prev", "Trang trước")}<span data-tool-version-page role="status"></span>${button("version-next", "Trang sau")}</footer></div></div>`);
     if (manifest.id === "file-explorer") return shell(manifest, `<section class="hh-tool__files"><header><label class="hh-tool__file-button">Chọn tệp<input type="file" data-tool-file multiple></label>${field("Thư mục hiện tại", '<select data-tool-input="file-folder"><option value="">Gốc</option></select>')}<input data-tool-input="file-filter" aria-label="Tìm tệp" placeholder="Tên hoặc loại tệp…"><input data-tool-input="folder-name" aria-label="Tên thư mục mới" placeholder="Tên thư mục mới">${button("new-folder", "Tạo thư mục")}${button("delete-folder", "Xóa thư mục trống")}</header><p class="hh-tool__help">Tệp chỉ nằm trên thiết bị và tài khoản hiện tại. HTML/SVG không được chạy; sửa văn bản tối đa 500 KB, tải lên tối đa 20 MB/tệp.</p><div class="hh-tool__file-layout"><div data-tool-list class="hh-tool__file-list"></div><section class="hh-tool__preview" data-tool-preview><div class="hh-tool__empty">Chọn một tệp để xem trước.</div></section></div></section>`);
-    if (manifest.id === "monaco-code-editor") return shell(manifest, `<section class="hh-tool__code"><header>${field("Tài liệu", '<select data-tool-input="code-document"><option value="code-document">Code chính</option></select>')}${button("new-code", "Tài liệu mới")}${field("Tên file", '<input data-tool-input="code-title" value="main.js">')}<select aria-label="Ngôn ngữ code" data-tool-input="language"><option value="javascript">JavaScript</option><option value="typescript">TypeScript</option><option value="json">JSON</option><option value="html">HTML</option><option value="css">CSS</option><option value="markdown">Markdown</option></select>${button("format-code", "Format")}${button("save-code", "Lưu")}${button("version-code", "Snapshot")}${button("diff-code", "So với bản lưu")}${button("export-code", "Xuất file")}</header><div data-tool-editor class="hh-tool__editor"><textarea aria-label="Mã nguồn · không thực thi" data-tool-input="code" spellcheck="false">function hello(name) {\n  return &quot;Xin chào &quot; + name;\n}</textarea></div><div data-tool-code-diff class="hh-tool__code-diff" hidden></div><section data-tool-code-problems class="hh-tool__code-problems" aria-label="Chẩn đoán cú pháp" aria-live="polite"></section><footer data-tool-editor-status>Editor văn bản sẵn sàng; đang tải Monaco cục bộ. Nội dung không được thực thi.</footer></section>`);
+    if (manifest.id === "monaco-code-editor") return shell(manifest, `<section class="hh-tool__code"><header>${field("Tài liệu đang mở", '<select data-tool-input="code-document"><option value="">Chưa có tài liệu</option></select>')}${button("new-code", "Tài liệu mới")}${button("duplicate-code", "Nhân bản thành mới")}${field("Tên file", '<input data-tool-input="code-title" maxlength="180" value="main.js">')}<select aria-label="Ngôn ngữ code" data-tool-input="language"><option value="javascript">JavaScript</option><option value="typescript">TypeScript</option><option value="json">JSON</option><option value="html">HTML</option><option value="css">CSS</option><option value="markdown">Markdown</option><option value="plaintext">Văn bản TXT</option></select>${button("format-code", "Format")}${button("save-code", "Lưu tài liệu")}${button("rename-code", "Đổi tên/ngôn ngữ")}${button("delete-code", "Xóa tài liệu")}${button("version-code", "Snapshot")}${button("diff-code", "So với bản lưu")}${button("export-code", "Xuất file")}</header><div class="hh-tool__code-import"><label class="hh-tool__file-button">Nhập file UTF-8<input type="file" accept=".js,.mjs,.cjs,.ts,.json,.html,.htm,.css,.md,.markdown,.txt" data-tool-code-file></label>${field("Khi tên file đã có", '<select data-tool-input="code-import-duplicate"><option value="rename">Tạo bản sao tên mới · giữ bản cũ</option><option value="reject">Dừng nếu trùng tên</option><option value="open">Chỉ mở bản đã có · không nhập tệp</option></select>')}<p class="hh-tool__help">Tệp UTF-8 tối đa 500 KB và 200.000 ký tự; chuẩn hóa CRLF thành LF. HTML/CSS/code chỉ được soạn, không chạy. Không nhập secret nếu bạn không muốn lưu trên thiết bị.</p></div><details class="hh-tool__code-library" open><summary>Tài liệu riêng trên thiết bị</summary>${field("Tìm tên hoặc ngôn ngữ", '<input data-tool-input="code-filter" placeholder="Tìm tài liệu đã lưu…">')}<div data-tool-code-documents></div></details><div class="hh-tool__code-status"><span data-tool-code-meta></span><span data-tool-code-save-state role="status" aria-live="polite"></span></div><div data-tool-editor class="hh-tool__editor"><textarea aria-label="Mã nguồn · không thực thi" data-tool-input="code" maxlength="200000" spellcheck="false" placeholder="Soạn tài liệu mới hoặc nhập file…"></textarea></div><div data-tool-code-diff class="hh-tool__code-diff" hidden></div><section data-tool-code-problems class="hh-tool__code-problems" aria-label="Chẩn đoán cú pháp" aria-live="polite"></section><footer data-tool-editor-status>Editor văn bản sẵn sàng; đang tải Monaco cục bộ. Nội dung không được thực thi.</footer></section>`);
     return shell(manifest, `<div class="hh-tool__grid"><section class="hh-tool__panel"><div class="hh-tool__form"><label class="hh-tool__file-button">Chọn ảnh<input type="file" accept="image/*" data-tool-ocr-file></label><div class="hh-tool__ocr-stage"><canvas data-tool-ocr-canvas width="960" height="540"></canvas><div class="hh-tool__empty" data-tool-ocr-empty>Chọn ảnh để crop và nhận dạng.</div></div><div class="hh-tool__row">${field("Ngôn ngữ", '<select data-tool-input="ocr-language"><option value="vi">Tiếng Việt</option><option value="en">English</option><option value="vi+en">Việt + Anh</option></select>')}${field("Crop X / Y / W / H", '<div class="hh-tool__crop"><input type="number" data-tool-input="crop-x" value="0" min="0"><input type="number" data-tool-input="crop-y" value="0" min="0"><input type="number" data-tool-input="crop-w" value="0" min="0"><input type="number" data-tool-input="crop-h" value="0" min="0"></div>')}</div><div class="hh-tool__actions">${button("apply-crop", "Áp dụng crop")}${button("recognize-ocr", "Nhận dạng", "is-primary")}${button("export-ocr", "Xuất TXT")}</div></div></section><section class="hh-tool__output"><header><strong>Kết quả OCR</strong><span data-tool-confidence>Confidence: —</span></header><textarea data-tool-input="ocr-result" placeholder="Văn bản nhận dạng sẽ xuất hiện ở đây..."></textarea></section></div>`);
   }
 
@@ -336,6 +337,24 @@
     if (typeof value !== "string" || value.length > 200000 && (value.length > 500000 || new Blob([value]).size > 500000)) throw new Error("Nội dung vượt giới hạn snapshot: 500 KB UTF-8 hoặc định dạng cũ 200.000 ký tự. Hãy xuất bản đang sửa trước khi rời.");
     return value;
   }
+  const CODE_LANGUAGES = Object.freeze({ javascript: ["js", "mjs", "cjs"], typescript: ["ts"], json: ["json"], html: ["html", "htm"], css: ["css"], markdown: ["md", "markdown"], plaintext: ["txt"] });
+  function codeLanguageForFilename(value) { const extension = String(value).split(".").at(-1).toLowerCase(); return Object.keys(CODE_LANGUAGES).find(language => CODE_LANGUAGES[language].includes(extension)) || null; }
+  function normalizeCodeFilename(value, language) {
+    if (!Object.hasOwn(CODE_LANGUAGES, language)) throw new Error("Ngôn ngữ code chưa được hỗ trợ.");
+    const name = String(value || "").trim().normalize("NFC");
+    if (!name || name.length > 180 || /[<>:"/\\|?*\u0000-\u001f]/.test(name) || /[. ]$/.test(name) || /^\.{1,2}$/.test(name) || /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(name)) throw new Error("Tên file cần 1–180 ký tự, không chứa đường dẫn/ký tự điều khiển hoặc tên thiết bị hệ thống.");
+    const extension = name.includes(".") ? name.split(".").at(-1).toLowerCase() : "";
+    if (CODE_LANGUAGES[language].includes(extension)) return name;
+    const base = name.replace(/\.[^.]+$/, "") || "document", result = `${base}.${CODE_LANGUAGES[language][0]}`;
+    if (result.length > 180) throw new Error("Tên file quá dài sau khi thêm phần mở rộng."); return result;
+  }
+  function validateCodeText(value, imported = false) { if (typeof value !== "string" || value.length > 200000 || imported && new Blob([value]).size > 500000 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(value)) throw new Error("Code cần là văn bản UTF-8 không chứa byte điều khiển, tối đa 200.000 ký tự; nhập/copy file tối đa 500 KB."); return value; }
+  function uniqueCodeFilename(title, language, rows) {
+    const name = normalizeCodeFilename(title, language), used = new Set(rows.map(row => String(row.title || "").normalize("NFC").toLocaleLowerCase())); if (!used.has(name.toLocaleLowerCase())) return name;
+    const dot = name.lastIndexOf("."), extension = name.slice(dot), base = name.slice(0, dot);
+    for (let index = 2; index <= 1000; index += 1) { const suffix = `-copy-${index}${extension}`, candidate = `${base.slice(0, 180 - suffix.length)}${suffix}`; if (!used.has(candidate.toLocaleLowerCase())) return candidate; }
+    throw new Error("Không tìm được tên bản sao; hãy đổi tên file.");
+  }
   function versionContext(row) { return String(row?.sourceDocument || "local").slice(0, 200); }
   function renderVersionContext(host) { const node = host.querySelector("[data-tool-version-context]"); if (node) node.textContent = `Đang soạn nhóm: ${host.dataset.versionContext === "local" || !host.dataset.versionContext ? "Tài liệu riêng" : host.dataset.versionContext}. Khôi phục chỉ đổi nội dung ở đây, không mở/ghi workspace nguồn.`; }
   function renderVersionSelection(host) { const node = host.querySelector("[data-tool-version-selection]"); if (node) node.textContent = host._selectedVersions?.size ? `Đã chọn ${host._selectedVersions.size}/2: ${[...host._selectedVersions].map(id => host._versionLabels?.get(id) || id).join(" → ")}` : "Chưa chọn snapshot."; }
@@ -353,7 +372,7 @@
   }
   function tabState(host, text) { const node = host.querySelector("[data-tool-save-state]"); if (node) node.textContent = text; }
 
-  const BACKUP_RECORD_TYPES = new Set(["prompt", "code", "version", "workspace-tab", "tool-draft", "plugin", "widget", "dashboard", "document", "tool-folder"]);
+  const BACKUP_RECORD_TYPES = new Set(["prompt", "code", "code-deleted", "version", "workspace-tab", "tool-draft", "plugin", "widget", "dashboard", "document", "tool-folder"]);
   const backupId = value => typeof value === "string" && /^[A-Za-z0-9._-]{1,160}$/.test(value);
   const stripMetadata = row => { const { owner, localId, schema, ...data } = row; return data; };
   function normalizeWorkspaceData(payload) {
@@ -361,7 +380,7 @@
     if (payload.records.length > 1000 || payload.history.length > 2000 || payload.files.length > 100 || payload.omittedFiles.length > 1000) throw new Error("Bản sao có quá nhiều mục.");
     const cleanRecord = row => {
       if (!row || !backupId(row.id) || !BACKUP_RECORD_TYPES.has(row.type) || Object.hasOwn(row, "owner") || Object.hasOwn(row, "localId") || Object.hasOwn(row, "schema")) throw new Error("Mục bản sao không hợp lệ hoặc chứa thông tin tài khoản nội bộ.");
-      const fields = new Set(["id", "type", "title", "content", "tags", "favorite", "updatedAt", "createdAt", "language", "label", "order", "pinned", "tool", "values", "output", "messages", "activeTab", "activeFile", "fileBaseUpdatedAt", "codeDocument", "sourceDocument", "promptId", "pluginId", "name", "version", "engine", "permissions", "enabled", "installedAt", "widgetId", "kind", "tasks", "count", "widgets", "subtitle", "versionPage", "versionContext"]);
+      const fields = new Set(["id", "type", "title", "content", "tags", "favorite", "updatedAt", "createdAt", "language", "label", "order", "pinned", "tool", "values", "output", "messages", "activeTab", "activeFile", "fileBaseUpdatedAt", "codeDocument", "codeDocumentState", "codeBaseUpdatedAt", "sourceDocument", "promptId", "pluginId", "name", "version", "engine", "permissions", "enabled", "installedAt", "widgetId", "kind", "tasks", "count", "widgets", "subtitle", "versionPage", "versionContext"]);
       if (Object.keys(row).some(name => !fields.has(name))) throw new Error("Bản sao có trường workspace chưa được hỗ trợ.");
       for (const name of ["title", "label", "name"]) if (row[name] != null && (typeof row[name] !== "string" || row[name].length > 500)) throw new Error("Tên mục bản sao không hợp lệ.");
       if (row.sourceDocument != null && (typeof row.sourceDocument !== "string" || row.sourceDocument.length > 200)) throw new Error("Nhóm tài liệu nguồn không hợp lệ.");
@@ -378,7 +397,12 @@
       if (row.versionPage != null && (!Number.isInteger(row.versionPage) || row.versionPage < 0 || row.versionPage > 1000)) throw new Error("Trang lịch sử không hợp lệ.");
       if (row.versionContext != null && (typeof row.versionContext !== "string" || row.versionContext.length > 200)) throw new Error("Ngữ cảnh lịch sử không hợp lệ.");
       if (row.type === "tool-folder" && (typeof row.name !== "string" || !row.name.trim() || row.name.length > 100 || /[\\/]/.test(row.name))) throw new Error("Thư mục không hợp lệ.");
-      if (row.type === "code" && !["javascript", "typescript", "json", "html", "css", "markdown"].includes(row.language)) throw new Error("Ngôn ngữ code không hợp lệ.");
+      if (row.type === "code") { if (!Object.hasOwn(CODE_LANGUAGES, row.language)) throw new Error("Ngôn ngữ code không hợp lệ."); normalizeCodeFilename(row.title, row.language); validateCodeText(row.content); }
+      if (row.type === "code-deleted" && (!backupId(row.sourceDocument) || row.id !== `code-deleted-${row.sourceDocument}` || !row.createdAt)) throw new Error("Dấu tài liệu đã xóa không hợp lệ.");
+      if (row.codeDocument && !backupId(row.codeDocument)) throw new Error("Tài liệu code trong bản nháp không hợp lệ.");
+      if (row.codeDocumentState != null && (row.type !== "tool-draft" || row.tool !== "monaco-code-editor" || !["new", "saved"].includes(row.codeDocumentState))) throw new Error("Trạng thái tài liệu code không hợp lệ.");
+      if (row.codeBaseUpdatedAt && (row.type !== "tool-draft" || row.tool !== "monaco-code-editor" || !Number.isFinite(new Date(row.codeBaseUpdatedAt).getTime()))) throw new Error("Revision code không hợp lệ.");
+      if (row.type === "tool-draft" && row.tool === "monaco-code-editor" && row.values?.code != null) validateCodeText(row.values.code);
       if (row.type === "dashboard" && (!Array.isArray(row.widgets) || row.widgets.length > 24)) throw new Error("Dashboard vượt giới hạn.");
       if (["widget", "dashboard"].includes(row.type)) for (const widget of row.type === "widget" ? [row] : row.widgets) {
         if (!widget || !backupId(widget.id) || !["notes", "checklist", "counter", "clock"].includes(widget.kind || widget.widgetId) || widget.content != null && (typeof widget.content !== "string" || widget.content.length > 200000) || widget.count != null && (!Number.isFinite(widget.count) || Math.abs(widget.count) > 1e9)) throw new Error("Widget trong bản sao không hợp lệ.");
@@ -389,6 +413,8 @@
     };
     const records = payload.records.map(cleanRecord), ids = new Set(records.map(row => row.id));
     if (ids.size !== records.length) throw new Error("Bản sao có ID mục trùng.");
+    const deletedCode = new Set(records.filter(row => row.type === "code-deleted").map(row => row.sourceDocument));
+    if (records.filter(row => row.type === "code" && !deletedCode.has(row.id)).length > 200) throw new Error("Bản sao vượt 200 tài liệu code.");
     const history = payload.history.map(row => {
       if (!row || !backupId(row.id) || !byId.has(row.tool) || typeof row.action !== "string" || row.action.length > 100 || !Number.isFinite(new Date(row.createdAt).getTime())) throw new Error("Lịch sử không hợp lệ.");
       return { id: row.id, tool: row.tool, action: row.action, summary: String(row.summary || "").slice(0, 160), createdAt: new Date(row.createdAt).toISOString() };
@@ -403,7 +429,9 @@
     });
     if (new Set(files.map(row => row.id)).size !== files.length) throw new Error("ID tệp trùng.");
     const omittedFiles = payload.omittedFiles.map(row => { if (!row || !backupId(row.id)) throw new Error("Mục bỏ qua không hợp lệ."); return { id: row.id, name: String(row.name || "").slice(0, 180), reason: String(row.reason || "").slice(0, 100) }; });
-    return { version: 1, records, history, files, filesIncluded: payload.filesIncluded, omittedFiles };
+    const result = { version: 1, records, history, files, filesIncluded: payload.filesIncluded, omittedFiles };
+    if (new Blob([JSON.stringify(result)]).size > 4194304) throw new Error("Workspace vượt dung lượng bản sao 4 MB; xuất riêng từng tài liệu hoặc giảm lịch sử trước.");
+    return result;
   }
   async function exportWorkspaceData({ owner, includeFiles = false, maxBytes = 4194304 }) {
     const records = (await storage.list("records", () => true, owner)).map(stripMetadata), history = (await storage.list("history", () => true, owner)).map(row => ({ id: row.id, tool: row.tool, action: row.action, summary: String(row.summary || "").slice(0, 160), createdAt: row.createdAt }));
@@ -423,6 +451,10 @@
     const incoming = { records: data.records, history: data.history, files: data.files.map(row => { const binary = atob(row.data), { data: encoded, ...metadata } = row; return { ...metadata, blob: new Blob([Uint8Array.from(binary, char => char.charCodeAt(0))], { type: row.type }) }; }) };
     const storedRow = row => ({ ...row, id: scopedId(row.id, owner), localId: row.id, owner, schema: 2 });
     const apply = (existing, deleteRow, putRow) => {
+      const mergedRecords = new Map((strategy === "replace" ? [] : existing.records).map(row => [row.localId, row]));
+      incoming.records.forEach(row => { if (strategy !== "skip" || !mergedRecords.has(row.id)) mergedRecords.set(row.id, row); });
+      const mergedDeleted = new Set([...mergedRecords.values()].filter(row => row.type === "code-deleted").map(row => row.sourceDocument));
+      if ([...mergedRecords.entries()].filter(([id, row]) => row.type === "code" && !mergedDeleted.has(id)).length > 200) throw new Error("Nhập bản sao sẽ vượt 200 tài liệu code; chưa thay đổi dữ liệu.");
       const referencedFolders = new Set(existing.files.map(row => row.folderId).filter(Boolean));
       for (const name of ["records", "history", "files"]) {
         const keepIds = new Set(incoming[name].map(row => row.id));
@@ -463,14 +495,27 @@
   function draftSnapshot(host, manifest) {
     const values = {};
     host.querySelectorAll("[data-tool-input]").forEach(node => { if (node.type !== "file" && node.type !== "password") { const name = node.dataset.toolInput, value = String(node.value || ""); if (manifest.id === "file-explorer" && name === "file-content") { if (new Blob([value]).size > 500000) throw new Error("Bản nháp tệp vượt 500 KB; chưa lưu. Xuất bản nháp trước khi rời."); values[name] = value; } else if (manifest.id === "version-history" && name === "document") { validateVersionContent(value); values[name] = value; } else if (manifest.id === "speech-to-text" && name === "subtitle-source") { if (value.length > 300000 || new Blob([value]).size > 1048576) throw new Error("Nguồn phụ đề vượt 300.000 ký tự hoặc 1 MB; chưa lưu bản nháp nguồn."); values[name] = value; } else values[name] = value.slice(0, 200000); } });
+    if (manifest.id === "monaco-code-editor") values.code = validateCodeText(editorValue(host));
     const result = host.querySelector("[data-tool-output]")?.textContent || "";
     const messages = host.querySelector("[data-tool-messages]") ? [...host.querySelectorAll("[data-tool-messages] > .is-user, [data-tool-messages] > .is-assistant")].slice(-100).map(node => ({ role: node.classList.contains("is-user") ? "user" : "assistant", content: node.textContent.slice(0, 16000) })) : [];
-    return { id: `draft-${manifest.id}`, type: "tool-draft", tool: manifest.id, values, output: result.slice(0, 200000), messages, activeTab: host.dataset.activeTab || "", activeFile: manifest.id === "file-explorer" ? host.dataset.activeFile || "" : "", fileBaseUpdatedAt: manifest.id === "file-explorer" ? host._fileBaseUpdatedAt || "" : "", codeDocument: host.dataset.codeDocument || "", promptId: host.dataset.promptId || "", ...(manifest.id === "speech-to-text" ? { subtitle: normalizeSubtitleDraft({ version: 1, origin: active.subtitleOrigin, cues: active.subtitleCues }) } : {}), ...(manifest.id === "version-history" ? { versionPage: host._versionPage || 0, versionContext: host.dataset.versionContext || "local" } : {}), updatedAt: new Date().toISOString() };
+    const updatedAt = new Date(manifest.id === "monaco-code-editor" ? Math.max(Date.now(), (new Date(host._codeExpectedUpdatedAt).getTime() || 0) + 1, (new Date(host._codeDraftSnapshotAt).getTime() || 0) + 1) : Date.now()).toISOString();
+    if (manifest.id === "monaco-code-editor") host._codeDraftSnapshotAt = updatedAt;
+    return { id: `draft-${manifest.id}`, type: "tool-draft", tool: manifest.id, values, output: result.slice(0, 200000), messages, activeTab: host.dataset.activeTab || "", activeFile: manifest.id === "file-explorer" ? host.dataset.activeFile || "" : "", fileBaseUpdatedAt: manifest.id === "file-explorer" ? host._fileBaseUpdatedAt || "" : "", codeDocument: manifest.id === "monaco-code-editor" ? host.dataset.codeDocument || "" : "", ...(manifest.id === "monaco-code-editor" ? { codeDocumentState: host._codeBaseline?.saved ? "saved" : "new", codeBaseUpdatedAt: host._codeExpectedUpdatedAt || "" } : {}), promptId: host.dataset.promptId || "", ...(manifest.id === "speech-to-text" ? { subtitle: normalizeSubtitleDraft({ version: 1, origin: active.subtitleOrigin, cues: active.subtitleCues }) } : {}), ...(manifest.id === "version-history" ? { versionPage: host._versionPage || 0, versionContext: host.dataset.versionContext || "local" } : {}), updatedAt };
   }
   async function saveDraft(host, manifest, snapshot = draftSnapshot(host, manifest)) {
-    return storage.put("records", snapshot, scopeFor(host));
+    const epoch = active.epoch, owner = scopeFor(host);
+    if (manifest.id === "monaco-code-editor" && live(host, epoch)) { host._codeDraftState = "saving"; updateCodeStatus(host); }
+    try {
+      const write = () => manifest.id === "monaco-code-editor" ? mutateCodeRecords(host, owner, epoch, (rows, put) => { if (!rows.some(row => row.type === "code-deleted" && row.sourceDocument === snapshot.codeDocument)) put(snapshot); }, false) : storage.put("records", snapshot, owner);
+      const pending = manifest.id === "monaco-code-editor" ? (host._codeDraftWrite || Promise.resolve()).catch(() => {}).then(write) : write();
+      if (manifest.id === "monaco-code-editor") host._codeDraftWrite = pending;
+      const result = await pending;
+      if (manifest.id === "monaco-code-editor" && live(host, epoch) && host.dataset.codeDocument === snapshot.codeDocument) { const current = editorValue(host) === snapshot.values.code && getValue(host, "code-title") === snapshot.values["code-title"] && getValue(host, "language") === snapshot.values.language; host._codeDraftState = current ? "saved" : "pending"; if (current) host._codeDraftSavedAt = snapshot.updatedAt; updateCodeStatus(host); } return result;
+    }
+    catch (error) { if (manifest.id === "monaco-code-editor" && live(host, epoch)) { host._codeDraftState = "error"; updateCodeStatus(host); } throw error; }
   }
   function scheduleDraft(host, manifest) {
+    if (manifest.id === "monaco-code-editor") { host._codeDraftState = "pending"; updateCodeStatus(host); }
     if (host._draftTimer) { clearTimeout(host._draftTimer); active.timers.delete(host._draftTimer); }
     host._draftTimer = setTimeout(() => { active.timers.delete(host._draftTimer); host._draftTimer = null; if (!live(host)) return; try { const snapshot = draftSnapshot(host, manifest); if (manifest.id === "monaco-code-editor") snapshot.values.code = editorValue(host); saveDraft(host, manifest, snapshot).catch(error => notice(host, error.message, "error")); } catch (error) { notice(host, error.message, "error"); } }, 400);
     active.timers.add(host._draftTimer);
@@ -504,7 +549,7 @@
     const draft = await storage.get("records", `draft-${manifest.id}`, scopeFor(host));
     if (!live(host, epoch) || !draft) return;
     // Tabs and Auto Save have their own authoritative document records.
-    if (!["workspace-tabs", "auto-save"].includes(manifest.id)) for (const [name, value] of Object.entries(draft.values || {})) { const node = getInput(host, name); if (node) node.value = value; }
+    if (!["workspace-tabs", "auto-save", "monaco-code-editor"].includes(manifest.id)) for (const [name, value] of Object.entries(draft.values || {})) { const node = getInput(host, name); if (node) node.value = value; }
     if (draft.output) setOutput(host, draft.output);
     const messages = host.querySelector("[data-tool-messages]");
     if (messages && Array.isArray(draft.messages)) messages.insertAdjacentHTML("beforeend", draft.messages.filter(row => ["user", "assistant"].includes(row.role)).map(row => `<div class="is-${row.role}">${esc(row.content)}</div>`).join(""));
@@ -535,7 +580,7 @@
     if (manifest.id === "ai-prompt-library" && draft.promptId) { const row = await storage.get("records", draft.promptId, scopeFor(host)); if (live(host, epoch) && row?.type === "prompt") host.dataset.promptId = row.id; }
     if (manifest.id === "speech-to-text" && draft.subtitle) { const restored = normalizeSubtitleDraft(draft.subtitle); active.subtitleCues = restored.cues; active.subtitleOrigin = restored.origin; }
     if (manifest.id === "version-history") { host._versionPage = Math.min(1000, Math.max(0, Number(draft.versionPage) || 0)); host.dataset.versionContext = draft.versionContext || "local"; }
-    if (manifest.id === "monaco-code-editor" && draft.codeDocument) { const row = await storage.get("records", draft.codeDocument, scopeFor(host)); if (!live(host, epoch)) return; if (row?.type === "code") host.dataset.codeDocument = row.id; await renderCodeDocuments(host); }
+    if (manifest.id === "monaco-code-editor" && draft.codeDocument && !host._codeHydrationEditing) await restoreCodeDraft(host, draft, epoch);
   }
 
   function formatSegments(segments, kind) {
@@ -753,7 +798,7 @@
     if (manifest.id === "workspace-tabs") await renderTabs(host);
     if (manifest.id === "file-explorer") { await renderFolders(host); await renderFiles(host); }
     if (manifest.id === "auto-save") { const draft = await storage.get("records", "autosave-document"); if (!live(host, epoch)) return; if (draft) { getInput(host, "title").value = draft.title; getInput(host, "document").value = draft.content; host.querySelector("[data-tool-save-state]").textContent = `Khôi phục bản lưu ${nowLabel(draft.updatedAt)}`; } }
-    if (manifest.id === "monaco-code-editor") { host.dataset.codeDocument = "code-document"; const saved = await storage.get("records", "code-document"); if (!live(host, epoch)) return; if (saved) { getInput(host, "code").value = saved.content; getInput(host, "language").value = saved.language; getInput(host, "code-title").value = saved.title || "main.js"; } await renderCodeDocuments(host); }
+    if (manifest.id === "monaco-code-editor") await hydrateCodeWorkspace(host);
     if (!live(host, epoch)) return;
     await restoreDraft(host, manifest);
     if (!live(host, epoch)) return;
@@ -773,7 +818,7 @@
       const tick = () => { if (!live(host, epoch) || globalThis.document?.hidden || host._clockTimer) return; host.querySelectorAll("[data-widget-clock]").forEach(node => node.textContent = new Date().toLocaleTimeString("vi-VN")); const timer = setTimeout(() => { active.timers.delete(timer); host._clockTimer = null; tick(); }, 1000); host._clockTimer = timer; active.timers.add(timer); }; tick();
       active.clockListener = tick; globalThis.document?.addEventListener?.("visibilitychange", tick);
     }
-    if (manifest.id === "monaco-code-editor") await mountCodeEditor(host);
+    if (manifest.id === "monaco-code-editor") { await mountCodeEditor(host); if (live(host, epoch)) host._codeHydrating = false; }
   }
 
   function cleanup() {
@@ -784,6 +829,7 @@
       if (manifest.id === "auto-save") saveAutoDocument(host, true).catch(error => notice(host, error.message, "error"));
     }
     active.epoch += 1;
+    if (active.host?._codeImportToken) active.host._codeImportToken.canceled = true;
     active.detach?.(); active.detach = null;
     if (active.recognition) { active.recognition.onend = null; active.recognition.onresult = null; active.recognition.onerror = null; active.recognition.onstart = null; active.recognition.stop?.(); } active.recognition = null;
     active.request?.abort?.(); active.request = null;
@@ -799,7 +845,7 @@
     active.timers.forEach(timer => clearTimeout(timer)); active.timers.clear();
     if (active.clockListener) globalThis.document?.removeEventListener?.("visibilitychange", active.clockListener); active.clockListener = null;
     const editor = active.host?.querySelector("[data-tool-editor]")?._editor, model = editor?.getModel?.();
-    active.host?._codeMarkerListener?.dispose?.(); active.host?._codeChangeListener?.dispose?.();
+    active.host?._codeMarkerListener?.dispose?.(); active.host?._codeChangeListener?.dispose?.(); active.host?._codeCursorListener?.dispose?.();
     active.host?._diffEditor?.dispose?.(); active.host?._diffModels?.forEach(item => item.dispose());
     editor?.dispose?.(); model?.dispose?.();
     if (active.manifest?.id === "monaco-code-editor") {
@@ -821,6 +867,7 @@
     if (manifest.id === "ai-prompt-library") delete host.dataset.promptId;
     if (manifest.id === "file-explorer") { delete host.dataset.activeFile; host._fileSavedContent = null; host._fileSavedName = ""; host._fileSavedFolder = ""; host._fileBaseUpdatedAt = ""; }
     if (manifest.id === "version-history") { host._versionPage = 0; host._versionEditRevision = 0; host._versionRenderRevision = 0; host._selectedVersions = new Set(); host._versionLabels = new Map(); host._versionLabelDrafts = new Map(); host.dataset.versionContext = "local"; }
+    if (manifest.id === "monaco-code-editor") { delete host.dataset.codeDocument; host._codeBaseline = null; host._codeExpectedUpdatedAt = ""; host._codeDraftState = "idle"; host._codeDraftSavedAt = ""; host._codeDraftSnapshotAt = ""; host._codeEditRevision = 0; host._codeImportToken = null; host._codeHydrationEditing = false; host._codeHydrating = true; host._codeEngine = "native"; }
     host.innerHTML = markup(manifest);
     host._toolReady = hydrate(host, manifest).catch(error => { if (live(host)) notice(host, error.message, "error"); });
     return true;
@@ -1006,7 +1053,20 @@
     if (["delete-file", "export-file", "rename-file", "save-file", "move-file"].includes(action)) return fileAction(host, action, buttonNode.closest("[data-record-id]")?.dataset.recordId, buttonNode);
     if (action === "new-folder") { const name = getValue(host, "folder-name").trim().slice(0, 100); if (!name || /[\\/]/.test(name)) throw new Error("Tên thư mục cần 1–100 ký tự, không chứa / hoặc \\."); const folders = await storage.list("records", row => row.type === "tool-folder"); if (folders.length >= 100 || folders.some(row => row.name.toLocaleLowerCase() === name.toLocaleLowerCase())) throw new Error("Thư mục đã có hoặc đã đạt giới hạn 100 thư mục."); const row = { id: uid("folder"), type: "tool-folder", name }; await storage.put("records", row); await renderFolders(host); getInput(host, "file-folder").value = row.id; getInput(host, "folder-name").value = ""; return renderFiles(host); }
     if (action === "delete-folder") { const id = getValue(host, "file-folder"); if (!id) throw new Error("Không thể xóa thư mục gốc."); const files = await storage.list("files", row => row.folderId === id); if (files.length) throw new Error("Thư mục còn tệp; hãy chuyển hoặc xóa tệp trước."); if (!await storage.delete("records", id)) throw new Error("Chưa xóa được thư mục."); await renderFolders(host); return renderFiles(host); }
-    if (["format-code", "save-code", "version-code", "export-code", "new-code", "diff-code", "close-code-diff"].includes(action)) return codeAction(host, action);
+    if (manifest.id === "file-explorer" && ["copy-file-code", "copy-file-draft-code"].includes(action)) {
+      const id = buttonNode.closest("[data-record-id]")?.dataset.recordId || host.dataset.activeFile, row = await storage.get("files", id, owner);
+      if (!row || row.size > 500000 || row.blob?.size > 500000) throw new Error("Chỉ copy tệp văn bản tối đa 500 KB vào Code Editor.");
+      const language = codeLanguageForFilename(row.name); if (!language) throw new Error("Phần mở rộng chưa được Code Editor hỗ trợ.");
+      let content;
+      if (action === "copy-file-draft-code") { if (host.dataset.activeFile !== id || !getInput(host, "file-content")) throw new Error("Không có bản nháp văn bản của tệp này."); content = getValue(host, "file-content"); }
+      else { try { content = new TextDecoder("utf-8", { fatal: true }).decode(await row.blob.arrayBuffer()).replace(/\r\n?/g, "\n"); } catch { throw new Error("Bản lưu không phải UTF-8 hợp lệ; chưa tạo tài liệu code."); } }
+      if (!live(host, epoch)) throw codeAbort();
+      const copy = await createCodeCopy(host, row.name, language, content, "rename", false);
+      if (!live(host, epoch)) return; return notice(host, `Đã copy ${action === "copy-file-draft-code" ? "bản nháp" : "bản lưu"} thành tài liệu độc lập “${copy.title}” trong Code Editor. Tệp gốc vẫn giữ nguyên.`);
+    }
+    if (manifest.id === "monaco-code-editor" && action === "open-code-document") return openCodeDocument(host, buttonNode.dataset.recordId);
+    if (manifest.id === "monaco-code-editor" && action === "cancel-code-import") { if (host._codeImportToken) host._codeImportToken.canceled = true; host._codeImportToken = null; return notice(host, "Đã hủy dùng kết quả nhập file. Nội dung đang soạn vẫn giữ; việc đọc file của trình duyệt có thể đã bắt đầu."); }
+    if (manifest.id === "monaco-code-editor" && ["format-code", "save-code", "version-code", "export-code", "new-code", "diff-code", "close-code-diff", "rename-code", "delete-code", "duplicate-code"].includes(action)) return codeAction(host, action, buttonNode);
     if (action === "apply-crop") return drawOcr(host, true);
     if (action === "recognize-ocr") return recognizeOcr(host);
     if (action === "cancel-ocr") { if (active.ocrRun) active.ocrRun.canceled = true; active.ocrWorker?.terminate?.().catch?.(() => {}); active.ocrWorker = null; active.ocrRun = null; return notice(host, "Đã dừng OCR cục bộ. Ảnh và văn bản đang sửa vẫn còn."); }
@@ -1040,7 +1100,7 @@
     else content = '<div class="hh-tool__empty">Không có preview an toàn cho định dạng này.</div>';
     if (!live(host, epoch)) return;
     const folders = await storage.list("records", item => item.type === "tool-folder"); if (!live(host, epoch)) return;
-    preview.innerHTML = `<article data-record-id="${esc(row.id)}"><header><label>Đổi tên<input data-tool-input="rename" value="${esc(row.name)}"></label><span>${esc(row.type)} · ${(row.size / 1024).toFixed(1)} KB</span></header>${content}<label class="hh-tool__field"><span>Chuyển tới thư mục</span><select data-tool-input="file-destination"><option value="">Gốc</option>${folders.map(folder => `<option value="${esc(folder.id)}" ${folder.id === row.folderId ? "selected" : ""}>${esc(folder.name)}</option>`).join("")}</select></label><p class="hh-tool__help" data-tool-file-state role="status"></p><footer>${button("rename-file", "Đổi tên")}${content.includes('data-tool-input="file-content"') ? `${button("save-file", "Lưu văn bản")}${button("export-file-draft", "Xuất bản nháp")}` : ""}${button("move-file", "Chuyển thư mục")}${button("export-file", "Tải bản lưu")}${button("discard-file-draft", "Bỏ thay đổi")}${button("delete-file", "Xóa")}</footer></article>`;
+    preview.innerHTML = `<article data-record-id="${esc(row.id)}"><header><label>Đổi tên<input data-tool-input="rename" value="${esc(row.name)}"></label><span>${esc(row.type)} · ${(row.size / 1024).toFixed(1)} KB</span></header>${content}<label class="hh-tool__field"><span>Chuyển tới thư mục</span><select data-tool-input="file-destination"><option value="">Gốc</option>${folders.map(folder => `<option value="${esc(folder.id)}" ${folder.id === row.folderId ? "selected" : ""}>${esc(folder.name)}</option>`).join("")}</select></label><p class="hh-tool__help" data-tool-file-state role="status"></p><footer>${button("rename-file", "Đổi tên")}${content.includes('data-tool-input="file-content"') ? `${button("save-file", "Lưu văn bản")}${button("export-file-draft", "Xuất bản nháp")}${codeLanguageForFilename(row.name) ? `${button("copy-file-code", "Copy bản lưu → Code Editor")}${button("copy-file-draft-code", "Copy bản nháp → Code Editor")}` : ""}` : ""}${button("move-file", "Chuyển thư mục")}${button("export-file", "Tải bản lưu")}${button("discard-file-draft", "Bỏ thay đổi")}${button("delete-file", "Xóa")}</footer></article>`;
     fileEditState(host);
   }
 
@@ -1094,37 +1154,154 @@
       runtime.languages.typescript?.typescriptDefaults?.setDiagnosticsOptions({ noSemanticValidation: false, noSyntaxValidation: false });
       runtime.languages.json?.jsonDefaults?.setDiagnosticsOptions({ validate: true, allowComments: false, enableSchemaRequest: false, schemas: [] });
       const model = runtime.editor.createModel(source, getValue(host, "language") || "javascript");
-      holder._editor = monaco.editor.create(holder, { model, theme: "vs-dark", automaticLayout: true, fontSize: 15, wordWrap: "on", tabSize: 2, scrollBeyondLastLine: false, minimap: { enabled: false }, ariaLabel: "Monaco Code Editor riêng · không chạy code" });
-      host._codeChangeListener = holder._editor.onDidChangeModelContent(() => { if (live(host, epoch)) { scheduleDraft(host, active.manifest); if (status) status.textContent = "Monaco · có thay đổi chưa lưu vào tài liệu; bản nháp đang giữ tự động."; } });
+      // Monaco 0.55.1's automatic word-highlighter leaves its cursor/focus delay promise
+      // unobserved when disposal cancels it. Keep that optional contribution idle from
+      // creation; normal search, selection highlighting and diagnostics remain available.
+      holder._editor = monaco.editor.create(holder, { model, theme: "vs-dark", automaticLayout: true, fontSize: 15, wordWrap: "on", tabSize: 2, scrollBeyondLastLine: false, occurrencesHighlight: "off", minimap: { enabled: false }, ariaLabel: "Monaco Code Editor riêng · không chạy code" });
+      host._codeEngine = "monaco";
+      host._codeChangeListener = holder._editor.onDidChangeModelContent(() => { if (live(host, epoch)) { host._codeEditRevision = (host._codeEditRevision || 0) + 1; scheduleDraft(host, active.manifest); if (status) status.textContent = "Monaco · có thay đổi chưa lưu vào tài liệu; bản nháp đang giữ tự động."; } });
+      host._codeCursorListener = holder._editor.onDidChangeCursorPosition(() => { if (live(host, epoch)) updateCodeStatus(host); }); updateCodeStatus(host);
       host._codeMarkerListener = runtime.editor.onDidChangeMarkers(() => { if (!live(host, epoch)) return; const model = holder._editor.getModel(), problems = host.querySelector("[data-tool-code-problems]"); if (!model || !problems) return; const markers = runtime.editor.getModelMarkers({ resource: model.uri }).slice(0, 50); problems.textContent = markers.length ? markers.map(item => `Dòng ${item.startLineNumber}:${item.startColumn} · ${item.message}`).join("\n") : "Chẩn đoán Monaco: chưa phát hiện lỗi. Đây không phải kiểm thử thực thi."; });
       if (status) status.textContent = "Monaco 0.55.1 cục bộ · Ctrl+F tìm, Ctrl+H thay thế, F1 lệnh. Không chạy code.";
     } catch (error) { if (live(host, epoch)) { if (status) status.textContent = error.message; notice(host, error.message, "warning"); } }
   }
   async function renderCodeDocuments(host) {
     const epoch = active.epoch, select = getInput(host, "code-document"); if (!select) return;
-    const rows = await storage.list("records", row => row.type === "code"); if (!live(host, epoch)) return;
-    if (!rows.some(row => row.id === "code-document")) rows.unshift({ id: "code-document", title: "main.js" });
-    select.innerHTML = rows.map(row => `<option value="${esc(row.id)}">${esc(row.title || "Code chính")}</option>`).join(""); select.value = host.dataset.codeDocument || "code-document";
+    const rows = await readCodeDocuments(host, scopeFor(host), epoch); if (!live(host, epoch)) return;
+    select.innerHTML = (!rows.some(row => row.id === host.dataset.codeDocument) ? `<option value="${esc(host.dataset.codeDocument || "")}">Bản nháp mới · chưa lưu tài liệu</option>` : "") + rows.map(row => `<option value="${esc(row.id)}">${esc(row.title || "Code chính")}</option>`).join(""); select.value = host.dataset.codeDocument || "";
+    const list = host.querySelector("[data-tool-code-documents]"), query = getValue(host, "code-filter").trim().toLocaleLowerCase();
+    const filtered = rows.filter(row => !query || `${row.title || ""} ${row.language}`.toLocaleLowerCase().includes(query));
+    if (list) list.innerHTML = filtered.map(row => `<button type="button" data-tool-action="open-code-document" data-record-id="${esc(row.id)}" aria-pressed="${row.id === host.dataset.codeDocument}"><strong>${esc(row.title || "Code chính")}</strong><span>${esc(row.language)} · ${row.content.length.toLocaleString("vi")} ký tự</span></button>`).join("") || `<div class="hh-tool__empty">${rows.length ? "Không có tài liệu khớp bộ lọc." : "Chưa có tài liệu đã lưu. Soạn bản mới hoặc nhập UTF-8 để bắt đầu."}</div>`;
+    updateCodeStatus(host);
+  }
+  function codeAbort() { const error = new Error("Editor đã đóng hoặc tài khoản đã đổi."); error.name = "AbortError"; return error; }
+  function captureCodeState(host) { return { id: host.dataset.codeDocument, title: getValue(host, "code-title"), language: getValue(host, "language"), content: editorValue(host), revision: host._codeEditRevision || 0 }; }
+  function codeStateMatches(host, state) { return state.id === host.dataset.codeDocument && state.title === getValue(host, "code-title") && state.language === getValue(host, "language") && state.content === editorValue(host) && state.revision === (host._codeEditRevision || 0); }
+  async function mutateCodeRecords(host, owner, epoch, apply, requireLive = true) {
+    const db = await openDb(), check = () => { if (requireLive && !live(host, epoch)) throw codeAbort(); }, stored = row => ({ ...row, id: scopedId(row.id, owner), localId: row.id, owner, schema: 2 });
+    try { check(); } catch (error) { db?.close(); throw error; }
+    if (!db) {
+      if (globalThis.indexedDB) throw new Error("IndexedDB chưa mở được; chưa thay đổi tài liệu code.");
+      const before = new Map(memory.records);
+      try { apply([...memory.records.values()].filter(row => row.owner === owner).map(publicRow), row => { const value = stored(row); memory.records.set(value.id, structuredCloneSafe(value)); }, id => memory.records.delete(scopedId(id, owner))); }
+      catch (error) { memory.records = before; throw error; } return;
+    }
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction("records", "readwrite"), store = tx.objectStore("records"), request = store.getAll();
+      request.onsuccess = () => { try { check(); apply((request.result || []).filter(row => row.owner === owner).map(publicRow), row => store.put(stored(row)), id => store.delete(scopedId(id, owner))); } catch (error) { tx._codeError = error; tx.abort(); } };
+      tx.oncomplete = () => { db.close(); resolve(); }; tx.onerror = () => {}; tx.onabort = () => { db.close(); reject(tx._codeError || tx.error || new Error("Giao dịch code thất bại; dữ liệu cũ được giữ nguyên.")); };
+    });
+  }
+  async function readCodeDocuments(host, owner, epoch) { const rows = await storage.list("records", row => ["code", "code-deleted"].includes(row.type), owner); if (!live(host, epoch)) throw codeAbort(); const deleted = new Set(rows.filter(row => row.type === "code-deleted").map(row => row.sourceDocument)); return rows.filter(row => row.type === "code" && !deleted.has(row.id)).sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || ""))); }
+  function codeHasChanges(host) { const baseline = host._codeBaseline; return !baseline?.saved || editorValue(host) !== baseline.content || getValue(host, "code-title") !== baseline.title || getValue(host, "language") !== baseline.language; }
+  function updateCodeStatus(host) {
+    const code = editorValue(host), editor = host.querySelector("[data-tool-editor]")?._editor, input = getInput(host, "code"), position = editor?.getPosition?.();
+    let cursor = ""; if (position) cursor = ` · Dòng ${position.lineNumber}:${position.column}`; else if (typeof input?.selectionStart === "number") { const prefix = code.slice(0, input.selectionStart); cursor = ` · Dòng ${prefix.split("\n").length}:${prefix.length - prefix.lastIndexOf("\n")}`; }
+    const metadata = host.querySelector("[data-tool-code-meta]"); if (metadata) metadata.textContent = `${host._codeEngine === "monaco" ? "Monaco" : "Editor văn bản"} · ${getValue(host, "language") || "javascript"} · ${code.split(/\r\n?|\n/).length.toLocaleString("vi")} dòng · ${code.length.toLocaleString("vi")} ký tự UTF-16${cursor}`;
+    const state = host.querySelector("[data-tool-code-save-state]");
+    if (state) { const dirty = codeHasChanges(host); state.dataset.codeDirty = String(dirty); state.textContent = `${dirty ? "Có thay đổi chưa lưu tài liệu" : "Tài liệu đã lưu"} · ${({ pending: "bản nháp đang chờ ghi", saving: "đang ghi bản nháp", saved: `${globalThis.indexedDB ? "bản nháp đã ghi trên thiết bị" : "bản nháp giữ trong phiên"}${host._codeDraftSavedAt ? ` ${nowLabel(host._codeDraftSavedAt)}` : ""}`, error: "bản nháp lưu lỗi · hãy xuất nội dung", idle: "bản nháp chưa ghi" })[host._codeDraftState || "idle"]}`; }
+  }
+  function setCodeDocument(host, row, saved = true) {
+    host.dataset.codeDocument = row.id; getInput(host, "code-title").value = row.title || "main.js"; getInput(host, "language").value = row.language || "javascript";
+    setEditorValue(host, row.content || "", row.language || "javascript"); host._codeBaseline = { ...row, saved }; host._codeExpectedUpdatedAt = saved ? row.updatedAt || "" : ""; host._codeDraftState = "idle"; host._codeEditRevision = (host._codeEditRevision || 0) + 1; clearCodeDiff(host); updateCodeStatus(host);
+  }
+  async function hydrateCodeWorkspace(host) {
+    const owner = scopeFor(host), epoch = active.epoch, rows = await readCodeDocuments(host, owner, epoch), selected = rows.find(row => row.id === "code-document") || rows[0];
+    if (host._codeHydrationEditing) { const state = captureCodeState(host); setCodeDocument(host, { id: uid("code"), title: state.title, language: state.language, content: state.content }, false); await renderCodeDocuments(host); return; }
+    if (selected) setCodeDocument(host, selected); else { const deleted = await storage.get("records", "code-deleted-code-document", owner); if (!live(host, epoch)) return; setCodeDocument(host, { id: deleted ? uid("code") : "code-document", title: "main.js", language: "javascript", content: "" }, false); }
+    if (live(host, epoch)) await renderCodeDocuments(host);
+  }
+  async function restoreCodeDraft(host, draft, epoch) {
+    const owner = scopeFor(host), id = draft.codeDocument, deleted = await storage.get("records", `code-deleted-${id}`, owner); if (!live(host, epoch)) return;
+    if (deleted?.type === "code-deleted") { notice(host, "Bản nháp tham chiếu tài liệu đã xóa; không khôi phục vào tài liệu khác. Bản an toàn nằm trong Version History.", "warning"); return; }
+    const row = await storage.get("records", id, owner); if (!live(host, epoch)) return;
+    const rows = await readCodeDocuments(host, owner, epoch), newDraft = draft.codeDocumentState === "new" || !draft.codeDocumentState && id === "code-document" && !rows.length;
+    if (host._codeHydrationEditing) return;
+    if (row?.type !== "code" && !newDraft) return;
+    const content = validateCodeText(String(draft.values?.code || "")), language = Object.hasOwn(CODE_LANGUAGES, draft.values?.language) ? draft.values.language : row?.language || "javascript", title = normalizeCodeFilename(draft.values?.["code-title"] || row?.title || "main.js", language);
+    if (row?.type === "code") setCodeDocument(host, row); else setCodeDocument(host, { id, title, language, content: "" }, false);
+    if (!row || (new Date(draft.updatedAt).getTime() || 0) >= (new Date(row.updatedAt).getTime() || 0)) {
+      getInput(host, "code-title").value = title; getInput(host, "language").value = language; setEditorValue(host, content, language); host._codeExpectedUpdatedAt = draft.codeBaseUpdatedAt || row?.updatedAt || "";
+      if (row && host._codeExpectedUpdatedAt !== row.updatedAt && codeHasChanges(host)) notice(host, "Bản nháp dựa trên revision cũ. Nội dung được giữ nhưng không tự ghi đè; dùng Nhân bản thành mới hoặc Xuất file.", "warning");
+    }
+    for (const name of ["code-filter", "code-import-duplicate"]) if (getInput(host, name) && typeof draft.values?.[name] === "string") getInput(host, name).value = draft.values[name];
+    host._codeDraftState = "saved"; host._codeDraftSavedAt = draft.updatedAt; await renderCodeDocuments(host);
+  }
+  async function openCodeDocument(host, id, preserve = true, token = null) {
+    const owner = scopeFor(host), epoch = active.epoch;
+    if (preserve) { await codeAction(host, "save-code"); if (!live(host, epoch)) throw codeAbort(); if (codeHasChanges(host)) throw new Error("Bạn vừa nhập thêm trong lúc lưu. Chưa chuyển tài liệu; hãy lưu lại hoặc xuất."); }
+    const state = captureCodeState(host);
+    const deleted = await storage.get("records", `code-deleted-${id}`, owner); if (!live(host, epoch)) throw codeAbort(); if (deleted) throw new Error("Tài liệu đã xóa; không phục hồi tự động.");
+    const row = await storage.get("records", id, owner); if (!live(host, epoch) || token?.canceled) throw codeAbort(); if (row?.type !== "code") throw new Error("Tài liệu không còn tồn tại."); if (!codeStateMatches(host, state)) throw new Error("Bạn vừa nhập thêm trong lúc đọc tài liệu. Chưa chuyển; nội dung mới được giữ."); setCodeDocument(host, row); await renderCodeDocuments(host); scheduleDraft(host, active.manifest);
+  }
+  async function createCodeCopy(host, title, language, content, policy = "rename", open = true, token = null) {
+    const owner = scopeFor(host), epoch = active.epoch; validateCodeText(content, true); const rows = await readCodeDocuments(host, owner, epoch), name = normalizeCodeFilename(title, language), duplicate = rows.find(row => String(row.title || "").normalize("NFC").toLocaleLowerCase() === name.toLocaleLowerCase());
+    if (!["rename", "reject", "open"].includes(policy)) throw new Error("Chính sách trùng tên không hợp lệ.");
+    if (duplicate && policy === "reject") throw new Error("Tên file đã tồn tại. Chọn Tạo bản sao tên mới hoặc chỉ mở bản đã có; không ghi đè.");
+    if (token?.canceled) throw codeAbort();
+    if (duplicate && policy === "open") { if (open) await openCodeDocument(host, duplicate.id, true, token); return { ...duplicate, openedExisting: true }; }
+    if (rows.length >= 200) throw new Error("Code Editor giới hạn 200 tài liệu; xuất hoặc xóa bớt trước khi tạo thêm.");
+    if (open) { await codeAction(host, "save-code"); if (!live(host, epoch)) throw codeAbort(); if (codeHasChanges(host)) throw new Error("Bạn vừa nhập thêm; chưa mở file mới. Lưu lại hoặc xuất trước."); }
+    const state = open ? captureCodeState(host) : null, row = { id: uid("code"), type: "code", title: name, language, content, updatedAt: new Date().toISOString() };
+    await mutateCodeRecords(host, owner, epoch, (records, put) => { if (token?.canceled) throw codeAbort(); if (state && !codeStateMatches(host, state)) throw new Error("Bạn vừa nhập thêm; chưa mở file mới."); const deleted = new Set(records.filter(item => item.type === "code-deleted").map(item => item.sourceDocument)), current = records.filter(item => item.type === "code" && !deleted.has(item.id)); if (current.length >= 200) throw new Error("Code Editor giới hạn 200 tài liệu."); row.title = uniqueCodeFilename(name, language, current); put(row); });
+    if (!live(host, epoch)) throw codeAbort(); if (open) { if (!codeStateMatches(host, state)) throw new Error(`Đã tạo “${row.title}”; bạn vừa nhập thêm nên chưa mở file mới. Nội dung hiện tại vẫn giữ.`); setCodeDocument(host, row); await renderCodeDocuments(host); } return row;
+  }
+  async function importCodeFile(host, file) {
+    const epoch = active.epoch, token = host._codeImportToken, state = captureCodeState(host); if (!file || file.size > 500000) throw new Error("File vượt 500 KB; không đọc hoặc gửi ra ngoài."); const language = codeLanguageForFilename(file.name); if (!language) throw new Error("Chỉ nhận JS/MJS/CJS/TS/JSON/HTML/HTM/CSS/MD/Markdown/TXT. Định dạng khác chưa có runtime."); normalizeCodeFilename(file.name, language);
+    let content; try { content = new TextDecoder("utf-8", { fatal: true }).decode(await file.arrayBuffer()).replace(/\r\n?/g, "\n"); } catch { throw new Error("Tệp không phải UTF-8 hợp lệ; chuyển encoding trước khi nhập."); } if (!live(host, epoch)) throw codeAbort(); validateCodeText(content, true);
+    if (token?.canceled || token !== host._codeImportToken) throw codeAbort(); if (!codeStateMatches(host, state)) throw new Error("Bạn vừa nhập thêm trong lúc đọc file. Chưa nhập; nội dung hiện tại được giữ.");
+    const result = await createCodeCopy(host, file.name, language, content, getValue(host, "code-import-duplicate") || "rename", true, token); if (!live(host, epoch)) return;
+    notice(host, result.openedExisting ? `Đã mở bản có sẵn “${result.title}”. Nội dung file được chọn không được nhập.` : `Đã tạo tài liệu riêng “${result.title}”. Tệp gốc và các tài liệu cũ không bị thay đổi.`);
+  }
+  async function commitCodeRemoval(host, id, expectedUpdatedAt, snapshots, title, state) {
+    const owner = scopeFor(host), epoch = active.epoch, marker = { id: `code-deleted-${id}`, type: "code-deleted", sourceDocument: id, title, createdAt: new Date().toISOString() };
+    await mutateCodeRecords(host, owner, epoch, (rows, put, remove) => { const row = rows.find(item => item.id === id), draft = rows.find(item => item.id === "draft-monaco-code-editor"); if (!codeStateMatches(host, state)) throw new Error("Bạn vừa nhập thêm; chưa xóa tài liệu."); if (row?.updatedAt !== expectedUpdatedAt) throw new Error("Tài liệu vừa đổi ở nơi khác. Chưa xóa; mở lại revision mới hoặc nhân bản nội dung hiện tại."); snapshots.forEach(put); put(marker); remove(id); if (draft?.codeDocument === id) remove(draft.id); });
   }
   function editorValue(host) { const editor = host.querySelector("[data-tool-editor]")?._editor; return editor ? editor.getValue() : getValue(host, "code"); }
   function setEditorValue(host, value, language) { const editor = host.querySelector("[data-tool-editor]")?._editor; if (editor) { editor.setValue(value); if (language) monaco.editor.setModelLanguage(editor.getModel(), language); } else { const input = getInput(host, "code"); if (input) input.value = value; } }
   function clearCodeDiff(host) { host._diffEditor?.dispose?.(); host._diffModels?.forEach(model => model.dispose()); host._diffEditor = null; host._diffModels = []; const panel = host.querySelector("[data-tool-code-diff]"); if (panel) { panel.hidden = true; panel.innerHTML = ""; } }
-  async function codeAction(host, action) {
+  async function codeAction(host, action, buttonNode) {
     const epoch = active.epoch, owner = scopeFor(host), editor = host.querySelector("[data-tool-editor]")?._editor, language = getValue(host, "language") || "javascript"; let code = editorValue(host);
-    if (code.length > 200000 && action !== "export-code") throw new Error("Tài liệu vượt 200.000 ký tự. Xuất hoặc chia nhỏ trước khi lưu.");
-    const id = host.dataset.codeDocument || "code-document", title = getValue(host, "code-title").trim().slice(0, 180) || "main.js";
+    const state = captureCodeState(host);
     if (action === "close-code-diff") { clearCodeDiff(host); return; }
-    if (action === "new-code") { await codeAction(host, "save-code"); if (!live(host, epoch)) return; const row = { id: uid("code"), type: "code", title: `document-${Date.now().toString().slice(-4)}.js`, language: "javascript", content: "", updatedAt: new Date().toISOString() }; await storage.put("records", row, owner); if (!live(host, epoch)) return; host.dataset.codeDocument = row.id; getInput(host, "code-title").value = row.title; getInput(host, "language").value = row.language; setEditorValue(host, "", row.language); clearCodeDiff(host); await renderCodeDocuments(host); return; }
-    if (action === "diff-code") { const saved = await storage.get("records", id, owner); if (!live(host, epoch)) return; if (!saved) throw new Error("Lưu tài liệu ít nhất một lần trước khi so sánh."); clearCodeDiff(host); const panel = host.querySelector("[data-tool-code-diff]"); if (!panel) return; panel.hidden = false; panel.innerHTML = `<header><strong>Bản lưu → nội dung hiện tại</strong>${button("close-code-diff", "Đóng so sánh")}</header><div data-tool-diff-surface></div>`; const surface = panel.querySelector("[data-tool-diff-surface]"); if (editor) { host._diffModels = [monaco.editor.createModel(saved.content, language), monaco.editor.createModel(code, language)]; host._diffEditor = monaco.editor.createDiffEditor(surface, { theme: "vs-dark", readOnly: true, originalEditable: false, automaticLayout: true, renderSideBySide: false, minimap: { enabled: false }, ariaLabel: "So sánh với bản đã lưu" }); host._diffEditor.setModel({ original: host._diffModels[0], modified: host._diffModels[1] }); } else { const pre = document.createElement("pre"); pre.textContent = compareLines(saved.content, code).text; surface.appendChild(pre); } return; }
+    const id = host.dataset.codeDocument || "code-document", title = normalizeCodeFilename(getValue(host, "code-title") || "main.js", language);
+    if (action === "export-code") { download(title, code); return notice(host, `Đã xuất ${title} theo ngôn ngữ ${language}; nội dung không được thực thi.`); }
+    validateCodeText(code);
+    if (action === "duplicate-code") { const result = await createCodeCopy(host, title, language, code, "rename", false); if (!live(host, epoch)) return; if (!codeStateMatches(host, state)) throw new Error(`Đã tạo bản sao ${result.title}; bạn vừa nhập thêm nên nội dung hiện tại vẫn giữ.`); setCodeDocument(host, result); await renderCodeDocuments(host); return notice(host, `Đã tạo bản sao ${result.title}; không thay đổi tài liệu gốc.`); }
+    if (action === "new-code") { await createCodeCopy(host, "document.js", "javascript", "", "rename", true); return; }
+    if (action === "delete-code") {
+      if (buttonNode?.dataset.confirmCodeDelete !== id) { if (buttonNode) { buttonNode.dataset.confirmCodeDelete = id; buttonNode.textContent = "Xác nhận xóa & giữ snapshot"; } return notice(host, "Xóa tài liệu này? Bấm lại sẽ giữ bản lưu/bản đang nhập trong Version History trước khi xóa. Không xóa tài liệu khác.", "warning"); }
+      const row = await storage.get("records", id, owner); if (!live(host, epoch)) return; if (row && host._codeExpectedUpdatedAt && row.updatedAt !== host._codeExpectedUpdatedAt) throw new Error("Tài liệu đã có revision khác; chưa xóa. Xuất/nhân bản bản hiện tại hoặc mở lại.");
+      const timestamp = new Date().toISOString(), snapshots = []; if (row?.type === "code") snapshots.push({ id: uid("version"), type: "version", label: `Đã xóa ${row.title || title} · bản lưu`.slice(0, 180), content: row.content, sourceDocument: id, createdAt: timestamp });
+      if (!row || row.content !== code || row.title !== title || row.language !== language) snapshots.push({ id: uid("version"), type: "version", label: `Bản nháp trước xóa ${title}`.slice(0, 180), content: code, sourceDocument: id, createdAt: timestamp });
+      await commitCodeRemoval(host, id, row?.updatedAt, snapshots, title, state); if (!live(host, epoch)) return; const rows = await readCodeDocuments(host, owner, epoch);
+      if (!codeStateMatches(host, state)) { const latest = captureCodeState(host); setCodeDocument(host, { id: uid("code"), title: latest.title, language: latest.language, content: latest.content }, false); }
+      else setCodeDocument(host, rows[0] || { id: uid("code"), title: "main.js", language: "javascript", content: "" }, Boolean(rows[0])); await renderCodeDocuments(host); if (buttonNode) { buttonNode.textContent = "Xóa tài liệu"; delete buttonNode.dataset.confirmCodeDelete; } return notice(host, "Đã xóa tài liệu riêng; snapshot nằm trong Version History. Phần nhập thêm trong lúc xóa được giữ thành bản nháp mới; bản nháp cũ không được tái tạo ID đã xóa.");
+    }
+    if (action === "diff-code") { const saved = await storage.get("records", id, owner); if (!live(host, epoch)) return; if (!saved) throw new Error("Lưu tài liệu ít nhất một lần trước khi so sánh."); clearCodeDiff(host); const panel = host.querySelector("[data-tool-code-diff]"); if (!panel) return; panel.hidden = false; panel.innerHTML = `<header><strong>Bản lưu → nội dung hiện tại</strong>${button("close-code-diff", "Đóng so sánh")}</header><div data-tool-diff-surface></div>`; const surface = panel.querySelector("[data-tool-diff-surface]"); if (editor) { host._diffModels = [monaco.editor.createModel(saved.content, language), monaco.editor.createModel(code, language)]; host._diffEditor = monaco.editor.createDiffEditor(surface, { theme: "vs-dark", readOnly: true, originalEditable: false, automaticLayout: true, renderSideBySide: false, occurrencesHighlight: "off", minimap: { enabled: false }, ariaLabel: "So sánh với bản đã lưu" }); host._diffEditor.setModel({ original: host._diffModels[0], modified: host._diffModels[1] }); } else { const pre = document.createElement("pre"); pre.textContent = compareLines(saved.content, code).text; surface.appendChild(pre); } return; }
     if (action === "format-code") {
-      if (editor) { const formatter = editor.getAction("editor.action.formatDocument"); if (language === "markdown") throw new Error("Markdown có tô màu/tìm kiếm nhưng chưa có formatter; không báo format thành công giả."); if (!formatter?.isSupported?.()) throw new Error("Formatter ngôn ngữ đang tải hoặc không hỗ trợ. Hãy thử lại sau."); await formatter.run(); }
+      if (editor) { const formatter = editor.getAction("editor.action.formatDocument"); if (["markdown", "plaintext"].includes(language)) throw new Error("Markdown/TXT chưa có formatter; không báo format thành công giả."); if (!formatter?.isSupported?.()) throw new Error("Formatter ngôn ngữ đang tải hoặc không hỗ trợ. Hãy thử lại sau."); await formatter.run(); }
       else if (language === "json") { try { code = JSON.stringify(JSON.parse(code), null, 2); getInput(host, "code").value = code; } catch { throw new Error("JSON không hợp lệ."); } }
       else { code = code.split("\n").map(line => line.replace(/\s+$/g, "")).join("\n"); getInput(host, "code").value = code; }
-      if (!live(host, epoch)) return; notice(host, editor ? "Đã chạy formatter Monaco; không thực thi mã nguồn." : language === "json" ? "Đã kiểm tra và định dạng JSON." : "Editor văn bản: chỉ bỏ khoảng trắng cuối dòng; chưa có formatter cho ngôn ngữ này.");
+      if (!live(host, epoch)) return; scheduleDraft(host, active.manifest); notice(host, editor ? "Đã chạy formatter Monaco; không thực thi mã nguồn." : language === "json" ? "Đã kiểm tra và định dạng JSON." : "Editor văn bản: chỉ bỏ khoảng trắng cuối dòng; chưa có formatter cho ngôn ngữ này.");
     }
-    if (action === "save-code") { await storage.put("records", { id, type: "code", title, language, content: code, updatedAt: new Date().toISOString() }, owner); if (!live(host, epoch)) return; await renderCodeDocuments(host); host.querySelector("[data-tool-editor-status]").textContent = `Đã lưu ${title} · ${nowLabel()}`; }
+    if (["save-code", "rename-code"].includes(action)) {
+      const deleted = await storage.get("records", `code-deleted-${id}`, owner); if (!live(host, epoch)) return; if (deleted) throw new Error("Tài liệu đã xóa; không ghi lại ID cũ. Dùng Nhân bản thành mới hoặc Xuất file để giữ nội dung.");
+      const existing = await storage.get("records", id, owner); if (!live(host, epoch)) return; if (host._codeBaseline?.saved && existing?.type !== "code") throw new Error("Tài liệu đã bị xóa hoặc mất ở nơi khác. Nhân bản thành mới; không tạo lại ID cũ.");
+      if (existing && host._codeExpectedUpdatedAt && existing.updatedAt !== host._codeExpectedUpdatedAt) throw new Error("Revision đã đổi. Nội dung vẫn giữ; xuất/nhân bản thay vì ghi đè tự động.");
+      const rows = await readCodeDocuments(host, owner, epoch); if (rows.some(row => row.id !== id && String(row.title || "").normalize("NFC").toLocaleLowerCase() === title.toLocaleLowerCase())) throw new Error("Tên file trùng tài liệu khác; đổi tên hoặc dùng Nhân bản thành mới. Không ghi đè."); if (!existing && rows.length >= 200) throw new Error("Đã đạt 200 tài liệu.");
+      if (action === "rename-code" && !existing) throw new Error("Lưu tài liệu mới trước khi đổi tên/ngôn ngữ riêng.");
+      const row = { id, type: "code", title, language, content: action === "rename-code" ? existing.content : code, updatedAt: new Date().toISOString() };
+      await mutateCodeRecords(host, owner, epoch, (records, put) => {
+        const current = records.find(item => item.id === id), deleted = new Set(records.filter(item => item.type === "code-deleted").map(item => item.sourceDocument)), documents = records.filter(item => item.type === "code" && !deleted.has(item.id));
+        if (deleted.has(id) || current?.updatedAt !== existing?.updatedAt || existing && current?.type !== "code") throw new Error("Revision đã đổi hoặc tài liệu đã xóa. Nội dung được giữ; xuất/nhân bản thành mới.");
+        if (documents.some(item => item.id !== id && String(item.title).normalize("NFC").toLocaleLowerCase() === title.toLocaleLowerCase()) || !current && documents.length >= 200) throw new Error("Tên trùng hoặc đã đạt 200 tài liệu; chưa lưu.");
+        row.updatedAt = new Date(Math.max(Date.now(), (new Date(current?.updatedAt).getTime() || 0) + 1)).toISOString();
+        if (action === "rename-code") put({ id: uid("version"), type: "version", label: `Trước đổi tên ${existing.title || "code"}`.slice(0, 180), content: existing.content, sourceDocument: id, createdAt: row.updatedAt }); put(row);
+      });
+      if (!live(host, epoch) || host.dataset.codeDocument !== id) return; host._codeBaseline = { ...row, saved: true }; host._codeExpectedUpdatedAt = row.updatedAt; if (getValue(host, "code-title") === state.title) getInput(host, "code-title").value = title; await renderCodeDocuments(host); if (!live(host, epoch)) return; host.querySelector("[data-tool-editor-status]").textContent = action === "rename-code" ? `Đã đổi tên/ngôn ngữ ${title}; nội dung chưa lưu vẫn giữ trong editor.` : `Đã lưu ${title} · ${nowLabel()}`; updateCodeStatus(host);
+    }
     if (action === "version-code") await storage.put("records", { id: uid("version"), type: "version", label: `Code · ${title} · ${language}`, content: code, sourceDocument: id, createdAt: new Date().toISOString() }, owner);
-    if (action === "export-code") download(title.replace(/[\\/]/g, "_") || `code.${({ javascript: "js", typescript: "ts", json: "json", html: "html", css: "css", markdown: "md" })[language] || "txt"}`, code);
   }
 
   async function loadOcrImage(host, file) {
@@ -1214,6 +1391,15 @@
     const epoch = active.epoch;
     const manifest = resolveManifest(name); if (!manifest || !live(work)) return false;
     const owner = scopeFor(work);
+    if (manifest.id === "monaco-code-editor" && event.target.matches("[data-tool-code-file]")) {
+      const file = event.target.files?.[0]; if (!file) return true;
+      if (work._codeImportToken) work._codeImportToken.canceled = true; const token = { canceled: false }; work._codeImportToken = token;
+      setState(work, "running", "Đang đọc UTF-8 cục bộ");
+      try { await importCodeFile(work, file); if (live(work, epoch) && !token.canceled) { await saveDraft(work, manifest); if (live(work, epoch)) setState(work, "done", "Đã xử lý file"); } }
+      catch (error) { if (error.name !== "AbortError") throw error; }
+      finally { if (live(work, epoch) && work._codeImportToken === token) { work._codeImportToken = null; event.target.value = ""; if (work.querySelector('[data-tool-state="running"]')) setState(work, "idle", "Đang chờ"); } }
+      return true;
+    }
     if (manifest.id === "speech-to-text" && event.target.matches("[data-tool-subtitle-file]")) {
       const file = event.target.files?.[0]; if (!file) return true; if (file.size > 1048576) throw new Error("Phụ đề vượt 1 MB. Không đọc hoặc gửi file.");
       const source = await file.text(), parsed = parseSubtitles(source); if (!live(work, epoch)) return true;
@@ -1234,7 +1420,7 @@
       notice(work, `Đã đính kèm ${file.name}. Tệp chỉ được gửi khi bạn nhấn Gửi.`); return true;
     }
     if (event.target.matches('[data-tool-input="language"]') && manifest.id === "monaco-code-editor") { work.querySelector("[data-tool-editor]")?._editor?.getModel?.() && monaco.editor.setModelLanguage(work.querySelector("[data-tool-editor]")._editor.getModel(), event.target.value); clearCodeDiff(work); scheduleDraft(work, manifest); return true; }
-    if (event.target.matches('[data-tool-input="code-document"]') && manifest.id === "monaco-code-editor") { const id = event.target.value; await codeAction(work, "save-code"); const row = await storage.get("records", id, owner); if (!live(work, epoch)) return true; if (!row || row.type !== "code") throw new Error("Tài liệu code không tồn tại."); work.dataset.codeDocument = id; getInput(work, "code-title").value = row.title || "main.js"; getInput(work, "language").value = row.language; setEditorValue(work, row.content, row.language); clearCodeDiff(work); await renderCodeDocuments(work); scheduleDraft(work, manifest); return true; }
+    if (event.target.matches('[data-tool-input="code-document"]') && manifest.id === "monaco-code-editor") { try { await openCodeDocument(work, event.target.value); } catch (error) { if (live(work, epoch)) event.target.value = work.dataset.codeDocument || ""; throw error; } return true; }
     if (manifest.id === "file-explorer" && event.target.matches('[data-tool-input="file-folder"]')) { await renderFiles(work); return true; }
     if (manifest.id === "file-explorer" && event.target.matches('[data-tool-input="file-destination"]')) { fileEditState(work); scheduleDraft(work, manifest); return true; }
     if (manifest.id === "ai-prompt-library" && event.target.matches('[data-tool-input="prompt-favorites"]')) { await renderCollection(work, "prompts"); return true; }
@@ -1244,6 +1430,8 @@
 
   function handleInput(event, work, name) {
     const manifest = resolveManifest(name); if (!manifest || !live(work)) return false;
+    if (manifest.id === "monaco-code-editor" && event.target.matches('[data-tool-input="code"],[data-tool-input="code-title"],[data-tool-input="language"]')) { if (work._codeHydrating) work._codeHydrationEditing = true; work._codeEditRevision = (work._codeEditRevision || 0) + 1; scheduleDraft(work, manifest); return true; }
+    if (manifest.id === "monaco-code-editor" && event.target.matches('[data-tool-input="code-filter"]')) { scheduleDraft(work, manifest); renderCodeDocuments(work).catch(error => { if (live(work)) notice(work, error.message, "error"); }); return true; }
     if (manifest.id === "version-history" && event.target.matches("[data-version-label]")) { const id = event.target.closest("[data-record-id]")?.dataset.recordId; if (id) { work._versionLabelDrafts ||= new Map(); work._versionLabelDrafts.set(id, String(event.target.value).slice(0, 180)); } return true; }
     if (manifest.id === "speech-to-text" && event.target.matches("[data-subtitle-field]")) {
       const id = event.target.closest("[data-subtitle-cue]")?.dataset.subtitleCue, fieldName = event.target.dataset.subtitleField, index = active.subtitleCues.findIndex(row => row.id === id); if (index < 0 || !["start", "end", "text"].includes(fieldName)) return false;

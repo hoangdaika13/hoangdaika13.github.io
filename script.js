@@ -8691,21 +8691,21 @@ function initAppShell() {
   document.addEventListener("keydown", (event) => {
     const galaxyLayerActive = document.body.dataset.hhProduct === "galaxy";
     const focusGalaxySearch = () => document.querySelector(".hh-galaxy-app [data-hgl1-global-search], .hh-galaxy-app [data-hgl1-sidebar-search], [data-gha-home-ai-host] [data-gha-search]")?.focus?.();
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+    if (!event.defaultPrevented && !event.repeat && !event.isComposing && !event.altKey && !event.shiftKey && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
       event.preventDefault();
       if (galaxyLayerActive) focusGalaxySearch();
       else openPalette();
     }
-    const typing = event.target.matches("input, textarea, select, [contenteditable=true]");
-    if (!typing && event.key === "/") {
+    const typing = Boolean(event.target?.closest?.("input, textarea, select, [contenteditable], [role=textbox]"));
+    if (!event.defaultPrevented && !event.repeat && !event.isComposing && !typing && !event.ctrlKey && !event.metaKey && !event.altKey && event.key === "/") {
       event.preventDefault();
       if (galaxyLayerActive) focusGalaxySearch();
       else openPalette();
     }
-    if (!typing && event.altKey && event.key.toLowerCase() === "h") { event.preventDefault(); location.hash = "#/platform"; }
-    if (!typing && event.altKey && event.key.toLowerCase() === "m") { event.preventDefault(); location.hash = galaxyLayerActive ? "#/galaxy/music" : "#/music-ai/project"; }
+    if (!event.defaultPrevented && !event.repeat && !event.isComposing && !typing && event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey && event.key.toLowerCase() === "h") { event.preventDefault(); location.hash = "#/platform"; }
+    if (!event.defaultPrevented && !event.repeat && !event.isComposing && !typing && event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey && event.key.toLowerCase() === "m") { event.preventDefault(); location.hash = galaxyLayerActive ? "#/galaxy/music" : "#/music-ai/project"; }
     if (event.key === "Escape") { closePalette(); closeOverlays(); closeSidebarContextMenu(); }
-    if (palette?.open && ["ArrowDown", "ArrowUp", "Enter"].includes(event.key)) {
+    if (!event.defaultPrevented && !event.repeat && !event.isComposing && palette?.open && ["ArrowDown", "ArrowUp", "Enter"].includes(event.key)) {
       const options = [...paletteResults.querySelectorAll("[role=option]")];
       if (!options.length) return;
       event.preventDefault();

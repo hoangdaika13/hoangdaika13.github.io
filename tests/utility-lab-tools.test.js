@@ -11,7 +11,7 @@ const css = fs.readFileSync(path.join(root, "utility-lab-tools.css"), "utf8");
 
 function load(options = {}) {
   const window = { crypto: require("node:crypto").webcrypto, ...(options.window || {}) };
-  const context = vm.createContext({ window, crypto: window.crypto, localStorage: { getItem: () => null, setItem() {}, removeItem() {} }, navigator: {}, performance: {}, document: {}, Blob, URL: options.URL || URL, TextEncoder, console, setTimeout, clearTimeout, setInterval, clearInterval });
+  const context = vm.createContext({ window, crypto: window.crypto, localStorage: { getItem: () => null, setItem() {}, removeItem() {} }, navigator: {}, performance: {}, document: {}, Blob, URL: options.URL || URL, TextEncoder, btoa: text => Buffer.from(text, "binary").toString("base64"), console, setTimeout, clearTimeout, setInterval, clearInterval });
   vm.runInContext(source, context);
   return window.HHUtilityTools;
 }
@@ -100,12 +100,47 @@ test("calculator uses a deterministic parser and rejects executable input", () =
 });
 
 test("real engines and capability fallbacks are present", () => {
-  for (const token of ["crypto.subtle.digest", "crypto.randomUUID", "crypto.getRandomValues", "BarcodeDetector", "navigator.storage", "api.github.com/repos", "api.open-meteo.com", "AbortController", "navigator.clipboard", "requestAnimationFrame"]) {
+  for (const token of ["cryptoSource.subtle.digest", "crypto.randomUUID", "cryptoSource.getRandomValues", "BarcodeDetector", "navigator.storage", "api.github.com/repos", "api.open-meteo.com", "AbortController", "navigator.clipboard", "requestAnimationFrame"]) {
     if (token === "requestAnimationFrame") continue;
     assert.match(source, new RegExp(token.replace(/[.?+]/g, "\\$&")));
   }
   assert.match(source, /không nằm trong sandbox/);
   assert.match(source, /Không tự bật camera|không tự bật camera/i);
+});
+
+test("hash engines match real SHA vectors, handle binary view slices and reject unsupported inputs", async () => {
+  const api = load(), { createHash } = require("node:crypto"), bytes = new TextEncoder().encode("Hoàng 🌌\n");
+  assert.equal(await api.computeDigest(new Uint8Array(), "SHA-256"), "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+  for (const [algorithm, nodeAlgorithm] of [["SHA-256", "sha256"], ["SHA-384", "sha384"], ["SHA-512", "sha512"]]) for (const encoding of ["hex", "base64", "base64url"]) assert.equal(await api.computeDigest(bytes, algorithm, encoding), createHash(nodeAlgorithm).update(bytes).digest(encoding));
+  const binary = Uint8Array.of(0, 255, 128, 1, 0); assert.equal(await api.computeDigest(binary.subarray(1, 4)), createHash("sha256").update(binary.subarray(1, 4)).digest("hex"));
+  await assert.rejects(api.computeDigest(bytes, "MD5"), /không hỗ trợ/); await assert.rejects(api.computeDigest(bytes, "SHA-256", "bad"), /không hỗ trợ/); await assert.rejects(api.computeDigest(bytes, "SHA-256", "hex", {}), /Web Crypto/); await assert.rejects(api.computeDigest(new Uint8Array(api.HASH_LIMITS.fileBytes + 1)), /8 MiB/);
+});
+
+test("password RNG uses bounded rejection sampling rather than biased modulo or insecure fallback", () => {
+  const api = load(), draws = [255, 254, 1]; let calls = 0; const crypto = { getRandomValues(target) { target[0] = draws[calls++]; return target; } };
+  assert.equal(api.secureRandomIndex(26, crypto), 1); assert.equal(calls, 3); assert.throws(() => api.secureRandomIndex(26, {}), /crypto/);
+  let rejected = 0; assert.throws(() => api.secureRandomIndex(26, { getRandomValues(target) { rejected++; target[0] = 255; return target; } }), /giới hạn thử/); assert.equal(rejected, 1024);
+  const generationSource = source.slice(source.indexOf("function generatePasswordBatch"), source.indexOf("function clearPasswords")); assert.doesNotMatch(generationSource, /Math\.random\s*\(/); assert.match(generationSource, /secureRandomIndex/); assert.match(generationSource, /config\.groups\.every/);
+});
+
+test("password batches guarantee every selected class, configurable ambiguous characters and honest entropy", () => {
+  const api = load(), result = api.generatePasswordBatch({ length: 12, count: 20 }); assert.equal(result.passwords.length, 20); assert.equal(result.count, 20); assert.ok(Number.isFinite(result.entropyBits)); assert.ok(result.entropyBits <= 12 * Math.log2(result.alphabetSize));
+  for (const password of result.passwords) { assert.equal(password.length, 12); for (const pattern of [/[A-Z]/, /[a-z]/, /[2-9]/, /[!@#$%&*+\-_]/]) assert.match(password, pattern); assert.doesNotMatch(password, /[0OIl1]/); }
+  const numeric = api.generatePasswordBatch({ length: 128, count: 3, uppercase: false, lowercase: false, numbers: true, symbols: false, excludeAmbiguous: false }); assert.ok(numeric.passwords.every(value => /^\d{128}$/.test(value))); assert.ok(Math.abs(numeric.entropyBits - 128 * Math.log2(10)) < 1e-10);
+  const zeroRNG = { getRandomValues(target) { target[0] = 0; return target; } }, allA = api.generatePasswordBatch({ length: 12, uppercase: true, lowercase: false, numbers: false, symbols: false, excludeAmbiguous: false }, zeroRNG); assert.equal(allA.passwords[0], "A".repeat(12));
+  for (const invalid of [{ length: 11 }, { length: 129 }, { length: 12.5 }, { count: 0 }, { count: 21 }, { uppercase: false, lowercase: false, numbers: false, symbols: false }, { uppercase: "false" }]) assert.throws(() => api.generatePasswordBatch(invalid));
+  assert.throws(() => api.generatePasswordBatch({}, {}), /crypto/);
+});
+
+test("password entropy counts only strings containing every selected class", () => {
+  const api = load(), config = api.passwordConfig({ length: 12 });
+  // Independently count valid strings by a dynamic program over class-presence masks.
+  let counts = Array(16).fill(0n); counts[0] = 1n;
+  for (let position = 0; position < 12; position++) { const next = Array(16).fill(0n); for (let mask = 0; mask < 16; mask++) for (let group = 0; group < 4; group++) next[mask | (1 << group)] += counts[mask] * BigInt(config.groups[group].chars.length); counts = next; }
+  const entropy = api.generatePasswordBatch({ length: 12 }).entropyBits;
+  assert.ok(Math.abs(entropy - Math.log2(Number(counts[15]))) < 1e-10);
+  assert.ok(entropy < 12 * Math.log2(config.alphabet.length));
+  assert.throws(() => api.generatePasswordBatch({}, { getRandomValues: true }), /crypto/);
 });
 
 test("source is UTF-8, responsive and keyboard accessible", () => {

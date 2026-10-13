@@ -51,6 +51,11 @@
     themePresetId: "",
     historyRows: [],
     historyFiltered: [],
+    shortcutEditing: "",
+    shortcutRecording: false,
+    shortcutImport: null,
+    shortcutImportVersion: 0,
+    favoriteLinks: [],
     progress: { value: 0, elapsed: 0, duration: 4000, running: false, mode: "demo" }
   };
 
@@ -70,7 +75,7 @@
     ["pwa", "PWA", "browser", ["service-worker"], ["inspect", "update"], true, true, "app-window"],
     ["offline-mode", "Offline Mode", "browser", ["service-worker", "cache"], ["inspect", "retry"], true, true, "wifi-off"],
     ["install-app", "Install App", "browser", ["install-prompt"], ["install", "instructions"], true, true, "monitor-down"],
-    ["keyboard-shortcuts", "Keyboard Shortcut System", "browser", ["keyboard"], ["add", "test", "reset", "export"], true, true, "keyboard"],
+    ["keyboard-shortcuts", "Keyboard Shortcut System", "browser", ["keyboard", "local-file", "download"], ["record", "add", "edit", "toggle", "test", "delete", "reset", "import", "export"], true, true, "keyboard"],
     ["settings-center", "Settings Center", "browser", ["appearance", "local-data"], ["search", "apply", "reset"], true, true, "settings"]
   ].map(([id, name, runtime, permissions, actions, history, offline, icon]) => ({
     id, name, runtime, permissions, actions, history, offline, icon,
@@ -96,7 +101,7 @@
     if (document.querySelector('link[data-platform-tools-style]')) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = new URL("/platform-tools.css?v=4", location.href).href;
+    link.href = new URL("/platform-tools.css?v=5", location.href).href;
     link.dataset.platformToolsStyle = "true";
     document.head.append(link);
   }
@@ -377,16 +382,60 @@
 
   function catalogFavoriteRows() {
     const preferences = catalogPreferences(), catalog = toolCatalog();
-    const selected = catalog.filter(tool => preferences.favorites.includes(tool.id) || preferences.pinned.includes(tool.id));
-    return `<header><strong>Yêu thích & ghim của danh mục</strong><span>${selected.length} công cụ</span></header>${field("Thêm từ danh mục", select("catalogTool", catalog.map(tool => [tool.id, tool.name])))}<div class="pt-actions">${button("favorite-catalog-add", "Thêm tool yêu thích", true)}${button("favorite-catalog-pin", "Ghim tool đã chọn")}</div><div class="pt-catalog-favorites">${selected.length ? selected.map(tool => `<article><div><b>${esc(tool.name)}</b><small>${esc(tool.group || "Platform")} · ${preferences.pinned.includes(tool.id) ? "Đã ghim" : "Chưa ghim"}</small></div><button type="button" data-pt-catalog-open="${esc(tool.id)}">Mở</button><button type="button" data-pt-catalog-toggle="pinned" data-pt-catalog-id="${esc(tool.id)}" aria-pressed="${preferences.pinned.includes(tool.id)}">◇ Ghim</button><button type="button" data-pt-catalog-toggle="favorites" data-pt-catalog-id="${esc(tool.id)}" aria-pressed="${preferences.favorites.includes(tool.id)}">★ Yêu thích</button></article>`).join("") : '<div class="pt-empty">Dùng nút Yêu thích/Ghim trong catalog hoặc chọn một tool ở trên.</div>'}</div>`;
+    return `<header><strong>Yêu thích & ghim của danh mục</strong><span data-pt-catalog-favorite-count></span></header><div class="pt-grid-3">${field("Tìm tool / nhóm", '<input name="favoriteQuery" type="search" maxlength="200" placeholder="Tên công cụ hoặc nhóm...">')}${field("Danh mục", select("favoriteGroup", [["all", "Tất cả nhóm"], ...[...new Set(catalog.map(tool => tool.group || "Platform"))].map(group => [group, group])]))}${field("Bộ sưu tập", select("favoriteCollection", [["all", "Yêu thích & ghim"], ["favorites", "Chỉ yêu thích"], ["pinned", "Chỉ ghim"]]))}</div><p class="pt-help">Thứ tự lấy từ cùng dữ liệu với catalog. ↑/↓ hoán đổi hai mục đang hiển thị; các mục bị lọc ẩn được giữ nguyên.</p>${field("Thêm từ danh mục", select("catalogTool", catalog.map(tool => [tool.id, tool.name])))}<div class="pt-actions">${button("favorite-catalog-add", "Thêm tool yêu thích", true)}${button("favorite-catalog-pin", "Ghim tool đã chọn")}${button("favorite-filter-reset", "Bỏ bộ lọc")}</div><div class="pt-catalog-favorites" data-pt-catalog-favorites>${catalogFavoriteItems(preferences, catalog, {})}</div>`;
+  }
+
+  function favoriteTools(preferences, catalog, filters = {}) {
+    const ids = filters.favoriteCollection === "favorites" ? preferences.favorites : filters.favoriteCollection === "pinned" ? preferences.pinned : [...new Set([...preferences.favorites, ...preferences.pinned])], query = normalizeSearch(filters.favoriteQuery).slice(0, 200);
+    return ids.map(id => catalog.find(tool => tool.id === id)).filter(tool => tool && (!filters.favoriteGroup || filters.favoriteGroup === "all" || (tool.group || "Platform") === filters.favoriteGroup) && (!query || normalizeSearch(`${tool.name} ${tool.group || "Platform"} ${tool.description || ""}`).includes(query)));
+  }
+  function reorderCollection(ids, id, direction, visibleIds = ids) {
+    if (!Array.isArray(ids) || !Array.isArray(visibleIds) || ![-1, 1].includes(direction)) throw new Error("Thứ tự bộ sưu tập không hợp lệ.");
+    const visible = ids.filter(value => visibleIds.includes(value)), index = visible.indexOf(id), targetId = visible[index + direction];
+    if (index < 0 || !targetId) return [...ids];
+    const result = [...ids], from = result.indexOf(id), to = result.indexOf(targetId); [result[from], result[to]] = [result[to], result[from]]; return result;
+  }
+  function catalogFavoriteItems(preferences, catalog, filters) {
+    const selected = favoriteTools(preferences, catalog, filters);
+    return selected.length ? selected.map(tool => `<article data-pt-catalog-favorite="${esc(tool.id)}"><div><b>${esc(tool.name)}</b><small>${esc(tool.group || "Platform")} · ${preferences.pinned.includes(tool.id) ? "Đã ghim" : "Chưa ghim"}</small></div><button type="button" data-pt-catalog-open="${esc(tool.id)}">Mở</button><button type="button" data-pt-catalog-toggle="pinned" data-pt-catalog-id="${esc(tool.id)}" aria-pressed="${preferences.pinned.includes(tool.id)}">◇ Ghim</button><button type="button" data-pt-catalog-toggle="favorites" data-pt-catalog-id="${esc(tool.id)}" aria-pressed="${preferences.favorites.includes(tool.id)}">★ Yêu thích</button><div class="pt-favorite-order">${["favorites", "pinned"].filter(collection => preferences[collection].includes(tool.id) && (!filters.favoriteCollection || filters.favoriteCollection === "all" || filters.favoriteCollection === collection)).map(collection => {
+      const visible = preferences[collection].filter(id => selected.some(tool => tool.id === id)), index = visible.indexOf(tool.id), label = collection === "favorites" ? "Yêu thích" : "Ghim";
+      return `<span>${label}: ${preferences[collection].indexOf(tool.id) + 1}/${preferences[collection].length}</span><button type="button" data-pt-catalog-move="${collection}" data-pt-catalog-id="${esc(tool.id)}" data-pt-direction="-1" ${index <= 0 ? "disabled" : ""} aria-label="Đưa ${esc(tool.name)} lên trong ${label}">↑</button><button type="button" data-pt-catalog-move="${collection}" data-pt-catalog-id="${esc(tool.id)}" data-pt-direction="1" ${index < 0 || index >= visible.length - 1 ? "disabled" : ""} aria-label="Đưa ${esc(tool.name)} xuống trong ${label}">↓</button>`;
+    }).join("")}</div></article>`).join("") : '<div class="pt-empty" role="status">Không có công cụ khớp bộ sưu tập và bộ lọc. Bỏ bộ lọc hoặc thêm tool từ danh mục.</div>';
+  }
+  function refreshCatalogFavorites() {
+    const preferences = catalogPreferences(), catalog = toolCatalog(), filters = values(), selected = favoriteTools(preferences, catalog, filters);
+    state.root.querySelector("[data-pt-catalog-favorites]").innerHTML = catalogFavoriteItems(preferences, catalog, filters);
+    state.root.querySelector("[data-pt-catalog-favorite-count]").textContent = `${selected.length} đang hiển thị · ${preferences.favorites.length} yêu thích · ${preferences.pinned.length} ghim`;
+  }
+  function moveCatalogFavorite(collection, id, direction, filters = values(), owner = activeOwner()) {
+    if (!["favorites", "pinned"].includes(collection)) throw new Error("Bộ sưu tập không hợp lệ."); assertAccount(owner);
+    const preferences = catalogPreferences(), visible = favoriteTools(preferences, toolCatalog(), filters).map(tool => tool.id);
+    const next = reorderCollection(preferences[collection], id, direction, visible); updateCatalogPreferences({ [collection]: next }, owner); return next;
   }
 
   const historyRows = (rows) => rows.length ? rows.map((row) => `<article data-pt-history-row data-search="${esc(`${row.name} ${row.action} ${row.source || "platform"}`.toLowerCase())}"><div><b>${esc(row.name)}</b><p>${esc(row.action)}</p><small>${new Date(row.createdAt).toLocaleString("vi-VN")} · ${esc(row.source || "platform")}</small></div><button type="button" data-pt-catalog-open="${esc(row.tool)}" ${toolCatalog().some(tool => tool.id === row.tool) ? "" : "disabled"}>Mở</button>${!row.source || row.source === "platform" ? `<button type="button" data-pt-history-delete="${esc(row.id)}" aria-label="Xóa hoạt động Platform">×</button>` : ""}</article>`).join("") : '<div class="pt-empty">Chưa có hoạt động.</div>';
 
   const favoritesMarkup = async () => {
-    const rows = (await dbAll("favorites")).sort((a, b) => a.order - b.order);
-    return `<div class="pt-layout"><section class="pt-card">${catalogFavoriteRows()}</section><section class="pt-card"><strong>Liên kết nội bộ cá nhân</strong><div class="pt-grid-3">${field("Tên", '<input name="title" maxlength="160" placeholder="Ví dụ: Bộ đổi màu">')}${field("Route", '<input name="route" maxlength="240" placeholder="/tools/platform/theme-switcher">')}${field("Thư mục / tag", '<input name="folder" maxlength="80" placeholder="Công việc">')}</div><div class="pt-actions">${button("favorite-add", "Thêm liên kết", true)}${button("favorite-current", "Thêm công cụ hiện tại")}</div><p class="pt-help">Liên kết cá nhân giữ nguyên dữ liệu cũ. Chỉ chấp nhận đường dẫn nội bộ. Kéo thả hoặc dùng nút lên/xuống để sắp xếp.</p><div class="pt-favorites" data-pt-favorites>${rows.length ? rows.map((row, index) => `<article draggable="true" data-pt-favorite="${esc(row.id)}"><span>★</span><div><b>${esc(row.title)}</b><small>${esc(row.folder || "Chưa phân loại")} · ${esc(row.route)}</small></div><button type="button" data-pt-favorite-up="${esc(row.id)}" aria-label="Đưa lên" ${index === 0 ? "disabled" : ""}>↑</button><button type="button" data-pt-favorite-down="${esc(row.id)}" aria-label="Đưa xuống" ${index === rows.length - 1 ? "disabled" : ""}>↓</button><button type="button" data-pt-favorite-open="${esc(row.id)}">Mở</button><button type="button" data-pt-favorite-delete="${esc(row.id)}" aria-label="Xóa">×</button></article>`).join("") : '<div class="pt-empty">Chưa có liên kết cá nhân.</div>'}</div></section></div>`;
+    const root = state.root, owner = state.owner, rows = (await dbAll("favorites", owner)).sort((a, b) => a.order - b.order);
+    if (root === state.root && owner === accountOwner()) state.favoriteLinks = rows;
+    return `<div class="pt-layout"><section class="pt-card">${catalogFavoriteRows()}</section><section class="pt-card"><header><strong>Liên kết nội bộ cá nhân</strong><span data-pt-link-count>${rows.length} mục</span></header><div class="pt-grid-3">${field("Tên", '<input name="title" maxlength="160" placeholder="Ví dụ: Bộ đổi màu">')}${field("Route", '<input name="route" maxlength="240" placeholder="/tools/platform/theme-switcher">')}${field("Thư mục / tag", '<input name="folder" maxlength="80" placeholder="Công việc">')}</div><div class="pt-actions">${button("favorite-add", "Thêm liên kết", true)}${button("favorite-current", "Thêm công cụ hiện tại")}</div><div class="pt-grid-2">${field("Tìm liên kết", '<input name="linkQuery" type="search" maxlength="200" placeholder="Tên, route hoặc tag...">')}${field("Thư mục / tag", select("linkFolder", [["all", "Tất cả tag"], ...[...new Set(rows.map(row => row.folder || "Chưa phân loại"))].map(folder => [folder, folder])]))}</div><p class="pt-help">Liên kết cá nhân giữ nguyên dữ liệu cũ. Chỉ chấp nhận đường dẫn nội bộ. Kéo thả hoặc dùng nút lên/xuống để sắp xếp theo toàn bộ thư viện.</p><div class="pt-favorites" data-pt-favorites>${favoriteLinkItems(rows, {})}</div></section></div>`;
   };
+  function filterFavoriteLinks(rows, filters = {}) {
+    const query = normalizeSearch(filters.linkQuery).slice(0, 200);
+    return rows.filter(row => (!filters.linkFolder || filters.linkFolder === "all" || (row.folder || "Chưa phân loại") === filters.linkFolder) && (!query || normalizeSearch(`${row.title} ${row.route} ${row.folder || "Chưa phân loại"}`).includes(query)));
+  }
+  function favoriteLinkItems(rows, filters) {
+    const selected = filterFavoriteLinks(rows, filters);
+    return selected.length ? selected.map(row => {
+      const index = rows.indexOf(row);
+      return `<article draggable="true" data-pt-favorite="${esc(row.id)}"><span>★</span><div><b>${esc(row.title)}</b><small>${esc(row.folder || "Chưa phân loại")} · ${esc(row.route)}</small></div><button type="button" data-pt-favorite-up="${esc(row.id)}" aria-label="Đưa lên" ${index === 0 ? "disabled" : ""}>↑</button><button type="button" data-pt-favorite-down="${esc(row.id)}" aria-label="Đưa xuống" ${index === rows.length - 1 ? "disabled" : ""}>↓</button><button type="button" data-pt-favorite-open="${esc(row.id)}">Mở</button><button type="button" data-pt-favorite-delete="${esc(row.id)}" aria-label="Xóa">×</button></article>`;
+    }).join("") : '<div class="pt-empty" role="status">Không có liên kết khớp từ khóa hoặc tag.</div>';
+  }
+  function refreshFavoriteLinks() {
+    const filters = values(), selected = filterFavoriteLinks(state.favoriteLinks, filters);
+    state.root.querySelector("[data-pt-favorites]").innerHTML = favoriteLinkItems(state.favoriteLinks, filters);
+    state.root.querySelector("[data-pt-link-count]").textContent = `${selected.length}/${state.favoriteLinks.length} mục`;
+  }
 
   const exportMarkup = () => `<div class="pt-layout"><section class="pt-card"><fieldset><legend>Phạm vi dữ liệu riêng All Tools</legend><div class="pt-check-grid">${["Thiết lập All Tools", "Lịch sử thao tác", "Liên kết yêu thích", "Thông báo", "Bản nháp Platform Tools", "Workspace, tiện ích & danh mục", "Nội dung tệp workspace (cần chọn workspace)"].map((label, index) => `<label><input type="checkbox" name="scope" value="${index}" ${index < 4 ? "checked" : ""}><span>${label}</span></label>`).join("")}</div></fieldset>${field("Định dạng", select("format", [["json", "JSON (sao lưu)"], ["csv", "CSV (chỉ lịch sử Platform)"]]))}<p class="pt-help">Chỉ xuất tài khoản hiện tại, tổng tối đa 5 MB. Các phạm vi nội dung do bạn chọn có thể chứa ghi chú, chat hoặc tài liệu riêng; giữ tệp sao lưu an toàn. Không đọc khóa đăng nhập/token; không xuất nội dung công cụ Password/API/Clipboard. Tệp workspace tùy chọn, tối đa 1 MB/tệp và 2 MB tổng.</p><div class="pt-actions">${button("export-preview", "Tạo bản xem trước", true)}${button("export-download", "Tải xuống", false, "disabled")}</div></section><section class="pt-card"><header><strong>Bản xem trước</strong><span data-pt-export-size>0 B</span></header><pre class="pt-code" data-pt-output>Chọn phạm vi rồi tạo bản xem trước.</pre></section></div>`;
 
@@ -396,8 +445,9 @@
 
   const shortcutsMarkup = async () => {
     const settings = await readSettings();
-    const rows = settings.shortcuts || [{ id: "palette", label: "Mở Command Palette", combo: "Ctrl+K", action: "palette" }, { id: "tools", label: "Mở All Tools", combo: "Ctrl+Alt+K", action: "tools" }];
-    return `<div class="pt-layout"><section class="pt-card"><div class="pt-grid-3">${field("Tên phím tắt", '<input name="label" placeholder="Mở Trang chủ">')}${field("Tổ hợp", '<input name="combo" placeholder="Ctrl+Shift+H">', "Ctrl/Alt/Shift + phím")}${field("Hành động", select("shortcutAction", [["home", "Mở Trang chủ"], ["palette", "Mở Command Palette"], ["tools", "Mở All Tools"], ["theme", "Đổi sáng/tối"]]))}</div><div class="pt-actions">${button("shortcut-add", "Thêm phím tắt", true)}${button("shortcut-reset", "Khôi phục mặc định")}${button("shortcut-export", "Xuất")}</div><div class="pt-shortcuts" data-pt-shortcuts>${rows.map((row) => `<article><div><b>${esc(row.label)}</b><small>${esc(row.action)}</small></div><kbd>${esc(row.combo)}</kbd><button type="button" data-pt-shortcut-test="${row.id}">Thử</button><button type="button" data-pt-shortcut-delete="${row.id}" aria-label="Xóa">×</button></article>`).join("")}</div></section></div>`;
+    let rows, warning = "";
+    try { rows = normalizeShortcuts(settings.shortcuts || defaultShortcuts()); } catch (error) { rows = []; warning = `<p class="pt-help" role="status">${esc(error.message)} Dữ liệu cũ chưa bị xóa; dùng Xuất dữ liệu để giữ bản sao hoặc khôi phục mặc định.</p>`; }
+    return `<div class="pt-layout"><section class="pt-card"><header><strong data-pt-shortcut-editor>Thêm phím tắt</strong><span>${rows.length}/30</span></header>${warning}<div class="pt-grid-2">${field("Tên phím tắt", '<input name="label" maxlength="80" placeholder="Mở Notes">')}${field("Tổ hợp", '<input name="combo" maxlength="80" placeholder="Alt+Shift+N">', "Không chiếm phím trình duyệt, soạn thảo hoặc Ctrl/Meta+K của HH Platform")}${field("Hành động / tool thật", select("shortcutAction", [["home", "Mở Trang chủ"], ["palette", "Mở Command Palette All Tools"], ["tools", "Mở catalog All Tools"], ["theme", "Mở thiết lập sáng/tối"], ...toolCatalog().map(tool => [`tool:${tool.id}`, `Tool · ${tool.name}`])]))}</div><div class="pt-actions">${button("shortcut-record", "Ghi tổ hợp phím", false, 'aria-pressed="false"')}${button("shortcut-add", "Lưu phím tắt", true)}${button("shortcut-cancel-edit", "Hủy sửa")}</div><div class="pt-shortcut-recorder" data-pt-recorder tabindex="0" role="group" aria-label="Vùng ghi tổ hợp phím"><p data-pt-recorder-status role="status">Nhấn Ghi tổ hợp phím rồi bấm tổ hợp ở vùng này. Escape hủy.</p></div><p class="pt-help">Chỉ chạy khi All Tools đang mở, không chạy trong input, contenteditable hoặc editor. Phím hệ thống Ctrl+K/Ctrl+Alt+K vẫn do website xử lý; xóa bản ghi không vô hiệu phím hệ thống. Không gọi API hay chạy mã.</p><div class="pt-actions">${button("shortcut-reset", "Khôi phục mặc định")}${button("shortcut-export", "Xuất JSON đúng tài khoản")}</div><div class="pt-shortcuts pt-shortcuts--editable" data-pt-shortcuts>${rows.length ? rows.map(row => `<article data-pt-shortcut-row="${esc(row.id)}"><div><b>${esc(row.label)}</b><small>${esc(shortcutActionLabel(row.action))} · ${isSystemCombo(row.combo) ? "Phím hệ thống" : row.enabled ? "Đang bật" : "Đang tắt"}</small></div><kbd>${esc(row.combo)}</kbd><div class="pt-actions"><button type="button" data-pt-shortcut-test="${esc(row.id)}">Thử</button><button type="button" data-pt-action="shortcut-edit:${esc(row.id)}">Sửa</button><button type="button" data-pt-action="shortcut-toggle:${esc(row.id)}" ${isSystemCombo(row.combo) ? "disabled" : ""} aria-pressed="${row.enabled}">${row.enabled ? "Tắt" : "Bật"}</button><button type="button" data-pt-action="shortcut-delete:${esc(row.id)}">Xóa</button></div></article>`).join("") : '<div class="pt-empty">Chưa có phím tắt tùy chỉnh hợp lệ. Thêm một tổ hợp an toàn ở trên.</div>'}</div></section><aside class="pt-card"><strong>Nhập phím tắt đã lưu</strong>${field("Tệp JSON", '<input type="file" name="shortcutFile" accept="application/json,.json">')}${field("Cách nhập", select("shortcutImportMode", [["merge", "Gộp, không ghi đè phím trùng"], ["replace", "Thay thế danh sách"]]))}<div class="pt-actions">${button("shortcut-import-check", "Kiểm tra tệp")}${button("shortcut-import-apply", "Xác nhận nhập", false, "disabled")}</div><pre class="pt-code" data-pt-shortcut-import>Chỉ phân tích cục bộ, chưa ghi dữ liệu. Tối đa 256 KB / 30 tổ hợp; chỉ cho phép lệnh và tool trong danh mục.</pre></aside></div>`;
   };
 
   const settingsMarkup = (settings) => `<div class="pt-layout"><section class="pt-card"><div class="pt-filter-row"><input name="settingSearch" placeholder="Tìm cài đặt..."></div><div class="pt-settings" data-pt-settings>
@@ -451,13 +501,14 @@
     restoreDraft();
     bind();
     applyToolAppearance(settings);
-    await getShortcuts();
+    await getShortcuts(owner).catch(() => { if (root === state.root && owner === accountOwner()) { state.shortcutCache = []; shortcutRuntime.rows = []; } });
     if (version !== state.renderVersion || owner !== accountOwner() || state.root !== root) return false;
     if (name === "Theme Color Switcher") { previewTheme(values()); refreshPresetSelection(values()); root.querySelector('[data-pt-action="theme-undo"]').disabled = !settings.themeUndo; }
     if (["Global Search", "Command Palette++"].includes(name)) await runSearch(name === "Command Palette++");
     if (!window.indexedDB) status("IndexedDB không hỗ trợ: dữ liệu chỉ nằm trong bộ nhớ tạm, sẽ mất khi tải lại.", "warning");
     else if (!["Global Search", "Command Palette++"].includes(name)) status("Sẵn sàng. Dữ liệu riêng cho tài khoản trên thiết bị này.");
     if (name === "History Manager") try { refreshHistoryView(); } catch { /* Filter error is shown in its own status and export stays disabled. */ }
+    if (name === "Favorite Manager") { refreshCatalogFavorites(); refreshFavoriteLinks(); }
     dispatchEvent(new CustomEvent("hh:platform-tool-mounted", { detail: { manifest: { ...manifest } } }));
     return true;
   }
@@ -483,6 +534,7 @@
     state.importFile = null;
     state.themeUndo = null;
     state.themePresetId = ""; state.historyRows = []; state.historyFiltered = [];
+    state.shortcutEditing = ""; state.shortcutRecording = false; state.shortcutImport = null; state.shortcutImportVersion++; state.favoriteLinks = [];
     state.cleanup.splice(0).forEach((fn) => { try { fn(); } catch {} });
     state.root = null;
     state.owner = "";
@@ -833,13 +885,15 @@
   async function moveFavorite(id, direction = -1, targetId = null) {
     const owner = state.owner, root = state.root;
     const rows = (await dbAll("favorites", owner)).sort((a, b) => a.order - b.order), index = rows.findIndex((row) => row.id === id);
+    assertAccount(owner); if (root !== state.root) return;
     const next = targetId ? rows.findIndex((row) => row.id === targetId) : index + direction;
     if (index < 0 || next < 0 || next >= rows.length || index === next) return;
     const [row] = rows.splice(index, 1); rows.splice(next, 0, row);
-    await Promise.all(rows.map((item, order) => dbPut("favorites", { ...item, order }, owner)));
-    if (root !== state.root) return;
-    await render(state.root.parentElement, state.active);
-    state.root?.querySelector(`[data-pt-favorite-open="${CSS.escape(id)}"]`)?.focus();
+    const ordered = rows.map((item, order) => ({ ...item, order }));
+    await Promise.all(ordered.map(item => dbPut("favorites", item, owner)));
+    if (root !== state.root || owner !== accountOwner()) return;
+    state.favoriteLinks = ordered; refreshFavoriteLinks();
+    root.querySelector(`[data-pt-favorite-open="${CSS.escape(id)}"]`)?.focus();
   }
 
   const safeKey = (key) => key.startsWith(`${localPrefix(activeOwner())}draft:`) && !/(token|secret|password|credential|session)/i.test(key);
@@ -944,13 +998,7 @@
     if (key === "fontScale" && Number.isFinite(Number(value)) && Number(value) >= 85 && Number(value) <= 125) return Number(value);
     if (["lightStart", "darkStart"].includes(key) && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)) return value;
     if (key === "shortcuts" && Array.isArray(value) && value.length <= 30) {
-      const combos = new Set();
-      return value.map((row, index) => {
-        if (!row || typeof row.label !== "string" || !row.label.trim() || row.label.length > 80 || !["home", "palette", "tools", "theme"].includes(row.action)) throw new Error("Phím tắt nhập không hợp lệ.");
-        const combo = canonicalCombo(row.combo);
-        if (combos.has(combo)) throw new Error("Phím tắt bị trùng."); combos.add(combo);
-        return { id: `import-${index}`, label: row.label, action: row.action, combo };
-      });
+      return normalizeShortcuts(value);
     }
     throw new Error(`Cài đặt không hợp lệ hoặc chưa được hỗ trợ: ${key}`);
   }
@@ -983,7 +1031,7 @@
       if (workspacePlan) { workspaceAttempted = true; await workspacePlan.apply(); }
       if (names.includes("settings")) {
         const importedSettings = Object.fromEntries((await dbAll("settings", owner)).map(row => [row.id.replace(/^setting:/, ""), row.value]));
-        publishAppearance(importedSettings, owner); state.shortcutCache = importedSettings.shortcuts || null;
+        publishAppearance(importedSettings, owner); state.shortcutCache = importedSettings.shortcuts || null; await refreshShortcutRuntime();
       }
     } catch (error) {
       const rollbackErrors = [];
@@ -1109,7 +1157,47 @@
     status(`Đã lưu ${saved.length}/${assets.length} tài nguyên. Đây không phải bản sao toàn website; backend/AI vẫn cần mạng.`, saved.length === assets.length ? "success" : "warning");
   }
 
-  const normalizeCombo = (event) => [event.ctrlKey && "Ctrl", event.altKey && "Alt", event.shiftKey && "Shift", event.metaKey && "Meta", event.key === " " ? "Space" : event.key.length === 1 ? event.key.toUpperCase() : event.key].filter(Boolean).join("+");
+  const normalizeCombo = (event) => [event.ctrlKey && "Ctrl", event.altKey && "Alt", event.shiftKey && "Shift", event.metaKey && "Meta", event.key === " " ? "Space" : event.key?.length === 1 ? event.key.toUpperCase() : event.key].filter(Boolean).join("+");
+  const shortcutRuntime = { owner: "", rows: [], generation: 0 };
+  const defaultShortcuts = () => [{ id: "palette", label: "Mở Command Palette", combo: "Ctrl+K", action: "palette", enabled: true }, { id: "tools", label: "Mở All Tools", combo: "Ctrl+Alt+K", action: "tools", enabled: true }];
+  const isSystemCombo = combo => /(?:^|\+)(?:Ctrl|Meta)\+/.test(combo) && combo.endsWith("+K");
+  function shortcutAction(action) {
+    if (["home", "palette", "tools", "theme"].includes(action)) return action;
+    if (typeof action === "string" && /^tool:[a-z0-9][a-z0-9-]{0,79}$/.test(action) && toolCatalog().some(tool => tool.id === action.slice(5))) return action;
+    throw new Error("Phím tắt chỉ được mở lệnh hoặc tool thật trong danh mục All Tools.");
+  }
+  function shortcutActionLabel(action) { return action.startsWith("tool:") ? toolCatalog().find(tool => tool.id === action.slice(5))?.name || action : ({ home: "Trang chủ", palette: "Command Palette All Tools", tools: "Catalog All Tools", theme: "Thiết lập sáng/tối" })[action] || action; }
+  function shortcutConflict(combo, action) {
+    if (isSystemCombo(combo) && !((combo === "Ctrl+K" || combo === "Meta+K") && action === "palette" || combo === "Ctrl+Alt+K" && action === "tools")) return "Tổ hợp K này được dành cho HH Platform; chọn phím khác.";
+    if (["Alt+H", "Alt+M"].includes(combo) && !(combo === "Alt+H" && action === "home")) return "Alt+H/Alt+M được dành cho điều hướng website; chọn thêm Ctrl/Shift hoặc phím khác.";
+    if (/^(?:Ctrl|Meta)(?:\+Shift)?\+(?:W|R|L|T|N|P|S|O|F|A|C|V|X|Z|Y|I|J|B|D|E|G|H|Q|U|[0-9])$/.test(combo) || /^(?:Meta\+Space|Alt\+Space|Alt\+(?:D|E|F)|Ctrl\+Escape|Meta\+Escape|Shift\+(?:Enter|Escape|Space|[A-Z0-9]))$/.test(combo)) return "Tổ hợp dành cho trình duyệt, hệ điều hành hoặc chỉnh sửa văn bản.";
+    return "";
+  }
+  function normalizeShortcuts(rows) {
+    if (!Array.isArray(rows) || rows.length > 30) throw new Error("Tối đa 30 phím tắt dạng danh sách.");
+    const combos = new Set(), ids = new Set();
+    return rows.map((row, index) => {
+      if (!row || typeof row !== "object" || Array.isArray(row) || Object.keys(row).some(key => !["id", "label", "combo", "action", "enabled"].includes(key)) || typeof row.label !== "string" || !row.label.trim() || row.label.length > 80 || /[\u0000-\u001f]/.test(row.label) || row.enabled !== undefined && typeof row.enabled !== "boolean") throw new Error("Phím tắt nhập không hợp lệ.");
+      const id = row.id === undefined ? `import-${index}` : row.id;
+      if (typeof id !== "string" || !/^[a-z0-9][a-z0-9._-]{0,179}$/i.test(id) || ids.has(id)) throw new Error("ID phím tắt không hợp lệ hoặc bị trùng.");
+      const combo = canonicalCombo(row.combo), action = shortcutAction(row.action), conflict = shortcutConflict(combo, action);
+      if (conflict) throw new Error(conflict);
+      if (combos.has(combo)) throw new Error("Phím tắt bị trùng."); combos.add(combo); ids.add(id);
+      return { id, label: row.label.trim(), combo, action, enabled: row.enabled !== false };
+    });
+  }
+  function normalizeShortcutImport(payload, owner = activeOwner()) {
+    assertAccount(owner);
+    if (Array.isArray(payload)) return { format: "HH All Tool Shortcuts", version: 1, owner, shortcuts: normalizeShortcuts(payload), legacy: true };
+    if (!payload || payload.format !== "HH All Tool Shortcuts" || payload.version !== 1 || payload.owner !== owner || Object.keys(payload).some(key => !["format", "version", "owner", "exportedAt", "shortcuts"].includes(key))) throw new Error("Tệp phím tắt sai định dạng hoặc thuộc tài khoản khác.");
+    return { format: payload.format, version: 1, owner, shortcuts: normalizeShortcuts(payload.shortcuts), legacy: false };
+  }
+  async function saveShortcuts(rows, owner = activeOwner()) {
+    const normalized = normalizeShortcuts(rows); assertAccount(owner); ++shortcutRuntime.generation; await saveSetting("shortcuts", normalized, owner); assertAccount(owner);
+    shortcutRuntime.owner = owner; shortcutRuntime.rows = normalized; if (state.owner === owner) state.shortcutCache = normalized;
+    try { localStorage.setItem(`hh.all-tools.shortcut-signal.v1.${owner}`, JSON.stringify({ at: Date.now(), id: uid() })); } catch {}
+    dispatchEvent(new CustomEvent("hh:alltools-shortcuts-change", { detail: { owner } })); return normalized;
+  }
   function canonicalCombo(value) {
     const parts = String(value || "").replace(/\s/g, "").split("+");
     const modifierNames = { ctrl: "Ctrl", control: "Ctrl", alt: "Alt", shift: "Shift", meta: "Meta", cmd: "Meta" };
@@ -1120,26 +1208,86 @@
     if (/^(?:Ctrl|Meta)\+(?:W|R|L|T|N|P|S|O|F|A|C|V|X|Z|Y)$/.test(combo)) throw new Error("Tổ hợp dành cho trình duyệt hoặc chỉnh sửa văn bản; hãy chọn thêm Alt/Shift.");
     return combo;
   }
-  async function getShortcuts() {
-    const owner = activeOwner(), root = state.root;
+  async function getShortcuts(owner = activeOwner()) {
+    const root = state.root, generation = ++shortcutRuntime.generation;
     const settings = await readSettings(owner);
-    const rows = settings.shortcuts || [{ id: "palette", label: "Mở Command Palette", combo: "Ctrl+K", action: "palette" }, { id: "tools", label: "Mở All Tools", combo: "Ctrl+Alt+K", action: "tools" }];
-    if (owner === accountOwner() && root === state.root) state.shortcutCache = rows;
+    const rows = normalizeShortcuts(settings.shortcuts || defaultShortcuts());
+    if (generation === shortcutRuntime.generation && owner === accountOwner() && root === state.root) state.shortcutCache = rows;
+    if (generation === shortcutRuntime.generation && owner === accountOwner()) { shortcutRuntime.owner = owner; shortcutRuntime.rows = rows; }
     return rows;
+  }
+  async function refreshShortcutRuntime() {
+    const generation = ++shortcutRuntime.generation, owner = accountOwner();
+    shortcutRuntime.owner = ""; shortcutRuntime.rows = [];
+    if (!/^#\/tools(?:\/|$)/.test(location.hash) || window.HHAllToolState?.isAccountChanging?.()) { shortcutRuntime.owner = ""; shortcutRuntime.rows = []; return; }
+    try { const rows = normalizeShortcuts((await readSettings(owner)).shortcuts || defaultShortcuts()); if (generation === shortcutRuntime.generation && owner === accountOwner() && /^#\/tools(?:\/|$)/.test(location.hash) && !window.HHAllToolState?.isAccountChanging?.()) { shortcutRuntime.owner = owner; shortcutRuntime.rows = rows; } }
+    catch { if (generation === shortcutRuntime.generation) { shortcutRuntime.owner = ""; shortcutRuntime.rows = []; } }
+  }
+  function recordShortcutKey(event) {
+    if (!state.shortcutRecording || !event.target?.closest?.("[data-pt-recorder]")) return false;
+    if (event.defaultPrevented || event.repeat || event.isComposing || event.getModifierState?.("AltGraph") || state.owner !== accountOwner() || window.HHAllToolState?.isAccountChanging?.()) return true;
+    if (["Control", "Alt", "Shift", "Meta"].includes(event.key)) return true;
+    event.preventDefault(); event.stopPropagation?.();
+    if (event.key === "Escape" && !event.ctrlKey && !event.altKey && !event.shiftKey && !event.metaKey) { state.shortcutRecording = false; state.root.querySelector('[data-pt-action="shortcut-record"]').setAttribute("aria-pressed", "false"); state.root.querySelector("[data-pt-recorder-status]").textContent = "Đã hủy ghi phím. Chưa thay đổi dữ liệu."; return true; }
+    try {
+      const combo = canonicalCombo(normalizeCombo(event)), action = shortcutAction(values().shortcutAction), conflict = shortcutConflict(combo, action);
+      if (conflict) throw new Error(conflict);
+      if ((state.shortcutCache || []).some(row => row.id !== state.shortcutEditing && row.combo === combo)) throw new Error("Tổ hợp đã được sử dụng. Chọn phím khác.");
+      state.root.querySelector('[name="combo"]').value = combo; state.shortcutRecording = false;
+      state.root.querySelector('[data-pt-action="shortcut-record"]').setAttribute("aria-pressed", "false"); state.root.querySelector("[data-pt-recorder-status]").textContent = `Đã ghi ${combo}. Nhấn Lưu phím tắt để áp dụng.`; saveDraft();
+    } catch (error) { state.root.querySelector("[data-pt-recorder-status]").textContent = error.message; status(error.message, "error"); }
+    return true;
   }
 
   function executeShortcut(action) {
+    action = shortcutAction(action);
+    if (action.startsWith("tool:")) { const id = action.slice(5), tool = toolCatalog().find(item => item.id === id); if (window.HHFeatureLab?.select) window.HHFeatureLab.select(id); else navigate(tool.route || `/tools/${id}`); return; }
     if (action === "home") navigate("/platform");
-    if (action === "palette") { if (window.HHFeatureLab?.select) window.HHFeatureLab.select("Command Palette++"); else render(state.root.parentElement, "Command Palette++"); }
-    if (action === "tools") { const catalog = document.querySelector("[data-all-tools-catalog]") || state.root?.closest(".feature-lab")?.querySelector("[data-lab-nav]"); if (catalog) { catalog.focus?.(); catalog.scrollIntoView?.({ block: "nearest" }); } else navigate("/tools"); }
-    if (action === "theme") { if (window.HHFeatureLab?.select) window.HHFeatureLab.select("Dark Light Auto Mode"); else render(state.root.parentElement, "Dark Light Auto Mode"); }
+    if (action === "palette") { if (window.HHFeatureLab?.select) window.HHFeatureLab.select("Command Palette++"); else navigate(byId.get("command-palette").route); }
+    if (action === "tools") { const catalog = document.querySelector("[data-all-tools-catalog]") || document.querySelector(".feature-lab [data-lab-search]"); if (catalog) { catalog.focus?.(); catalog.scrollIntoView?.({ block: "nearest" }); } else navigate("/tools"); }
+    if (action === "theme") { if (window.HHFeatureLab?.select) window.HHFeatureLab.select("Dark Light Auto Mode"); else navigate(byId.get("dark-light-auto").route); }
+  }
+  function clearShortcutEditor() {
+    state.shortcutEditing = ""; state.shortcutRecording = false;
+    for (const [name, value] of [["label", ""], ["combo", ""], ["shortcutAction", "home"]]) { const input = state.root?.querySelector(`[name="${name}"]`); if (input) input.value = value; }
+    state.root?.querySelector('[data-pt-action="shortcut-record"]')?.setAttribute?.("aria-pressed", "false"); saveDraft();
+  }
+  async function upsertShortcut(data, editing = "", owner = activeOwner()) {
+    const root = state.root, rows = await getShortcuts(owner); assertAccount(owner);
+    if (root !== state.root) throw new Error("Công cụ đã đóng. Bản nháp phím tắt chưa được lưu.");
+    const previous = editing ? rows.find(row => row.id === editing) : null;
+    if (editing && !previous) throw new Error("Phím tắt đang sửa đã bị xóa ở nơi khác. Bản nháp chưa được lưu.");
+    const next = { id: editing || uid(), label: data.label, combo: data.combo, action: data.shortcutAction, enabled: previous?.enabled !== false };
+    const result = normalizeShortcuts(editing ? rows.map(row => row.id === editing ? next : row) : [...rows, next]);
+    await saveShortcuts(result, owner); return result.find(row => row.id === next.id);
+  }
+  function mergeShortcuts(existing, incoming, strategy) {
+    existing = normalizeShortcuts(existing); incoming = normalizeShortcuts(incoming);
+    if (strategy === "replace") return incoming;
+    if (strategy !== "merge") throw new Error("Cách nhập phím tắt không hợp lệ.");
+    const result = [...existing]; for (const row of incoming) if (!result.some(item => item.id === row.id || item.combo === row.combo)) result.push(row);
+    return normalizeShortcuts(result);
+  }
+  async function checkShortcutFile() {
+    const root = state.root, owner = state.owner, version = ++state.shortcutImportVersion, file = root.querySelector('[name="shortcutFile"]')?.files?.[0], strategy = values().shortcutImportMode;
+    state.shortcutImport = null; root.querySelector('[data-pt-action="shortcut-import-apply"]').disabled = true;
+    if (!file) throw new Error("Chọn một tệp JSON phím tắt."); if (file.size > 256 * 1024) throw new Error("Tệp phím tắt vượt 256 KB.");
+    const text = await file.text(); assertAccount(owner); if (root !== state.root || version !== state.shortcutImportVersion) return;
+    if (new Blob([text]).size > 256 * 1024) throw new Error("Tệp phím tắt vượt 256 KB.");
+    const payload = normalizeShortcutImport(JSON.parse(text), owner), existing = await getShortcuts(owner); assertAccount(owner); if (root !== state.root || version !== state.shortcutImportVersion) return;
+    const planned = mergeShortcuts(existing, payload.shortcuts, strategy);
+    state.shortcutImport = payload; root.querySelector('[data-pt-action="shortcut-import-apply"]').disabled = false;
+    root.querySelector("[data-pt-shortcut-import]").textContent = JSON.stringify({ valid: true, legacy: payload.legacy, incoming: payload.shortcuts.length, result: planned.length, owner, actions: payload.shortcuts.map(row => ({ label: row.label, combo: row.combo, action: row.action })) }, null, 2);
+    status("Tệp phím tắt hợp lệ. Chưa ghi dữ liệu; kiểm tra lệnh rồi xác nhận.", "ready");
   }
 
   async function handleAction(action, target) {
     const owner = state.owner, root = state.root, tool = state.active;
     assertAccount(owner);
     if (action.startsWith("theme-preset-delete:") && state.confirmedAction !== action) return askConfirmation(action, "Xóa preset cá nhân này? Giao diện đang dùng và các preset khác được giữ nguyên.");
-    if (["history-clear", "history-clear-recent", "notification-clear", "settings-reset", "theme-presets-clear"].includes(action) && state.confirmedAction !== action) return askConfirmation(action, "Thao tác này chỉ xóa phạm vi đã chọn trong All Tools của tài khoản hiện tại. Bạn muốn tiếp tục?");
+    if (action.startsWith("shortcut-delete:") && state.confirmedAction !== action) return askConfirmation(action, "Xóa bản ghi phím tắt này? Các phím hệ thống của website không bị vô hiệu.");
+    if (action === "shortcut-import-apply" && values().shortcutImportMode === "replace" && state.confirmedAction !== action) return askConfirmation(action, "Thay thế danh sách phím tắt bằng tệp đã kiểm tra? Thiết lập khác không thay đổi.");
+    if (["history-clear", "history-clear-recent", "notification-clear", "settings-reset", "theme-presets-clear", "shortcut-reset"].includes(action) && state.confirmedAction !== action) return askConfirmation(action, "Thao tác này chỉ xóa phạm vi đã chọn trong All Tools của tài khoản hiện tại. Bạn muốn tiếp tục?");
     state.confirmedAction = null;
     if (action === "search") return runSearch(false);
     if (action === "theme-preset-save") {
@@ -1224,7 +1372,11 @@
       if (!toolCatalog().some(tool => tool.id === id)) throw new Error("Công cụ không tồn tại trong danh mục.");
       const collection = action.endsWith("pin") ? "pinned" : "favorites", prefs = catalogPreferences();
       updateCatalogPreferences({ [collection]: [...new Set([...prefs[collection], id])] }, owner);
-      return render(root.parentElement, tool);
+      refreshCatalogFavorites(); return status("Đã lưu bộ sưu tập trong cùng danh mục All Tools.", "success");
+    }
+    if (action === "favorite-filter-reset") {
+      for (const [name, value] of [["favoriteQuery", ""], ["favoriteGroup", "all"], ["favoriteCollection", "all"]]) root.querySelector(`[name="${name}"]`).value = value;
+      saveDraft(); return refreshCatalogFavorites();
     }
     if (action === "history-export" || action === "history-export-csv") {
       const rows = historyMetadata(await allHistory(owner)); assertAccount(owner); if (root !== state.root) return;
@@ -1234,7 +1386,7 @@
       status(`Đã tạo tệp ${format.toUpperCase()} gồm ${filtered.length} hoạt động đang lọc, chỉ chứa metadata.`, "success"); return;
     }
     if (action === "history-clear") { await dbClear("history", owner); if (root === state.root) return render(root.parentElement, tool); return; }
-    if (action === "favorite-add" || action === "favorite-current") { const data = values(), rows = await dbAll("favorites", owner), route = validRoute(action.endsWith("current") ? byName.get(tool).route : data.route), title = action.endsWith("current") ? tool : data.title.trim(); if (!title || title.length > 160) throw new Error("Hãy nhập tên tối đa 160 ký tự."); if (rows.some((row) => row.route === route)) throw new Error("Đường dẫn đã có trong danh sách yêu thích."); await dbPut("favorites", { id: uid(), title, route, folder: data.folder?.trim().slice(0, 80) || "Chưa phân loại", order: rows.length, createdAt: Date.now() }, owner); await record("favorite.add", { route }, tool, owner); if (root === state.root) return render(root.parentElement, tool); return; }
+    if (action === "favorite-add" || action === "favorite-current") { const data = values(), rows = await dbAll("favorites", owner); assertAccount(owner); if (root !== state.root) return; const route = validRoute(action.endsWith("current") ? byName.get(tool).route : data.route), title = action.endsWith("current") ? tool : data.title.trim(); if (!title || title.length > 160) throw new Error("Hãy nhập tên tối đa 160 ký tự."); if (rows.some((row) => row.route === route)) throw new Error("Đường dẫn đã có trong danh sách yêu thích."); await dbPut("favorites", { id: uid(), title, route, folder: data.folder?.trim().slice(0, 80) || "Chưa phân loại", order: rows.length, createdAt: Date.now() }, owner); await record("favorite.add", { route }, tool, owner); if (root === state.root) return render(root.parentElement, tool); return; }
     if (action === "export-preview") return buildExport();
     if (action === "export-download") { if (!state.generatedExport) throw new Error("Hãy tạo bản xem trước trước."); const format = state.exportFormat; return download(state.generatedExport, `hh-platform-tools.${format}`, format === "csv" ? "text/csv" : "application/json"); }
     if (action === "import-validate") return validateImport();
@@ -1254,9 +1406,29 @@
     }
     if (action === "install-run") { if (!state.installPrompt) throw new Error("Install Prompt chưa sẵn sàng. Hãy dùng menu trình duyệt › Cài đặt ứng dụng hoặc kiểm tra manifest/HTTPS."); state.installPrompt.prompt(); const choice = await state.installPrompt.userChoice; state.installPrompt = null; return status(`Kết quả cài đặt: ${choice.outcome}.`, choice.outcome === "accepted" ? "success" : "warning"); }
     if (action === "install-help") { const report = state.root.querySelector("[data-pt-pwa-report]"); report.innerHTML = '<article><span>Chrome / Edge</span><b>Menu ⋮ › Cài đặt HH Platform</b></article><article><span>Safari iOS</span><b>Chia sẻ › Thêm vào Màn hình chính</b></article><article><span>Yêu cầu</span><b>HTTPS + manifest + Service Worker</b></article>'; return status("Đã mở hướng dẫn cài đặt theo trình duyệt.", "success"); }
-    if (action === "shortcut-add") { const data = values(), combo = canonicalCombo(data.combo); if (!data.label.trim() || data.label.length > 80) throw new Error("Tên phím tắt tối đa 80 ký tự."); const rows = await getShortcuts(); if (rows.some((row) => row.combo.toLowerCase() === combo.toLowerCase())) throw new Error("Tổ hợp này đang được sử dụng."); rows.push({ id: uid(), label: data.label.trim(), combo, action: data.shortcutAction }); await saveSetting("shortcuts", rows, owner); if (root === state.root) return render(root.parentElement, tool); return; }
-    if (action === "shortcut-reset") { await saveSetting("shortcuts", [{ id: "palette", label: "Mở Command Palette", combo: "Ctrl+K", action: "palette" }, { id: "tools", label: "Mở All Tools", combo: "Ctrl+Alt+K", action: "tools" }], owner); if (root === state.root) return render(root.parentElement, tool); return; }
-    if (action === "shortcut-export") { download(JSON.stringify(await getShortcuts(), null, 2), "hh-shortcuts.json"); return; }
+    if (action === "shortcut-add") { const row = await upsertShortcut(values(), state.shortcutEditing, owner); assertAccount(owner); if (root !== state.root) return; clearShortcutEditor(); await render(root.parentElement, tool); if (state.owner === owner && state.active === tool) { state.root.querySelector(`[data-pt-action="shortcut-edit:${CSS.escape(row.id)}"]`)?.focus(); status("Đã lưu phím tắt trên thiết bị, chỉ có hiệu lực trong All Tools.", "success"); } return; }
+    if (action === "shortcut-record") { state.shortcutRecording = !state.shortcutRecording; root.querySelector('[data-pt-action="shortcut-record"]').setAttribute("aria-pressed", String(state.shortcutRecording)); root.querySelector("[data-pt-recorder-status]").textContent = state.shortcutRecording ? "Đang ghi: bấm một tổ hợp an toàn. Escape hủy." : "Đã dừng ghi, chưa lưu dữ liệu."; if (state.shortcutRecording) root.querySelector("[data-pt-recorder]").focus(); return; }
+    if (action === "shortcut-cancel-edit") { clearShortcutEditor(); root.querySelector("[data-pt-shortcut-editor]").textContent = "Thêm phím tắt"; root.querySelector('[name="label"]').focus(); return; }
+    if (/^shortcut-(edit|toggle|delete):/.test(action)) {
+      const [command, id] = action.split(":"), rows = await getShortcuts(owner); assertAccount(owner); if (root !== state.root) return;
+      const row = rows.find(item => item.id === id); if (!row) throw new Error("Phím tắt không còn tồn tại.");
+      if (command === "shortcut-edit") { state.shortcutEditing = id; for (const [name, value] of [["label", row.label], ["combo", row.combo], ["shortcutAction", row.action]]) root.querySelector(`[name="${name}"]`).value = value; root.querySelector("[data-pt-shortcut-editor]").textContent = `Sửa ${row.label}`; root.querySelector('[name="label"]').focus(); return; }
+      if (command === "shortcut-toggle" && isSystemCombo(row.combo)) throw new Error("Phím hệ thống do website quản lý, không tắt từ All Tools.");
+      await saveShortcuts(command === "shortcut-delete" ? rows.filter(item => item.id !== id) : rows.map(item => item.id === id ? { ...item, enabled: !item.enabled } : item), owner);
+      if (root !== state.root || owner !== accountOwner()) return; await render(root.parentElement, tool); if (state.owner === owner && state.active === tool) state.root.querySelector(command === "shortcut-delete" ? '[name="label"]' : `[data-pt-action="shortcut-toggle:${CSS.escape(id)}"]`)?.focus(); return;
+    }
+    if (action === "shortcut-reset") { await saveShortcuts(defaultShortcuts(), owner); if (root === state.root) { clearShortcutEditor(); return render(root.parentElement, tool); } return; }
+    if (action === "shortcut-export") { const rows = await getShortcuts(owner); assertAccount(owner); if (root !== state.root) return; download(JSON.stringify({ format: "HH All Tool Shortcuts", version: 1, owner, exportedAt: new Date().toISOString(), shortcuts: rows }, null, 2), "hh-shortcuts.json"); return; }
+    if (action === "shortcut-import-check") return checkShortcutFile();
+    if (action === "shortcut-import-apply") {
+      if (!state.shortcutImport) throw new Error("Chưa có tệp phím tắt đã kiểm tra.");
+      const payload = state.shortcutImport, incoming = normalizeShortcuts(payload.shortcuts); if (payload.owner !== owner) throw new Error("Tệp thuộc tài khoản khác.");
+      const version = state.shortcutImportVersion, strategy = values().shortcutImportMode, existing = await getShortcuts(owner); assertAccount(owner);
+      if (root !== state.root || version !== state.shortcutImportVersion || payload !== state.shortcutImport) return;
+      const result = mergeShortcuts(existing, incoming, strategy);
+      await saveShortcuts(result, owner); if (root !== state.root || owner !== accountOwner()) return; await render(root.parentElement, tool);
+      if (state.owner === owner && state.active === tool) status(`Đã lưu ${result.length} phím tắt. Bản ghi trùng không được ghi đè khi gộp.`, "success"); return;
+    }
     if (action === "settings-apply") { const data = values(); await Promise.all(["density", "reducedMotion", "autosave", "historyEnabled"].map((key) => saveSetting(key, data[key], owner))); assertAccount(owner); if (root !== state.root) return; state.settings = { ...state.settings, ...data }; root.dataset.density = data.density; root.dataset.reducedMotion = data.reducedMotion ? "true" : "false"; if (!data.autosave) { Object.keys(localStorage).filter((key) => key.startsWith(`${localPrefix(owner)}draft:`)).forEach((key) => localStorage.removeItem(key)); state.drafts.clear(); } return status("Đã lưu cài đặt trên thiết bị. Chỉ áp dụng bên trong All Tools.", "success"); }
     if (action === "settings-reset") { await dbClear("settings", owner); publishAppearance({ mode: "system" }, owner); if (root !== state.root) return; state.settings = { autosave: false }; Object.keys(localStorage).filter((key) => key.startsWith(`${localPrefix(owner)}draft:`)).forEach((key) => localStorage.removeItem(key)); state.drafts.clear(); state.appearanceCleanup?.(); state.appearanceCleanup = null; return render(root.parentElement, tool); }
     if (action === "settings-storage") { const estimate = await navigator.storage?.estimate?.(); state.root.querySelector("[data-pt-storage-report]").innerHTML = estimate ? `<article><span>Đã dùng</span><b>${formatBytes(estimate.usage)}</b></article><article><span>Hạn mức</span><b>${formatBytes(estimate.quota)}</b></article><article><span>Tỷ lệ</span><b>${((estimate.usage || 0) / (estimate.quota || 1) * 100).toFixed(2)}%</b></article>` : '<div class="pt-empty">StorageManager API không được hỗ trợ.</div>'; return; }
@@ -1273,12 +1445,12 @@
   }
 
   function bind() {
-    const root = state.root, tool = state.active;
+    const root = state.root, tool = state.active, owner = state.owner;
     const onClick = async (event) => {
-      const target = event.target.closest("button"), owner = state.owner;
+      const target = event.target.closest("button");
       if (target?.dataset.ptBusy) return;
       try {
-        assertAccount(owner);
+        assertAccount(owner); if (root !== state.root) return;
         const confirmation = event.target.closest("[data-pt-confirm-accept]");
         if (confirmation) { const action = confirmation.dataset.ptConfirmAccept; confirmation.closest("[data-pt-confirm]").remove(); state.confirmedAction = action; await handleAction(action); return; }
         const cancel = event.target.closest("[data-pt-confirm-cancel]");
@@ -1295,7 +1467,15 @@
           const collection = catalogToggle.dataset.ptCatalogToggle, id = catalogToggle.dataset.ptCatalogId;
           if (!["favorites", "pinned"].includes(collection) || !toolCatalog().some(tool => tool.id === id)) throw new Error("Mục danh mục không hợp lệ.");
           const prefs = catalogPreferences(); updateCatalogPreferences({ [collection]: prefs[collection].includes(id) ? prefs[collection].filter(value => value !== id) : [...prefs[collection], id] }, owner);
-          if (root === state.root) await render(root.parentElement, tool); return;
+          refreshCatalogFavorites();
+          root.querySelector(`[data-pt-catalog-toggle="${collection}"][data-pt-catalog-id="${CSS.escape(id)}"]`)?.focus(); return;
+        }
+        const catalogMove = event.target.closest("[data-pt-catalog-move]");
+        if (catalogMove) {
+          const collection = catalogMove.dataset.ptCatalogMove, id = catalogMove.dataset.ptCatalogId, direction = Number(catalogMove.dataset.ptDirection);
+          moveCatalogFavorite(collection, id, direction, values(), owner); refreshCatalogFavorites();
+          const moved = root.querySelector(`[data-pt-catalog-move="${collection}"][data-pt-catalog-id="${CSS.escape(id)}"][data-pt-direction="${direction}"]`);
+          (moved && !moved.disabled ? moved : root.querySelector(`[data-pt-catalog-open="${CSS.escape(id)}"]`))?.focus(); return;
         }
         const notificationId = event.target.closest("[data-pt-delete-notification]")?.dataset.ptDeleteNotification;
         if (notificationId) { await dbDelete("notifications", notificationId, owner); publishNotificationSignal(owner); if (root === state.root) await render(root.parentElement, tool); return; }
@@ -1304,7 +1484,7 @@
         const historyOpen = event.target.closest("[data-pt-history-open]")?.dataset.ptHistoryOpen;
         if (historyOpen) { const manifest = byId.get(historyOpen); if (manifest) window.HHFeatureLab?.select?.(manifest.name); return; }
         const favoriteOpen = event.target.closest("[data-pt-favorite-open]")?.dataset.ptFavoriteOpen;
-        if (favoriteOpen) { const row = (await dbAll("favorites")).find((item) => item.id === favoriteOpen); if (row) navigate(row.route); return; }
+        if (favoriteOpen) { const row = (await dbAll("favorites", owner)).find((item) => item.id === favoriteOpen); assertAccount(owner); if (root === state.root && row) navigate(row.route); return; }
         const favoriteDelete = event.target.closest("[data-pt-favorite-delete]")?.dataset.ptFavoriteDelete;
         if (favoriteDelete) { await dbDelete("favorites", favoriteDelete, owner); if (root === state.root) await render(root.parentElement, tool); return; }
         const favoriteUp = event.target.closest("[data-pt-favorite-up]")?.dataset.ptFavoriteUp;
@@ -1312,17 +1492,19 @@
         const favoriteDown = event.target.closest("[data-pt-favorite-down]")?.dataset.ptFavoriteDown;
         if (favoriteDown) return await moveFavorite(favoriteDown, 1);
         const shortcutTest = event.target.closest("[data-pt-shortcut-test]")?.dataset.ptShortcutTest;
-        if (shortcutTest) { const row = (await getShortcuts()).find((item) => item.id === shortcutTest); if (row) executeShortcut(row.action); return; }
-        const shortcutDelete = event.target.closest("[data-pt-shortcut-delete]")?.dataset.ptShortcutDelete;
-        if (shortcutDelete) { await saveSetting("shortcuts", (await getShortcuts()).filter((item) => item.id !== shortcutDelete), owner); if (root === state.root) await render(root.parentElement, tool); }
+        if (shortcutTest) { const row = (await getShortcuts(owner)).find((item) => item.id === shortcutTest); assertAccount(owner); if (root === state.root && row) executeShortcut(row.action); return; }
       } catch (error) { if (root === state.root && owner === accountOwner()) status(error.message || "Không thể hoàn thành thao tác.", "error"); }
       finally { if (target) { delete target.dataset.ptBusy; target.removeAttribute("aria-busy"); } }
     };
     const onInput = (event) => {
+      if (root !== state.root || owner !== accountOwner()) return;
       if (event.target.name === "query" && ["Global Search", "Command Palette++"].includes(state.active)) runSearch(state.active === "Command Palette++").catch((error) => { if (root === state.root) status(error.message, "error"); });
       if (event.target.name === "fontScale") { root.querySelector("[data-pt-font-value]").textContent = `${event.target.value}%`; previewTheme(values()); refreshPresetSelection(values()); }
       if (["accent", "highlight", "contrast"].includes(event.target.name)) { previewTheme(values()); refreshPresetSelection(values()); }
       if (tool === "History Manager" && ["query", "historyTool", "historyAction", "historySource", "historyFrom", "historyTo"].includes(event.target.name)) try { refreshHistoryView(); } catch { /* Preserve inputs and show the filter error. */ }
+      if (tool === "Favorite Manager" && ["favoriteQuery", "favoriteGroup", "favoriteCollection"].includes(event.target.name)) refreshCatalogFavorites();
+      if (tool === "Favorite Manager" && ["linkQuery", "linkFolder"].includes(event.target.name)) refreshFavoriteLinks();
+      if (["shortcutFile", "shortcutImportMode"].includes(event.target.name)) { state.shortcutImport = null; state.shortcutImportVersion++; root.querySelector('[data-pt-action="shortcut-import-apply"]').disabled = true; root.querySelector("[data-pt-shortcut-import]").textContent = "Tệp hoặc cách nhập đã đổi. Nhấn Kiểm tra tệp lại trước khi áp dụng."; }
       if (event.target.name === "count") root.querySelector("[data-pt-count]").textContent = event.target.value;
       if (event.target.name === "settingSearch") { const query = event.target.value.toLowerCase(); root.querySelectorAll("[data-pt-settings] > label").forEach((row) => { row.hidden = !row.dataset.search.includes(query); }); }
       if (event.target.name === "importFile") { state.importFile = event.target.files?.[0] || null; state.importPayload = null; root.querySelector('[data-pt-action="import-commit"]').disabled = true; }
@@ -1330,13 +1512,14 @@
       saveDraft();
     };
     const onKey = (event) => {
+      if (root !== state.root || owner !== accountOwner() || event.defaultPrevented || event.repeat || event.isComposing || event.getModifierState?.("AltGraph")) return;
+      if (recordShortcutKey(event)) return;
       if (event.key === "Escape") { root.querySelector("[data-pt-confirm]")?.remove(); state.confirmedAction = null; state.confirmedImport = null; if (state.active === "Command Palette++") root.querySelector('input[name="query"]')?.focus(); }
       if (["ArrowDown", "ArrowUp"].includes(event.key) && event.target.name === "query") { event.preventDefault(); const rows = [...root.querySelectorAll("[data-pt-results] .pt-result")]; rows[event.key === "ArrowUp" ? rows.length - 1 : 0]?.focus(); }
       if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key) && event.target.matches("[data-pt-results] .pt-result")) { event.preventDefault(); const rows = [...root.querySelectorAll("[data-pt-results] .pt-result")], index = rows.indexOf(event.target), next = event.key === "Home" ? 0 : event.key === "End" ? rows.length - 1 : (index + (event.key === "ArrowDown" ? 1 : -1) + rows.length) % rows.length; rows[next]?.focus(); }
       if (event.key === "Enter" && event.target.name === "query") { event.preventDefault(); const result = root.querySelector("[data-pt-results] .pt-result"); if (result) result.click(); else if (state.active === "History Manager") handleAction("history-filter").catch((error) => status(error.message, "error")); }
-      globalShortcut(event);
     };
-    const onChange = event => { if (tool === "History Manager" && ["historyTool", "historyAction", "historySource", "historyFrom", "historyTo"].includes(event.target.name)) onInput(event); };
+    const onChange = event => { if (tool === "History Manager" && ["historyTool", "historyAction", "historySource", "historyFrom", "historyTo"].includes(event.target.name) || tool === "Favorite Manager" && ["favoriteGroup", "favoriteCollection", "linkFolder"].includes(event.target.name) || ["shortcutFile", "shortcutImportMode"].includes(event.target.name)) onInput(event); };
     root.addEventListener("click", onClick); root.addEventListener("input", onInput); root.addEventListener("change", onChange); root.addEventListener("keydown", onKey);
     const dropzone = root.querySelector(".pt-dropzone");
     const onDragOver = (event) => { event.preventDefault(); dropzone?.classList.add("is-dragging"); };
@@ -1371,10 +1554,15 @@
   }
 
   function globalShortcut(event) {
-    // hotkeys-js inspired scope/filter lifecycle, implemented locally without a dependency.
-    if (event.defaultPrevented || event.repeat || event.isComposing || !state.root?.isConnected || state.owner !== accountOwner() || event.target.closest("input,textarea,select,[contenteditable]") || state.root.closest("[hidden]")) return;
-    const combo = normalizeCombo(event), shortcut = (state.shortcutCache || []).find((row) => row.combo.toLowerCase() === combo.toLowerCase());
-    if (shortcut) { event.preventDefault(); executeShortcut(shortcut.action); }
+    const host = window.HHFeatureLab?.activeHost?.() || state.root;
+    if (event.defaultPrevented || event.repeat || event.isComposing || event.getModifierState?.("AltGraph") || document.hidden || !/^#\/tools(?:\/|$)/.test(location.hash) || !host?.isConnected || host.closest?.("[hidden],[aria-hidden=true]") || shortcutRuntime.owner !== accountOwner() || window.HHAllToolState?.isAccountChanging?.() || state.shortcutRecording || event.target?.closest?.("input,textarea,select,[contenteditable],[role=textbox],.monaco-editor,.cm-editor,.CodeMirror")) return;
+    const combo = normalizeCombo(event);
+    // Shared shell handlers own these existing navigation chords.
+    if (isSystemCombo(combo) || ["Alt+H", "Alt+M"].includes(combo)) return;
+    const shortcut = shortcutRuntime.rows.find(row => row.enabled && row.combo === combo);
+    if (!shortcut) return;
+    try { shortcutAction(shortcut.action); } catch { return; }
+    event.preventDefault(); executeShortcut(shortcut.action);
   }
 
   function integrateFeatureLab() {
@@ -1396,6 +1584,7 @@
 
   addEventListener("beforeinstallprompt", (event) => { event.preventDefault(); state.installPrompt = event; const button = state.root?.querySelector('[data-pt-action="install-run"]'); if (button) button.disabled = false; });
   const accountChanged = () => {
+    refreshShortcutRuntime();
     if (state.owner === accountOwner()) return;
     const root = state.root, host = root?.parentElement, name = state.active;
     state.appearanceCleanup?.(); state.appearanceCleanup = null;
@@ -1403,10 +1592,17 @@
     if (root?.isConnected && host) render(host, name).catch(() => {});
   };
   addEventListener("hh:auth-change", accountChanged);
-  addEventListener("storage", (event) => { if (event.key === "hh-auth-user") accountChanged(); });
+  addEventListener("hh:alltools-account-change", () => { ++shortcutRuntime.generation; shortcutRuntime.owner = ""; shortcutRuntime.rows = []; cleanupRuntime(); });
+  addEventListener("keydown", globalShortcut);
+  addEventListener("hashchange", refreshShortcutRuntime);
+  addEventListener("hh:assets-ready", refreshShortcutRuntime);
+  addEventListener("hh:route-rendered", refreshShortcutRuntime);
+  addEventListener("hh:alltools-shortcuts-change", event => { if (event.detail?.owner === accountOwner()) refreshShortcutRuntime(); });
+  addEventListener("storage", (event) => { if (event.key === "hh-auth-user") accountChanged(); else if (event.key === null || event.key === `hh.all-tools.shortcut-signal.v1.${accountOwner()}`) refreshShortcutRuntime(); });
   const integrationTimer = setInterval(() => { if (integrateFeatureLab()) clearInterval(integrationTimer); }, 120);
   setTimeout(() => clearInterval(integrationTimer), 15000);
   ensureStyle();
+  refreshShortcutRuntime();
 
   window.HHPlatformTools = {
     manifests: () => manifests.map((manifest) => ({ ...manifest, permissions: [...manifest.permissions], actions: [...manifest.actions] })),

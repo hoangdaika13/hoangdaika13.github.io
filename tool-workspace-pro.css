@@ -104,6 +104,19 @@
 .hh-tool [data-tool-save-state], .hh-tool [data-tool-prompt-state] { color: #a9efd4; overflow-wrap: anywhere; }
 .hh-tool__code > header { flex-wrap: wrap; align-items: flex-end; }
 .hh-tool__code > header .hh-tool__field { flex: 1 1 180px; }
+.hh-tool__code-import { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px; border-bottom: 1px solid var(--tw-line); }
+.hh-tool__code-import .hh-tool__field { flex: 1 1 260px; min-width: 0; }
+.hh-tool__code-import .hh-tool__help { flex: 1 0 100%; overflow-wrap: anywhere; }
+.hh-tool__code-library { padding: 12px; border-bottom: 1px solid var(--tw-line); }
+.hh-tool__code-library > summary { cursor: pointer; color: var(--tw-accent); font-weight: 700; padding: 4px 0 12px; }
+.hh-tool__code-library > summary:focus-visible { outline: 3px solid var(--tw-accent); outline-offset: 3px; }
+.hh-tool__code-library [data-tool-code-documents] { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 8px; max-height: 240px; overflow: auto; margin-top: 10px; }
+.hh-tool__code-library [data-tool-code-documents] > button { display: grid; gap: 4px; text-align: left; min-width: 0; overflow-wrap: anywhere; }
+.hh-tool__code-library [data-tool-code-documents] > button span { color: var(--tw-muted); font-size: 11px; }
+.hh-tool__code-library [aria-pressed="true"] { border-color: var(--tw-accent); background: rgba(92, 225, 230, .08); }
+.hh-tool__code-status { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 10px 12px; color: var(--tw-muted); border-bottom: 1px solid var(--tw-line); font-size: 12px; overflow-wrap: anywhere; }
+.hh-tool__code-status [data-code-dirty="true"] { color: #ffe1a4; }
+.hh-tool__code-status [data-code-dirty="false"] { color: #a9efd4; }
 .hh-tool__editor { height: 480px; min-height: 300px; max-width: 100%; }
 .hh-tool__editor > textarea { height: 100%; min-height: 300px; font: 500 15px/1.65 ui-monospace, Consolas, monospace; white-space: pre; overflow: auto; }
 .hh-tool__code-diff { border-top: 1px solid var(--tw-line); }
@@ -123,6 +136,8 @@
   .hh-tool input, .hh-tool select, .hh-tool textarea { font-size: 16px; }
   .hh-tool__editor { height: 400px; }
   .hh-tool__code > header > .hh-tool__field, .hh-tool__files > header > * { flex-basis: 100%; width: 100%; }
+  .hh-tool__code-import > .hh-tool__field, .hh-tool__code-import > .hh-tool__file-button { flex-basis: 100%; width: 100%; }
+  .hh-tool__code-status > span { width: 100%; }
   .hh-tool [data-tool-variables] { grid-template-columns: minmax(0, 1fr); }
 }
 @media (forced-colors: active) {

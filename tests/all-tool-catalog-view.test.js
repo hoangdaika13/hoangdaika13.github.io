@@ -31,6 +31,9 @@ test("catalog orders actual recent/pinned ids and stable names without mutating 
   assert.deepEqual(plain(api.filterCatalog(catalog, { sort: "name" }).map(row => row.id)), ["a", "b", "c"]);
   assert.deepEqual(plain(api.filterCatalog(catalog, { sort: "recent" }, { recent: ["c", "a"] }).map(row => row.id)), ["c", "a", "b"]);
   assert.deepEqual(plain(api.filterCatalog(catalog, { sort: "pinned" }, { pinned: ["a"] }).map(row => row.id)), ["a", "b", "c"]);
+  assert.deepEqual(plain(api.filterCatalog(catalog, { collection: "favorites" }, { favorites: ["c", "a"] }).map(row => row.id)), ["c", "a"]);
+  assert.deepEqual(plain(api.filterCatalog(catalog, { collection: "pinned" }, { pinned: ["a", "b"] }).map(row => row.id)), ["a", "b"]);
+  assert.deepEqual(plain(api.filterCatalog(catalog, { collection: "recent" }, { recent: ["c", "b"] }).map(row => row.id)), ["c", "b"]);
   assert.deepEqual(catalog.map(row => row.id), ["b", "a", "c"]);
   assert.equal(api.catalog().length, 86);
 });

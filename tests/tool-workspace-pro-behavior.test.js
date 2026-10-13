@@ -28,7 +28,7 @@ function hostDouble() {
   Object.defineProperty(host, "innerHTML", { set(html) {
     this.inputs.clear(); this.nodes.clear();
     parseInputs(this, html);
-    for (const attr of ["data-tool-state", "data-tool-notice", "data-tool-output", "data-tool-tabs", "data-tool-save-state", "data-tool-editor", "data-tool-editor-status", "data-tool-list", "data-tool-variables", "data-tool-prompt-state", "data-tool-code-problems", "data-tool-speech-capability", "data-tool-paid-consent", "data-tool-tts-preview", "data-tool-file-state", "data-tool-subtitle-origin", "data-tool-subtitle-validation", "data-tool-subtitle-cues", "data-tool-version-context", "data-tool-version-selection", "data-tool-version-page"]) {
+    for (const attr of ["data-tool-state", "data-tool-notice", "data-tool-output", "data-tool-tabs", "data-tool-save-state", "data-tool-editor", "data-tool-editor-status", "data-tool-list", "data-tool-variables", "data-tool-prompt-state", "data-tool-code-problems", "data-tool-code-documents", "data-tool-code-meta", "data-tool-code-save-state", "data-tool-speech-capability", "data-tool-paid-consent", "data-tool-tts-preview", "data-tool-file-state", "data-tool-subtitle-origin", "data-tool-subtitle-validation", "data-tool-subtitle-cues", "data-tool-version-context", "data-tool-version-selection", "data-tool-version-page"]) {
       if (html.includes(attr)) this.nodes.set(`[${attr}]`, { dataset: { toolState: "idle" }, textContent: attr === "data-tool-output" ? "Chưa có kết quả." : "", innerHTML: "", className: "", checked: false, querySelectorAll: () => [], pause() {}, load() {}, removeAttribute() {} });
     }
     if (html.includes("data-tool-preview")) {
@@ -52,6 +52,9 @@ function freshApi() {
   const filename = require.resolve("../tool-workspace-pro.js"), cached = require.cache[filename];
   delete require.cache[filename]; const fresh = require(filename); require.cache[filename] = cached; return fresh;
 }
+function codeFile(name, content) { const file = new Blob([content]); file.name = name; return file; }
+function codeFileChange(file) { return { target: { files: [file], value: "selected", matches: selector => selector === "[data-tool-code-file]" } }; }
+function inputCode(host, name, value, instance = api) { const target = host.inputs.get(name); target.value = value; instance.handleInput({ target }, host, "monaco-code-editor"); }
 
 test("draft flush survives tool change and is never restored to another account", async () => {
   const host = hostDouble();
@@ -119,6 +122,133 @@ test("Monaco fallback multiple documents save before switching and keep independ
   const select = host.inputs.get("code-document"); select.value = "code-document"; await api.handleChange({ target: select }, host, "monaco-code-editor");
   assert.equal(host.inputs.get("code").value, "const first = 1;"); assert.equal((await api.storage.get("records", second, "account:code-tabs")).content, "const second = 2;");
   mounted.cleanup(); await tick();
+});
+
+test("code saved and new drafts reload with their latest text, metadata and account ownership", async () => {
+  const owner = "account:code-draft-reload", host = hostDouble(), mounted = api.mount(host, { toolId: "monaco-code-editor", currentUser: { id: "code-draft-reload" } }); await mounted.ready;
+  try {
+    inputCode(host, "code", "saved text"); await click(host, "monaco-code-editor", "save-code");
+    inputCode(host, "code", "latest unsaved text"); inputCode(host, "code-title", "latest.ts"); inputCode(host, "language", "typescript");
+    await click(host, "monaco-code-editor", "version-code");
+    assert.equal(host.nodes.get("[data-tool-code-save-state]").dataset.codeDirty, "true");
+    const backup = await api.exportWorkspaceData({ owner }), draft = backup.records.find(row => row.id === "draft-monaco-code-editor"), saved = backup.records.find(row => row.type === "code");
+    assert.equal(draft.values.code, "latest unsaved text"); assert.ok(draft.updatedAt > saved.updatedAt); assert.equal(saved.content, "saved text");
+    async function reload(payload, user = "code-draft-reload") { const fresh = freshApi(); await fresh.importWorkspaceData(payload, { owner, strategy: "replace" }); const nextHost = hostDouble(), next = fresh.mount(nextHost, { toolId: "monaco-code-editor", currentUser: { id: user } }); await next.ready; return { fresh, nextHost, next }; }
+    let result = await reload(backup); assert.equal(result.nextHost.inputs.get("code").value, "latest unsaved text"); assert.equal(result.nextHost.inputs.get("code-title").value, "latest.ts"); assert.equal(result.nextHost.inputs.get("language").value, "typescript"); assert.equal(result.nextHost.nodes.get("[data-tool-code-save-state]").dataset.codeDirty, "true"); result.next.cleanup(); await tick();
+    result = await reload(backup, "code-draft-reload-other"); assert.equal(result.nextHost.inputs.get("code").value, ""); result.next.cleanup(); await tick();
+    const newer = structuredClone(backup), row = newer.records.find(item => item.type === "code"); row.content = "new authoritative revision"; row.updatedAt = new Date(Date.parse(draft.updatedAt) + 10000).toISOString();
+    result = await reload(newer); assert.equal(result.nextHost.inputs.get("code").value, "new authoritative revision"); result.next.cleanup(); await tick();
+    const newDraft = structuredClone(backup); newDraft.records = newDraft.records.filter(item => item.type !== "code"); const unsaved = newDraft.records.find(item => item.type === "tool-draft"); unsaved.codeDocument = "new-independent-draft"; unsaved.codeDocumentState = "new"; unsaved.codeBaseUpdatedAt = "";
+    result = await reload(newDraft); assert.equal(result.nextHost.dataset.codeDocument, "new-independent-draft"); assert.equal(result.nextHost.inputs.get("code").value, "latest unsaved text"); assert.equal((await result.fresh.storage.list("records", item => item.type === "code", owner)).length, 0); result.next.cleanup(); await tick();
+  } finally { mounted.cleanup(); await tick(); }
+});
+
+test("UTF-8 code import applies explicit duplicate policies and rejects unsupported or excessive input", async () => {
+  const owner = "account:code-import", host = hostDouble(), mounted = api.mount(host, { toolId: "monaco-code-editor", currentUser: { id: "code-import" } }); await mounted.ready;
+  try {
+    inputCode(host, "code-title", "sample.ts"); inputCode(host, "language", "typescript"); inputCode(host, "code", "original saved"); await click(host, "monaco-code-editor", "save-code");
+    const original = host.dataset.codeDocument;
+    host.inputs.get("code-import-duplicate").value = "reject"; await assert.rejects(api.handleChange(codeFileChange(codeFile("SAMPLE.ts", "incoming")), host, "monaco-code-editor"), /Tên file đã tồn tại/);
+    assert.equal((await api.storage.get("records", original, owner)).content, "original saved");
+    host.inputs.get("code-import-duplicate").value = "open"; await api.handleChange(codeFileChange(codeFile("sample.ts", "ignored incoming")), host, "monaco-code-editor"); assert.equal(host.inputs.get("code").value, "original saved"); assert.equal((await api.storage.list("records", item => item.type === "code", owner)).length, 1);
+    host.inputs.get("code-import-duplicate").value = "rename"; await api.handleChange(codeFileChange(codeFile("sample.ts", "line one\r\nline two\rline three")), host, "monaco-code-editor"); assert.equal(host.inputs.get("code-title").value, "sample-copy-2.ts"); assert.equal(host.inputs.get("code").value, "line one\nline two\nline three"); assert.equal((await api.storage.get("records", original, owner)).content, "original saved");
+    for (const [file, message] of [[codeFile("broken.js", new Uint8Array([0xc3, 0x28])), /UTF-8 hợp lệ/], [codeFile("binary.exe", "text"), /Chỉ nhận/], [codeFile("unsafe.txt", "text\u0000control"), /byte điều khiển/], [codeFile("large.txt", "x".repeat(200001)), /200.000/], [codeFile("bytes.txt", "猫".repeat(166667)), /500 KB/], [codeFile("CON.js", "text"), /tên thiết bị/]]) await assert.rejects(api.handleChange(codeFileChange(file), host, "monaco-code-editor"), message);
+    assert.equal((await api.storage.list("records", item => item.type === "code", owner)).length, 2);
+  } finally { mounted.cleanup(); await tick(); }
+});
+
+test("code search, metadata rename, duplication and extension-aware export preserve literal unsaved text", async () => {
+  const owner = "account:code-manage", host = hostDouble(), mounted = api.mount(host, { toolId: "monaco-code-editor", currentUser: { id: "code-manage" } }); await mounted.ready;
+  const originalDocument = globalThis.document, createUrl = URL.createObjectURL, downloads = [], blobs = new Map();
+  try {
+    inputCode(host, "code-title", "first.js"); inputCode(host, "code", "saved code"); await click(host, "monaco-code-editor", "save-code"); const original = host.dataset.codeDocument;
+    inputCode(host, "code", "<script>globalThis.mustNeverRun = true</script>"); inputCode(host, "language", "html"); inputCode(host, "code-title", "renamed.js"); await click(host, "monaco-code-editor", "rename-code");
+    assert.equal((await api.storage.get("records", original, owner)).title, "renamed.html"); assert.equal((await api.storage.get("records", original, owner)).content, "saved code"); assert.match(host.inputs.get("code").value, /<script>/); assert.equal(host.nodes.get("[data-tool-code-save-state]").dataset.codeDirty, "true");
+    await click(host, "monaco-code-editor", "duplicate-code"); const copied = host.dataset.codeDocument; assert.notEqual(copied, original); assert.equal(host.inputs.get("code-title").value, "renamed-copy-2.html"); assert.equal((await api.storage.get("records", copied, owner)).content, host.inputs.get("code").value);
+    inputCode(host, "code-filter", "html"); await tick(); assert.match(host.nodes.get("[data-tool-code-documents]").innerHTML, /renamed-copy-2/); inputCode(host, "code-filter", "missing"); await tick(); assert.doesNotMatch(host.nodes.get("[data-tool-code-documents]").innerHTML, /open-code-document/);
+    URL.createObjectURL = blob => { const url = createUrl(blob); blobs.set(url, blob); return url; }; globalThis.document = { createElement: () => ({ click() { downloads.push({ name: this.download, blob: blobs.get(this.href) }); } }) };
+    inputCode(host, "language", "plaintext"); await click(host, "monaco-code-editor", "export-code"); assert.equal(downloads[0].name, "renamed-copy-2.txt"); assert.equal(await downloads[0].blob.text(), "<script>globalThis.mustNeverRun = true</script>"); assert.equal(globalThis.mustNeverRun, undefined);
+  } finally { globalThis.document = originalDocument; URL.createObjectURL = createUrl; mounted.cleanup(); await tick(); }
+});
+
+test("code deletion keeps saved and dirty snapshots and stale drafts cannot recreate the deleted ID", async () => {
+  const owner = "account:code-delete", host = hostDouble(), mounted = api.mount(host, { toolId: "monaco-code-editor", currentUser: { id: "code-delete" } }); await mounted.ready;
+  try {
+    inputCode(host, "code", "saved before deletion"); await click(host, "monaco-code-editor", "save-code"); const id = host.dataset.codeDocument;
+    inputCode(host, "code", "unsaved before deletion"); await click(host, "monaco-code-editor", "version-code"); const stale = await api.storage.get("records", "draft-monaco-code-editor", owner);
+    await click(host, "monaco-code-editor", "delete-code"); assert.ok(await api.storage.get("records", id, owner));
+    await click(host, "monaco-code-editor", "delete-code", { confirmCodeDelete: id }); assert.equal(await api.storage.get("records", id, owner), null); assert.equal((await api.storage.get("records", `code-deleted-${id}`, owner)).sourceDocument, id);
+    const versions = await api.storage.list("records", row => row.type === "version", owner); assert.ok(versions.some(row => row.content === "saved before deletion")); assert.ok(versions.some(row => row.content === "unsaved before deletion"));
+    host.dataset.codeDocument = id; inputCode(host, "code", "stale editor content"); await click(host, "monaco-code-editor", "save-code"); assert.equal(await api.storage.get("records", id, owner), null); assert.match(host.nodes.get("[data-tool-notice]").textContent, /đã xóa/);
+    await api.storage.put("records", stale, owner); const backup = await api.exportWorkspaceData({ owner }), fresh = freshApi(); await fresh.importWorkspaceData(backup, { owner, strategy: "replace" }); const nextHost = hostDouble(), next = fresh.mount(nextHost, { toolId: "monaco-code-editor", currentUser: { id: "code-delete" } }); await next.ready;
+    assert.notEqual(nextHost.dataset.codeDocument, id); assert.equal(nextHost.inputs.get("code").value, ""); assert.equal(await fresh.storage.get("records", id, owner), null); next.cleanup(); await tick();
+  } finally { mounted.cleanup(); await tick(); }
+});
+
+test("delayed code-document reads retain text entered after saving and restore the selector", async () => {
+  const owner = "account:code-switch-race", host = hostDouble(), mounted = api.mount(host, { toolId: "monaco-code-editor", currentUser: { id: "code-switch-race" } }); await mounted.ready;
+  const originalGet = api.storage.get; let release, reached;
+  try {
+    inputCode(host, "code", "first document"); await click(host, "monaco-code-editor", "save-code"); const originalId = host.dataset.codeDocument;
+    await api.storage.put("records", { id: "switch-target", type: "code", title: "target.txt", language: "plaintext", content: "target content", updatedAt: new Date().toISOString() }, owner);
+    const waiting = new Promise(resolve => { reached = resolve; }); api.storage.get = async (...args) => { const row = await originalGet(...args); if (args[1] === "switch-target") { reached(); await new Promise(resolve => { release = resolve; }); } return row; };
+    const selector = host.inputs.get("code-document"); selector.value = "switch-target"; const switching = api.handleChange({ target: selector }, host, "monaco-code-editor"); await waiting;
+    inputCode(host, "code", "typed during target read"); release(); await assert.rejects(switching, /vừa nhập thêm/); assert.equal(host.dataset.codeDocument, originalId); assert.equal(selector.value, originalId); assert.equal(host.inputs.get("code").value, "typed during target read");
+  } finally { api.storage.get = originalGet; release?.(); mounted.cleanup(); await tick(); }
+});
+
+test("code imports cancel late reads, preserve concurrent typing and cannot enter another account", async () => {
+  const owner = "account:code-import-race", host = hostDouble(); let mounted = api.mount(host, { toolId: "monaco-code-editor", currentUser: { id: "code-import-race" } }); await mounted.ready;
+  function delayedFile() { let release; const file = { name: "late.js", size: 4, arrayBuffer: () => new Promise(resolve => { release = () => resolve(new TextEncoder().encode("late").buffer); }) }; return { file, finish: () => release() }; }
+  try {
+    inputCode(host, "code", "present text"); let delayed = delayedFile(), pending = api.handleChange(codeFileChange(delayed.file), host, "monaco-code-editor"); await tick(); await click(host, "monaco-code-editor", "cancel-code-import"); delayed.finish(); await pending;
+    assert.equal(host.inputs.get("code").value, "present text"); assert.equal((await api.storage.list("records", row => row.type === "code", owner)).length, 0);
+    delayed = delayedFile(); pending = api.handleChange(codeFileChange(delayed.file), host, "monaco-code-editor"); await tick(); inputCode(host, "code", "new typing"); delayed.finish(); await assert.rejects(pending, /vừa nhập thêm/); assert.equal(host.inputs.get("code").value, "new typing");
+    delayed = delayedFile(); pending = api.handleChange(codeFileChange(delayed.file), host, "monaco-code-editor"); await tick(); mounted = api.mount(host, { toolId: "monaco-code-editor", currentUser: { id: "code-import-race-other" } }); await mounted.ready; delayed.finish(); await pending;
+    assert.equal(host.inputs.get("code").value, ""); assert.equal((await api.storage.list("records", row => row.type === "code", "account:code-import-race-other")).length, 0);
+  } finally { mounted.cleanup(); await tick(); }
+});
+
+test("code save detects a revision changed between read and commit without replacing newer content", async () => {
+  const owner = "account:code-save-conflict", host = hostDouble(), mounted = api.mount(host, { toolId: "monaco-code-editor", currentUser: { id: "code-save-conflict" } }); await mounted.ready;
+  const originalList = api.storage.list; let changed = false;
+  try {
+    inputCode(host, "code", "first saved"); await click(host, "monaco-code-editor", "save-code"); const id = host.dataset.codeDocument;
+    inputCode(host, "code", "local unsaved"); api.storage.list = async (...args) => { if (!changed && args[0] === "records") { changed = true; const current = await api.storage.get("records", id, owner); await api.storage.put("records", { ...current, content: "other editor revision", updatedAt: new Date(Date.parse(current.updatedAt) + 1000).toISOString() }, owner); } return originalList(...args); };
+    await click(host, "monaco-code-editor", "save-code"); assert.equal((await api.storage.get("records", id, owner)).content, "other editor revision"); assert.equal(host.inputs.get("code").value, "local unsaved"); assert.match(host.nodes.get("[data-tool-notice]").textContent, /Revision đã đổi/);
+  } finally { api.storage.list = originalList; mounted.cleanup(); await tick(); }
+});
+
+test("File Explorer copies saved and draft UTF-8 text into independent code documents without altering bytes", async () => {
+  const owner = "account:file-code-copy", original = "<script>globalThis.mustNeverRun = true</script>\r\n", blob = new Blob([original], { type: "text/html" });
+  await api.storage.put("files", { id: "copy-html", name: "literal.html", type: "text/html", size: blob.size, blob, updatedAt: new Date().toISOString() }, owner);
+  const host = hostDouble(), mounted = api.mount(host, { toolId: "file-explorer", currentUser: { id: "file-code-copy" } }); await mounted.ready;
+  try {
+    await click(host, "file-explorer", "preview-file", { recordId: "copy-html" }); host.inputs.get("file-content").value = "unsaved draft HTML";
+    assert.match(host.nodes.get("[data-tool-preview]").innerHTML, /copy-file-code/); await click(host, "file-explorer", "copy-file-code", { recordId: "copy-html" }); await click(host, "file-explorer", "copy-file-draft-code", { recordId: "copy-html" });
+    const copies = await api.storage.list("records", row => row.type === "code", owner); assert.equal(copies.length, 2); assert.ok(copies.some(row => row.content === original.replace(/\r\n/g, "\n"))); assert.ok(copies.some(row => row.content === "unsaved draft HTML")); assert.equal(new Set(copies.map(row => row.title)).size, 2);
+    assert.equal(await (await api.storage.get("files", "copy-html", owner)).blob.text(), original); assert.equal(host.inputs.get("file-content").value, "unsaved draft HTML"); assert.equal(host.dataset.activeFile, "copy-html"); assert.equal(globalThis.mustNeverRun, undefined);
+    host.inputs.get("file-content").value = "x".repeat(200001); await click(host, "file-explorer", "copy-file-draft-code", { recordId: "copy-html" }); assert.match(host.nodes.get("[data-tool-notice]").textContent, /200.000/); assert.equal((await api.storage.list("records", row => row.type === "code", owner)).length, 2);
+  } finally { mounted.cleanup(); await tick(); }
+});
+
+test("Monaco editor and diff avoid cancellable occurrence delays and dispose each owned resource once", async () => {
+  const originalMonaco = globalThis.monaco, models = [], editors = [], listeners = [];
+  function disposable() { const item = { disposed: 0, dispose() { this.disposed += 1; } }; listeners.push(item); return item; }
+  globalThis.monaco = { languages: {}, editor: {
+    createModel(content, language) { const model = { content, language, disposed: 0, uri: {}, dispose() { this.disposed += 1; } }; models.push(model); return model; },
+    create(holder, options) { const editor = { options, disposed: 0, getValue: () => options.model.content, getModel: () => options.model, getPosition: () => ({ lineNumber: 1, column: 1 }), setValue(value) { options.model.content = value; this.changed?.(); }, onDidChangeModelContent(callback) { this.changed = callback; return disposable(); }, onDidChangeCursorPosition(callback) { this.cursor = callback; return disposable(); }, dispose() { this.disposed += 1; } }; editors.push(editor); return editor; },
+    setModelLanguage(model, language) { model.language = language; }, onDidChangeMarkers: () => disposable(),
+    createDiffEditor(holder, options) { const editor = { options, disposed: 0, setModel(model) { this.model = model; }, dispose() { this.disposed += 1; } }; editors.push(editor); return editor; }
+  } };
+  const host = hostDouble(); let mounted;
+  try {
+    mounted = api.mount(host, { toolId: "monaco-code-editor", currentUser: { id: "code-resource-life" } }); await mounted.ready;
+    assert.equal(editors[0].options.occurrencesHighlight, "off"); assert.equal(editors[0].options.minimap.enabled, false);
+    editors[0].setValue("const saved = 1;"); await click(host, "monaco-code-editor", "save-code"); editors[0].setValue("const edited = 2;"); editors[0].cursor();
+    host.nodes.set("[data-tool-code-diff]", { hidden: true, innerHTML: "", querySelector: () => ({}) }); await click(host, "monaco-code-editor", "diff-code"); assert.equal(editors[1].options.occurrencesHighlight, "off"); assert.equal(editors[1].model.original.content, "const saved = 1;"); assert.equal(editors[1].model.modified.content, "const edited = 2;");
+    mounted.cleanup(); await tick(); assert.ok(editors.every(editor => editor.disposed === 1)); assert.ok(models.every(model => model.disposed === 1)); assert.ok(listeners.every(listener => listener.disposed === 1));
+  } finally { mounted?.cleanup(); globalThis.monaco = originalMonaco; await tick(); }
 });
 
 test("speech adapters require each explicit consent, make one request and never autoplay WAV", async () => {

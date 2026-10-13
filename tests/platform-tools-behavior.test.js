@@ -1,9 +1,9 @@
 "use strict";
 const test = require("node:test"), assert = require("node:assert/strict"), fs = require("node:fs"), path = require("node:path"), vm = require("node:vm");
 const source = fs.readFileSync(path.join(__dirname, "..", "platform-tools.js"), "utf8");
-function runtime() {
+function runtime(storageSeed = {}) {
   let user = { id: "owner-a" };
-  const listeners = new Map(), cancelled = [], storage = {};
+  const listeners = new Map(), cancelled = [], storage = { ...storageSeed };
   Object.defineProperties(storage, {
     getItem: { value: key => Object.hasOwn(storage, key) ? storage[key] : null },
     setItem: { value: (key, value) => { storage[key] = String(value); } },
@@ -19,15 +19,16 @@ function runtime() {
     matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }), HHAuthz: { currentUser: () => user }
   };
   context.window = context;
-  vm.runInNewContext(source.replace("window.HHPlatformTools = {", "window.__test = { state, values, dbAll, dbPut, dbClear, readSettings, saveSetting, record, accountOwner, safeKey, localPrefix, normalizeImport, validRoute, canonicalCombo, normalizeCombo, applyColorMode, cleanupRuntime, setupLongTasks, handleAction, buildExport, globalShortcut, catalogPreferences, updateCatalogPreferences, allHistory, scanWorkspace, runSearch, searchScore, normalizeSearch, skeletonDocument, prepareOffline, readBoundedAsset, offlineAssetUrl, startProgress, applyStoreBatch, commitImport, publishNotificationSignal, inspectPwa, COSMIC_PRESETS, themeConfig, themePresetStore, getThemePresets, saveThemePreset, renameThemePreset, deleteThemePreset, useThemePreset, historyMetadata, filterHistory, historyExport, csvCell, refreshHistoryView }; window.HHPlatformTools = {"), context);
+  vm.runInNewContext(source.replace("window.HHPlatformTools = {", "window.__test = { state, values, dbAll, dbPut, dbClear, readSettings, saveSetting, record, accountOwner, safeKey, localPrefix, normalizeImport, validRoute, canonicalCombo, normalizeCombo, applyColorMode, cleanupRuntime, setupLongTasks, handleAction, buildExport, globalShortcut, catalogPreferences, updateCatalogPreferences, allHistory, scanWorkspace, runSearch, searchScore, normalizeSearch, skeletonDocument, prepareOffline, readBoundedAsset, offlineAssetUrl, startProgress, applyStoreBatch, commitImport, publishNotificationSignal, inspectPwa, COSMIC_PRESETS, themeConfig, themePresetStore, getThemePresets, saveThemePreset, renameThemePreset, deleteThemePreset, useThemePreset, historyMetadata, filterHistory, historyExport, csvCell, refreshHistoryView, shortcutRuntime, defaultShortcuts, shortcutAction, shortcutConflict, normalizeShortcuts, normalizeShortcutImport, saveShortcuts, getShortcuts, refreshShortcutRuntime, recordShortcutKey, executeShortcut, upsertShortcut, mergeShortcuts, checkShortcutFile, favoriteTools, reorderCollection, moveCatalogFavorite, filterFavoriteLinks, refreshCatalogFavorites, refreshFavoriteLinks, moveFavorite, bind }; window.HHPlatformTools = {"), context);
   const api = context.__test;
   api.state.owner = api.accountOwner();
   return { api, context, storage, listeners, cancelled, setUser: next => { user = next; api.state.owner = api.accountOwner(); } };
 }
 const plain = value => JSON.parse(JSON.stringify(value));
 function root(fields = []) {
-  const nodes = new Map();
-  return { isConnected: true, dataset: {}, querySelectorAll: () => fields, querySelector: selector => { if (!nodes.has(selector)) nodes.set(selector, { textContent: "", dataset: {}, disabled: false, value: 0 }); return nodes.get(selector); }, closest: () => null };
+  const nodes = new Map(), listeners = new Map();
+  const node = () => ({ textContent: "", dataset: {}, disabled: false, value: 0, attributes: {}, focus() { this.focused = true; }, setAttribute(key, value) { this.attributes[key] = value; }, removeAttribute(key) { delete this.attributes[key]; }, addEventListener() {}, removeEventListener() {}, remove() {} });
+  return { isConnected: true, dataset: {}, _listeners: listeners, querySelectorAll: () => fields, querySelector: selector => { const name = selector.match(/^\[name="([^"]+)"\]$/)?.[1], input = name && fields.find(field => field.name === name); if (input) return input; if (!nodes.has(selector)) nodes.set(selector, node()); return nodes.get(selector); }, closest: () => null, addEventListener: (type, listener) => listeners.set(type, listener), removeEventListener: type => listeners.delete(type) };
 }
 const payload = data => ({ format: "HH Platform Tools Export", version: 1, data });
 
@@ -95,15 +96,156 @@ test("export is scoped, excludes other workspace/accounts and neutralizes CSV fo
   assert.match(api.state.generatedExport, /"'=SUM\(1,2\)"/); assert.match(api.state.generatedExport, /"'@FORMULA"/);
 });
 
-test("shortcuts normalize modifier order and Space and do not steal text/browser editing", () => {
+test("shortcuts normalize modifier order and Space and leave shell/browser editing keys alone", async () => {
   const { api, context } = runtime();
   assert.equal(api.canonicalCombo("shift + ctrl + h"), "Ctrl+Shift+H"); assert.equal(api.canonicalCombo("alt+space"), "Alt+Space");
   assert.equal(api.normalizeCombo({ ctrlKey: false, altKey: true, key: " " }), "Alt+Space");
   assert.throws(() => api.canonicalCombo("Ctrl+R"), /trình duyệt/);
   assert.throws(() => api.canonicalCombo("Ctrl+Ctrl+H"), /không hợp lệ/);
-  let prevented = false; api.state.root = root(); api.state.shortcutCache = [{ combo: "Ctrl+K", action: "home" }];
-  api.globalShortcut({ key: "k", ctrlKey: true, target: { closest: () => ({}) }, preventDefault() { prevented = true; } }); assert.equal(prevented, false);
-  api.globalShortcut({ key: "k", ctrlKey: true, target: { closest: () => null }, preventDefault() { prevented = true; } }); assert.equal(prevented, true); assert.equal(context.location.hash, "#/platform");
+  let prevented = false; api.state.root = root(); context.location.hash = "#/tools/keyboard-shortcuts";
+  await api.saveShortcuts([{ id: "home", label: "Home", combo: "Alt+Shift+H", action: "home" }]);
+  api.globalShortcut({ key: "h", altKey: true, shiftKey: true, target: { closest: () => ({}) }, preventDefault() { prevented = true; } }); assert.equal(prevented, false);
+  api.globalShortcut({ key: "k", ctrlKey: true, target: { closest: () => null }, preventDefault() { prevented = true; } }); assert.equal(prevented, false);
+  api.globalShortcut({ key: "h", altKey: true, shiftKey: true, target: { closest: () => null }, preventDefault() { prevented = true; } }); assert.equal(prevented, true); assert.equal(context.location.hash, "#/platform");
+});
+
+const binding = (id = "notes", combo = "Alt+Shift+N", action = "tool:notes") => ({ id, label: `Open ${id}`, combo, action });
+const keyEvent = (overrides = {}) => ({ key: "N", altKey: true, shiftKey: true, ctrlKey: false, metaKey: false, target: { closest: () => null, matches: () => false }, prevented: false, preventDefault() { this.prevented = true; this.defaultPrevented = true; }, stopPropagation() { this.stopped = true; }, ...overrides });
+
+test("shortcut targets are actual catalog tools and reserved/conflicting/bounded input is rejected", () => {
+  const { api, context } = runtime(); context.HHFeatureLab = { catalog: () => [{ id: "notes", name: "Notes" }] };
+  assert.equal(api.normalizeShortcuts([binding()])[0].enabled, true);
+  assert.throws(() => api.normalizeShortcuts([binding("fake", "Alt+Shift+N", "tool:fake")]), /tool thật/);
+  assert.throws(() => api.normalizeShortcuts([binding("script", "Alt+Shift+N", "javascript:alert(1)")]), /tool thật/);
+  for (const combo of ["Ctrl+Shift+V", "Ctrl+Shift+H", "Meta+1", "Alt+D", "Alt+Space", "Shift+N", "Ctrl+K", "Ctrl+Alt+K", "Alt+M"]) assert.throws(() => api.normalizeShortcuts([binding("reserved", combo)]), /dành|K này/);
+  assert.throws(() => api.normalizeShortcuts([binding(), binding("duplicate")]), /trùng/);
+  assert.throws(() => api.normalizeShortcuts([{ ...binding(), enabled: "yes" }]), /không hợp lệ/);
+  assert.throws(() => api.normalizeShortcuts([{ ...binding(), script: "ignored?" }]), /không hợp lệ/);
+  assert.throws(() => api.normalizeShortcuts(Array.from({ length: 31 }, (_, index) => binding(String(index)))), /30/);
+  assert.equal(api.normalizeShortcuts(api.defaultShortcuts()).length, 2);
+});
+
+test("shortcut legacy arrays and full Platform settings backups round-trip enabled defaults", () => {
+  const { api, context } = runtime(); context.HHFeatureLab = { catalog: () => [{ id: "notes", name: "Notes" }] };
+  const old = [binding("home", "Alt+Shift+H", "home"), ...plain(api.defaultShortcuts()).map(({ enabled, ...row }) => row)];
+  const imported = api.normalizeShortcutImport(old);
+  assert.equal(imported.legacy, true); assert.ok(imported.shortcuts.every(row => row.enabled));
+  const backup = api.normalizeImport(payload({ settings: [{ id: "setting:shortcuts", value: old }, { id: "setting:autosave", value: false }] }));
+  assert.deepEqual(plain(backup.data.settings[0].value), plain(imported.shortcuts)); assert.equal(backup.data.settings[1].value, false);
+  const exported = { format: "HH All Tool Shortcuts", version: 1, owner: api.accountOwner(), exportedAt: new Date().toISOString(), shortcuts: imported.shortcuts };
+  assert.deepEqual(plain(api.normalizeShortcutImport(exported).shortcuts), plain(imported.shortcuts));
+  assert.throws(() => api.normalizeShortcutImport({ ...exported, owner: "account:owner-b" }), /khác/);
+  assert.throws(() => api.normalizeShortcutImport({ ...exported, version: 2 }), /định dạng/);
+});
+
+test("shortcut merge never overwrites existing combos or IDs and replace validates all targets", () => {
+  const { api, context } = runtime(); context.HHFeatureLab = { catalog: () => [{ id: "notes", name: "Notes" }] };
+  const existing = [binding("first"), { ...binding("disabled", "Alt+Shift+D"), enabled: false }];
+  const result = api.mergeShortcuts(existing, [binding("same-combo"), binding("first", "Alt+Shift+A"), binding("new", "Alt+Shift+F")], "merge");
+  assert.deepEqual(plain(result.map(row => row.id)), ["first", "disabled", "new"]); assert.equal(result[1].enabled, false);
+  assert.deepEqual(plain(api.mergeShortcuts(existing, [], "replace")), []);
+  assert.throws(() => api.mergeShortcuts(existing, [binding("bad", "Alt+Shift+Z", "tool:missing")], "replace"), /tool thật/);
+  assert.throws(() => api.mergeShortcuts(existing, [], "unknown"), /không hợp lệ/);
+});
+
+test("custom shortcuts work from active Utility/Workspace host and never claim system navigation keys", async () => {
+  const { api, context, listeners } = runtime(); const host = root(), opened = [];
+  context.HHFeatureLab = { activeHost: () => host, catalog: () => [{ id: "notes", name: "Notes" }], select: id => opened.push(id) };
+  context.location.hash = "#/tools/notes"; api.state.root = root();
+  await api.saveShortcuts([binding(), ...plain(api.defaultShortcuts()), binding("legacy-home", "Alt+H", "home")]); api.cleanupRuntime();
+  const event = keyEvent(); listeners.get("keydown")(event); assert.equal(event.prevented, true); assert.deepEqual(opened, ["notes"]);
+  for (const overrides of [{ key: "K", altKey: false, shiftKey: false, ctrlKey: true }, { key: "K", shiftKey: false, ctrlKey: true }, { key: "H", shiftKey: false }, { key: "M", shiftKey: false }]) { const reserved = keyEvent(overrides); api.globalShortcut(reserved); assert.equal(reserved.prevented, false); }
+  assert.deepEqual(opened, ["notes"]);
+});
+
+test("shortcut dispatcher ignores typing editors repeats composition AltGraph hidden and inactive scopes", async () => {
+  const { api, context, setUser } = runtime(); const host = root(), opened = [];
+  context.HHFeatureLab = { activeHost: () => host, catalog: () => [{ id: "notes", name: "Notes" }], select: id => opened.push(id) };
+  context.location.hash = "#/tools/notes"; await api.saveShortcuts([binding(), { ...binding("disabled", "Alt+Shift+D"), enabled: false }]);
+  for (const overrides of [{ defaultPrevented: true }, { repeat: true }, { isComposing: true }, { getModifierState: name => name === "AltGraph" }, { target: { closest: () => ({}) } }, { key: "D" }]) { const event = keyEvent(overrides); api.globalShortcut(event); assert.equal(event.prevented, false); }
+  context.document.hidden = true; api.globalShortcut(keyEvent()); context.document.hidden = false;
+  host.isConnected = false; api.globalShortcut(keyEvent()); host.isConnected = true;
+  host.closest = () => ({}); api.globalShortcut(keyEvent()); host.closest = () => null;
+  context.location.hash = "#/platform"; api.globalShortcut(keyEvent()); context.location.hash = "#/tools/notes";
+  context.HHAllToolState = { isAccountChanging: () => true }; api.globalShortcut(keyEvent()); delete context.HHAllToolState;
+  setUser({ id: "owner-b" }); api.globalShortcut(keyEvent()); assert.deepEqual(opened, []);
+});
+
+test("shortcut recording handles safe keys Escape conflicts and leaves invalid input unsaved", async () => {
+  const { api, context } = runtime(); const fields = [{ name: "shortcutAction", value: "home" }, { name: "combo", value: "" }], view = root(fields);
+  api.state.active = "Keyboard Shortcut System"; api.state.root = view; context.location.hash = "#/tools/keyboard-shortcuts"; api.bind();
+  const recorderTarget = { closest: selector => selector === "[data-pt-recorder]" ? {} : null, matches: () => false };
+  await api.handleAction("shortcut-record"); assert.equal(api.state.shortcutRecording, true);
+  const event = keyEvent({ key: "H", target: recorderTarget }); view._listeners.get("keydown")(event);
+  assert.equal(event.prevented, true); assert.equal(fields[1].value, "Alt+Shift+H"); assert.equal(api.state.shortcutRecording, false); assert.equal((await api.readSettings()).shortcuts, undefined);
+  api.state.shortcutRecording = true; api.state.shortcutCache = [{ id: "existing", combo: "Alt+Shift+H" }]; api.recordShortcutKey(keyEvent({ key: "H", target: recorderTarget })); assert.equal(api.state.shortcutRecording, true); assert.match(view.querySelector("[data-pt-recorder-status]").textContent, /đã được sử dụng/);
+  api.recordShortcutKey(keyEvent({ key: "Escape", altKey: false, shiftKey: false, target: recorderTarget })); assert.equal(api.state.shortcutRecording, false); assert.match(view.querySelector("[data-pt-recorder-status]").textContent, /hủy/);
+});
+
+test("shortcut edits persist and disabled records and deleted edit targets stay honest", async () => {
+  const { api, context } = runtime(); context.HHFeatureLab = { catalog: () => [{ id: "notes", name: "Notes" }] }; api.state.root = root();
+  await api.saveShortcuts([{ ...binding(), enabled: false }]);
+  const row = await api.upsertShortcut({ label: "Updated", combo: "Alt+Shift+U", shortcutAction: "tool:notes" }, "notes");
+  assert.equal(row.enabled, false); assert.equal(row.id, "notes"); assert.equal((await api.getShortcuts())[0].label, "Updated");
+  await api.saveShortcuts([]); await assert.rejects(api.upsertShortcut({ label: "Gone", combo: "Alt+Shift+U", shortcutAction: "home" }, "notes"), /đã bị xóa/);
+  assert.deepEqual(plain(await api.getShortcuts()), []);
+});
+
+test("shortcut settings remain account-owned through switches guest state and runtime refresh", async () => {
+  const { api, context, setUser } = runtime(); context.location.hash = "#/tools/notes"; context.HHFeatureLab = { catalog: () => [{ id: "notes", name: "Notes" }] };
+  await api.saveShortcuts([binding()]); const a = api.accountOwner();
+  setUser({ id: "owner-b" }); await api.refreshShortcutRuntime(); assert.equal(api.shortcutRuntime.owner, "account:owner-b"); assert.equal(api.shortcutRuntime.rows.some(row => row.action === "tool:notes"), false);
+  await assert.rejects(api.saveShortcuts([binding()], a), /Tài khoản/); setUser(null); await api.saveShortcuts([]); assert.deepEqual(plain(await api.getShortcuts()), []);
+  setUser({ id: "owner-a" }); assert.equal((await api.getShortcuts())[0].action, "tool:notes");
+  context.location.hash = "#/platform"; await api.refreshShortcutRuntime(); assert.equal(api.shortcutRuntime.owner, ""); assert.deepEqual(plain(api.shortcutRuntime.rows), []);
+});
+
+test("late shortcut reads and favorite writes cannot mutate after their owning view closes", async () => {
+  const { api, context } = runtime(); context.HHFeatureLab = { catalog: () => [{ id: "notes", name: "Notes" }] }; api.state.root = root();
+  const pending = api.upsertShortcut({ label: "Late", combo: "Alt+Shift+N", shortcutAction: "tool:notes" }); api.state.root = root(); await assert.rejects(pending, /đã đóng/); assert.equal((await api.readSettings()).shortcuts, undefined);
+  api.state.active = "Favorite Manager"; api.state.root = root([{ name: "title", value: "Late" }, { name: "route", value: "/platform" }]);
+  const favorite = api.handleAction("favorite-add"); api.state.root = root(); await favorite; assert.deepEqual(plain(await api.dbAll("favorites")), []);
+});
+
+test("shortcut file validation is bounded and stale file or mode changes cannot enable apply", async () => {
+  const { api, context } = runtime(); context.HHFeatureLab = { catalog: () => [{ id: "notes", name: "Notes" }] }; api.state.active = "Keyboard Shortcut System";
+  let finish; const file = { size: 100, text: () => new Promise(resolve => { finish = resolve; }) }, fields = [{ name: "shortcutFile", type: "file", files: [file] }, { name: "shortcutImportMode", value: "merge" }], view = root(fields); api.state.root = view; api.bind();
+  const pending = api.checkShortcutFile(); fields[1].value = "replace"; view._listeners.get("change")({ target: fields[1] }); finish(JSON.stringify([binding()])); await pending;
+  assert.equal(api.state.shortcutImport, null); assert.equal(view.querySelector('[data-pt-action="shortcut-import-apply"]').disabled, true);
+  fields[0].files = [{ size: 262145, text: async () => "[]" }]; await assert.rejects(api.checkShortcutFile(), /256 KB/);
+  fields[0].files = [{ size: 1, text: async () => "x".repeat(262145) }]; await assert.rejects(api.checkShortcutFile(), /256 KB/);
+  fields[0].files = [{ size: 100, text: async () => JSON.stringify([binding()]) }]; fields[1].value = "merge"; await api.checkShortcutFile(); assert.equal(api.state.shortcutImport.legacy, true); assert.equal(view.querySelector('[data-pt-action="shortcut-import-apply"]').disabled, false); assert.equal((await api.readSettings()).shortcuts, undefined);
+});
+
+test("shared favorites retain preference order through filters and leave hidden positions unchanged", () => {
+  const { api, context, storage, setUser } = runtime(); const catalog = [{ id: "notes", name: "Notes", group: "Work" }, { id: "hash", name: "Hash", group: "Technical" }, { id: "todo", name: "Tô dô", group: "Work" }];
+  context.HHFeatureLab = { catalog: () => catalog }; context.HHAllToolState = { readJSON: (base, fallback, owner) => JSON.parse(storage.getItem(`${base}:${owner}`) || JSON.stringify(fallback)), writeJSON: (base, data, owner) => storage.setItem(`${base}:${owner}`, JSON.stringify(data)) };
+  api.updateCatalogPreferences({ favorites: ["todo", "hash", "notes"], pinned: ["hash", "notes"] });
+  assert.deepEqual(plain(api.favoriteTools(api.catalogPreferences(), catalog, { favoriteGroup: "Work" }).map(tool => tool.id)), ["todo", "notes"]);
+  assert.deepEqual(plain(api.moveCatalogFavorite("favorites", "notes", -1, { favoriteGroup: "Work" })), ["notes", "hash", "todo"]);
+  assert.deepEqual(plain(api.catalogPreferences().pinned), ["hash", "notes"]);
+  assert.deepEqual(plain(api.favoriteTools(api.catalogPreferences(), catalog, { favoriteQuery: "to do", favoriteCollection: "favorites" }).map(tool => tool.id)), ["todo"]);
+  assert.deepEqual(plain(api.reorderCollection(["a", "hidden", "b"], "a", -1, ["a", "b"])), ["a", "hidden", "b"]);
+  assert.throws(() => api.moveCatalogFavorite("unknown", "notes", 1, {}), /không hợp lệ/);
+  const reloaded = runtime(storage); reloaded.context.HHFeatureLab = { catalog: () => catalog }; reloaded.context.HHAllToolState = { readJSON: (base, fallback, owner) => JSON.parse(reloaded.storage.getItem(`${base}:${owner}`) || JSON.stringify(fallback)) }; assert.deepEqual(plain(reloaded.api.catalogPreferences().favorites), ["notes", "hash", "todo"]);
+  setUser({ id: "owner-b" }); assert.deepEqual(plain(api.catalogPreferences().favorites), []);
+});
+
+test("favorite filters and semantic reorder buttons update shared order without clearing controls", async () => {
+  const { api, context } = runtime(), data = new Map(), catalog = [{ id: "notes", name: "Notes", group: "Work" }, { id: "todo", name: "Todo", group: "Work" }];
+  context.HHFeatureLab = { catalog: () => catalog }; context.HHAllToolState = { readJSON: (base, fallback, owner) => data.get(`${base}:${owner}`) || fallback, writeJSON: (base, value, owner) => data.set(`${base}:${owner}`, value) };
+  api.updateCatalogPreferences({ favorites: ["notes", "todo"] }); api.state.active = "Favorite Manager"; const fields = [{ name: "favoriteQuery", value: "todo" }, { name: "favoriteGroup", value: "all" }, { name: "favoriteCollection", value: "favorites" }], view = root(fields); api.state.root = view; api.bind();
+  view._listeners.get("input")({ target: fields[0] }); assert.doesNotMatch(view.querySelector("[data-pt-catalog-favorites]").innerHTML, /data-pt-catalog-favorite="notes"/); assert.match(view.querySelector("[data-pt-catalog-favorite-count]").textContent, /^1/);
+  fields[0].value = ""; view._listeners.get("input")({ target: fields[0] });
+  const button = { dataset: { ptCatalogMove: "favorites", ptCatalogId: "todo", ptDirection: "-1" }, setAttribute() {}, removeAttribute() {}, closest: selector => ["button", "[data-pt-catalog-move]"].includes(selector) ? button : null };
+  await view._listeners.get("click")({ target: button }); assert.deepEqual(plain(api.catalogPreferences().favorites), ["todo", "notes"]); assert.equal(fields[2].value, "favorites"); assert.ok(view.querySelector("[data-pt-catalog-favorites]").innerHTML.indexOf('data-pt-catalog-favorite="todo"') < view.querySelector("[data-pt-catalog-favorites]").innerHTML.indexOf('data-pt-catalog-favorite="notes"'));
+});
+
+test("private-link search and global reorder stay independent from catalog favorites", async () => {
+  const { api } = runtime(); const rows = [{ id: "a", title: "Notes", route: "/tools/notes", folder: "Study", order: 0 }, { id: "b", title: "Tasks", route: "/tools/todo", folder: "Work", order: 1 }];
+  assert.deepEqual(plain(api.filterFavoriteLinks(rows, { linkQuery: "NOTES", linkFolder: "Study" }).map(row => row.id)), ["a"]);
+  api.state.active = "Favorite Manager"; const fields = [{ name: "linkQuery", value: "Notes" }, { name: "linkFolder", value: "Study" }]; api.state.root = root(fields); for (const row of rows) await api.dbPut("favorites", row);
+  await api.moveFavorite("a", 1); assert.deepEqual(plain((await api.dbAll("favorites")).sort((a, b) => a.order - b.order).map(row => row.id)), ["b", "a"]); assert.equal(fields[0].value, "Notes"); assert.equal(api.state.favoriteLinks[1].id, "a"); assert.match(api.state.root.querySelector("[data-pt-link-count]").textContent, /1\/2/);
 });
 
 test("All Tools settings do not mutate the primary shell", async () => {

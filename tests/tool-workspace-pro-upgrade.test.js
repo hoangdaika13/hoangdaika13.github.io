@@ -92,3 +92,20 @@ test("version search, context paging and large-content limits are deterministic"
   assert.equal(api.selectVersionPage(rows, { query: "needle" }).rows[0].id, "v-4"); assert.equal(api.selectVersionPage(rows, { document: "code" }).count, 21); assert.equal(api.selectVersionPage(rows, { sort: "oldest" }).rows[0].id, "v-0");
   assert.equal(api.validateVersionContent("x".repeat(500000)).length, 500000); assert.equal(api.validateVersionContent("猫".repeat(200000)).length, 200000); assert.throws(() => api.validateVersionContent("猫".repeat(200001)), /vượt giới hạn/);
 });
+
+test("code management exposes file, document and copy actions with scoped save-state controls", () => {
+  const markup = api.renderMarkup("monaco-code-editor"), source = fs.readFileSync(path.resolve(__dirname, "../tool-workspace-pro.js"), "utf8"), css = fs.readFileSync(path.resolve(__dirname, "../tool-workspace-pro.css"), "utf8");
+  assert.equal(api.getManifest("monaco-code-editor").runtime, "browser"); assert.doesNotMatch(markup, /fallback server/);
+  for (const selector of ["data-tool-code-file", "code-import-duplicate", "code-filter", "data-tool-code-documents", "data-tool-code-save-state", "data-tool-code-meta", "rename-code", "delete-code", "duplicate-code", "cancel-code-import"]) assert.ok(markup.includes(selector), selector);
+  assert.match(markup, /500 KB và 200.000 ký tự/); assert.match(markup, /HTML\/CSS\/code chỉ được soạn, không chạy/); assert.match(source, /TextDecoder\("utf-8", \{ fatal: true \}\)/); assert.match(source, /copy-file-draft-code/); assert.match(css, /hh-tool__code-library/); assert.match(css, /data-code-dirty/);
+});
+
+test("code backup validation bounds document count, metadata, text and total size", async () => {
+  const stamp = new Date().toISOString(), code = index => ({ id: `bounded-code-${index}`, type: "code", title: `file-${index}.txt`, language: "plaintext", content: "text", updatedAt: stamp }), payload = records => ({ version: 1, records, history: [], files: [], filesIncluded: false, omittedFiles: [] });
+  assert.equal(api.normalizeWorkspaceData(payload(Array.from({ length: 200 }, (_, index) => code(index)))).records.length, 200);
+  assert.throws(() => api.normalizeWorkspaceData(payload(Array.from({ length: 201 }, (_, index) => code(index)))), /200 tài liệu/);
+  for (const [row, pattern] of [[{ ...code(0), title: "../escape.txt" }, /Tên file/], [{ ...code(0), content: "x".repeat(200001) }, /200.000/], [{ ...code(0), content: "hidden\u0000byte" }, /byte điều khiển/], [{ ...code(0), language: "executable" }, /Ngôn ngữ/], [{ id: "code-deleted-wrong", type: "code-deleted", sourceDocument: "other", createdAt: stamp }, /Dấu tài liệu/], [{ id: "draft-monaco-code-editor", type: "tool-draft", tool: "monaco-code-editor", values: { code: "text" }, codeDocument: "account:unowned", codeDocumentState: "saved", updatedAt: stamp }, /Tài liệu code/]]) assert.throws(() => api.normalizeWorkspaceData(payload([row])), pattern);
+  assert.throws(() => api.normalizeWorkspaceData(payload(Array.from({ length: 22 }, (_, index) => ({ id: `bulk-${index}`, type: "version", content: "x".repeat(200000), createdAt: stamp })))), /bản sao 4 MB/);
+  const owner = "account:code-merge-bound"; await api.importWorkspaceData(payload(Array.from({ length: 200 }, (_, index) => code(index))), { owner, strategy: "replace" });
+  await assert.rejects(api.importWorkspaceData(payload([code(200)]), { owner, strategy: "merge" }), /vượt 200 tài liệu/); assert.equal((await api.storage.list("records", row => row.type === "code", owner)).length, 200); assert.equal(await api.storage.get("records", "bounded-code-200", owner), null);
+});

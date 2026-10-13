@@ -30,10 +30,11 @@ test("platform loader includes runtime, manifests, dedicated suites and nested t
     "all-tool-state.js?v=2",
     "tool-manifests.js?v=2",
     "tool-runtime.js?v=2",
-    "feature-lab.js?v=9",
-    "platform-tools.js?v=4",
-    "tool-workspace-pro.js?v=4",
-    "utility-lab-tools.js?v=13"
+    "feature-lab.css?v=8",
+    "feature-lab.js?v=10",
+    "platform-tools.js?v=5",
+    "tool-workspace-pro.js?v=5",
+    "utility-lab-tools.js?v=14"
   ]) assert.match(loader, new RegExp(asset.replace(/[.?+]/g, "\\$&")));
   assert.match(loader, /value\.startsWith\("\/tools"\)/);
 });
@@ -45,7 +46,8 @@ test("toolkit source is UTF-8 and service worker publishes the new assets", () =
   }
   const worker = read("sw.js");
   assert.match(worker, /hh-identity-portal-v\d+/);
-  assert.match(worker, /platform-tools\.css\?v=4/);
-  assert.match(worker, /tool-workspace-pro\.js\?v=4/);
-  assert.match(worker, /utility-lab-tools\.js\?v=13/);
+  assert.match(worker, /feature-lab\.css\?v=8/);
+  assert.match(worker, /platform-tools\.css\?v=5/);
+  assert.match(worker, /tool-workspace-pro\.js\?v=5/);
+  assert.match(worker, /utility-lab-tools\.js\?v=14/);
 });

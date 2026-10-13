@@ -63,6 +63,10 @@
     "notes": "Ghi chú cá nhân, tìm kiếm, xem Markdown, lưu theo tài khoản và xuất dữ liệu.",
     "dev-utilities": "CSV Workbench: đọc bảng, lọc, chuyển CSV/JSON, nhập và xuất tệp; tiện ích xử lý văn bản.",
     "regex-playground": "Regex trong Worker: match, capture groups, vị trí và xem thay thế; giới hạn thời gian chạy.",
+    "hash-generator": "Băm văn bản UTF-8 hoặc tệp đã chọn bằng SHA-256/384/512; đối chiếu, sao chép và xuất hash trên thiết bị.",
+    "password-toolkit": "Tạo mật khẩu bằng Web Crypto, chọn nhóm ký tự và số lượng; không lưu mật khẩu hoặc tự sao chép.",
+    "keyboard-shortcuts": "Phím tắt mở tool trong All Tool: ghi tổ hợp, kiểm tra xung đột và nhập/xuất cấu hình theo tài khoản.",
+    "favorite-manager": "Quản lý yêu thích và ghim chung với danh mục; lọc nhóm và sắp xếp bằng bàn phím.",
     ocr: "Crop ảnh và nhận dạng chữ cục bộ bằng Tesseract Việt/Anh; sửa và xuất TXT, không tải ảnh lên máy chủ."
   });
 
@@ -98,6 +102,7 @@
     return tools.sort((left, right) => {
       if (view.sort === "name") return left.name.localeCompare(right.name, "vi", { numeric: true, sensitivity: "base" }) || positions.get(left.id) - positions.get(right.id);
       if (["recent", "pinned"].includes(view.sort)) return rank(view.sort, left.id) - rank(view.sort, right.id) || positions.get(left.id) - positions.get(right.id);
+      if (view.collection !== "all") return rank(view.collection, left.id) - rank(view.collection, right.id) || positions.get(left.id) - positions.get(right.id);
       return positions.get(left.id) - positions.get(right.id);
     });
   }
@@ -250,7 +255,7 @@
         </header>
         <div class="feature-lab__body">
           <nav class="feature-lab__catalog" id="all-tool-catalog" aria-label="Danh sách công cụ">
-            <div class="feature-lab__filters"><label>Nhóm<select data-lab-group-filter><option value="all">Toàn bộ nhóm</option>${Object.entries(GROUP_META).map(([id, meta]) => `<option value="${esc(id)}">${esc(meta.label)}</option>`).join("")}</select></label><label>Bộ sưu tập<select data-lab-collection><option value="all">Tất cả</option><option value="favorites">Yêu thích</option><option value="pinned">Đã ghim</option><option value="recent">Gần đây</option></select></label><label>Engine công cụ<select data-lab-runtime-filter><option value="all">Tất cả engine</option>${Object.entries(runtimeLabels).filter(([id]) => id !== "legacy").map(([id, label]) => `<option value="${esc(id)}">${esc(label)}</option>`).join("")}</select></label><label>Sắp xếp trong nhóm<select data-lab-sort><option value="registry">Thứ tự danh mục</option><option value="name">Tên A–Z</option><option value="recent">Dùng gần đây trước</option><option value="pinned">Đã ghim trước</option></select></label><button type="button" data-lab-reset-filters>Xóa bộ lọc</button></div>
+            <div class="feature-lab__filters"><label>Nhóm<select data-lab-group-filter><option value="all">Toàn bộ nhóm</option>${Object.entries(GROUP_META).map(([id, meta]) => `<option value="${esc(id)}">${esc(meta.label)}</option>`).join("")}</select></label><label>Bộ sưu tập<select data-lab-collection><option value="all">Tất cả</option><option value="favorites">Yêu thích</option><option value="pinned">Đã ghim</option><option value="recent">Gần đây</option></select></label><label>Engine công cụ<select data-lab-runtime-filter><option value="all">Tất cả engine</option>${Object.entries(runtimeLabels).filter(([id]) => id !== "legacy").map(([id, label]) => `<option value="${esc(id)}">${esc(label)}</option>`).join("")}</select></label><label>Sắp xếp trong nhóm<select data-lab-sort><option value="registry">Thứ tự mặc định</option><option value="name">Tên A–Z</option><option value="recent">Dùng gần đây trước</option><option value="pinned">Đã ghim trước</option></select></label><button type="button" data-lab-reset-filters>Xóa bộ lọc</button></div>
             <p class="feature-lab__count" data-lab-count role="status"></p>
             <div data-lab-quick class="feature-lab__quick"></div>
             ${catalogMarkup(initialTool.id)}
@@ -319,7 +324,7 @@
         buttons.set(button.dataset.labFeature, button);
         button.hidden = !visible.has(button.dataset.labFeature);
       });
-      const ordered = filterCatalog(catalog, { ...view, group: "all", collection: "all", runtime: "all" }, preferences);
+      const ordered = filterCatalog(catalog, { ...view, group: "all", runtime: "all" }, preferences);
       for (const group of Object.keys(GROUPS)) {
         const rows = ordered.filter(tool => tool.group === group).map(tool => buttons.get(tool.id));
         const parent = rows[0]?.parentElement;
@@ -454,7 +459,8 @@
   }
 
   global.addEventListener("keydown", (event) => {
-    if (event.ctrlKey && event.altKey && event.key.toLowerCase() === "k") {
+    if (event.defaultPrevented || event.repeat || event.isComposing || event.getModifierState?.("AltGraph") || event.target?.closest?.("input,textarea,select,[contenteditable],[role=textbox]")) return;
+    if (event.ctrlKey && event.altKey && !event.shiftKey && !event.metaKey && event.key.toLowerCase() === "k") {
       event.preventDefault();
       open("global-search");
     }
