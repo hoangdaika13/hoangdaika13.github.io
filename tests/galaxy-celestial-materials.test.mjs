@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as T from '../vendor/three.module.min.js';
-import { WORLD_PROFILES, profileFor, orbitPosition, damp, surfaceMaterial, cloudMaterial, ringMaterial } from '../galaxy-celestial-materials.mjs';
+import { WORLD_PROFILES, profileFor, orbitPosition, damp, surfaceMaterial, atmosphereMaterial, cloudMaterial, ringMaterial } from '../galaxy-celestial-materials.mjs';
 import { buildLandmark, routes } from '../galaxy-workspace-renderer.mjs';
 
 test('all 11 real workspaces have a distinct spatial identity and cover five surface families',()=>{
@@ -33,11 +33,22 @@ test('materials keep instance uniforms isolated, retain lighting coordinates and
  const light=new T.Vector3(1,2,3),center=new T.Vector3(4,5,6);
  const a=surfaceMaterial(WORLD_PROFILES.learning,7,light),b=surfaceMaterial(WORLD_PROFILES.learning,7,light);
  a.uniforms.selected.value=1;assert.equal(b.uniforms.selected.value,0);
+ a.uniforms.tint.value.set('#ffffff');a.uniforms.accent.value.set('#000000');
+ assert.equal(b.uniforms.tint.value.getHexString(),WORLD_PROFILES.learning.color.slice(1));
+ assert.equal(b.uniforms.accent.value.getHexString(),WORLD_PROFILES.learning.accent.slice(1));
  assert.equal(a.uniforms.lightPosition.value,light);assert.equal(a.depthTest,true);
  const clouds=cloudMaterial(7,light),ring=ringMaterial('#aabbcc',2,3,light,center,1);
  assert.equal(clouds.depthTest,true);assert.equal(clouds.depthWrite,false);
  assert.equal(ring.uniforms.center.value,center);assert.equal(ring.depthTest,true);
  [a,b,clouds,ring].forEach(m=>m.dispose());
+});
+
+test('twilight atmosphere retains independent colors, world-space lighting and bounded transparency',()=>{
+ const light=new T.Vector3(-5,5,8),a=atmosphereMaterial(WORLD_PROFILES.ai.accent,light),b=atmosphereMaterial(WORLD_PROFILES.ai.accent,light);
+ a.uniforms.tint.value.set('#ffffff');assert.equal(b.uniforms.tint.value.getHexString(),WORLD_PROFILES.ai.accent.slice(1));
+ assert.equal(a.uniforms.lightPosition.value,light);assert.equal(a.uniforms.time.value,0);
+ assert.equal(a.transparent,true);assert.equal(a.depthTest,true);assert.equal(a.depthWrite,false);assert.equal(a.blending,T.AdditiveBlending);
+ a.dispose();b.dispose();
 });
 
 test('every landmark builds finite real geometry within a bounded object budget',()=>{

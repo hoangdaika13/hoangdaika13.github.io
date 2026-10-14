@@ -98,7 +98,7 @@
     };
     const input=event=>{if(!draftFields(app).includes(event.target))return;dirty=true;status('Đang giữ bản nháp…');scope.clearTimeout(timer);timer=scope.setTimeout(persist,400);};
     app.addEventListener('input',input);
-    const visit=()=>{prefs.recent=[route,...prefs.recent.filter(r=>r!==route)].slice(0,6);savePreferences(storage,prefs);};visit();
+    const visit=()=>{prefs=readPreferences(storage);prefs.recent=[route,...prefs.recent.filter(r=>r!==route)].slice(0,6);savePreferences(storage,prefs);};visit();
     let directory=null;
     function paintDirectory(){
       if(!directory)return;
@@ -119,10 +119,11 @@
     }
     if(route==='/home')setView(prefs.view);
     const click=event=>{
-      const view=event.target.closest('[data-gcs-view]');if(view){setView(view.dataset.gcsView);if(!savePreferences(storage,prefs))status('Chế độ xem chỉ giữ đến khi rời trang: kho lưu trữ không khả dụng.');return;}
+      const view=event.target.closest('button[data-gcs-view]');if(view && toolbar.contains(view)){prefs=readPreferences(storage);setView(view.dataset.gcsView);if(!savePreferences(storage,prefs))status('Chế độ xem chỉ giữ đến khi rời trang: kho lưu trữ không khả dụng.');return;}
       if(event.target.closest('[data-hgl1-route]')){persist();return;}
       const star=event.target.closest('[data-gcs-star],[data-gcs-favorite]');if(!star)return;
       const target=star.dataset.gcsStar||route;if(!allowed(target))return;
+      prefs=readPreferences(storage);
       prefs.favorites=prefs.favorites.includes(target)?prefs.favorites.filter(r=>r!==target):[...prefs.favorites,target];
       if(!savePreferences(storage,prefs)){status('Chưa lưu được yêu thích. Kiểm tra dung lượng hoặc quyền lưu trữ.');return;}
       star.setAttribute('aria-pressed',String(prefs.favorites.includes(target)));

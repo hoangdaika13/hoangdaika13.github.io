@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1054";
+const CACHE = "hh-identity-portal-v1055";
+// Previous release: hh-identity-portal-v1054; ./performance-loader.js?v=716; ./galaxy-stable-chrome.css?v=4; ./galaxy-living-universe.css?v=3; ./galaxy-living-universe.js?v=8; ./galaxy-layer-one.js?v=27; ./galaxy-universe-renderer.mjs?v=8; ./galaxy-workspace-renderer.mjs?v=3; ./galaxy-celestial-materials.mjs?v=3; ./galaxy-deep-space.mjs?v=1.
 // Previous release: hh-identity-portal-v1053; ./performance-loader.js?v=715; ./script.js?v=290; ./feature-lab.js?v=9; ./platform-tools.css?v=4; ./platform-tools.js?v=4; ./tool-workspace-pro.css?v=4; ./tool-workspace-pro.js?v=4; ./utility-lab-tools.css?v=12; ./utility-lab-tools.js?v=13.
 // Previous release: hh-identity-portal-v1052; ./performance-loader.js?v=714; ./feature-lab.css?v=6; ./feature-lab.js?v=8; ./platform-tools.css?v=3; ./platform-tools.js?v=3; ./tool-workspace-pro.css?v=3; ./tool-workspace-pro.js?v=3; ./utility-lab-tools.css?v=11; ./utility-lab-tools.js?v=12.
 // Previous release: hh-identity-portal-v1051; ./performance-loader.js?v=713; ./all-tool-state.js?v=1; ./feature-lab.js?v=7; ./platform-tools.css?v=2; ./platform-tools.js?v=2; ./tool-workspace-pro.css?v=2; ./tool-workspace-pro.js?v=2; ./utility-lab-tools.css?v=10; ./utility-lab-tools.js?v=11.
@@ -158,7 +159,7 @@ const RUNTIME_ASSETS = [
   "./galaxy-workbench.js?v=4",
   "./galaxy-workbench.css?v=4",
   "./galaxy-premium-workspaces.css?v=2",
-  "./galaxy-stable-chrome.css?v=4",
+  "./galaxy-stable-chrome.css?v=5",
   "./home-cosmos-motion.css?v=5",
   "./home-cosmos-motion.js?v=3",
   "./platform-home.css?v=9",
@@ -409,9 +410,9 @@ const RUNTIME_ASSETS = [
   "./galaxy-layer-one-tools.js?v=3",
   "./vendor/qrcode.js?v=1",
   "./galaxy-layer-one-backup.js?v=2",
-  "./galaxy-layer-one.js?v=27",
-  "./galaxy-cosmic-studio.js?v=4", "./galaxy-living-universe.js?v=8", "./galaxy-living-universe.css?v=3", "./galaxy-universe-renderer.mjs?v=8", "./galaxy-workspace-renderer.mjs?v=3", "./galaxy-celestial-materials.mjs?v=3",
-  "./galaxy-deep-space.mjs?v=1",
+  "./galaxy-layer-one.js?v=28",
+  "./galaxy-cosmic-studio.js?v=5", "./galaxy-living-universe.js?v=9", "./galaxy-living-universe.css?v=4", "./galaxy-universe-renderer.mjs?v=9", "./galaxy-workspace-renderer.mjs?v=4", "./galaxy-celestial-materials.mjs?v=4",
+  "./galaxy-deep-space.mjs?v=2",
   "./assets/galaxy/learning-portals-atlas-v1.png",
   // Runtime-cached on first route use; deliberately excluded from CORE.
   "./assets/galaxy/function-portals/ai-universe-v1.png",
@@ -797,7 +798,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=716",
+  "./performance-loader.js?v=717",
   "./auth-platform.js?v=22",
   "./auth-neon-gateway.js?v=35",
   "./script.js?v=291"

@@ -18,6 +18,20 @@ test('all quality prefixes include large and small stars with more than one colo
     assert.ok(new Set(stars.color.slice(0,n*3).map(v=>v.toFixed(2))).size>20);
   }
 });
+
+test('every quality tier keeps a dense tilted band and a sparse surrounding halo', () => {
+  const stars=starAttributes(),normal=[-Math.cos(-.25)*Math.sin(-1.1),Math.cos(-.25)*Math.cos(-1.1),Math.sin(-.25)];
+  for(const {stars:n} of Object.values(SKY_BUDGETS)){
+    let band=0,halo=0;
+    for(let i=0;i<n;i++){
+      const point=stars.position.slice(i*3,i*3+3),radius=Math.hypot(...point);
+      const latitude=Math.abs(point.reduce((sum,v,j)=>sum+v*normal[j],0)/radius);
+      if(latitude<.24)band++;if(latitude>.65)halo++;
+    }
+    assert.ok(band/n>.7,'most stars form the same visible band at every tier');
+    assert.ok(halo/n>.07,'a sparse halo avoids flattening the sky into a sheet');
+  }
+});
 test('one point cloud and one shared nebula geometry: quality changes allocate nothing', () => {
   const assets=new Set(),sky=createDeepSpace(a=>{assets.add(a);return a;});const count=assets.size;
   assert.equal(sky.group.children.length,4);assert.ok(sky.stars.isPoints);
@@ -35,7 +49,7 @@ test('one point cloud and one shared nebula geometry: quality changes allocate n
 });
 test('both renderers share the local sky, whose exact module version is cached',()=>{
   const read=name=>readFileSync(new URL('../'+name,import.meta.url),'utf8');
-  for(const name of ['galaxy-universe-renderer.mjs','galaxy-workspace-renderer.mjs'])assert.match(read(name),/from '\.\/galaxy-deep-space\.mjs\?v=1'/);
-  assert.match(read('sw.js'),/"\.\/galaxy-deep-space\.mjs\?v=1"/);
+  for(const name of ['galaxy-universe-renderer.mjs','galaxy-workspace-renderer.mjs'])assert.match(read(name),/from '\.\/galaxy-deep-space\.mjs\?v=2'/);
+  assert.match(read('sw.js'),/"\.\/galaxy-deep-space\.mjs\?v=2"/);
   assert.doesNotMatch(read('galaxy-deep-space.mjs'),/requestAnimationFrame|https?:\/\//);
 });

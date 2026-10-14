@@ -66,7 +66,7 @@ test("renderer lifecycle pauses offscreen work and deterministically releases GP
     /controller\.abort\(\)/
   ]) assert.match(rendererSource, contract);
 
-  assert.match(shellSource, /import\("\.\/galaxy-workspace-renderer\.mjs\?v=3"\)/);
+  assert.match(shellSource, /import\("\.\/galaxy-workspace-renderer\.mjs\?v=4"\)/);
   assert.match(shellSource, /cleanupWorkspaceScene\(runtime\)/);
   assert.match(shellSource, /workspaceSceneToken/);
   assert.match(shellSource, /owner\.workspaceScene\s*=\s*controller/);
@@ -84,8 +84,8 @@ test("CSS keeps 3D decorative, responsive and backed by the existing local porta
 
 test("release loader and offline runtime carry the exact new 3D assets", () => {
   assert.match(loaderSource, /galaxy-layer-one-worlds\.css\?v=17/);
-  assert.match(loaderSource, /galaxy-layer-one\.js\?v=27/);
+  assert.match(loaderSource, /galaxy-layer-one\.js\?v=28/);
   assert.match(serviceWorkerSource, /\.\/galaxy-layer-one-worlds\.css\?v=17/);
-  assert.match(serviceWorkerSource, /\.\/galaxy-layer-one\.js\?v=27/);
-  assert.match(serviceWorkerSource, /\.\/galaxy-workspace-renderer\.mjs\?v=3/);
+  assert.match(serviceWorkerSource, /"\.\/galaxy-layer-one\.js\?v=28"/);
+  assert.match(serviceWorkerSource, /"\.\/galaxy-workspace-renderer\.mjs\?v=4"/);
 });

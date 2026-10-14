@@ -6,9 +6,24 @@
   'use strict';
   const KEY = 'hh.galaxy.universe.v1';
   const COLORS = ['#bca1ff','#64ddce','#ffaf91','#f394d9','#9ee8aa','#efcf82','#8acafa','#dc9dce','#82e4ea','#9caefe','#c0bde6'];
+  const PORTRAIT_KINDS = Object.freeze({ ai: 'tech', music: 'gas', video: 'rock', creator: 'gas', games: 'ocean', dev: 'tech', learning: 'ocean', community: 'ocean', tools: 'ice', analytics: 'ice', settings: 'rock' });
   const clamp = (value, min, max, fallback) => Number.isFinite(Number(value)) ? Math.min(max, Math.max(min, Number(value))) : fallback;
   const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const validRoute = value => typeof value === 'string' && /^\/(?!\/)[a-z0-9/_-]+$/i.test(value);
+  function catalogSummary(catalog = []) {
+    const systems = new Set(), tools = new Set();
+    for (const entry of catalog) {
+      if (!validRoute(entry?.route)) continue;
+      systems.add(entry.route);
+      for (const child of Array.isArray(entry.children) ? entry.children : []) if (validRoute(child?.route) && child.route !== entry.route) tools.add(child.route);
+    }
+    return { systems: systems.size, tools: tools.size };
+  }
+  function portraitKind(item, parent) {
+    if (!item) return 'sun';
+    for (const id of [item.id, parent?.id]) if (Object.hasOwn(PORTRAIT_KINDS, id)) return PORTRAIT_KINDS[id];
+    return 'rock';
+  }
   function systemForTool(tool) {
     if (tool.id === 'creator-studio' || tool.route === '/create/workflow') return 'creator';
     if (tool.id === 'analytics' || tool.route === '/analytics') return 'analytics';
@@ -43,6 +58,7 @@
     if (!host?.ownerDocument) return false;
     const doc = host.ownerDocument, catalog = buildCatalog(options.manifest, options.tools);
     if (!catalog.length) return false;
+    const summary = catalogSummary(catalog);
     const storage = options.storage, personal = options.personal || {};
     let raw = {}; try { raw = JSON.parse(storage?.getItem(KEY) || '{}'); } catch {}
     let state = normalizeState(raw || {}, catalog), renderer = null, destroyed = false, loading = false, view = 'map', filter = 'all', searchTerm = '', interactive = false, previewed = '';
@@ -53,7 +69,7 @@
     const device = { saveData: scope.navigator?.connection?.saveData, memory: scope.navigator?.deviceMemory, cores: scope.navigator?.hardwareConcurrency };
     const prefs = () => scope.HHGalaxyCosmicStudio?.readPreferences(storage) || { favorites: [], recent: [] };
     host.innerHTML = `<section class="glu" aria-labelledby="glu-title" data-glu>
-      <header class="glu-intro"><div><span class="glu-eyebrow">A LIVING CREATIVE UNIVERSE</span><h2 id="glu-title">Một thiên hà. Vô vàn ý tưởng.</h2><p>Chọn một hành tinh để khám phá; chỉ mở công cụ khi bạn sẵn sàng.</p></div><span class="glu-count">${catalog.length} vùng chức năng<br><small>Từ registry hiện có</small></span></header>
+      <header class="glu-intro"><div><span class="glu-eyebrow">HH GALAXY / ASTRAL ATLAS</span><h2 id="glu-title">Vũ trụ của những ý tưởng.</h2><p>Khám phá hệ hành tinh, xem trước công cụ và mở workspace ngay trong HH Platform.</p></div><div class="glu-count" aria-label="Danh mục chức năng hiện có"><span><strong data-glu-system-count>${summary.systems}</strong><small>hệ hành tinh</small></span><span><strong data-glu-tool-count>${summary.tools}</strong><small>công cụ con</small></span></div></header>
       <div class="glu-controls" role="group" aria-label="Điều khiển thế giới Galaxy">
         <button type="button" data-glu-action="overview">◎ Toàn cảnh</button><button type="button" data-glu-action="back" disabled>← Hệ trước</button>
         <button type="button" data-glu-action="reset-camera">↺ Đặt lại góc nhìn</button>
@@ -111,8 +127,11 @@
       const item = selected();
       const hover = entries().find(entry => entry.route === previewed);
       const target = hover || item || currentSystem();
+      root.style.setProperty('--glu-active-accent', target?.color || '#bca1ff');
+      root.dataset.portraitKind = portraitKind(target, currentSystem());
       const canPin = target && personal.canPersonalize?.(target.route);
       query('[data-glu-preview]').innerHTML = target ? `<span class="glu-eyebrow">${hover ? 'ĐANG XEM TRƯỚC' : item ? 'ĐANG CHỌN' : 'HỆ HIỆN TẠI'}</span><div class="glu-portrait" style="--glu-accent:${target.color}" aria-hidden="true"></div><h3>${escape(target.title)}</h3><p>${escape(target.description)}</p><div class="glu-actions"><a class="glu-primary" href="#${escape(target.route)}" data-glu-open="${escape(target.route)}">Mở workspace ↗</a>${target.children.length ? `<button type="button" data-glu-system="${escape(target.id)}">Khám phá ${target.children.length} công cụ →</button>` : ''}<button type="button" data-glu-star="${escape(target.route)}" aria-pressed="${isFavorite(target)}" ${!target.route.startsWith('/galaxy/') && !canPin ? 'disabled title="Lưu mục cha bằng sidebar HH Platform"' : ''}>${isFavorite(target) ? '♥ Đã yêu thích' : '♡ Yêu thích'}</button>${canPin ? `<button type="button" data-glu-pin="${escape(target.route)}" aria-pressed="${(personal.getPins?.() || []).includes(target.route)}">${(personal.getPins?.() || []).includes(target.route) ? '★ Đã ghim' : '☆ Ghim sidebar'}</button>` : ''}</div><small>Công cụ mở trong khung HH Platform. Dịch vụ trực tuyến được kiểm tra tại workspace.</small>` : `<span class="glu-eyebrow">TRẠM ĐỊNH HƯỚNG</span><div class="glu-portrait glu-portrait--sun" aria-hidden="true"></div><h3>Ý tưởng bắt đầu từ đâu?</h3><p>Chạm vào một hành tinh hoặc chọn điểm đến bên dưới. Xem mô tả trước khi mở công cụ.</p><div class="glu-legend"><span><i></i> Hành tinh: vùng chức năng</span><span><i></i> Vệ tinh: công cụ trong hệ</span></div><p class="glu-small">Danh sách và bản đồ dùng cùng registry. Không có điểm đến giả.</p>`;
+      query('.glu-portrait')?.setAttribute('data-kind', portraitKind(target, currentSystem()));
     }
     function paintCards() {
       const recent = [...prefs().recent, ...(personal.getRecent?.() || [])];
@@ -156,7 +175,7 @@
       query('[data-glu-action="retry"]').hidden = true;
       query('[data-glu-render-status]').textContent = 'Đang tải cảnh 3D trên thiết bị…';
       try {
-        const module = await import('./galaxy-universe-renderer.mjs?v=8');
+        const module = await import('./galaxy-universe-renderer.mjs?v=9');
         if (destroyed || token !== loadToken) return;
         renderer = module.mount(query('[data-glu-canvas]'), {
           onSelect: route => select(route), onHover: route => { previewed = route; paintPreview(); }, onCamera: scheduleSave,
@@ -261,5 +280,5 @@
     updateWorld(); void loadRenderer();
     return { setView, destroy() { if (destroyed) return; save(); destroyed = true; loadToken++; controller.abort(); observer?.disconnect(); scope.clearTimeout(saveTimer); renderer?.destroy(); renderer = null; host.replaceChildren(); } };
   }
-  return Object.freeze({ buildCatalog, normalizeState, effectiveQuality, mount });
+  return Object.freeze({ buildCatalog, catalogSummary, portraitKind, normalizeState, effectiveQuality, mount });
 });

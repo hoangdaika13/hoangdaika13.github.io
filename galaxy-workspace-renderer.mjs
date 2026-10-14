@@ -1,7 +1,7 @@
 /* Original procedural artwork. One disposable scene per active workspace. */
 import * as T from './vendor/three.module.min.js';
-import { createDeepSpace } from './galaxy-deep-space.mjs?v=1';
-import { WORLD_PROFILES, profileFor, surfaceMaterial, atmosphereMaterial, cloudMaterial, ringMaterial, orbitPosition } from './galaxy-celestial-materials.mjs?v=3';
+import { createDeepSpace } from './galaxy-deep-space.mjs?v=2';
+import { WORLD_PROFILES, profileFor, surfaceMaterial, atmosphereMaterial, cloudMaterial, ringMaterial, orbitPosition } from './galaxy-celestial-materials.mjs?v=4';
 
 export const routes=Object.freeze(Object.keys(WORLD_PROFILES).map(id=>'/galaxy/'+id));
 function glowTexture(doc) {

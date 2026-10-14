@@ -1,7 +1,7 @@
 // Original procedural artwork. One disposable WebGL renderer for the Galaxy map.
 import * as T from './vendor/three.module.min.js';
-import { vertex, noise, surfaceMaterial, atmosphereMaterial, cloudMaterial, ringMaterial, profileFor, damp, orbitPosition } from './galaxy-celestial-materials.mjs?v=3';
-import { createDeepSpace } from './galaxy-deep-space.mjs?v=1';
+import { vertex, noise, surfaceMaterial, atmosphereMaterial, cloudMaterial, ringMaterial, profileFor, damp, orbitPosition } from './galaxy-celestial-materials.mjs?v=4';
+import { createDeepSpace } from './galaxy-deep-space.mjs?v=2';
 
 const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 const sunFragment = `${noise} uniform float time; varying vec3 vLocal; varying vec3 vNormal; varying vec3 vPosition;

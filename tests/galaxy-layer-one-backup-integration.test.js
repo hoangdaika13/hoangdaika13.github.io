@@ -36,7 +36,7 @@ function bridgeBackupApi(overrides) {
 }
 
 function scriptAsset(source, fileName) {
-  const expression = new RegExp(`(?:\\./)?${fileName.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")}\\?v=(\\d+)`, "g");
+  const expression = new RegExp(`["'](?:\\./)?${fileName.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")}\\?v=(\\d+)["']`, "g");
   const matches = [...source.matchAll(expression)];
   assert.ok(matches.length, `${fileName} must be versioned`);
   return Object.freeze({ token: `${fileName}?v=${matches[0][1]}`, version: Number(matches[0][1]), index: matches[0].index });
