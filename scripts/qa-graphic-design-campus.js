@@ -3,7 +3,7 @@
 const fs = require("node:fs"), path = require("node:path"), http = require("node:http"), assert = require("node:assert/strict");
 const { execFileSync } = require("node:child_process");
 const { chromium } = require(process.env.HH_QA_PLAYWRIGHT || "playwright");
-const repo = path.resolve(__dirname, ".."), output = path.join(repo, ".study-local/graphic-design-campus-1056");
+const repo = path.resolve(__dirname, ".."), output = path.join(repo, ".study-local/graphic-design-campus-1057");
 const results = [], routes = [], pageErrors = [], cspErrors = [], publicErrors = [], backendDoubles = [];
 const gitFile = (file, staged = false) => execFileSync("git", ["show", `${staged ? ":" : "HEAD:"}${file}`], { cwd: repo, maxBuffer: 10 * 1048576 });
 const csp = JSON.parse(gitFile("vercel.json").toString()).headers.flatMap(row => row.headers).find(row => row.key === "Content-Security-Policy").value;
@@ -11,7 +11,7 @@ const server = http.createServer((req, res) => {
   const name = decodeURIComponent(new URL(req.url, "http://localhost").pathname), relative = name.slice(1);
   if (relative === "tests/fixtures/graphic-campus-probe.html") {
     res.setHeader("Content-Type", "text/html"); res.setHeader("Content-Security-Policy", csp);
-    return res.end('<!doctype html><html lang="vi"><meta charset="utf-8"><title>Isolated real document API probe</title><body><main id="probe"></main><script src="/graphic-design-project-context.js"></script><script src="/graphic-design-universal.js"></script></body></html>');
+    return res.end('<!doctype html><html lang="vi"><meta charset="utf-8"><title>Isolated real document API probe</title><body><main id="probe"></main><script src="/graphic-design-project-context.js"></script><script src="/vendor/polygon-clipping-0.15.7.umd.min.js"></script><script src="/graphic-design-geometry.js"></script><script src="/graphic-design-universal.js"></script></body></html>');
   }
   const file = path.resolve(repo, "." + name);
   if (!file.startsWith(repo + path.sep) || name.split("/").some(part => part.startsWith(".") || ["api", "utils", "node_modules"].includes(part))) return res.writeHead(403).end();
@@ -157,7 +157,7 @@ async function run() {
     // Control visibility/RAF delivery while the real Three module initializes;
     // this is a scheduling-race test, not a physical background-tab benchmark.
     const graphicsLifecycle = await context.newPage();await graphicsLifecycle.goto(origin + '/tests/fixtures/graphic-campus-probe.html');
-    await graphicsLifecycle.addScriptTag({url:origin+'/graphic-design-3d.js?v=5'});
+    await graphicsLifecycle.addScriptTag({url:origin+'/graphic-design-3d.js?v=6'});
     await graphicsLifecycle.evaluate(()=>{
       window.qaHidden=true;Object.defineProperty(document,'hidden',{configurable:true,get:()=>qaHidden});
       window.qaFrames=new Map();window.qaFrameId=0;
@@ -213,6 +213,99 @@ async function run() {
     assert.deepEqual(restored, { id: 'qa-import-document', remapped: true, linked: true, dimensions: [1024, 768], checksum: assetResult.checksum, expectedChecksum: assetResult.checksum, ok: true, crossAccount: false });
     await clean.close(); await fixture.close();
     pass("Real original1024×768 asset exports SVG→decodedPNG with exact known pixels; portablepackage imports into a clean browser context with remappedIDs, same checksum, full dimensions and account-isolated originals");
+    const advanced = await context.newPage(); await advanced.goto(origin + '/tests/fixtures/graphic-campus-probe.html');
+    for(const file of ['graphic-design-vector-core.js','graphic-design-vector-bridge.js','graphic-design-export-center.js'])await advanced.addScriptTag({url:origin+'/'+file});
+    await advanced.evaluate(async()=>{
+      const host=document.querySelector('#probe'),nativeRoot=document.createElement('div'),bridgeRoot=document.createElement('section');host.append(nativeRoot,bridgeRoot);
+      const ctx=HHGraphicProjectContext.resolve({accountId:'qa-bridge-account',projectId:'qa-bridge-project'});
+      window.qaShared=HHGraphicDesignUniversal.mount(host,{projectContext:ctx});
+      window.qaVector=HHGraphicVectorCore.mount(nativeRoot,{storage:ctx.engineStorage,projectContext:ctx});await qaVector.ready;
+      qaVector.setProject({format:HHGraphicVectorCore.FORMAT,meta:{name:'QA editable transfer'},stage:{width:640,height:480,background:'#101010'},layers:[{id:'source-shape',type:'rect',name:'Transferred red shape',geometry:{x:32,y:40,width:120,height:80},style:{fill:'#ff0000',stroke:'none'},transform:{x:10,y:20}}],timeline:{duration:3}});
+      window.qaBridge=HHGraphicVectorBridge.mount(bridgeRoot,{vectorController:qaVector,designDocumentController:qaShared});window.qaBridgeRoot=bridgeRoot;window.qaNativeRoot=nativeRoot;
+    });
+    await advanced.locator('.gd-vector-bridge summary').click();await advanced.locator('[data-gvb-check]').click();await advanced.locator('[data-gvb-copy]').click();
+    await advanced.waitForFunction(()=>/Đã tạo và lưu/.test(document.querySelector('[data-gvb-status]').textContent));
+    const bridgeResult=await advanced.evaluate(async()=>{
+      const copied=qaShared.document,frame=copied.frames.at(-1),layer=copied.layers.at(-1);
+      const editable=layer.type==='path'&&layer.pathPoints.length===5&&layer.pathPoints[0].x===42&&layer.pathPoints[0].y===60;
+      const baseFrames=copied.frames.length;qaShared.undo();const undoFrames=qaShared.document.frames.length;qaShared.redo();await qaShared.save();
+      const ctx=HHGraphicProjectContext.resolve({accountId:'qa-bridge-account',projectId:'qa-bridge-project'});
+      qaBridge.destroy();HHGraphicVectorCore.unmount(qaNativeRoot);qaShared.unmount();
+      window.qaShared=HHGraphicDesignUniversal.mount(document.querySelector('#probe'),{projectContext:ctx});
+      const restored=qaShared.document;
+      return{editable,baseFrames,undoFrames,reloaded:restored.frames.at(-1).id===frame.id,retainedOriginal:restored.frames.length===2};
+    });
+    assert.deepEqual(bridgeResult,{editable:true,baseFrames:2,undoFrames:1,reloaded:true,retainedOriginal:true});
+    await advanced.evaluate(()=>{
+      qaShared.dispatch('add-layer',{type:'ellipse',x:160,y:100,width:180,height:180,fill:'#00ff00',stroke:'none'});const first=qaShared.document.selectedLayerId;
+      qaShared.dispatch('add-layer',{type:'ellipse',x:210,y:150,width:80,height:80,fill:'#00ff00',stroke:'none'});qaShared.select([first,qaShared.document.selectedLayerId]);
+    });
+    await advanced.locator('[data-gdu-planet="vector"]').click();await advanced.locator('[data-gdu-boolean="subtract"]').click();
+    const booleanResult=await advanced.evaluate(()=>{const doc=qaShared.document,layer=doc.layers.find(item=>item.id===doc.selectedLayerId);return{type:layer?.type,engine:layer?.metadata.booleanGeometry.engine,approximate:layer?.metadata.booleanGeometry.approximate,tolerance:layer?.metadata.booleanGeometry.tolerance,contours:(layer?.pathData.match(/M /g)||[]).length};});
+    assert.deepEqual(booleanResult,{type:'path',engine:'polygon-clipping-0.15.7',approximate:true,tolerance:.25,contours:2});
+    await go('vector');await page.locator('.gd-vector-bridge').waitFor();await page.locator('.gd-vector-bridge summary').click();
+    for(const width of [1440,375]){await page.setViewportSize({width,height:1000});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));}
+    await page.setViewportSize({width:1440,height:1000});
+    pass('Real Vector bridge controls create an editable new frame without replacing original; undo/redo and save/remount restore; Vector Forge UI subtracts curved shapes into a true two-contour hole; shell1440/375 layout verified');
+    const exportResult=await advanced.evaluate(async()=>{
+      const api=HHGraphicDesignUniversal;
+      let source=api.defaultDocument({name:'QA multipage'});source.layers=[];source.frames[0].width=64;source.frames[0].height=48;source.frames[0].background='#ff0000';
+      source=api.operation(source,'add-frame',{name:'Blue second page',width:80,height:60,background:'#0000ff'});
+      const controller={get document(){return structuredClone(source);},getAsset:async()=>null,prepareExportSVG:options=>api.prepareExportSVG(source,options)};
+      const png=await HHGraphicExportCenter.exportSharedDocument(controller,'png',{frameId:source.frames[0].id,scale:2,runtime:globalThis});
+      const image=await createImageBitmap(png.blob),canvas=document.createElement('canvas');canvas.width=image.width;canvas.height=image.height;canvas.getContext('2d').drawImage(image,0,0);image.close();
+      const pixel=[...canvas.getContext('2d').getImageData(10,10,1,1).data];
+      const pdf=await HHGraphicExportCenter.exportSharedDocument(controller,'pdf',{allFrames:true,scale:2,runtime:globalThis});
+      const pdfjs=await import('/vendor/pdf.min.mjs');pdfjs.GlobalWorkerOptions.workerSrc='/vendor/pdf.worker.min.mjs';
+      const task=pdfjs.getDocument({data:new Uint8Array(await pdf.blob.arrayBuffer())});const file=await task.promise;
+      const pages=[];
+      for(let i=1;i<=file.numPages;i++){const page=await file.getPage(i),viewport=page.getViewport({scale:96/72}),c=document.createElement('canvas');c.width=Math.round(viewport.width);c.height=Math.round(viewport.height);await page.render({canvasContext:c.getContext('2d'),viewport}).promise;pages.push({size:[c.width,c.height],pixel:[...c.getContext('2d').getImageData(10,10,1,1).data]});c.dataset.qaPdf=String(i);document.body.append(c);}
+      await file.destroy();
+      const abort=new AbortController();abort.abort();let aborted=false;try{await HHGraphicExportCenter.exportSharedDocument(controller,'png',{signal:abort.signal,runtime:globalThis});}catch(e){aborted=e.name==='AbortError';}
+      return{png:[png.width,png.height,png.blob.type],pixel,pages,aborted};
+    });
+    assert.deepEqual(exportResult.png,[128,96,'image/png']);assert.deepEqual(exportResult.pixel,[255,0,0,255]);assert.equal(exportResult.pages.length,2);
+    assert.deepEqual(exportResult.pages.map(p=>p.size),[[64,48],[80,60]]);
+    assert.ok(exportResult.pages[0].pixel[0]>245&&exportResult.pages[0].pixel[2]<10);assert.ok(exportResult.pages[1].pixel[2]>245&&exportResult.pages[1].pixel[0]<10);assert.equal(exportResult.aborted,true);
+    await advanced.locator('[data-qa-pdf="1"]').screenshot({path:path.join(output,'export-pdf-page1.png')});
+    await advanced.locator('[data-qa-pdf="2"]').screenshot({path:path.join(output,'export-pdf-page2.png')});
+    await advanced.close();
+    pass('Actual shared PNG2x dimensions/pixels and two-page raster PDF reopened/rendered by PDF.js retain page sizes/colors; already-aborted export produces no file');
+    const assetPage=await context.newPage();await assetPage.goto(origin+'/tests/fixtures/graphic-campus-probe.html');await assetPage.addScriptTag({url:origin+'/graphic-design-3d.js?v=6'});
+    const restored3D=await assetPage.evaluate(async()=>{
+      const api=HHGraphic3D,ctx=HHGraphicProjectContext.resolve({accountId:'qa-3d-originals',projectId:'qa-model-texture'}),host=document.querySelector('#probe');
+      let c=api.mount(host,{storage:ctx.engineStorage,projectContext:ctx});await c.ready;
+      const positions=new Float32Array([-1,0,0,1,0,0,0,1,0]),base64=btoa(String.fromCharCode(...new Uint8Array(positions.buffer)));
+      const gltf={asset:{version:'2.0'},buffers:[{uri:'data:application/octet-stream;base64,'+base64,byteLength:36}],bufferViews:[{buffer:0,byteOffset:0,byteLength:36}],accessors:[{bufferView:0,componentType:5126,count:3,type:'VEC3'}],meshes:[{primitives:[{attributes:{POSITION:0}}]}],nodes:[{mesh:0}],scenes:[{nodes:[0]}],scene:0};
+      const file=new File([JSON.stringify(gltf)],'synthetic-triangle.gltf',{type:'model/gltf+json'}),imported=await c.importFiles([file]);
+      if(!imported?.ok)throw Error('3D original import failed: '+JSON.stringify(imported));
+      const canvas=document.createElement('canvas');canvas.width=canvas.height=32;canvas.getContext('2d').fillStyle='#ffaa55';canvas.getContext('2d').fillRect(0,0,32,32);const png=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+      const texture=await c.applyTexture('map',new File([png],'synthetic-surface.png',{type:'image/png'})),environment=await c.applyEnvironment(new File([png],'synthetic-environment.png',{type:'image/png'}));
+      if(!texture.ok||!environment.ok)throw Error('3D texture/environment failed: '+JSON.stringify({texture,environment}));
+      const model=c.getState().objects.find(o=>o.id===imported.objectId),original=await c.getAsset(model.asset.storageId),checksum=await HHGraphicDesignUniversal.checksumBlob(original.files[0].blob),expected=await HHGraphicDesignUniversal.checksumBlob(file);
+      const saved=c.save();c.destroy();c=api.mount(host,{storage:ctx.engineStorage,projectContext:ctx});await c.ready;
+      const other=api.createBinaryAssetStore({projectContext:HHGraphicProjectContext.resolve({accountId:'qa-3d-other',projectId:ctx.projectId})}),otherProject=api.createBinaryAssetStore({projectContext:HHGraphicProjectContext.resolve({accountId:ctx.accountId,projectId:'qa-3d-other-project'})});
+      const isolated=(await other.get(model.asset.storageId))===null&&(await otherProject.get(model.asset.storageId))===null;other.close();otherProject.close();
+      window.qa3DAssets=c;
+      return{checksumMatch:checksum===expected,restored:c.getAssetState(),model:c.getState().objects.find(o=>o.id===model.id)?.asset.status,isolated,saved:saved?.ok??c.getSaveState().status==='saved',metrics:!!c.getMetrics()};
+    });
+    assert.equal(restored3D.checksumMatch,true);assert.equal(restored3D.restored.restored,3);assert.equal(restored3D.restored.missing,0);assert.equal(restored3D.model,'imported');assert.equal(restored3D.isolated,true);assert.equal(restored3D.saved,true);assert.equal(restored3D.metrics,true);
+    const modelName=assetPage.locator('[data-g3d-field="name"]');await modelName.fill('QA focus survives render');await modelName.focus();
+    await assetPage.evaluate(()=>window.qaFocused3D=document.activeElement);await assetPage.waitForTimeout(300);
+    assert.ok(await assetPage.evaluate(()=>qaFocused3D===document.activeElement&&qaFocused3D.value==='QA focus survives render'));
+    assert.ok(await assetPage.evaluate(()=>{const toolbar=document.querySelector('.g3d-toolbar').getBoundingClientRect(),canvas=document.querySelector('[data-g3d-canvas]').getBoundingClientRect();return toolbar.height<150&&canvas.top-toolbar.bottom<10;}),'3D toolbar must not occupy the canvas grid row');
+    await assetPage.screenshot({path:path.join(output,'3d-originals-restored.png'),fullPage:false});
+    await assetPage.locator('[data-g3d-canvas]').screenshot({path:path.join(output,'3d-restored-canvas.png')});
+    await assetPage.evaluate(()=>qa3DAssets.destroy());await assetPage.close();
+    pass('Real Three+IndexedDB original glTF bytes/checksum, texture and environment save/remount restoration verified; other account/project cannot read binary records');
+    await go('export');await page.locator('[data-hec-shared="format"]').selectOption('png');await page.locator('[data-hec-shared="scale"]').selectOption('2');
+    const downloadPromise=page.waitForEvent('download');await page.locator('[data-hec-action="shared-export"]').click();const download=await downloadPromise;
+    assert.match(download.suggestedFilename(),/\.png$/);await download.saveAs(path.join(output,'shared-export-ui.png'));
+    const pngBytes=fs.readFileSync(path.join(output,'shared-export-ui.png'));assert.equal(pngBytes.subarray(1,4).toString(),'PNG');assert.ok(pngBytes.readUInt32BE(16)>0&&pngBytes.readUInt32BE(20)>0);
+    await page.setViewportSize({width:375,height:900});await page.evaluate(()=>document.documentElement.style.zoom='2');
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Export375px CSSzoom200 must not overflow');
+    await page.evaluate(()=>document.documentElement.style.zoom='1');await page.setViewportSize({width:1440,height:1000});
+    pass('Actual Export Center button downloads a decoded PNG file; new controls stay within375px at CSSzoom200');
     assert.deepEqual(pageErrors, []); assert.deepEqual(cspErrors, []); assert.deepEqual(publicErrors, []);
     assert.ok(!backendDoubles.some(row => row.method === 'POST' && /\/api\/(ai|image|video|generate)/i.test(row.pathname)));
     pass("No uncaught JavaScript, shader/CSP or publicasset errors and no paidproviderPOST; backend unavailable is explicit test doubles only");

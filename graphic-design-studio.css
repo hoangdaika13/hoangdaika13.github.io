@@ -1976,6 +1976,18 @@ body.app-graphic-design-tool-route .app-workspace {
   .graphic-design-studio .gd-focused-workspace :is(button,select) { max-width:100%; }
 }
 @media(prefers-reduced-motion:reduce) { .graphic-design-studio *,.graphic-design-studio *::before,.graphic-design-studio *::after { animation:none !important; scroll-behavior:auto !important; } }
+.gd-vector-bridge { margin:0 0 16px; padding:16px; border:1px solid #63e8ff55; border-radius:14px; background:linear-gradient(110deg,#112139,#21172e); color:#e8f3ff; overflow-wrap:anywhere; }
+.gd-vector-bridge summary { cursor:pointer; font-weight:700; color:#95edff; }
+.gd-vector-bridge p { font-size:13px; line-height:1.7; color:#c2cfe2; max-width:90ch; }
+.gd-vector-bridge-actions { display:flex; flex-wrap:wrap; gap:12px; align-items:end; }
+.gd-vector-bridge-actions label { display:grid; gap:6px; font-size:13px; }
+.gd-vector-bridge input { width:140px; max-width:100%; }
+.gd-vector-bridge :is(button,input) { min-height:42px; padding:9px 12px; color:#f0f6ff; border:1px solid #7d9cc280; border-radius:8px; background:#111c30; }
+.gd-vector-bridge button:disabled { opacity:.55; cursor:not-allowed; }
+.gd-vector-bridge :is(button,input,summary):focus-visible { outline:3px solid #63e8ff; outline-offset:3px; }
+.gd-vector-bridge output { display:block; margin-top:12px; white-space:pre-line; line-height:1.6; font-size:13px; color:#d2e6fb; }
+@media(max-width:600px) { .gd-vector-bridge-actions { display:grid; grid-template-columns:minmax(0,1fr); } .gd-vector-bridge input { width:100%; } }
+@media(forced-colors:active) { .gd-vector-bridge { background:Canvas; color:CanvasText; border-color:CanvasText; } .gd-vector-bridge :is(summary,p,output) { color:CanvasText; } .gd-vector-bridge :is(button,input) { background:ButtonFace; color:ButtonText; border-color:ButtonText; } }
 @media(forced-colors:active) {
   .graphic-design-studio .gdc-command,.graphic-design-studio .gdc-guide { background:Canvas; color:CanvasText; border:1px solid CanvasText; box-shadow:none; }
   .gdc-heading :is(strong,small),.gdc-guide p,.gdc-guide summary,.gdc-finder :is(label,output),.gdc-status { color:CanvasText; }

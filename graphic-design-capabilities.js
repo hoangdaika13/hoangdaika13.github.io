@@ -3,14 +3,14 @@
   const KEY = 'hh.graphic-design.interface.v1';
   const mounted = new WeakMap();
   const CATALOG = Object.freeze([
-    ['vector','Vector & Motion Core','Vẽ path, Bezier, layer và keyframe.','Lưu JSON/SVG để chuyển đổi; không mặc định mọi thuộc tính tương thích studio khác.','vector logo bezier svg'],
+    ['vector','Vector & Motion Core','Vẽ Bézier, keyframe và chuyển một thời điểm thành frame có thể sửa trong tài liệu chung.','Chuyển tĩnh có kiểm tra: không chuyển timeline, mask, Trim Path hoặc scale không đều. Boolean đường cong trong tài liệu chung dùng sai số tối đa 0,25px; Arc SVG cần đổi sang Bézier.','vector logo bezier svg boolean chuyển frame'],
     ['nondestructive','Non-destructive Editing','Chỉnh ảnh bằng các bước có thể thay đổi lại.','Giữ bản gốc; kiểm tra mask/filter khi chuyển sang định dạng khác.','ảnh photo crop filter mask'],
     ['typography','Typography Studio Pro','Chỉnh chữ, màu, khoảng cách và text path.','Font cần được cấp phép; OpenType tùy theo font và engine.','chữ font type text'],
     ['effects','Node Effects Composer','Ghép hiệu ứng bằng graph có đầu vào/đầu ra.','Graph không hợp lệ cần sửa trước khi render; preview có thể giảm độ phân giải.','node blur glow mask'],
     ['quick-motion','Motion Maker','Tạo chuyển động ngắn bằng preset và keyframe.','Chỉ xuất định dạng engine hỗ trợ; JSON không phải video.','motion logo animation'],
     ['animation','Animation 2D','Dựng timeline và chỉnh keyframe 2D.','Preview chuyển động không đồng nghĩa hỗ trợ mọi codec xuất.','timeline frame easing'],
     ['state-machine','State Machine & Data Binding','Kiểm tra state, trigger và binding có kiểu.','Không chạy JavaScript tùy ý từ project nhập vào.','state interaction data'],
-    ['3d','3D Scene Studio','Sắp xếp vật thể, camera, ánh sáng và vật liệu.','Model/texture nhị phân của engine riêng có thể cần nhập lại; HDR/EXR và DOF chưa có renderer tương ứng.','3d model gltf camera'],
+    ['3d','3D Scene Studio','Sắp xếp vật thể, camera và ánh sáng; lưu bản gốc model/texture trên thiết bị theo dự án.','GLB/glTF chỉ theo subset loader hiện hỗ trợ; dữ liệu gốc không đi kèm JSON scene. HDR/EXR, Draco/KTX2 và rig/skinning chưa được hỗ trợ.','3d model gltf glb camera texture khôi phục'],
     ['mockup','3D Device Mockup','Trình bày thiết kế trên khung thiết bị.','Kiểm tra khả năng phối cảnh/3D thực tế trước khi xuất.','mockup phone laptop device'],
     ['character','Character Creator','Chỉnh nhân vật, biểu cảm và pose.','Asset và rig thuộc engine nhân vật; không cam kết mô phỏng người thật.','character nhân vật rig pose'],
     ['simulation','Simulation Lab','Thử particle, lực và chuyển động có seed.','Mô phỏng thiết kế có giới hạn, không phải kết quả vật lý khoa học.','particle physics spring'],
@@ -24,14 +24,22 @@
     ['collaboration','Live Collaboration','Kết nối phòng, bình luận và quyền theo backend.','Chỉ online khi máy chủ xác nhận. Hiện không coi presence là đồng bộ toàn bộ document.','realtime team phòng'],
     ['review','Review & Approval','Ghim nhận xét và theo dõi phiên bản duyệt.','Chia sẻ local-browser-profile chỉ mở trong cùng hồ sơ trình duyệt, không phải link bảo mật online.','review comment approval'],
     ['dev-ai','Dev Mode & Controlled AI','Inspect thiết kế, token và công việc AI có xác nhận.','Heuristic cục bộ không phải AI provider; API ngoài cần cấu hình và sự đồng ý.','ai css handoff dev'],
-    ['export','Export Center Pro','Kiểm tra đầu ra và xếp hàng xuất.','PDF/MP4/WAV cần encoder thật; ảnh/video xuất phải được mở lại để kiểm tra.','export png svg video pdf'],
+    ['export','Export Center Pro','Xuất frame tài liệu chung thành SVG, PNG/JPEG/WebP hoặc PDF nhiều trang dạng ảnh; đóng gói asset gốc.','PDF tài liệu chung là ảnh RGB, không phải vector/chữ tìm kiếm hoặc chuẩn in CMYK. Queue artboard riêng vẫn cần encoder cho PDF/MP4/WAV.','export png svg video pdf nhiều trang'],
     ['plugins','Plugin & Extension SDK','Nạp gói declarative với quyền được kiểm tra.','Không chạy mã tùy ý; lệnh chỉ áp dụng trong phạm vi host hỗ trợ.','plugin extension package'],
     ['performance','Performance Workspace','Xem asset, object và phép đo có nguồn.','Nhịp RAF giao diện không phải FPS render 3D; số không đo được phải ghi chưa có.','performance fps memory proxy'],
     ['composer','Universal Scene Composer','Ghép đối tượng, nội dung và chuyển động.','Một số đối tượng là proxy 2D; không gọi preview đó là render 3D hoặc video hoàn chỉnh.','composer scene audio 3d']
   ].map(([id,title,task,limit,keywords]) => Object.freeze({id,title,task,limit,keywords,route:'/graphic-design/'+id})));
   const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase();
-  const search = value => { const terms=normalize(value).trim().split(/\s+/).filter(Boolean); return CATALOG.filter(item=>terms.every(term=>normalize([item.title,item.task,item.keywords].join(' ')).includes(term))); };
+  const search = value => {
+    const terms=normalize(value).trim().split(/\s+/).filter(Boolean);
+    return CATALOG.map((item,index)=>{
+      const fields=[normalize(item.keywords),normalize(item.title),normalize(item.task)];
+      if(!terms.every(term=>fields.some(field=>field.includes(term))))return null;
+      const score=terms.reduce((sum,term)=>sum+Math.max(...fields.map((field,i)=>field.split(/[^a-z0-9]+/).includes(term)?[8,6,4][i]:field.includes(term)?1:0)),0);
+      return{item,index,score};
+    }).filter(Boolean).sort((a,b)=>b.score-a.score||a.index-b.index).map(row=>row.item);
+  };
   function preferences(raw) {
     return {version:1,theme:['nebula','aurora','solar'].includes(raw?.theme)?raw.theme:'nebula',focus:raw?.focus===true,motion:raw?.motion!==false};
   }

@@ -9,6 +9,7 @@
   const MAX_CANVAS_EDGE = 16384;
   const MAX_QUEUE_JOBS = 100;
   const MAX_RETRY_ATTEMPTS = 3;
+  const SHARED_EXPORT_LIMITS = Object.freeze({ edge: 16384, pixels: 33554432, totalPixels: 100663296, pages: 32, bytes: 67108864 });
   const SYSTEM_FONTS = Object.freeze(["Arial", "Helvetica", "Inter", "Georgia", "Times New Roman", "Verdana", "system-ui", "sans-serif", "serif", "monospace"]);
   const instances = new WeakMap();
 
@@ -562,7 +563,20 @@
   async function canvasToBlob(canvas, mime, quality, signal) {
     assertNotAborted(signal);
     if (typeof canvas.toBlob !== "function") throw new ExportCapabilityError("canvas.toBlob không được hỗ trợ.", "unsupported");
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, mime, quality));
+    const blob = await new Promise((resolve, reject) => {
+      let settled = false;
+      const finish = (result, error) => {
+        if (settled) return;
+        settled = true;
+        signal?.removeEventListener?.("abort", onAbort);
+        if (error) reject(error); else resolve(result);
+      };
+      const onAbort = () => { const error = new Error("Export đã bị hủy."); error.name = "AbortError"; finish(null, error); };
+      signal?.addEventListener?.("abort", onAbort, { once: true });
+      try { canvas.toBlob(result => finish(result), mime, quality); }
+      catch (error) { finish(null, error); }
+      if (signal?.aborted) onAbort();
+    });
     assertNotAborted(signal);
     if (!blob) throw new ExportCapabilityError(`Trình duyệt không tạo được ${mime}.`, "encode-failed");
     if (!blob.size) throw new ExportCapabilityError(`Trình duyệt tạo tệp ${mime} rỗng.`, "empty-output");
@@ -1101,6 +1115,9 @@
       @media(max-width:680px){.hec-top{align-items:flex-start;flex-wrap:wrap}.hec-top-actions{width:100%;overflow:auto}.hec-layout{display:block}.hec-panel:first-child{border-right:0;border-bottom:1px solid var(--hec-line)}.hec-panel:last-child{display:block}.hec-panel:last-child .hec-section+.hec-section{margin-top:16px;padding-top:14px;border-top:1px solid var(--hec-line)}.hec-preview{grid-template-columns:1fr}.hec-preview-copy{display:none}}
       @media(max-width:420px){.hec{width:100%;max-width:100%;border-radius:0}.hec-top{padding:9px 10px}.hec-brand small{max-width:250px}.hec-top-actions button{flex:0 0 auto}.hec-panel,.hec-queue{padding:10px}.hec-job{grid-template-columns:minmax(0,1fr) auto}.hec-job-state{grid-row:2}.hec-job-actions{grid-row:1/3;grid-column:2}.hec-workbar{padding:8px 10px}.hec-footer{flex-wrap:wrap}.hec-footer [role=status]{width:100%;margin-left:0}.hec-preset-row{grid-template-columns:minmax(0,1fr) 36px}.hec-canvas-wrap{min-height:150px}.hec input,.hec select,.hec button{max-width:100%}}
       @media(max-width:375px){.hec-brand strong{font-size:13px}.hec-mark{width:34px;height:34px;flex-basis:34px}.hec-artboard{grid-template-columns:18px minmax(0,1fr)}.hec-artboard code{grid-column:2}.hec-scale span{height:38px}.hec-job{gap:6px}.hec-job-actions{flex-direction:column}}
+      .hec-shared-source{padding:16px;background:linear-gradient(115deg,#10172e,#121c29);border-bottom:1px solid var(--hec-line)}.hec-shared-source h2{font-size:15px;text-transform:none}.hec-shared-source p{max-width:100ch;color:var(--hec-muted);line-height:1.6}.hec-shared-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:12px;align-items:end}.hec-shared-controls .hec-field{font-size:12px}.hec-shared-controls .hec-field input,.hec-shared-controls .hec-field select{height:auto;min-height:44px}.hec-shared-controls .hec-check{min-height:44px;align-items:center}.hec-shared-source .hec-shared-note{font-size:12px}.hec-shared-actions{flex-wrap:wrap;overflow:visible}.hec-shared-actions button{min-height:44px;white-space:normal}.hec-shared-status{display:block;min-height:1.6em;margin-top:12px;color:var(--hec-cyan);overflow-wrap:anywhere}.hec-shared-source .hec-heading{flex-wrap:wrap}.hec-shared-source .hec-heading span{font-size:11px}
+      @media(max-width:420px){.hec-shared-source{padding:12px}.hec-shared-actions button{flex:1 1 140px}}
+      @media(forced-colors:active){.hec-shared-source{background:Canvas;color:CanvasText;border-color:CanvasText}.hec-shared-source p,.hec-shared-status{color:CanvasText}.hec-shared-source button{border:1px solid ButtonText}.hec-shared-source :focus-visible{outline:2px solid Highlight}}
       @media(prefers-reduced-motion:reduce){.hec *,.hec *::before,.hec *::after{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.001ms!important}}
     `;
     documentObject.head.appendChild(style);
@@ -1113,22 +1130,157 @@
     }).join("");
   }
 
+  function sharedExportPlan(controller, kind, options = {}) {
+    if (!["png", "jpeg", "webp", "pdf", "svg"].includes(kind)) throw new ExportCapabilityError("Định dạng tài liệu chung chưa được hỗ trợ.", "invalid-format");
+    const document = controller?.document;
+    const frames = Array.isArray(document?.frames) ? document.frames : [];
+    const requestedId = options.frameId || document?.activeFrameId || frames[0]?.id;
+    const selected = kind === "pdf" && options.allFrames ? frames : frames.filter((frame) => frame.id === requestedId);
+    if (!selected.length || selected.length > SHARED_EXPORT_LIMITS.pages) throw new ExportCapabilityError(`Chọn từ 1 đến ${SHARED_EXPORT_LIMITS.pages} khung để xuất.`, "invalid-frames");
+    const scale = Number(options.scale ?? 1);
+    if (!Number.isFinite(scale) || scale < 0.25 || scale > 3) throw new ExportCapabilityError("Tỉ lệ xuất phải từ 0,25x đến 3x.", "invalid-scale");
+    let totalPixels = 0;
+    const pages = selected.map((frame) => {
+      const sourceWidth = Number(frame.width), sourceHeight = Number(frame.height);
+      const width = Math.round(sourceWidth * scale), height = Math.round(sourceHeight * scale);
+      if (!Number.isFinite(sourceWidth) || !Number.isFinite(sourceHeight) || width < 1 || height < 1 || width > SHARED_EXPORT_LIMITS.edge || height > SHARED_EXPORT_LIMITS.edge || width * height > SHARED_EXPORT_LIMITS.pixels) throw new ExportCapabilityError("Mỗi khung phải dưới 32 megapixel và cạnh không quá 16384px. Hãy giảm tỉ lệ.", "canvas-too-large");
+      totalPixels += width * height;
+      return { id: frame.id, name: cleanText(frame.name || "Khung", 180), width, height, sourceWidth, sourceHeight };
+    });
+    if (totalPixels > SHARED_EXPORT_LIMITS.totalPixels) throw new ExportCapabilityError("Tổng batch vượt 96 megapixel. Hãy xuất ít khung hoặc giảm tỉ lệ.", "batch-too-large");
+    const requestedBackground = String(options.background ?? "transparent").toLowerCase();
+    if (!/^(?:transparent|white|black|#(?:[a-f0-9]{3}|[a-f0-9]{4}|[a-f0-9]{6}|[a-f0-9]{8}))$/.test(requestedBackground)) throw new ExportCapabilityError("Màu nền đệm không hợp lệ. Dùng mã hex, trắng, đen hoặc trong suốt.", "invalid-background");
+    const background = requestedBackground;
+    return { kind, document, pages, scale, totalPixels, quality: clamp(options.quality, 0.1, 1, 0.92), background: ["pdf", "jpeg"].includes(kind) && background === "transparent" ? "#ffffff" : background };
+  }
+
+  // A JPEG is embedded in each PDF page; this is deliberately NOT a vector,
+  // editable, tagged-accessibility or CMYK print PDF. No remote encoder is used.
+  async function encodeRasterPDF(pages, options = {}) {
+    if (!Array.isArray(pages) || !pages.length || pages.length > SHARED_EXPORT_LIMITS.pages) throw new ExportCapabilityError("Số trang PDF không hợp lệ.", "invalid-frames");
+    const encoder = new (options.runtime?.TextEncoder || globalScope.TextEncoder)();
+    const chunks = [], offsets = [0];
+    let length = 0, encodedBytes = 0, totalPixels = 0;
+    const push = (part) => { const bytes = typeof part === "string" ? encoder.encode(part) : part; chunks.push(bytes); length += bytes.byteLength; };
+    const object = (id, body) => { offsets[id] = length; push(`${id} 0 obj\n`); push(body); push("\nendobj\n"); };
+    push("%PDF-1.4\n"); push(new Uint8Array([37, 226, 227, 207, 211, 10]));
+    object(1, "<< /Type /Catalog /Pages 2 0 R >>");
+    object(2, `<< /Type /Pages /Count ${pages.length} /Kids [${pages.map((_, index) => `${3 + index * 3} 0 R`).join(" ")}] >>`);
+    for (let index = 0; index < pages.length; index += 1) {
+      assertNotAborted(options.signal);
+      const page = pages[index], id = 3 + index * 3;
+      const width = Number(page.width), height = Number(page.height);
+      if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1 || width > SHARED_EXPORT_LIMITS.edge || height > SHARED_EXPORT_LIMITS.edge || width * height > SHARED_EXPORT_LIMITS.pixels) throw new ExportCapabilityError("Kích thước trang PDF không hợp lệ.", "canvas-too-large");
+      totalPixels += width * height;
+      if (totalPixels > SHARED_EXPORT_LIMITS.totalPixels) throw new ExportCapabilityError("Tổng PDF vượt 96 megapixel.", "batch-too-large");
+      if (page.blob?.type !== "image/jpeg") throw new ExportCapabilityError("PDF raster cần ảnh JPEG đúng MIME.", "invalid-mime");
+      encodedBytes += page.blob.size;
+      if (encodedBytes > SHARED_EXPORT_LIMITS.bytes) throw new ExportCapabilityError("Ảnh mã hóa PDF vượt giới hạn 64 MiB.", "output-too-large");
+      const bytes = new Uint8Array(await page.blob.arrayBuffer());
+      assertNotAborted(options.signal);
+      if (bytes.length < 4 || bytes[0] !== 255 || bytes[1] !== 216 || bytes[bytes.length - 2] !== 255 || bytes[bytes.length - 1] !== 217) throw new ExportCapabilityError("JPEG mã hóa không có cấu trúc hợp lệ.", "invalid-jpeg");
+      const pointWidth = Math.round(Number(page.sourceWidth || width) * 75) / 100;
+      const pointHeight = Math.round(Number(page.sourceHeight || height) * 75) / 100;
+      if (!Number.isFinite(pointWidth) || !Number.isFinite(pointHeight) || pointWidth <= 0 || pointHeight <= 0 || pointWidth > 14400 || pointHeight > 14400) throw new ExportCapabilityError("Kích thước giấy PDF vượt giới hạn.", "invalid-page-size");
+      const stream = `q\n${pointWidth} 0 0 ${pointHeight} 0 0 cm\n/Im0 Do\nQ\n`;
+      object(id, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pointWidth} ${pointHeight}] /Resources << /XObject << /Im0 ${id + 1} 0 R >> >> /Contents ${id + 2} 0 R >>`);
+      offsets[id + 1] = length;
+      push(`${id + 1} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${width} /Height ${height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${bytes.length} >>\nstream\n`);
+      push(bytes); push("\nendstream\nendobj\n");
+      object(id + 2, `<< /Length ${encoder.encode(stream).byteLength} >>\nstream\n${stream}endstream`);
+    }
+    const startXref = length, count = pages.length * 3 + 3;
+    push(`xref\n0 ${count}\n0000000000 65535 f \n`);
+    for (let id = 1; id < count; id += 1) push(`${String(offsets[id]).padStart(10, "0")} 00000 n \n`);
+    push(`trailer\n<< /Size ${count} /Root 1 0 R >>\nstartxref\n${startXref}\n%%EOF\n`);
+    return makeBlob(chunks, "application/pdf", options.runtime);
+  }
+
+  function decodeSharedSVG(svg, environment = {}, signal) {
+    const ImageCtor = environment.Image || globalScope.Image;
+    const urlApi = environment.URL || globalScope.URL;
+    if (!ImageCtor || !urlApi?.createObjectURL || !urlApi?.revokeObjectURL) throw new ExportCapabilityError("Trình duyệt chưa hỗ trợ giải mã SVG cục bộ.", "unsupported");
+    assertNotAborted(signal);
+    const svgBlob = makeBlob([svg], "image/svg+xml", environment);
+    if (svgBlob.size > SHARED_EXPORT_LIMITS.bytes) throw new ExportCapabilityError("SVG nhúng asset vượt 64 MiB. Hãy giảm số ảnh gốc trong khung.", "output-too-large");
+    const image = new ImageCtor();
+    const url = urlApi.createObjectURL(svgBlob);
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      const timer = setTimeout(() => finish(new ExportCapabilityError("Hết thời gian giải mã ảnh SVG. Không có file nào được xuất.", "decode-timeout")), 15000);
+      const cleanup = () => { clearTimeout(timer); image.onload = image.onerror = null; signal?.removeEventListener?.("abort", onAbort); urlApi.revokeObjectURL(url); };
+      const finish = (error) => { if (settled) return; settled = true; cleanup(); if (error) { image.src = ""; reject(error); } else resolve(image); };
+      const onAbort = () => { const error = new Error("Export đã bị hủy."); error.name = "AbortError"; finish(error); };
+      image.onload = () => finish();
+      image.onerror = () => finish(new ExportCapabilityError("Không giải mã được SVG hoặc asset gốc. Hãy kiểm tra preflight.", "media-load-failed"));
+      signal?.addEventListener?.("abort", onAbort, { once: true });
+      image.src = url;
+      if (signal?.aborted) onAbort();
+    });
+  }
+
   async function exportSharedDocument(controller, kind, options = {}) {
-    if (kind === 'svg' && typeof controller?.prepareExportSVG === 'function') {
-      const result = await controller.prepareExportSVG(options);
-      return { blob: new Blob([result.svg], { type: 'image/svg+xml' }), filename: 'hh-shared-design.svg' };
-    }
-    if (kind === 'package' && typeof controller?.exportPackage === 'function') {
+    const runtime = options.runtime || globalScope;
+    assertNotAborted(options.signal);
+    if (kind === "package" && typeof controller?.exportPackage === "function") {
       const packaged = await controller.exportPackage(options);
-      return { blob: new Blob([typeof packaged === 'string' ? packaged : JSON.stringify(packaged)], { type: 'application/json' }), filename: 'hh-shared-design.hhdesign' };
+      assertNotAborted(options.signal);
+      return { blob: makeBlob([typeof packaged === "string" ? packaged : JSON.stringify(packaged)], "application/json", runtime), filename: "hh-shared-design.hhdesign" };
     }
-    throw new Error('Tài liệu chung hoặc định dạng chưa được cấu hình. Không có file nào được xuất.');
+    if (typeof controller?.prepareExportSVG !== "function") throw new ExportCapabilityError("Tài liệu chung chưa được cấu hình. Không có file nào được xuất.", "unsupported");
+    // Legacy SVG adapters without document metadata still retain their old API.
+    if (kind === "svg" && !controller.document?.frames) {
+      const result = await controller.prepareExportSVG(options);
+      assertNotAborted(options.signal);
+      return { blob: makeBlob([result.svg], "image/svg+xml", runtime), filename: "hh-shared-design.svg" };
+    }
+    const plan = sharedExportPlan(controller, kind, options);
+    const prepare = options.prepareSVG || runtime.HHGraphicDesignUniversal?.prepareExportSVG;
+    const pages = [], warnings = [];
+    let encodedBytes = 0;
+    for (const page of plan.pages) {
+      assertNotAborted(options.signal);
+      const exportOptions = { frameId: page.id, scale: plan.scale, accountId: options.accountId };
+      const result = typeof prepare === "function" && typeof controller.getAsset === "function"
+        ? await prepare(plan.document, { ...exportOptions, readAsset: (id) => controller.getAsset(id) })
+        : await controller.prepareExportSVG(exportOptions);
+      assertNotAborted(options.signal);
+      if ((result.frameId != null && result.frameId !== page.id) || result.width !== page.width || result.height !== page.height) throw new ExportCapabilityError("Nguồn xuất trả sai khung hoặc kích thước đã chọn. Không xuất dữ liệu thay thế.", "source-mismatch");
+      warnings.push(...(result.warnings || []));
+      if (kind === "svg") return { blob: makeBlob([result.svg], "image/svg+xml", runtime), filename: `${slug(plan.document.name, "hh-shared-design")}-${slug(page.name, "frame")}.svg`, width: page.width, height: page.height, warnings };
+      const canvas = createCanvas({ document: runtime.document, canvasFactory: options.canvasFactory });
+      let image;
+      try {
+        canvas.width = page.width; canvas.height = page.height;
+        const context = canvas.getContext("2d");
+        image = await decodeSharedSVG(result.svg, runtime, options.signal);
+        assertNotAborted(options.signal);
+        context.clearRect(0, 0, page.width, page.height);
+        if (["jpeg", "pdf"].includes(kind)) { context.fillStyle = "#ffffff"; context.fillRect(0, 0, page.width, page.height); }
+        if (plan.background !== "transparent") { context.fillStyle = plan.background; context.fillRect(0, 0, page.width, page.height); }
+        context.drawImage(image, 0, 0, page.width, page.height);
+        const mime = kind === "pdf" ? "image/jpeg" : FORMATS[kind].mime;
+        const blob = await canvasToBlob(canvas, mime, plan.quality, options.signal);
+        encodedBytes += blob.size;
+        if (encodedBytes > SHARED_EXPORT_LIMITS.bytes) throw new ExportCapabilityError("Batch mã hóa vượt giới hạn 64 MiB.", "output-too-large");
+        if (kind !== "pdf") return { blob, filename: `${slug(plan.document.name, "hh-shared-design")}-${slug(page.name, "frame")}-${plan.scale}x.${FORMATS[kind].extension}`, width: page.width, height: page.height, mimeType: mime, warnings };
+        pages.push({ ...page, blob });
+      } finally {
+        if (image) { image.onload = image.onerror = null; image.src = ""; }
+        canvas.width = canvas.height = 0;
+      }
+      options.onProgress?.({ completed: pages.length, total: plan.pages.length });
+    }
+    const blob = await encodeRasterPDF(pages, { runtime, signal: options.signal });
+    return { blob, filename: `${slug(plan.document.name, "hh-shared-design")}-raster.pdf`, mimeType: "application/pdf", pageCount: pages.length, warnings, raster: true };
   }
 
   function mount(root, options) {
     if (!root || typeof root.querySelector !== "function") return null;
     if (instances.has(root)) return instances.get(root);
     const config = options && typeof options === "object" ? options : {};
+    let disposed = false;
+    let sharedAbort = null;
     const runtime = config.runtime || globalScope;
     const documentRef = runtime.document || globalScope.document;
     addStyles(documentRef);
@@ -1152,7 +1304,8 @@
       URL: runtime.URL || globalScope.URL,
       MediaRecorder: runtime.MediaRecorder || globalScope.MediaRecorder,
       HTMLCanvasElement: runtime.HTMLCanvasElement || globalScope.HTMLCanvasElement,
-      encoders: config.encoders || runtime.encoders || runtime.HHExportEncoders || {}
+      encoders: config.encoders || runtime.encoders || runtime.HHExportEncoders || {},
+      HHGraphicDesignUniversal: runtime.HHGraphicDesignUniversal || globalScope.HHGraphicDesignUniversal
     };
     const capabilities = config.capabilities || detectCapabilities(capabilityRuntime, config.capabilityCanvas);
     const mountId = uid("hec");
@@ -1167,6 +1320,7 @@
     let unsubscribe = () => {};
 
     function announce(message) {
+      if (disposed) return;
       const status = qs("[data-hec-status]");
       if (status) status.textContent = message;
     }
@@ -1241,6 +1395,7 @@
       environment: { ...capabilityRuntime, canvasFactory: config.canvasFactory, images: config.images },
       exporter: config.exporter,
       onResult: async (result, job) => {
+        if (disposed) return;
         if (config.autoDownload !== false) {
           const downloaded = downloadBlob(result.blob, result.filename, capabilityRuntime);
           if (!downloaded.ok) throw new ExportCapabilityError(capabilities.download.reason, "download-unsupported");
@@ -1304,8 +1459,50 @@
     if (sharedController) {
       const shared = documentRef.createElement('section');
       shared.className = 'hec-section hec-shared-source';
-      shared.innerHTML = '<h2>Tài liệu thiết kế chung</h2><p>Hai nút này xuất document đang mở và asset gốc. Queue bên dưới dùng artboard của riêng Export Center, không tự chuyển đổi mọi engine.</p><div class="hec-top-actions"><button type="button" class="hec-btn" data-hec-action="shared-svg">SVG tài liệu chung</button><button type="button" class="hec-btn" data-hec-action="shared-package">Gói .hhdesign kèm asset</button></div>';
+      shared.innerHTML = '<div class="hec-heading"><h2>Xuất bản tài liệu chung</h2><span>Asset gốc · xử lý tại thiết bị</span></div><p>Chọn khung của tài liệu chung để xuất ảnh hoặc PDF raster. Không thay thế bằng thumbnail. Queue phía dưới dùng artboard riêng, không tự chuyển đổi mọi engine.</p><div class="hec-shared-controls"><label class="hec-field">Khung<select data-hec-shared="frame"></select></label><label class="hec-field">Định dạng<select data-hec-shared="format"><option value="png">PNG · giữ trong suốt nếu khung cho phép</option><option value="jpeg">JPEG · ảnh nền đặc</option><option value="webp">WebP · trình duyệt phải mã hóa đúng MIME</option><option value="pdf">PDF raster · mỗi khung một trang</option><option value="svg">SVG · vector và ảnh gốc nhúng</option></select></label><label class="hec-field">Độ phân giải<select data-hec-shared="scale"><option value="0.5">0,5x</option><option value="1" selected>1x</option><option value="2">2x</option><option value="3">3x</option></select></label><label class="hec-field">Nền đệm<select data-hec-shared="background"><option value="transparent">Giữ nền của khung</option><option value="#ffffff">Trắng</option><option value="#080d14">Đen vũ trụ</option></select></label><label class="hec-field">Chất lượng JPEG/WebP<input type="number" min="10" max="100" value="92" data-hec-shared="quality"></label><label class="hec-check"><input type="checkbox" data-hec-shared="all"><span>Toàn bộ khung (chỉ PDF, tối đa 32 trang)</span></label></div><p class="hec-shared-note">Giới hạn 32 MP/khung, 96 MP/batch, 64 MiB ảnh mã hóa. Nền đệm nằm dưới nội dung, không xóa nền khung. PDF là ảnh RGB: không có chữ tìm kiếm, vector chỉnh sửa, CMYK hoặc PDF có gắn thẻ.</p><div class="hec-top-actions hec-shared-actions"><button type="button" class="hec-btn hec-primary" data-hec-action="shared-export">Xuất khung đã chọn</button><button type="button" class="hec-btn" data-hec-action="shared-svg">SVG tài liệu chung</button><button type="button" class="hec-btn" data-hec-action="shared-package">Gói .hhdesign kèm asset</button><button type="button" class="hec-btn" data-hec-action="shared-cancel" disabled>Dừng xuất</button></div><output class="hec-shared-status" role="status" aria-live="polite" data-hec-shared-status>Chưa xuất. Không có dữ liệu được gửi ra ngoài.</output>';
       root.querySelector('.hec-top')?.after(shared);
+      const queueCapabilityHeading = root.querySelector('.hec-capabilities')?.closest('section')?.querySelector('h3');
+      if (queueCapabilityHeading) queueCapabilityHeading.textContent = 'Định dạng queue riêng';
+      const frameControl = qs('[data-hec-shared="frame"]');
+      const document = sharedController.document;
+      for (const frame of document?.frames || []) {
+        const option = documentRef.createElement('option');
+        option.value = frame.id;
+        option.textContent = `${frame.name || 'Khung'} · ${frame.width} × ${frame.height}`;
+        option.selected = frame.id === document.activeFrameId;
+        frameControl.appendChild(option);
+      }
+      shared.querySelector('.hec-shared-note').appendChild(documentRef.createTextNode(' Nền đệm áp dụng cho ảnh và PDF; SVG giữ nền tài liệu.'));
+    }
+
+    function sharedStatus(message) { if (!disposed) { const status = qs('[data-hec-shared-status]'); if (status) status.textContent = message; announce(message); } }
+    function sharedBusy(busy) {
+      if (disposed) return;
+      root.querySelectorAll('.hec-shared-source button,.hec-shared-source input,.hec-shared-source select').forEach(control => { control.disabled = busy; });
+      const cancel = qs('[data-hec-action="shared-cancel"]'); if (cancel) cancel.disabled = !busy;
+    }
+    async function runSharedExport(action) {
+      if (sharedAbort || disposed) return;
+      const abort = new AbortController(); sharedAbort = abort;
+      const kind = action === 'shared-package' ? 'package' : action === 'shared-svg' ? 'svg' : qs('[data-hec-shared="format"]').value;
+      const allFrames = kind === 'pdf' && qs('[data-hec-shared="all"]').checked;
+      const exportOptions = {
+        runtime: capabilityRuntime, canvasFactory: config.canvasFactory,
+        signal: abort.signal, accountId: config.projectContext?.accountId,
+        frameId: qs('[data-hec-shared="frame"]').value,
+        scale: Number(qs('[data-hec-shared="scale"]').value),
+        quality: Number(qs('[data-hec-shared="quality"]').value) / 100,
+        background: qs('[data-hec-shared="background"]').value, allFrames,
+        onProgress: progress => sharedStatus(`Đã mã hóa ${progress.completed}/${progress.total} trang. Chưa tạo file cuối.`)
+      };
+      sharedBusy(true); sharedStatus('Đang preflight khung và đọc asset gốc…');
+      try {
+        const result = await exportSharedDocument(sharedController, kind, exportOptions);
+        if (disposed || abort.signal.aborted || sharedAbort !== abort) return;
+        const downloaded = downloadBlob(result.blob, result.filename, capabilityRuntime);
+        sharedStatus(downloaded.ok ? `Đã yêu cầu tải ${result.filename} · ${(result.blob.size / 1024).toFixed(1)} KiB${result.pageCount ? ` · ${result.pageCount} trang raster` : ''}${result.warnings?.length ? ` · ${result.warnings.length} cảnh báo preflight` : ''}. Hãy mở file để kiểm tra.` : 'Đã mã hóa nhưng trình duyệt chưa hỗ trợ tải file.');
+      } catch (error) { if (!disposed) sharedStatus(error.name === 'AbortError' ? 'Đã dừng xuất. Không tải file chưa hoàn tất.' : error.message); }
+      finally { if (sharedAbort === abort) sharedAbort = null; sharedBusy(false); }
     }
     const onClick = (event) => {
       const target = event.target.closest("button,[data-hec-artboard]");
@@ -1315,15 +1512,8 @@
       if (target.dataset.hecRetry) { queue.retry(target.dataset.hecRetry); return announce("Đã đưa job trở lại queue."); }
       if (target.dataset.hecRemove) { queue.remove(target.dataset.hecRemove); return announce("Đã xóa job khỏi queue."); }
       const action = target.dataset.hecAction;
-      if (action === 'shared-svg' || action === 'shared-package') {
-        target.disabled = true;
-        announce('Đang kiểm tra tài liệu và đọc asset gốc…');
-        void exportSharedDocument(sharedController, action === 'shared-svg' ? 'svg' : 'package', { accountId: config.projectContext?.accountId })
-          .then(result => { if (root.isConnected) { const downloaded = downloadBlob(result.blob, result.filename, runtime); announce(downloaded.ok ? 'Đã tạo file từ tài liệu chung. Hãy mở file để kiểm tra.' : 'Trình duyệt chưa hỗ trợ tải file.'); } })
-          .catch(error => { if (root.isConnected) announce(error.message); })
-          .finally(() => { target.disabled = false; });
-        return;
-      }
+      if (action === 'shared-cancel') { sharedAbort?.abort(); return; }
+      if (action === 'shared-svg' || action === 'shared-package' || action === 'shared-export') return void runSharedExport(action);
       if (action === "enqueue") return enqueueSelected();
       if (action === "start") return void startQueue();
       if (action === "clear") { const count = queue.clearCompleted(); return announce(`Đã dọn ${count} job.`); }
@@ -1405,6 +1595,8 @@
       preflight: refreshPreflight,
       exportManifest: downloadManifest,
       unmount() {
+        disposed = true;
+        sharedAbort?.abort(); sharedAbort = null;
         persist();
         unsubscribe();
         queue.dispose();
@@ -1440,6 +1632,7 @@
     createExportQueue, createQueue: createExportQueue,
     createExportManifest, exportManifest,
     normalizeWorkspace, saveWorkspace, loadWorkspace, saveState: saveWorkspace, loadState: loadWorkspace,
+    SHARED_EXPORT_LIMITS, sharedExportPlan, encodeRasterPDF, decodeSharedSVG,
     downloadBlob, exportSharedDocument, mount, unmount
   });
 

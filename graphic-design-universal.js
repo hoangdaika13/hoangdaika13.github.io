@@ -268,7 +268,7 @@
       fontWeight: clamp(source.fontWeight, 100, 900, 400),
       lineHeight: clamp(source.lineHeight, 0.5, 4, 1.2),
       letterSpacing: clamp(source.letterSpacing, -40, 200, 0),
-      fill: safeColor(source.fill, "#63e8ff"),
+      fill: source.fill === "none" ? "none" : safeColor(source.fill, "#63e8ff"),
       stroke: source.stroke === "none" ? "none" : safeColor(source.stroke, "#63e8ff"),
       strokeWidth: clamp(source.strokeWidth, 0, 80, 0),
       strokeDash: (Array.isArray(source.strokeDash) ? source.strokeDash : []).slice(0, 12).map((item) => clamp(item, 0, 1000, 0)),
@@ -661,6 +661,29 @@
       const page = next.pages.find((item) => item.id === next.frames.at(-1).pageId) || next.pages[0];
       page?.frameIds.push(id);
       next.activeFrameId = id;
+    } else if (type === "import-frame-layers") {
+      const allowed = new Set(["rect", "ellipse", "text", "path", "polygon", "star"]);
+      if (!Array.isArray(payload.layers) || payload.layers.length > 1000) throw new Error("Nhập frame cần mảng tối đa 1.000 layer vector/text.");
+      if (![payload.width, payload.height].every((value) => typeof value === "number" && Number.isFinite(value) && value >= 1 && value <= 8192)) throw new Error("Frame nhập phải có kích thước hữu hạn từ 1 đến 8.192 px.");
+      const targetPage = next.pages.find((page) => page.id === next.activePageId) || next.pages[0];
+      if (!targetPage || next.frames.length >= 200 || targetPage.frameIds.length >= 100 || next.layers.length + payload.layers.length > MAX_LAYERS) throw new Error("Tài liệu đã đạt giới hạn frame hoặc layer; chưa nhập dữ liệu.");
+      for (const layer of payload.layers) {
+        if (!layer || typeof layer !== "object" || !allowed.has(layer.type) || layer.assetId) throw new Error("Frame nhập chỉ nhận rect, ellipse, text, path, polygon và star không phụ thuộc asset.");
+        for (const key of ["x", "y", "width", "height", "rotation", "skewX", "skewY", "anchorX", "anchorY"]) {
+          if (layer[key] != null && (typeof layer[key] !== "number" || !Number.isFinite(layer[key]))) throw new Error("Layer nhập có tọa độ hoặc transform không hữu hạn.");
+        }
+        if ((layer.width != null && layer.width <= 0) || (layer.height != null && layer.height <= 0)) throw new Error("Layer nhập phải có chiều rộng/cao dương.");
+        if (layer.pathPoints != null && (!Array.isArray(layer.pathPoints) || layer.pathPoints.length > 1000 || layer.pathPoints.some((point) => !point || ["x", "y", "inX", "inY", "outX", "outY"].some((key) => point[key] != null && (typeof point[key] !== "number" || !Number.isFinite(point[key])))))) throw new Error("Điểm path nhập không hợp lệ.");
+      }
+      const id = uid("frame");
+      const incoming = payload.layers.map((layer) => normalizeLayer({ ...layer, id: uid("layer"), frameId: id, parentId: null, textPathLayerId: null }, id));
+      next.frames.push({ id, pageId: targetPage.id, name: text(payload.name || "Vector snapshot"), x: 0, y: 0, width: payload.width, height: payload.height, background: safeColor(payload.background, next.canvas.background), breakpoint: "desktop" });
+      targetPage.frameIds.push(id);
+      next.layers.push(...incoming);
+      next.activePageId = targetPage.id;
+      next.activeFrameId = id;
+      next.selectedLayerIds = incoming.map((layer) => layer.id);
+      next.selectedLayerId = incoming.at(-1)?.id || "";
     } else if (type === "add-layer") {
       const id = uid("layer");
       const kind = ["rect", "ellipse", "text", "image", "video", "audio", "group", "path", "polygon", "star", "adjustment", "component", "instance", "3d"].includes(payload.type) ? payload.type : "rect";
@@ -911,10 +934,11 @@
         layer.gradient = normalizeLayer({ ...layer, gradient: payload.gradient || null }, layer.frameId).gradient;
       }
     } else if (type === "boolean-layers") {
-      const layers = selectedLayers(next, payload).filter((layer) => !layer.locked);
+      const layers = selectedLayers(next, payload);
       if (layers.length >= 2) {
+        if (layers.some((layer) => layer.locked)) throw new Error("Hãy mở khóa tất cả layer trước khi dùng Boolean.");
         const mode = ["union", "subtract", "intersect", "exclude"].includes(payload.mode) ? payload.mode : "union";
-        const geometry = rectangleBoolean(layers, mode);
+        const geometry = vectorBoolean(layers, mode);
         const booleanLayer = normalizeLayer({
           id: uid("layer"),
           frameId,
@@ -927,9 +951,11 @@
           fill: layers[0].fill,
           stroke: layers[0].stroke,
           strokeWidth: layers[0].strokeWidth,
+          cornerRadius: 0,
           pathData: geometry.pathData,
           metadata: {
             booleanMode: mode,
+            booleanGeometry: { engine: geometry.engine || "hh-exact-rect", approximate: geometry.approximate === true, tolerance: geometry.approximate ? geometry.tolerance : 0 },
             booleanSources: layers.map((layer) => clone(layer))
           }
         }, frameId);
@@ -1266,6 +1292,15 @@
     return { empty: false, x: minX, y: minY, width: maxX - minX, height: maxY - minY, pathData: paths.join(" "), area };
   }
 
+  function vectorBoolean(layers, mode = "union") {
+    if (!Array.isArray(layers) || layers.some((layer) => !layer || ![layer.x, layer.y, layer.width, layer.height].every((value) => typeof value === "number" && Number.isFinite(value)) || layer.width <= 0 || layer.height <= 0 || [layer.x, layer.y, layer.x + layer.width, layer.y + layer.height].some((value) => Math.abs(value) > 1000000))) throw new Error("Hình Boolean cần tọa độ hữu hạn trong ±1.000.000 px và kích thước dương.");
+    const exactRectangles = Array.isArray(layers) && layers.every((layer) => layer.type === "rect" && !layer.rotation && !layer.skewX && !layer.skewY && !layer.cornerRadius && !layer.locked && layer.fill !== "none" && !layer.masks?.some((mask) => mask.enabled) && !layer.adjustments?.some((item) => item.enabled));
+    if (exactRectangles) return rectangleBoolean(layers, mode);
+    const geometry = globalThis.HHGraphicDesignGeometry || (typeof require === "function" ? require("./graphic-design-geometry.js") : null);
+    if (!geometry?.booleanLayers) throw new Error("Engine Boolean nâng cao chưa tải. Bản gốc được giữ nguyên.");
+    return geometry.booleanLayers(layers, mode);
+  }
+
   function contrastRatio(a, b) {
     const light = Math.max(luminance(a), luminance(b));
     const dark = Math.min(luminance(a), luminance(b));
@@ -1426,10 +1461,13 @@
   }
 
   async function exportPreflight(documentState, options = {}) {
-    const health = runHealthScan(documentState);
-    const issues = [...health.issues];
     const document = normalizeDocument(documentState);
-    const frame = activeFrame(document);
+    const frame = options.frameId != null ? document.frames.find((item) => item.id === options.frameId) : activeFrame(document);
+    if (!frame) throw new Error("Frame được chọn để xuất không tồn tại.");
+    const layers = document.layers.filter((item) => item.visible && item.frameId === frame.id);
+    const assetIds = new Set(layers.map((layer) => layer.assetId).filter(Boolean));
+    const health = runHealthScan({ ...document, frames: [frame], layers, assets: document.assets.filter((asset) => assetIds.has(asset.id)) });
+    const issues = [...health.issues];
     const readAsset = options.readAsset || ((id) => getAssetBlob(id, options.accountId));
     const originals = new Map();
     for (const layer of document.layers.filter((item) => item.visible && item.frameId === frame?.id && item.type === "image")) {
@@ -1447,7 +1485,9 @@
     const preflight = await exportPreflight(documentState, options);
     if (!preflight.ok) throw new Error(`Preflight chặn xuất: ${preflight.issues.filter((item) => item.severity === "error").map((item) => item.message).join(" ")}`);
     const doc = normalizeDocument(documentState);
-    const frame = activeFrame(doc);
+    const frame = options.frameId != null ? doc.frames.find((item) => item.id === options.frameId) : activeFrame(doc);
+    if (!frame) throw new Error("Frame được chọn để xuất không tồn tại.");
+    doc.activeFrameId = frame.id;
     const scale = clamp(options.scale, 0.1, 3, 1);
     if (!frame || frame.width * frame.height * scale * scale > 33554432 || frame.width * scale > 16384 || frame.height * scale > 16384) throw new Error("Kích thước xuất vượt giới hạn 32 megapixel hoặc cạnh 16384px.");
     doc.assetSources = new Map();
@@ -1456,7 +1496,7 @@
     doc.canvas = { ...doc.canvas, gridVisible: false, rulersVisible: false, guides: [] };
     const width = Math.round(frame.width * scale), height = Math.round(frame.height * scale);
     const svg = renderCanvas(doc, scale).replace(/^<svg /, '<svg xmlns="http://www.w3.org/2000/svg" ').replace(/width="[^"]+" height="[^"]+" role="application"/, `width="${width}" height="${height}" role="img"`).replace(/\sdata-gdu-[\w-]+(?:="[^"]*")?/g, "");
-    return { svg, width, height, warnings: preflight.issues.filter((item) => item.severity === "warning") };
+    return { svg, width, height, frameId: frame.id, warnings: preflight.issues.filter((item) => item.severity === "warning") };
   }
 
   function readStored(storage = globalThis.localStorage, key = STORAGE_KEY, options = {}) {
@@ -1621,7 +1661,7 @@
 
   function layerFill(documentState, layer) {
     const bound = resolveVariable(documentState, layer.variableBindings?.fill, layer.fill);
-    return layer.gradient ? `url(#gdu-gradient-${escapeHTML(layer.id)})` : safeColor(bound, layer.fill);
+    return layer.gradient ? `url(#gdu-gradient-${escapeHTML(layer.id)})` : bound === "none" ? "none" : safeColor(bound, layer.fill);
   }
 
   function layerFilter(layer) {
@@ -1803,7 +1843,7 @@
 
   function renderVectorPanel(documentState, selected) {
     const paths = documentState.layers.filter((layer) => layer.frameId === documentState.activeFrameId && layer.type === "path");
-    return `${renderTransformInspector(selected, documentState)}<section class="gdu-panel-section"><div class="gdu-panel-title"><strong>Vector Forge</strong><span>Sẵn sàng</span></div><div class="gdu-button-grid"><button type="button" data-gdu-command="pen">Pen Tool (P)</button><button type="button" data-gdu-command="add-polygon">Polygon</button><button type="button" data-gdu-command="add-star">Star</button><button type="button" data-gdu-command="shape-builder">Shape Builder</button></div><div class="gdu-button-grid"><button type="button" data-gdu-boolean="union">Union</button><button type="button" data-gdu-boolean="subtract">Subtract</button><button type="button" data-gdu-boolean="intersect">Intersect</button><button type="button" data-gdu-boolean="exclude">Exclude</button></div>${selected ? `<div class="gdu-field-grid">${field("strokeWidth", "Stroke", selected.strokeWidth, { min: 0, max: 80, step: 0.5 })}${field("cornerRadius", "Radius", selected.cornerRadius, { min: 0 })}</div><div class="gdu-color-row"><label>Fill<input type="color" data-gdu-field="fill" value="${safeColor(selected.fill, "#63e8ff")}"></label><label>Stroke<input type="color" data-gdu-field="stroke" value="${safeColor(selected.stroke, "#63e8ff")}"></label></div><div class="gdu-button-grid"><button type="button" data-gdu-command="gradient-linear">Linear gradient</button><button type="button" data-gdu-command="gradient-radial">Radial gradient</button><button type="button" data-gdu-command="toggle-arrow">Arrow end</button><button type="button" data-gdu-command="text-on-path" ${paths.length ? "" : "disabled"}>Text on path</button></div>` : ""}<button type="button" class="gdu-wide" data-gdu-route="vector">Mở Vector & Motion Core đầy đủ →</button></section>`;
+    return `${renderTransformInspector(selected, documentState)}<section class="gdu-panel-section"><div class="gdu-panel-title"><strong>Vector Forge</strong><span>Boolean vector</span></div><p class="gdu-empty">Boolean: rect, ellipse, polygon, star và path đóng (M/L/H/V/C/S/Q/T/Z). Đường cong được xấp xỉ ≤0,25 px; mask, stroke-only, Arc và contour tự cắt chưa hỗ trợ. Undo giữ nguồn gốc.</p><div class="gdu-button-grid"><button type="button" data-gdu-command="pen">Pen Tool (P)</button><button type="button" data-gdu-command="add-polygon">Polygon</button><button type="button" data-gdu-command="add-star">Star</button><button type="button" data-gdu-command="shape-builder">Shape Builder</button></div><div class="gdu-button-grid"><button type="button" data-gdu-boolean="union">Union</button><button type="button" data-gdu-boolean="subtract">Subtract</button><button type="button" data-gdu-boolean="intersect">Intersect</button><button type="button" data-gdu-boolean="exclude">Exclude</button></div>${selected ? `<div class="gdu-field-grid">${field("strokeWidth", "Stroke", selected.strokeWidth, { min: 0, max: 80, step: 0.5 })}${field("cornerRadius", "Radius", selected.cornerRadius, { min: 0 })}</div><div class="gdu-color-row"><label>Fill<input type="color" data-gdu-field="fill" value="${safeColor(selected.fill, "#63e8ff")}"></label><label>Stroke<input type="color" data-gdu-field="stroke" value="${safeColor(selected.stroke, "#63e8ff")}"></label></div><div class="gdu-button-grid"><button type="button" data-gdu-command="gradient-linear">Linear gradient</button><button type="button" data-gdu-command="gradient-radial">Radial gradient</button><button type="button" data-gdu-command="toggle-arrow">Arrow end</button><button type="button" data-gdu-command="text-on-path" ${paths.length ? "" : "disabled"}>Text on path</button></div>` : ""}<button type="button" class="gdu-wide" data-gdu-route="vector">Mở Vector & Motion Core đầy đủ →</button></section>`;
   }
 
   function renderRasterPanel(documentState, selected) {
@@ -2719,7 +2759,7 @@
     return true;
   }
 
-  const api = Object.freeze({ VERSION, FORMAT, PACKAGE_FORMAT, PACKAGE_LIMITS, STORAGE_KEY, GALAXY_PREF_KEY, PLANETS, defaultDocument, normalizeLayer, normalizeDocument, serializableDocument, snapshotDocument, documentChanges, applyChanges, pathFromPoints, rectangleBoolean, operation, undo, redo, runHealthScan, exportDocument, importDocument, exportPackage, importPackage, exportPreflight, prepareExportSVG, readStored, writeStored, persist, putAssetBlob, getAssetBlob, removeAssetBlob, checksumBlob, assetRecordFromBlob, mount, unmount });
+  const api = Object.freeze({ VERSION, FORMAT, PACKAGE_FORMAT, PACKAGE_LIMITS, STORAGE_KEY, GALAXY_PREF_KEY, PLANETS, defaultDocument, normalizeLayer, normalizeDocument, serializableDocument, snapshotDocument, documentChanges, applyChanges, pathFromPoints, rectangleBoolean, vectorBoolean, operation, undo, redo, runHealthScan, exportDocument, importDocument, exportPackage, importPackage, exportPreflight, prepareExportSVG, readStored, writeStored, persist, putAssetBlob, getAssetBlob, removeAssetBlob, checksumBlob, assetRecordFromBlob, mount, unmount });
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   globalThis.HHGraphicDesignUniversal = api;
 })();

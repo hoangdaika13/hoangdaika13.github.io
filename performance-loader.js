@@ -164,14 +164,16 @@
       scripts: ["vendor/jszip.min.js?v=3.10.1", "comic-open-source-catalog.js?v=2", "services/comicLibraryBridge.js?v=1", "comic-reader-hub.js?v=21"]
     },
     graphic: {
-      styles: ["graphic-design-studio.css?v=10", "graphic-design-universal.css?v=4"],
+      styles: ["graphic-design-studio.css?v=11", "graphic-design-universal.css?v=4"],
       scripts: [
-        "graphic-design-project-context.js?v=1", "graphic-design-capabilities.js?v=1",
-        "graphic-design-animation.js?v=2", "graphic-design-3d.js?v=5", "graphic-design-prototype.js?v=2",
+        "graphic-design-project-context.js?v=1", "graphic-design-capabilities.js?v=2",
+        "graphic-design-animation.js?v=2", "graphic-design-3d.js?v=6", "graphic-design-prototype.js?v=2",
         "graphic-design-motion.js?v=2", "graphic-design-quick-motion.js?v=2", "graphic-design-mockup.js?v=1",
         "graphic-design-character.js?v=1", "graphic-design-vector-core.js?v=3", "graphic-design-state-machine.js?v=2",
         "graphic-design-adaptive.js?v=3", "graphic-design-project-store.js?v=3", "graphic-design-collaboration.js?v=3",
-        "graphic-design-dev-ai.js?v=3", "graphic-design-composer.js?v=3", "graphic-design-workflow.js?v=3", "graphic-design-universal.js?v=6", "graphic-design-studio.js?v=9"
+        "graphic-design-dev-ai.js?v=3", "graphic-design-composer.js?v=3", "graphic-design-workflow.js?v=3",
+        "vendor/polygon-clipping-0.15.7.umd.min.js?v=0.15.7", "graphic-design-geometry.js?v=1", "graphic-design-vector-bridge.js?v=1",
+        "graphic-design-universal.js?v=7", "graphic-design-studio.js?v=10"
       ]
     },
     creative: {

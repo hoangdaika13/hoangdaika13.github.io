@@ -155,9 +155,9 @@ test("unsupported Boolean geometry does not mutate original; valid result and em
   assert.equal(result.layers.length, 1);
   assert.equal(winding(result.layers[0].pathData, 50, 50), false);
   assert.deepEqual(design.undo(result).layers, design.normalizeDocument(before).layers);
-  doc.layers[1].rotation = 15;
+  doc.layers[1].masks = [{ id: "unsupported-mask", enabled: true, type: "rect" }];
   const untouched = JSON.stringify(doc);
-  assert.throws(() => design.operation(doc, "boolean-layers", { ids: ["a", "b"], mode: "union" }), /không bo góc/);
+  assert.throws(() => design.operation(doc, "boolean-layers", { ids: ["a", "b"], mode: "union" }), /mask/);
   assert.equal(JSON.stringify(doc), untouched);
   assert.throws(() => design.rectangleBoolean([rect(0, 0, 10, 10), rect(0, 0, 5, 5, { type: "path" })]), /engine/);
 });

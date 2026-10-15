@@ -107,7 +107,7 @@
     data: { selector: "[data-graphic-data-driven]", api: "HHGraphicDataDriven", source: "graphic-design-data-driven.js?v=1" },
     components: { selector: "[data-graphic-components]", api: "HHGraphicComponents", source: "graphic-design-components.js?v=2" },
     color: { selector: "[data-graphic-color-pro]", api: "HHGraphicColorPro", source: "graphic-design-color-pro.js?v=1" },
-    export: { selector: "[data-graphic-export-center]", api: "HHGraphicExportCenter", source: "graphic-design-export-center.js?v=3" },
+    export: { selector: "[data-graphic-export-center]", api: "HHGraphicExportCenter", source: "graphic-design-export-center.js?v=4" },
     plugins: { selector: "[data-graphic-plugins]", api: "HHGraphicPlugins", source: "graphic-design-plugins.js?v=2" },
     review: { selector: "[data-graphic-review]", api: "HHGraphicReview", source: "graphic-design-review.js?v=3" },
     performance: { selector: "[data-graphic-performance]", api: "HHGraphicPerformance", source: "graphic-design-performance.js?v=2" }
@@ -169,7 +169,7 @@
   function mountChild(root, selector, api, options = {}) {
     const target = root.querySelector(selector);
     if (!target) return;
-    if (api?.mount) api.mount(target, options);
+    if (api?.mount) return api.mount(target, options);
     else target.innerHTML = `<div class="gd-engine-unavailable"><strong>Engine đang chờ tải</strong><p>Làm mới trang để khởi động workspace này.</p></div>`;
   }
 
@@ -692,7 +692,10 @@
         if (retryButton) mountProEngine(root, normalizeView(retryButton.dataset.gdRetryEngine), workspaceOptions);
       }, isCurrent);
       if (PRO_ENGINES[view]) mountProEngine(root, view, workspaceOptions);
-      else if (view === "vector") mountChild(root, "[data-graphic-vector-core]", globalThis.HHGraphicVectorCore, workspaceOptions);
+      else if (view === "vector") {
+        const vectorController = mountChild(root, "[data-graphic-vector-core]", globalThis.HHGraphicVectorCore, workspaceOptions);
+        globalThis.HHGraphicVectorBridge?.mount?.(root.querySelector('.gd-focused-workspace'), { vectorController, designDocumentController: universalController });
+      }
       else if (view === "quick-motion") mountChild(root, "[data-graphic-quick-motion]", globalThis.HHGraphicQuickMotion, workspaceOptions);
       else if (view === "animation") mountChild(root, "[data-graphic-animation]", globalThis.HHGraphicAnimation, workspaceOptions);
       else if (view === "state-machine") mountChild(root, "[data-graphic-state-machine]", globalThis.HHGraphicStateMachine, workspaceOptions);
@@ -712,6 +715,7 @@
     mountGeneration += 1;
     activeListeners.splice(0).forEach((cleanup) => cleanup());
     clearTimeout(showToast.timer);
+    globalThis.HHGraphicVectorBridge?.unmount?.(activeRoot?.querySelector('.gd-focused-workspace'));
     globalThis.HHGraphicDesignCapabilities?.unmount?.(activeRoot);
     globalThis.HHGraphicDesignUniversal?.unmount?.(activeRoot);
     globalThis.HHGraphicDesignWorkflow?.unmount?.(activeRoot?.querySelector("[data-graphic-design-workflow]"));

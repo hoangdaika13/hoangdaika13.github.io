@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1056";
+const CACHE = "hh-identity-portal-v1057";
+// Previous release: hh-identity-portal-v1056; ./performance-loader.js?v=718; ./script.js?v=292.
 // Previous release: hh-identity-portal-v1055; ./performance-loader.js?v=717; ./script.js?v=291; ./galaxy-living-universe.js?v=9; ./galaxy-stable-chrome.css?v=5.
 // Previous release: hh-identity-portal-v1054; ./performance-loader.js?v=716; ./galaxy-stable-chrome.css?v=4; ./galaxy-living-universe.css?v=3; ./galaxy-living-universe.js?v=8; ./galaxy-layer-one.js?v=27; ./galaxy-universe-renderer.mjs?v=8; ./galaxy-workspace-renderer.mjs?v=3; ./galaxy-celestial-materials.mjs?v=3; ./galaxy-deep-space.mjs?v=1.
 // Previous release: hh-identity-portal-v1053; ./performance-loader.js?v=715; ./script.js?v=290; ./feature-lab.js?v=9; ./platform-tools.css?v=4; ./platform-tools.js?v=4; ./tool-workspace-pro.css?v=4; ./tool-workspace-pro.js?v=4; ./utility-lab-tools.css?v=12; ./utility-lab-tools.js?v=13.
@@ -121,7 +122,7 @@ const EONWILD_CINEMATIC_CACHE = "hh-eonwild-cinematic-assets-v1";
 // Compatibility from v370 and v395-v408: hh-identity-portal-v370 script.js?v=159 script.js?v=160 performance-loader.js?v=139 performance-loader.js?v=140 hh-identity-portal-v395 hh-identity-portal-v396 hh-identity-portal-v397 hh-identity-portal-v403 hh-identity-portal-v404 hh-identity-portal-v405 hh-identity-portal-v406 hh-identity-portal-v407 hh-identity-portal-v408
 // script.js?v=141 script.js?v=145 performance-loader.js?v=51 performance-loader.js?v=52 performance-loader.js?v=57 performance-loader.js?v=58
 // AI Video Remake upgrade compatibility: script.js?v=172 performance-loader.js?v=249 performance-loader.js?v=250 performance-loader.js?v=251 hh-identity-portal-v517 hh-identity-portal-v518 hh-identity-portal-v519 ai-video-remake-studio.css?v=1 ai-video-remake-studio.css?v=2 ai-video-remake-studio.js?v=1
-// Graphic Design Universal compatibility aliases: graphic-design-universal.css?v=1 graphic-design-universal.js?v=1
+// Graphic Design Universal compatibility aliases: graphic-design-universal.css?v=1 graphic-design-universal.js?v=7
 // Open Media upgrade compatibility: hh-identity-portal-v527 hh-identity-portal-v543 ./performance-loader.js?v=259 ./script.js?v=176 ./script.js?v=172 ./auth-neon-gateway.js?v=14 ./auth-h-galaxy.js?v=5 ./home-galaxy-command.js?v=8 ./open-music-hub.css?v=4 ./open-music-hub.js?v=3
 // YouTube Batch compatibility: ./script.js?v=179 ./performance-loader.js?v=272 ./youtube-creator-galaxy.css?v=20 ./youtube-creator-galaxy.js?v=24 ./home-galaxy-command.css?v=9
 // communication-suite.css?v=1 communication-suite.js?v=1 communication-command-center.css?v=1 communication-command-center.js?v=1 communication-messenger-next.css?v=1 communication-messenger-next.js?v=1 communication-channels-forum.css?v=1 communication-channels-forum.js?v=1 communication-live-room.css?v=1 communication-live-room.js?v=1 communication-canvas-automation.css?v=1 communication-canvas-automation.js?v=1 communication-intelligence.css?v=1 communication-intelligence.js?v=1
@@ -246,11 +247,14 @@ const RUNTIME_ASSETS = [
   "./vendor/pdf-lib.min.js?v=1.17.1",
   "./script.js?v=244",
   "./graphic-design-project-context.js?v=1",
-  "./graphic-design-capabilities.js?v=1",
-  "./graphic-design-studio.css?v=10",
+  "./graphic-design-capabilities.js?v=2",
+  "./vendor/polygon-clipping-0.15.7.umd.min.js?v=0.15.7",
+  "./graphic-design-geometry.js?v=1",
+  "./graphic-design-vector-bridge.js?v=1",
+  "./graphic-design-studio.css?v=11",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=2",
-  "./graphic-design-3d.js?v=5",
+  "./graphic-design-3d.js?v=6",
   "./graphic-design-prototype.js?v=2",
   "./graphic-design-motion.js?v=2",
   "./graphic-design-quick-motion.js?v=2",
@@ -271,13 +275,13 @@ const RUNTIME_ASSETS = [
   "./graphic-design-data-driven.js?v=1",
   "./graphic-design-components.js?v=2",
   "./graphic-design-color-pro.js?v=1",
-  "./graphic-design-export-center.js?v=3",
+  "./graphic-design-export-center.js?v=4",
   "./graphic-design-plugins.js?v=2",
   "./graphic-design-review.js?v=3",
   "./graphic-design-performance.js?v=2",
   "./graphic-design-workflow.js?v=3",
-  "./graphic-design-universal.js?v=6",
-  "./graphic-design-studio.js?v=9",
+  "./graphic-design-universal.js?v=7",
+  "./graphic-design-studio.js?v=10",
   "./vendor/three.module.min.js",
   "./vendor/three.core.min.js",
   "./social-media-tools-v2.css?v=9",
@@ -801,7 +805,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=718",
+  "./performance-loader.js?v=719",
   "./auth-platform.js?v=22",
   "./auth-neon-gateway.js?v=35",
   "./script.js?v=292"
