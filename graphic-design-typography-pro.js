@@ -616,12 +616,13 @@
     return true;
   }
 
-  function mount(root) {
+  function mount(root, options = {}) {
     if (!root || typeof root.querySelector !== "function") return null;
     if (mounted.has(root)) return mounted.get(root).api;
     ensureStyles();
 
     const storage = (() => {
+      if (options.storage !== undefined) return options.storage;
       try { return globalScope.localStorage || null; } catch (_) { return null; }
     })();
     let project = createDefaultProject();

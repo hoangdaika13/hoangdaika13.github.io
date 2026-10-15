@@ -12,7 +12,7 @@ test("Graphic Animation exposes a versioned project schema and independent mount
   assert.equal(animation.FORMAT, "hh-graphic-animation-project");
   assert.equal(animation.INTERNAL_LOTTIE_FORMAT, "hh-lottie-like-compatibility");
   assert.match(source, /window\.HHGraphicAnimation/);
-  assert.match(source, /mount\(root\)/);
+  assert.match(source, /mount\(root, options = \{\}\)/);
   assert.match(source, /\[data-graphic-animation\]/);
   assert.match(source, /dataset\.graphicAnimationMounted/);
 });

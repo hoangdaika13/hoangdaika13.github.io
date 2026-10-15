@@ -371,6 +371,54 @@
     return target[method](...args);
   }
 
+  // All document changes go through the editor command history, never a shadow canvas.
+  function createDocumentHost(controller) {
+    if (!controller || typeof controller.dispatch !== "function" || typeof controller.select !== "function") throw new Error("Document controller is unavailable.");
+    const read = () => {
+      const value = controller.document;
+      if (!value || !Array.isArray(value.layers)) throw new Error("Document is unavailable.");
+      return value;
+    };
+    const frame = () => { const value = read(); return value.frames?.find((item) => item.id === value.activeFrameId) || value.canvas || {}; };
+    const updateCanvas = (changes) => {
+      const value = read();
+      const active = value.frames?.find((item) => item.id === value.activeFrameId);
+      controller.dispatch(active ? "set-frame" : "set-canvas", active ? { id: active.id, changes } : { changes });
+      return clone(frame());
+    };
+    return Object.freeze({
+      canvas: {
+        getSize: () => ({ width: frame().width, height: frame().height }),
+        setBackground: (color) => updateCanvas({ background: normalizeColor(color, frame().background || "#111827") }),
+        resize: (width, height) => updateCanvas({ width: Math.round(clampNumber(width, 64, 16384, frame().width)), height: Math.round(clampNumber(height, 64, 16384, frame().height)) })
+      },
+      layer: {
+        list: () => clone(read().layers),
+        add(layer) {
+          const source = isPlainObject(layer) ? layer : {};
+          const kind = ({ shape: "rect", text: "text", group: "group" })[source.type];
+          if (!kind) throw new Error("Plugin layer.add supports shape, text and group; image assets must be imported by the editor first.");
+          const after = controller.dispatch("add-layer", { type: kind, name: safeText(source.name, 100, "Plugin layer"), text: safeText(source.text, 2000, ""), width: clampNumber(source.width, 1, 16384, 240), height: clampNumber(source.height, 1, 16384, 140), x: clampNumber(source.x, -100000, 100000, 120), y: clampNumber(source.y, -100000, 100000, 120), fill: normalizeColor(source.fill, "#65DCE8") });
+          return clone(after.layers.find((item) => item.id === after.selectedLayerId));
+        },
+        rename(id, name) {
+          const item = read().layers.find((layer) => layer.id === String(id));
+          if (!item || item.locked) throw new Error("Layer is missing or locked.");
+          const after = controller.dispatch("update-layer", { id: item.id, changes: { name: safeText(name, 100, item.name) } });
+          return clone(after.layers.find((layer) => layer.id === item.id));
+        }
+      },
+      selection: {
+        get: () => [...(read().selectedLayerIds || [])],
+        set(ids) { const existing = new Set(read().layers.map((item) => item.id)); const selected = [...new Set((Array.isArray(ids) ? ids : []).map(String))]; if (selected.some((id) => !existing.has(id))) throw new Error("Selection contains a missing layer."); controller.select(selected); return [...(read().selectedLayerIds || [])]; },
+        clear() { controller.select([]); return []; }
+      },
+      export: { snapshot: (label) => ({ label: safeText(label, 100, "Plugin snapshot"), format: "hh-design-document", document: clone(read()) }) },
+      command: { notify: (message) => safeText(message, 240, "Command completed.") },
+      getState: () => clone(read())
+    });
+  }
+
   function createCapabilityApi(permissionInput, hostInput) {
     const granted = new Set((Array.isArray(permissionInput) ? permissionInput : []).filter((permission) => PERMISSIONS.includes(permission)));
     const host = hostInput || createMemoryHost();
@@ -806,7 +854,7 @@
     const registry = settings.registry || createRegistry({
       storage: Object.prototype.hasOwnProperty.call(settings, "storage") ? settings.storage : (() => { try { return view.localStorage; } catch (_) { return null; } })(),
       storageKey: settings.storageKey,
-      host: settings.host,
+      host: settings.host || (settings.designDocumentController ? createDocumentHost(settings.designDocumentController) : null),
       hostState: settings.hostState
     });
     const capabilityReport = detectCapabilities(view);
@@ -850,10 +898,17 @@
       if (selectedId && !extensions.some((extension) => extension.manifest.id === selectedId)) selectedId = extensions[0]?.manifest.id || null;
       const selected = selectedExtension();
       const commands = selected ? selected.manifest.contributes.commands : [];
-      const storageLabel = registry.backend === "localStorage" ? "Saved locally" : "Memory only: localStorage unsupported";
+      const storageLabel = `${registry.backend === "localStorage" ? "Đã lưu registry trên thiết bị" : "Chỉ trong phiên: không thể lưu registry"} · ${settings.designDocumentController ? "Lệnh áp dụng vào tài liệu đang mở" : "Sandbox bộ nhớ riêng, không thay đổi tài liệu thiết kế"}`;
       const previewLabel = capabilityReport.preview ? "Sandbox preview available" : "Sandbox preview unsupported";
       root.innerHTML = `<header class="hgp-head"><div class="hgp-mark" aria-hidden="true">PX</div><div><h2>Plugin & Extension SDK</h2><p>${escapeHtml(storageLabel)}</p></div><div class="hgp-actions"><button type="button" class="hgp-drop" data-hgp-install>Install local JSON</button><button type="button" class="hgp-primary" data-hgp-demo>Install demo</button></div></header><div class="hgp-grid"><aside class="hgp-pane" aria-label="Extension registry"><h3>Extension registry</h3><div class="hgp-list" data-hgp-extensions>${extensions.map(extensionMarkup).join("") || `<div class="hgp-empty">No local extensions installed.</div>`}</div></aside><main class="hgp-work"><div class="hgp-toolbar"><label>Command<select data-hgp-command ${!commands.length || !selected?.enabled ? "disabled" : ""}>${commands.map((command) => `<option value="${escapeHtml(command.id)}">${escapeHtml(command.title)}</option>`).join("") || `<option>No commands</option>`}</select></label><button type="button" data-hgp-run ${!commands.length || !selected?.enabled ? "disabled" : ""}>Run command</button></div><div class="hgp-preview" data-hgp-preview-slot>${selected ? (capabilityReport.preview ? `<iframe data-hgp-frame title="Sandbox preview for ${escapeHtml(selected.manifest.name)}" sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe>` : `<div class="hgp-empty" role="alert">This browser cannot provide an isolated iframe sandbox preview.</div>`) : `<div class="hgp-empty">Select or install an extension.</div>`}</div><pre class="hgp-output" data-hgp-output>${escapeHtml(commandOutput)}</pre></main><aside class="hgp-pane"><section><h3>Enabled packs</h3><div data-hgp-packs>${packsMarkup()}</div></section><section><h3>Audit log</h3><div data-hgp-audit>${auditMarkup()}</div><button type="button" data-hgp-clear-audit ${registry.getAuditLog().length ? "" : "disabled"}>Clear audit</button></section></aside></div><footer class="hgp-status"><strong role="status" aria-live="polite" data-hgp-status>${escapeHtml(message || "Ready.")}</strong><span>${escapeHtml(previewLabel)} | ${extensions.length}/${MAX_EXTENSIONS} installed</span></footer><input class="hgp-sr" type="file" accept="application/json,.json" data-hgp-file>`;
       previewFrame = root.querySelector("[data-hgp-frame]");
+      if (selected) {
+        const permissions = doc.createElement("p");
+        permissions.className = "hgp-output";
+        permissions.style.flexBasis = "100%";
+        permissions.textContent = `Quyền khai báo trước khi chạy: ${selected.manifest.permissions.join(", ") || "không có"}. Chỉ lệnh allowlist được áp dụng khi bấm Run/Preview. Snapshot là JSON tài liệu, không bao gồm Blob asset gốc.`;
+        root.querySelector(".hgp-toolbar")?.appendChild(permissions);
+      }
       if (previewFrame && selected) previewFrame.srcdoc = createPreviewDocument(selected);
     }
 
@@ -1047,6 +1102,7 @@
     validatePackage,
     parseLocalPackage,
     createMemoryHost,
+    createDocumentHost,
     createCapabilityApi,
     executeDeclarativeCommand,
     createRegistry,

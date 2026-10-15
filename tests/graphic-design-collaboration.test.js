@@ -2,6 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const vm = require("node:vm");
 
 const sourcePath = path.resolve(__dirname, "..", "graphic-design-collaboration.js");
 const source = fs.readFileSync(sourcePath, "utf8");
@@ -39,13 +40,25 @@ test("fallback is explicitly read-only and guests remain clearly labeled", () =>
 });
 
 test("renders Vietnamese accessible and responsive collaboration controls", () => {
-  for (const token of ["Tạo phòng thiết kế", "Ghim bình luận", "Tạo phiên bản", "Yêu cầu duyệt", "Đang online", "role=\"application\"", "aria-live=\"polite\""]) {
+  for (const token of ["Tạo phòng thiết kế", "Ghim bình luận", "Ghi nhận mốc metadata", "Yêu cầu duyệt", "Đang online", "role=\"application\"", "aria-live=\"polite\""]) {
     assert.match(source, new RegExp(token));
   }
   assert.match(source, /@media\(max-width:760px\)/);
   assert.match(source, /@media\(max-width:480px\)/);
   assert.match(source, /prefers-reduced-motion:reduce/);
   assert.match(source, /focus-visible/);
+});
+
+test("document context uses real current-frame layers and content fingerprint, not simulated timestamps", () => {
+  const document = { id: "d-one", name: "Actual design", activeFrameId: "frame-a", frames: [{ id: "frame-a", width: 1000, height: 500 }], layers: [{ id: "actual", frameId: "frame-a", name: "My text", type: "text", fill: "#ABCDEF" }, { id: "other", frameId: "frame-b" }] };
+  const first = collaboration.documentContext(document);
+  assert.equal(first.documentSync, false);
+  assert.deepEqual(first.layers.map((item) => item.id), ["actual"]);
+  assert.equal(first.layers[0].label, "My text");
+  assert.equal(first.fingerprint, collaboration.documentContext(structuredClone(document)).fingerprint);
+  const changed = structuredClone(document); changed.layers[0].name = "Edited";
+  assert.notEqual(first.fingerprint, collaboration.documentContext(changed).fingerprint);
+  assert.equal(collaboration.documentContext(null), null);
 });
 
 test("normalizes canvas coordinates for realtime cursors and pinned comments", () => {
@@ -81,4 +94,21 @@ test("sanitizes server room payloads and keeps an append-only audit chain", () =
   const copy = audit.list();
   copy[0].details.code = "mutated";
   assert.equal(audit.list()[0].details.code, "ROOM");
+});
+
+test("unmount during deferred socket-client loading never reads a new session token or creates a late socket", async () => {
+  let pendingScript, socketCreates = 0, tokenReads = 0;
+  const document = { getElementById: () => ({}), querySelector: () => null, createElement: () => ({ dataset: {}, addEventListener() {} }), head: { appendChild(script) { pendingScript = script; } } };
+  const scope = { document, setTimeout, clearTimeout, localStorage: { getItem: () => null, setItem() {} }, HHAuthSession: { token() { tokenReads += 1; return "new-session-token"; } } };
+  vm.runInNewContext(source, scope);
+  const root = { innerHTML: "", querySelector: () => null, setAttribute() {}, removeAttribute() {}, addEventListener() {}, removeEventListener() {}, replaceChildren() { this.innerHTML = ""; } };
+  const controller = scope.HHGraphicCollaboration.mount(root, { socketUrl: "https://realtime.example.invalid" });
+  assert.ok(pendingScript, "client script is genuinely waiting for load");
+  controller.unmount();
+  scope.io = () => { socketCreates += 1; return { on() {}, off() {}, disconnect() {} }; };
+  pendingScript.onload();
+  await Promise.resolve(); await Promise.resolve();
+  assert.equal(socketCreates, 0);
+  assert.equal(tokenReads, 0);
+  assert.equal(root.innerHTML, "");
 });

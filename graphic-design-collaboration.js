@@ -77,6 +77,17 @@
     return String(value == null ? "" : value).replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, maxLength);
   }
 
+  function documentContext(input) {
+    if (!input || !Array.isArray(input.layers)) return null;
+    const frame = input.frames?.find((item) => item.id === input.activeFrameId) || input.canvas || {};
+    const frameId = cleanText(frame.id || "canvas", 80);
+    const layers = input.layers.filter((item) => !frame.id || item.frameId === frame.id).slice(0, 200).map((item) => ({ id: cleanText(item.id, 160), label: cleanText(item.name || item.type, 120), color: /^#[0-9a-f]{6}$/i.test(item.fill || "") ? item.fill : "#62d7e7", type: cleanText(item.type, 40) }));
+    let hash = 2166136261;
+    const serialized = JSON.stringify({ id: input.id, canvas: input.canvas, frames: input.frames, layers: input.layers, assets: input.assets, revision: input.revision });
+    for (let index = 0; index < serialized.length; index += 1) hash = Math.imul(hash ^ serialized.charCodeAt(index), 16777619);
+    return { id: cleanText(input.id || "document", 80), name: cleanText(input.name || "Tài liệu đang mở", 120), frameId, layers, fingerprint: `document-${(hash >>> 0).toString(16).padStart(8, "0")}`, documentSync: false };
+  }
+
   function isWebSocketConfirmed(socket) {
     if (!socket || socket.connected !== true) return false;
     if (socket.realtimeConfirmed === true || socket.transport === "websocket") return true;
@@ -171,6 +182,9 @@
       pinDraft: null, selectedLayers: [], ownSocket: false, socket: null, destroyed: false, serverConfirmed: false
     };
     const auditTrail = createAuditTrail({ now: options.now });
+    const designContext = () => documentContext(options.designDocumentController?.document || options.designDocument);
+    const currentLayers = () => designContext()?.layers || SAMPLE_LAYERS;
+    const currentFrameId = () => designContext()?.frameId || "hero";
     const socketHandlers = [];
     let cursorFrame = 0;
     let pendingCursor = null;
@@ -224,19 +238,20 @@
     }
 
     function canvas() {
+      const context = designContext();
       const locks = new Map((state.room?.locks || []).map((lock) => [lock.layerId, lock]));
       const selected = new Set(state.selectedLayers);
       const cursors = (state.room?.members || []).filter((member) => member.socketId !== state.selfSocketId && member.cursor);
-      const comments = (state.room?.comments || []).filter((comment) => comment.artboardId === "hero" || !comment.artboardId);
-      return `<main class="dc-canvas-wrap"><div class="dc-canvas-toolbar"><button type="button" data-dc-action="comment-mode" class="${state.commentMode ? "is-primary" : ""}" ${!can("commenter") || readonly() ? "disabled" : ""}>${state.commentMode ? "Đang ghim bình luận" : "Ghim bình luận"}</button><button type="button" data-dc-action="version" ${!can("editor") || readonly() ? "disabled" : ""}>Tạo phiên bản</button><span class="dc-room-code">${escapeHtml(currentRole())} · ${escapeHtml(state.room?.persistence === "memory" ? "realtime memory" : "local")}</span></div>
+      const comments = (state.room?.comments || []).filter((comment) => comment.artboardId === currentFrameId() || !comment.artboardId);
+      return `<main class="dc-canvas-wrap"><p class="dc-empty" data-dc-document-capability>${context ? `Tài liệu cục bộ: ${escapeHtml(context.name)} · ${context.layers.length} layer.` : "Mẫu minh họa, chưa kết nối tài liệu thiết kế."} Máy chủ hiện đồng bộ presence, con trỏ, bình luận và mốc metadata; chưa đồng bộ nội dung document/CRDT. Các thành viên phải tự mở cùng bản tài liệu.</p><div class="dc-canvas-toolbar"><button type="button" data-dc-action="comment-mode" class="${state.commentMode ? "is-primary" : ""}" ${!can("commenter") || readonly() ? "disabled" : ""}>${state.commentMode ? "Đang ghim bình luận" : "Ghim bình luận"}</button><button type="button" data-dc-action="version" ${!can("editor") || readonly() ? "disabled" : ""}>Ghi nhận mốc metadata</button><span class="dc-room-code">${escapeHtml(currentRole())} · ${escapeHtml(state.room?.persistence === "memory" ? "realtime memory" : "local")}</span></div>
         <div class="dc-canvas-stage" data-dc-canvas role="application" aria-label="Canvas cộng tác. Dùng Tab để chọn layer, sau đó Enter để chọn.">
-          <div class="dc-artboard" aria-label="Artboard Hero"><span class="dc-artboard-label">HH Creative System</span><h3>Thiết kế cùng nhau, quyết định nhanh hơn.</h3><p>Một canvas minh họa để thử con trỏ, vùng chọn, comment và khóa layer.</p><span class="dc-design-button">Khám phá studio</span><span class="dc-design-character" aria-hidden="true"></span>
+          ${context ? `<div class="dc-artboard" aria-label="Danh sách layer tài liệu, không phải renderer cuối"><span class="dc-artboard-label">${escapeHtml(context.name)}</span><h3>${escapeHtml(context.frameId)}</h3><p>Ngữ cảnh layer thật; bản thiết kế được chỉnh trong editor. Không có thay đổi tài liệu nào được gửi qua phòng này.</p><div style="display:flex;flex-wrap:wrap;gap:8px">${context.layers.map((layer) => `<button type="button" data-layer="${escapeHtml(layer.id)}" data-dc-action="select-layer" aria-pressed="${selected.has(layer.id)}">${escapeHtml(layer.label)} · ${escapeHtml(layer.type)}</button>`).join("") || "Frame chưa có layer."}</div></div>` : `<div class="dc-artboard" aria-label="Mẫu minh họa Hero"><span class="dc-artboard-label">Mẫu minh họa HH</span><h3>Thiết kế cùng nhau, quyết định nhanh hơn.</h3><p>Một canvas mẫu để thử con trỏ, vùng chọn, comment và khóa layer.</p><span class="dc-design-button">Khám phá studio</span><span class="dc-design-character" aria-hidden="true"></span>
             ${["hero-bg", "hero-title", "hero-button", "hero-character"].map((id) => `<button type="button" class="dc-layer-hit ${selected.has(id) ? "is-selected" : ""}" data-layer="${id}" data-dc-action="select-layer" aria-label="Chọn ${escapeHtml(SAMPLE_LAYERS.find((item) => item.id === id)?.label || id)}"></button>`).join("")}
-          </div>
+          </div>`}
           ${cursors.map((member) => `<span class="dc-cursor" style="left:${clamp(member.cursor.x)}%;top:${clamp(member.cursor.y)}%;--cursor:${escapeHtml(member.cursor.color || "#62d7e7")}"><span>${escapeHtml(member.user?.name || "Thành viên")}</span></span>`).join("")}
           ${comments.map((comment, index) => `<button type="button" class="dc-pin ${comment.resolved ? "is-resolved" : ""}" style="left:${clamp(comment.x)}%;top:${clamp(comment.y)}%" data-dc-comment-id="${escapeHtml(comment.id)}" title="${escapeHtml(comment.body)}">${index + 1}</button>`).join("")}
         </div>
-        <div class="dc-layer-strip" aria-label="Layer nhanh">${SAMPLE_LAYERS.map((layer) => { const lock = locks.get(layer.id); const owned = lock?.user?.id === state.identity?.id; return `<span class="dc-layer-chip"><i class="dc-color-dot" style="--layer-color:${layer.color}"></i>${escapeHtml(layer.label)}${lock ? `<span class="dc-lock">${escapeHtml(lock.user.name)}</span>` : ""}<button type="button" data-dc-layer-lock="${layer.id}" ${!can("editor") || readonly() || (lock && !owned) ? "disabled" : ""}>${owned ? "Mở" : lock ? "Đã khóa" : "Khóa"}</button></span>`; }).join("")}</div>
+        <div class="dc-layer-strip" aria-label="Layer nhanh">${currentLayers().map((layer) => { const lock = locks.get(layer.id); const owned = lock?.user?.id === state.identity?.id; return `<span class="dc-layer-chip"><i class="dc-color-dot" style="--layer-color:${layer.color}"></i>${escapeHtml(layer.label)}${lock ? `<span class="dc-lock">${escapeHtml(lock.user.name)}</span>` : ""}<button type="button" data-dc-layer-lock="${escapeHtml(layer.id)}" ${!can("editor") || readonly() || (lock && !owned) ? "disabled" : ""}>${owned ? "Mở" : lock ? "Đã khóa" : "Khóa"}</button></span>`; }).join("")}</div>
       </main>`;
     }
 
@@ -348,11 +363,13 @@
       }
       try { await loadSocketClient(socketUrl); }
       catch (error) {
+        if (state.destroyed) return;
         state.connection = "readonly";
         state.message = `${error.message} Chế độ dự phòng chỉ cho phép xem.`;
         state.kind = "error";
         return render();
       }
+      if (state.destroyed) return;
       const token = options.token || globalScope.HHAuthSession?.token?.() || "";
       const socket = globalScope.io(socketUrl, {
         transports: ["websocket", "polling"],
@@ -371,8 +388,8 @@
         if (action === "copy-code") { await globalScope.navigator?.clipboard?.writeText(state.room.code); return setMessage("Đã sao chép mã phòng."); }
         if (action === "leave") { if (state.room?.code !== "LOCAL") await emitAck("design:room:leave"); state.room = null; state.selectedLayers = []; return setMessage("Đã rời phòng."); }
         if (action === "comment-mode") { state.commentMode = !state.commentMode; return render(); }
-        if (action === "select-layer") { const id = target.dataset.layer; state.selectedLayers = [id]; state.socket?.emit("design:selection", { layerIds: [id], artboardId: "hero" }); return render(); }
-        if (action === "version") { const label = `Snapshot ${new Date().toLocaleTimeString("vi-VN")}`; await emitAck("design:version:create", { label, branchId: "main", projectHash: `ui-${Date.now().toString(36)}` }); return setMessage(`Đã tạo ${label}.`); }
+        if (action === "select-layer") { const id = target.dataset.layer; if (!currentLayers().some((item) => item.id === id)) return; state.selectedLayers = [id]; options.designDocumentController?.select?.([id]); state.socket?.emit("design:selection", { layerIds: [id], artboardId: currentFrameId() }); return render(); }
+        if (action === "version") { const label = `Mốc ${new Date().toLocaleTimeString("vi-VN")}`; await emitAck("design:version:create", { label, branchId: "main", projectHash: designContext()?.fingerprint || "sample-no-document" }); return setMessage(`Đã ghi ${label}: metadata phòng, không lưu snapshot nội dung tài liệu.`); }
       } catch (error) { setMessage(error.message, "error"); }
     }
 
@@ -407,7 +424,7 @@
       if (commentForm) {
         const form = new FormData(commentForm);
         try {
-          await emitAck("design:comment:add", { body: form.get("body"), x: form.get("x"), y: form.get("y"), artboardId: "hero", layerId: state.selectedLayers[0] || "" });
+          await emitAck("design:comment:add", { body: form.get("body"), x: form.get("x"), y: form.get("y"), artboardId: currentFrameId(), layerId: state.selectedLayers[0] || "" });
           state.pinDraft = null;
           return setMessage("Đã ghim bình luận lên canvas.");
         } catch (error) { return setMessage(error.message, "error"); }
@@ -475,7 +492,7 @@
     return true;
   }
 
-  const api = { VERSION, ROLE_LABELS, SAMPLE_LAYERS: SAMPLE_LAYERS.map((item) => ({ ...item })), createFallbackRoom, positionFromEvent, isWebSocketConfirmed, normalizeRoom, createAuditTrail, mount, unmount };
+  const api = { VERSION, ROLE_LABELS, SAMPLE_LAYERS: SAMPLE_LAYERS.map((item) => ({ ...item })), createFallbackRoom, documentContext, positionFromEvent, isWebSocketConfirmed, normalizeRoom, createAuditTrail, mount, unmount };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   globalScope.HHGraphicCollaboration = api;
 }(typeof window !== "undefined" ? window : globalThis));

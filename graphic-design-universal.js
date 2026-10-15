@@ -12,6 +12,9 @@
   const MAX_COMMENTS = 80;
   const MAX_ASSETS = 500;
   const MAX_LAYERS = 4000;
+  const PACKAGE_FORMAT = "hh-design-package";
+  const PACKAGE_LIMITS = Object.freeze({ assetBytes: 16 * 1024 * 1024, totalBytes: 64 * 1024 * 1024, jsonBytes: 96 * 1024 * 1024 });
+  const RASTER_MIME = /^image\/(png|jpeg|webp|gif|avif|bmp)$/i;
   const GALAXY_PREF_KEY = "hh.home.galaxy.preferences.v2";
   const instances = new WeakMap();
   const GALAXY_THEMES = Object.freeze({
@@ -277,7 +280,7 @@
       blendMode: text(source.blendMode || "normal", "normal"),
       assetId: source.assetId ? text(source.assetId) : null,
       altText: text(source.altText),
-      pathData: text(source.pathData),
+      pathData: String(source.pathData || "").slice(0, 200000),
       pathPoints: (Array.isArray(source.pathPoints) ? source.pathPoints : []).slice(0, 1000).map(normalizePoint),
       pathClosed: source.pathClosed === true,
       textPathLayerId: source.textPathLayerId ? text(source.textPathLayerId) : null,
@@ -489,6 +492,8 @@
 
   function serializableDocument(document) {
     const value = clone(normalizeDocument(document));
+    delete value.assetSources;
+    value.layers.forEach((layer) => { if (layer.metadata) delete layer.metadata.objectUrl; });
     value.canvas.panX = 0;
     value.canvas.panY = 0;
     value.timeline.playing = false;
@@ -801,6 +806,15 @@
     } else if (type === "set-canvas") {
       const incoming = payload.changes && typeof payload.changes === "object" ? payload.changes : {};
       next.canvas = normalizeDocument({ ...next, canvas: { ...next.canvas, ...incoming } }).canvas;
+    } else if (type === "set-frame") {
+      const frame = next.frames.find((item) => item.id === (payload.id || next.activeFrameId));
+      const changes = payload.changes || {};
+      if (frame) {
+        if ("width" in changes) frame.width = clamp(changes.width, 1, 100000, frame.width);
+        if ("height" in changes) frame.height = clamp(changes.height, 1, 100000, frame.height);
+        if ("background" in changes) frame.background = safeColor(changes.background, frame.background);
+        if ("name" in changes) frame.name = text(changes.name, frame.name);
+      }
     } else if (type === "add-guide") {
       next.canvas.guides.push({ id: uid("guide"), axis: payload.axis === "x" ? "x" : "y", position: number(payload.position), locked: false });
     } else if (type === "remove-guide") {
@@ -900,32 +914,29 @@
       const layers = selectedLayers(next, payload).filter((layer) => !layer.locked);
       if (layers.length >= 2) {
         const mode = ["union", "subtract", "intersect", "exclude"].includes(payload.mode) ? payload.mode : "union";
-        const minX = Math.min(...layers.map((layer) => layer.x));
-        const minY = Math.min(...layers.map((layer) => layer.y));
-        const maxX = Math.max(...layers.map((layer) => layer.x + layer.width));
-        const maxY = Math.max(...layers.map((layer) => layer.y + layer.height));
+        const geometry = rectangleBoolean(layers, mode);
         const booleanLayer = normalizeLayer({
           id: uid("layer"),
           frameId,
           type: "path",
           name: `${mode} · ${layers.map((layer) => layer.name).join(" + ")}`,
-          x: minX,
-          y: minY,
-          width: maxX - minX,
-          height: maxY - minY,
+          x: geometry.x,
+          y: geometry.y,
+          width: geometry.width,
+          height: geometry.height,
           fill: layers[0].fill,
           stroke: layers[0].stroke,
           strokeWidth: layers[0].strokeWidth,
-          pathData: `M ${minX} ${minY} H ${maxX} V ${maxY} H ${minX} Z`,
+          pathData: geometry.pathData,
           metadata: {
             booleanMode: mode,
             booleanSources: layers.map((layer) => clone(layer))
           }
         }, frameId);
         next.layers = next.layers.filter((layer) => !layers.some((source) => source.id === layer.id));
-        next.layers.push(booleanLayer);
-        next.selectedLayerId = booleanLayer.id;
-        next.selectedLayerIds = [booleanLayer.id];
+        if (!geometry.empty) next.layers.push(booleanLayer);
+        next.selectedLayerId = geometry.empty ? "" : booleanLayer.id;
+        next.selectedLayerIds = geometry.empty ? [] : [booleanLayer.id];
       }
     } else if (type === "create-component") {
       const layers = selectedLayers(next, payload);
@@ -1194,6 +1205,67 @@
     return rgb.map((value) => value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4).reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
   }
 
+  // Exact orthogonal geometry: cancel internal cell edges, then trace contours.
+  // This deliberately rejects unsupported curves/transforms instead of inventing
+  // a bounding-box result. Clockwise outer/counter-clockwise hole contours keep
+  // SVG's nonzero fill rule correct for subtract and exclude.
+  function rectangleBoolean(layers, mode = "union") {
+    if (!["union", "subtract", "intersect", "exclude"].includes(mode)) throw new Error("Phép Boolean không hợp lệ.");
+    if (!Array.isArray(layers) || layers.length < 2 || layers.length > 32) throw new Error("Boolean cần 2–32 hình chữ nhật.");
+    if (layers.some((layer) => layer.type !== "rect" || layer.rotation || layer.skewX || layer.skewY || layer.cornerRadius || layer.masks?.some((mask) => mask.enabled) || layer.adjustments?.some((item) => item.enabled))) {
+      throw new Error("Boolean hiện hỗ trợ hình chữ nhật không bo góc, xoay, skew, mask hoặc hiệu ứng. Giữ nguyên bản gốc; đường cong cần engine hình học chuyên dụng.");
+    }
+    if (new Set(layers.map((layer) => layer.frameId)).size > 1) throw new Error("Chọn các hình trong cùng một frame.");
+    const xs = [...new Set(layers.flatMap((layer) => [layer.x, layer.x + layer.width]))].sort((a, b) => a - b);
+    const ys = [...new Set(layers.flatMap((layer) => [layer.y, layer.y + layer.height]))].sort((a, b) => a - b);
+    const edges = new Map();
+    const key = (x, y) => `${x},${y}`;
+    const addEdge = (x1, y1, x2, y2, direction) => {
+      const start = key(x1, y1), end = key(x2, y2);
+      if (!edges.delete(`${end}>${start}`)) edges.set(`${start}>${end}`, { x1, y1, x2, y2, start, end, direction });
+    };
+    let area = 0;
+    for (let x = 0; x < xs.length - 1; x += 1) for (let y = 0; y < ys.length - 1; y += 1) {
+      const mx = (xs[x] + xs[x + 1]) / 2, my = (ys[y] + ys[y + 1]) / 2;
+      const contained = layers.map((layer) => mx > layer.x && mx < layer.x + layer.width && my > layer.y && my < layer.y + layer.height);
+      const count = contained.filter(Boolean).length;
+      const include = mode === "union" ? count > 0 : mode === "intersect" ? count === layers.length : mode === "subtract" ? contained[0] && count === 1 : count % 2 === 1;
+      if (!include) continue;
+      area += (xs[x + 1] - xs[x]) * (ys[y + 1] - ys[y]);
+      addEdge(xs[x], ys[y], xs[x + 1], ys[y], 0);
+      addEdge(xs[x + 1], ys[y], xs[x + 1], ys[y + 1], 1);
+      addEdge(xs[x + 1], ys[y + 1], xs[x], ys[y + 1], 2);
+      addEdge(xs[x], ys[y + 1], xs[x], ys[y], 3);
+    }
+    if (!edges.size) return { empty: true, x: 0, y: 0, width: 0, height: 0, pathData: "", area: 0 };
+    const boundary = [...edges.values()];
+    const minX = Math.min(...boundary.map((edge) => edge.x1)), maxX = Math.max(...boundary.map((edge) => edge.x1));
+    const minY = Math.min(...boundary.map((edge) => edge.y1)), maxY = Math.max(...boundary.map((edge) => edge.y1));
+    const outgoing = new Map();
+    for (const edge of edges.values()) {
+      if (!outgoing.has(edge.start)) outgoing.set(edge.start, []);
+      outgoing.get(edge.start).push(edge);
+    }
+    const paths = [];
+    while (edges.size) {
+      let edge = edges.values().next().value;
+      const origin = edge.start;
+      const commands = [`M ${edge.x1} ${edge.y1}`];
+      while (edge) {
+        edges.delete(`${edge.start}>${edge.end}`);
+        commands.push(`L ${edge.x2} ${edge.y2}`);
+        if (edge.end === origin) break;
+        const candidates = (outgoing.get(edge.end) || []).filter((candidate) => edges.has(`${candidate.start}>${candidate.end}`));
+        const turnPriority = (candidate) => [1, 0, 3, 2].indexOf((candidate.direction - edge.direction + 4) % 4);
+        candidates.sort((a, b) => turnPriority(a) - turnPriority(b));
+        edge = candidates[0];
+        if (!edge) throw new Error("Không thể khép kín đường Boolean; bản gốc được giữ nguyên.");
+      }
+      paths.push(`${commands.join(" ")} Z`);
+    }
+    return { empty: false, x: minX, y: minY, width: maxX - minX, height: maxY - minY, pathData: paths.join(" "), area };
+  }
+
   function contrastRatio(a, b) {
     const light = Math.max(luminance(a), luminance(b));
     const dark = Math.min(luminance(a), luminance(b));
@@ -1258,25 +1330,155 @@
     return imported;
   }
 
-  function readStored() {
+  async function blobBase64(blob) {
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    let binary = "";
+    for (let index = 0; index < bytes.length; index += 0x8000) binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
+    return btoa(binary);
+  }
+
+  const assetStorageId = (id, accountId) => accountId ? `account:${encodeURIComponent(String(accountId))}:${text(id)}` : text(id);
+
+  async function putAssetBatch(records, options = {}) {
+    if (!records.length) return;
+    const db = await openAssetDatabase();
+    if (!db) throw new Error("Trình duyệt không hỗ trợ IndexedDB; chưa nhập tài liệu.");
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(ASSET_STORE_NAME, "readwrite");
+      const store = transaction.objectStore(ASSET_STORE_NAME);
+      records.forEach((record) => store.put({ ...record, id: assetStorageId(record.id, options.accountId), updatedAt: now() }));
+      transaction.oncomplete = () => { db.close(); resolve(); };
+      transaction.onabort = transaction.onerror = () => { db.close(); reject(transaction.error || new Error("Không thể lưu gói tài nguyên; tài liệu cũ được giữ nguyên.")); };
+    });
+  }
+
+  async function exportPackage(documentState, options = {}) {
+    const document = serializableDocument(documentState);
+    const readAsset = options.readAsset || ((id) => getAssetBlob(id, options.accountId));
+    const assets = [];
+    let total = 0;
+    for (const asset of document.assets) {
+      const record = await readAsset(asset.id);
+      const blob = record?.blob;
+      if (!blob || typeof blob.arrayBuffer !== "function") throw new Error(`Thiếu bản gốc: ${asset.name}. Relink trước khi đóng gói.`);
+      total += blob.size;
+      if (blob.size > PACKAGE_LIMITS.assetBytes || total > PACKAGE_LIMITS.totalBytes) throw new Error("Gói vượt giới hạn 16 MiB/tài nguyên hoặc 64 MiB tổng. Hãy chia nhỏ dự án.");
+      const checksum = await checksumBlob(blob);
+      assets.push({ id: asset.id, type: blob.type || asset.type, size: blob.size, checksum, encoding: "base64", data: await blobBase64(blob) });
+    }
+    const result = JSON.stringify({ format: PACKAGE_FORMAT, version: 1, documentVersion: VERSION, exportedAt: now(), document, assets });
+    if (result.length > PACKAGE_LIMITS.jsonBytes) throw new Error("Metadata dự án quá lớn để đóng gói an toàn.");
+    return result;
+  }
+
+  async function importPackage(input, options = {}) {
+    if (typeof input === "string" && input.length > PACKAGE_LIMITS.jsonBytes) throw new Error("Gói dự án vượt giới hạn dung lượng.");
+    const parsed = typeof input === "string" ? JSON.parse(input) : input;
+    // Old metadata documents remain importable, but missing originals remain
+    // visibly unresolved and block graphical exports; they are never fabricated.
+    if (parsed?.format === FORMAT) return importDocument(parsed);
+    if (!parsed || parsed.format !== PACKAGE_FORMAT || parsed.version !== 1 || parsed.documentVersion !== VERSION || !parsed.document || !Array.isArray(parsed.assets)) throw new Error("Gói HH Design không hợp lệ hoặc phiên bản chưa hỗ trợ.");
+    if (parsed.assets.length > MAX_ASSETS || parsed.document.assets?.length > MAX_ASSETS || parsed.document.layers?.length > MAX_LAYERS) throw new Error("Gói có quá nhiều tài nguyên hoặc layer.");
+    const document = importDocument({ format: FORMAT, document: parsed.document });
+    const ids = new Set(document.assets.map((asset) => asset.id));
+    if (ids.size !== document.assets.length || parsed.assets.length !== ids.size) throw new Error("Manifest tài nguyên không khớp hoặc có ID trùng.");
+    const seen = new Set(), records = [], remapped = new Map();
+    let total = 0;
+    for (const asset of parsed.assets) {
+      if (!ids.has(asset?.id) || seen.has(asset.id) || asset.encoding !== "base64" || typeof asset.data !== "string" || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(asset.data)) throw new Error("Payload tài nguyên không hợp lệ.");
+      if (!Number.isSafeInteger(asset.size) || asset.size < 0 || asset.size > PACKAGE_LIMITS.assetBytes || asset.data.length > Math.ceil(PACKAGE_LIMITS.assetBytes / 3) * 4) throw new Error("Tài nguyên vượt giới hạn 16 MiB.");
+      total += asset.size;
+      if (total > PACKAGE_LIMITS.totalBytes) throw new Error("Gói tài nguyên vượt giới hạn 64 MiB.");
+      const binary = atob(asset.data);
+      if (binary.length !== asset.size) throw new Error("Kích thước tài nguyên không khớp manifest.");
+      const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+      const type = typeof asset.type === "string" && /^[\w.+-]+\/[\w.+-]+$/.test(asset.type) ? asset.type : "application/octet-stream";
+      const blob = new Blob([bytes], { type });
+      if (await checksumBlob(blob) !== asset.checksum) throw new Error("Checksum tài nguyên không khớp; chưa nhập dữ liệu.");
+      const id = uid("asset-import");
+      seen.add(asset.id); remapped.set(asset.id, id);
+      records.push({ id, blob, meta: { checksum: asset.checksum, type, name: document.assets.find((item) => item.id === asset.id).name } });
+    }
+    // Validate all payloads before a single atomic write. New IDs never overwrite
+    // an existing account's asset, even when importing the same package twice.
+    await (options.storeAssets || putAssetBatch)(records, options);
+    const rewrite = (value, key = "") => {
+      if (Array.isArray(value)) return value.map((item) => rewrite(item, key));
+      if (value && typeof value === "object") {
+        const result = {};
+        for (const [field, item] of Object.entries(value)) {
+          if (["__proto__", "prototype", "constructor", "objectUrl"].includes(field)) continue;
+          result[field] = field === "id" && value.checksum && remapped.has(item) ? remapped.get(item) : rewrite(item, field);
+        }
+        return result;
+      }
+      return ["assetId", "assetIds", "resultAssetIds"].includes(key) && remapped.has(value) ? remapped.get(value) : value;
+    };
+    const restored = rewrite(document);
+    restored.assets = document.assets.map((asset) => {
+      const record = records.find((item) => item.id === remapped.get(asset.id));
+      return { ...asset, id: record.id, checksum: record.meta.checksum, type: record.blob.type, size: record.blob.size, status: "ready" };
+    });
+    restored.id = options.documentId || uid("design-import");
+    restored.history = { past: [], future: [] };
+    restored.commandLog = [];
+    return normalizeDocument(restored);
+  }
+
+  async function exportPreflight(documentState, options = {}) {
+    const health = runHealthScan(documentState);
+    const issues = [...health.issues];
+    const document = normalizeDocument(documentState);
+    const frame = activeFrame(document);
+    const readAsset = options.readAsset || ((id) => getAssetBlob(id, options.accountId));
+    const originals = new Map();
+    for (const layer of document.layers.filter((item) => item.visible && item.frameId === frame?.id && item.type === "image")) {
+      if (layer.assetId && originals.has(layer.assetId)) continue;
+      const asset = document.assets.find((item) => item.id === layer.assetId);
+      const record = asset ? await Promise.resolve().then(() => readAsset(asset.id)).catch(() => null) : null;
+      if (!record?.blob) issues.push({ id: `original-${layer.id}`, severity: "error", message: `${layer.name}: thiếu ảnh gốc. Thumbnail chỉ để xem trước; hãy relink.` });
+      else if (!RASTER_MIME.test(record.blob.type)) issues.push({ id: `mime-${layer.id}`, severity: "error", message: `${layer.name}: chỉ hỗ trợ ảnh raster PNG/JPEG/WebP/GIF/AVIF/BMP khi xuất. SVG nhập ngoài cần chuyển đổi an toàn.` });
+      else originals.set(asset.id, record.blob);
+    }
+    return { ...health, issues, ok: !issues.some((item) => item.severity === "error"), summary: { errors: issues.filter((item) => item.severity === "error").length, warnings: issues.filter((item) => item.severity === "warning").length, info: issues.filter((item) => item.severity === "info").length }, originals };
+  }
+
+  async function prepareExportSVG(documentState, options = {}) {
+    const preflight = await exportPreflight(documentState, options);
+    if (!preflight.ok) throw new Error(`Preflight chặn xuất: ${preflight.issues.filter((item) => item.severity === "error").map((item) => item.message).join(" ")}`);
+    const doc = normalizeDocument(documentState);
+    const frame = activeFrame(doc);
+    const scale = clamp(options.scale, 0.1, 3, 1);
+    if (!frame || frame.width * frame.height * scale * scale > 33554432 || frame.width * scale > 16384 || frame.height * scale > 16384) throw new Error("Kích thước xuất vượt giới hạn 32 megapixel hoặc cạnh 16384px.");
+    doc.assetSources = new Map();
+    for (const [id, blob] of preflight.originals) doc.assetSources.set(id, `data:${blob.type};base64,${await blobBase64(blob)}`);
+    doc.selectedLayerId = ""; doc.selectedLayerIds = [];
+    doc.canvas = { ...doc.canvas, gridVisible: false, rulersVisible: false, guides: [] };
+    const width = Math.round(frame.width * scale), height = Math.round(frame.height * scale);
+    const svg = renderCanvas(doc, scale).replace(/^<svg /, '<svg xmlns="http://www.w3.org/2000/svg" ').replace(/width="[^"]+" height="[^"]+" role="application"/, `width="${width}" height="${height}" role="img"`).replace(/\sdata-gdu-[\w-]+(?:="[^"]*")?/g, "");
+    return { svg, width, height, warnings: preflight.issues.filter((item) => item.severity === "warning") };
+  }
+
+  function readStored(storage = globalThis.localStorage, key = STORAGE_KEY, options = {}) {
     try {
-      const current = globalThis.localStorage?.getItem(STORAGE_KEY);
+      const current = storage?.getItem(key);
       if (current) return normalizeDocument(JSON.parse(current));
-      const legacy = globalThis.localStorage?.getItem(LEGACY_STORAGE_KEY);
+      const legacy = options.allowLegacy === false ? null : storage?.getItem(LEGACY_STORAGE_KEY);
       if (legacy) {
         const migrated = normalizeDocument(JSON.parse(legacy));
-        globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify(serializableDocument(migrated)));
+        storage?.setItem(key, JSON.stringify(serializableDocument(migrated)));
         return migrated;
       }
-      return normalizeDocument(defaultDocument());
+      return normalizeDocument(defaultDocument({ id: options.documentId, name: options.documentName }));
     } catch {
-      return normalizeDocument(defaultDocument());
+      return normalizeDocument(defaultDocument({ id: options.documentId, name: options.documentName }));
     }
   }
 
-  function writeStored(document) {
+  function writeStored(document, storage = globalThis.localStorage, key = STORAGE_KEY) {
     try {
-      globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify(serializableDocument(document)));
+      if (!storage?.setItem) return false;
+      storage.setItem(key, JSON.stringify(serializableDocument(document)));
       return true;
     } catch { return false; }
   }
@@ -1293,34 +1495,34 @@
     });
   }
 
-  async function putAssetBlob(id, blob, meta = {}) {
+  async function putAssetBlob(id, blob, meta = {}, accountId) {
     const db = await openAssetDatabase();
     if (!db) throw new Error("Trình duyệt không hỗ trợ IndexedDB.");
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(ASSET_STORE_NAME, "readwrite");
-      transaction.objectStore(ASSET_STORE_NAME).put({ id: text(id), blob, meta: clone(meta), updatedAt: now() });
+      transaction.objectStore(ASSET_STORE_NAME).put({ id: assetStorageId(id, accountId), blob, meta: clone(meta), updatedAt: now() });
       transaction.oncomplete = () => { db.close(); resolve(true); };
       transaction.onerror = () => { const error = transaction.error; db.close(); reject(error || new Error("Không thể lưu asset.")); };
     });
   }
 
-  async function getAssetBlob(id) {
+  async function getAssetBlob(id, accountId) {
     const db = await openAssetDatabase();
     if (!db) return null;
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(ASSET_STORE_NAME, "readonly");
-      const request = transaction.objectStore(ASSET_STORE_NAME).get(text(id));
+      const request = transaction.objectStore(ASSET_STORE_NAME).get(assetStorageId(id, accountId));
       request.onsuccess = () => { const result = request.result || null; db.close(); resolve(result); };
       request.onerror = () => { const error = request.error; db.close(); reject(error); };
     });
   }
 
-  async function removeAssetBlob(id) {
+  async function removeAssetBlob(id, accountId) {
     const db = await openAssetDatabase();
     if (!db) return false;
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(ASSET_STORE_NAME, "readwrite");
-      transaction.objectStore(ASSET_STORE_NAME).delete(text(id));
+      transaction.objectStore(ASSET_STORE_NAME).delete(assetStorageId(id, accountId));
       transaction.oncomplete = () => { db.close(); resolve(true); };
       transaction.onerror = () => { const error = transaction.error; db.close(); reject(error); };
     });
@@ -1339,7 +1541,7 @@
 
   function imageDimensions(blob) {
     return new Promise((resolve) => {
-      if (!String(blob?.type || "").startsWith("image/") || typeof Image === "undefined") return resolve({ width: 0, height: 0, thumbnail: "" });
+      if (!RASTER_MIME.test(blob?.type || "") || typeof Image === "undefined") return resolve({ width: 0, height: 0, thumbnail: "" });
       const url = URL.createObjectURL(blob);
       const image = new Image();
       image.onload = () => {
@@ -1359,11 +1561,12 @@
     });
   }
 
-  async function assetRecordFromBlob(blob, name, source = "local-device") {
+  async function assetRecordFromBlob(blob, name, source = "local-device", accountId) {
+    if (!blob || blob.size > PACKAGE_LIMITS.assetBytes) throw new Error("Mỗi tài nguyên tối đa 16 MiB.");
     const id = uid("asset");
     const checksum = await checksumBlob(blob);
     const dimensions = await imageDimensions(blob);
-    const kind = String(blob.type || "").startsWith("image/")
+    const kind = blob.type === "image/svg+xml" ? "vector" : String(blob.type || "").startsWith("image/")
       ? "image"
       : String(blob.type || "").startsWith("video/") ? "video"
         : String(blob.type || "").startsWith("audio/") ? "audio"
@@ -1386,7 +1589,7 @@
       tags: [],
       createdAt: now()
     };
-    await putAssetBlob(id, blob, { name: record.name, type: record.type, checksum });
+    await putAssetBlob(id, blob, { name: record.name, type: record.type, checksum }, accountId);
     return record;
   }
 
@@ -1486,8 +1689,9 @@
     }
     if (layer.type === "image") {
       const asset = documentState.assets.find((item) => item.id === layer.assetId);
-      const href = layer.metadata?.objectUrl || asset?.thumbnail || layer.metadata?.dataUrl;
-      if (href) return `<image ${attrs} href="${escapeHTML(href)}" x="${layer.x}" y="${layer.y}" width="${layer.width}" height="${layer.height}" preserveAspectRatio="xMidYMid slice"></image>`;
+      const href = documentState.assetSources?.get?.(layer.assetId) || asset?.thumbnail || layer.metadata?.dataUrl;
+      const safeHref = /^(?:data:image\/(?:png|jpeg|webp|gif|avif|bmp);base64,[A-Za-z0-9+/=]+|blob:[^\s"<>]+)$/i.test(String(href || "")) ? String(href).replace(/&/g, "&amp;").replace(/"/g, "&quot;") : "";
+      if (safeHref) return `<image ${attrs} href="${safeHref}" x="${layer.x}" y="${layer.y}" width="${layer.width}" height="${layer.height}" preserveAspectRatio="xMidYMid slice"></image>`;
       return `<g ${attrs}><rect x="${layer.x}" y="${layer.y}" width="${layer.width}" height="${layer.height}" rx="${layer.cornerRadius}" fill="#132238" stroke="#52677d" stroke-dasharray="8 6"></rect><text x="${layer.x + 16}" y="${layer.y + 30}" fill="#91a8bd" font-size="14">Asset chưa được liên kết</text></g>`;
     }
     if (["group", "component", "instance"].includes(layer.type)) {
@@ -1688,15 +1892,36 @@
   }
 
   function persist(documentState, instance) {
-    writeStored(documentState);
+    const serializable = serializableDocument(documentState);
+    const saved = writeStored(documentState, instance.storage, instance.storageKey);
+    const sequence = (instance.saveSequence || 0) + 1;
+    instance.saveSequence = sequence;
+    instance.saveState = saved ? "Đã lưu trên thiết bị; đang kiểm tra kho dự án…" : "Chưa lưu: bộ nhớ không khả dụng hoặc đã đầy. Giữ trang mở và xuất gói dự án.";
+    instance.onSaveState?.();
     if (typeof globalThis.dispatchEvent === "function" && typeof CustomEvent !== "undefined") {
-      globalThis.dispatchEvent(new CustomEvent("hh:graphic-design-document-change", { detail: { document: serializableDocument(documentState) } }));
+      globalThis.dispatchEvent(new CustomEvent("hh:graphic-design-document-change", { detail: { document: serializable, saved, accountId: instance.projectContext?.accountId, projectId: instance.projectContext?.projectId } }));
     }
     const projectStore = globalThis.HHGraphicProjectStore;
-    if (projectStore?.createStore && !instance.mirrorBusy) {
-      instance.mirrorBusy = true;
-      Promise.resolve(projectStore.createStore()).then((store) => store.saveProject({ id: documentState.id, name: documentState.name, branch: documentState.branch, status: documentState.status, data: { designDocument: serializableDocument(documentState) }, assetIds: documentState.assets.map((asset) => asset.id) })).catch(() => null).finally(() => { instance.mirrorBusy = false; });
-    }
+    // Queue every revision: an edit arriving during a pending mirror may never
+    // be discarded merely because an earlier IndexedDB write is still busy.
+    const task = (instance.saveQueue || Promise.resolve()).catch(() => {}).then(async () => {
+      let mirrored = false, error = "";
+      if (projectStore?.createStore) {
+        try {
+          const store = await projectStore.createStore({ accountId: instance.projectContext?.accountId });
+          try { await store.saveProject({ id: serializable.id, name: serializable.name, branch: serializable.branch, status: serializable.status, data: { designDocument: serializable }, assetIds: serializable.assets.map((asset) => asset.id) }); mirrored = true; }
+          finally { await store.close?.(); }
+        } catch (failure) { error = text(failure?.message || "Không thể đồng bộ kho dự án."); }
+      }
+      const ok = saved && (!projectStore?.createStore || mirrored);
+      if (instance.saveSequence === sequence) {
+        instance.saveState = ok ? `Đã lưu trên thiết bị${mirrored ? " và kho dự án" : ""} · ${serializable.updatedAt}` : !saved ? "Chưa lưu vào bộ nhớ trình duyệt. Giữ bản nháp và xuất gói dự án trước khi đóng." : `Đã lưu bản nháp; kho dự án chưa lưu: ${error} Có thể thử Lưu lại.`;
+        instance.onSaveState?.();
+      }
+      return { ok, local: saved, mirrored, error };
+    });
+    instance.saveQueue = task;
+    return task;
   }
 
   function download(name, content, type) {
@@ -1769,9 +1994,21 @@
     const host = root.querySelector(".gd-main") || root;
     // Repair fresh and legacy documents before any renderer calls array
     // methods on layer masks, adjustments, strokes or prototype actions.
-    let documentState = normalizeDocument(readStored());
+    const projectContext = options.projectContext || globalThis.HHGraphicProjectContext?.resolve?.(options);
+    const storage = (() => {
+      if (projectContext) return projectContext.storage;
+      if (options.storage !== undefined) return options.storage;
+      try { return globalThis.localStorage || null; } catch { return null; }
+    })();
+    const storageKey = projectContext?.storageKey?.(STORAGE_KEY) || STORAGE_KEY;
+    let documentState = normalizeDocument(options.document || readStored(storage, storageKey, { allowLegacy: !projectContext, documentId: projectContext?.projectId, documentName: options.projectName }));
+    if (projectContext?.projectId) documentState.id = projectContext.projectId;
     const instance = {
       document: documentState,
+      projectContext, storage, storageKey,
+      saveState: "Bản nháp trên thiết bị · chưa xác minh kho dự án",
+      imageSources: new Map(),
+      imageHydration: 0,
       zoom: documentState.canvas.zoom || 1,
       focus: "design",
       mode: "studio",
@@ -1790,7 +2027,32 @@
     let shell = host.querySelector("[data-gdu-shell]");
     const qs = (selector) => shell?.querySelector(selector);
     const toast = (message) => { const element = qs("[data-gdu-toast]"); if (!element) return; element.textContent = message; element.hidden = false; clearTimeout(instance.toastTimer); instance.toastTimer = setTimeout(() => { element.hidden = true; }, 2600); };
-    const redraw = () => { shell.outerHTML = renderShell(instance.document, instance.mode, instance.focus, instance.zoom, instance.compact, instance.presentation); shell = host.querySelector("[data-gdu-shell]"); bind(); };
+    const paintSaveState = () => { const node = qs("[data-gdu-status]"); if (node) { node.textContent = instance.saveState; node.setAttribute("aria-live", "polite"); } };
+    instance.onSaveState = paintSaveState;
+    const hydrateOriginalImages = async () => {
+      const revision = ++instance.imageHydration;
+      const snapshot = instance.document;
+      const used = new Set(snapshot.layers.filter((item) => item.type === "image").map((item) => item.assetId));
+      for (const [id, entry] of instance.imageSources) {
+        const asset = snapshot.assets.find((item) => item.id === id);
+        if (!used.has(id) || !asset || entry.checksum !== asset.checksum) { URL.revokeObjectURL(entry.url); instance.imageSources.delete(id); }
+      }
+      for (const id of used) {
+        if (!id || instance.imageSources.has(id)) continue;
+        const asset = snapshot.assets.find((item) => item.id === id);
+        const record = asset ? await getAssetBlob(id, instance.projectContext?.accountId).catch(() => null) : null;
+        if (revision !== instance.imageHydration || instance.disposed) return;
+        if (record?.blob && RASTER_MIME.test(record.blob.type)) instance.imageSources.set(id, { url: URL.createObjectURL(record.blob), checksum: asset.checksum });
+      }
+      if (revision !== instance.imageHydration || instance.disposed) return;
+      shell.querySelectorAll('image[data-gdu-layer]').forEach((node) => {
+        const layer = snapshot.layers.find((item) => item.id === node.dataset.gduLayer);
+        const entry = instance.imageSources.get(layer?.assetId);
+        if (entry) { node.setAttribute("href", entry.url); node.dataset.gduSource = "original"; }
+        else node.dataset.gduSource = "preview-only";
+      });
+    };
+    const redraw = () => { shell.outerHTML = renderShell(instance.document, instance.mode, instance.focus, instance.zoom, instance.compact, instance.presentation); shell = host.querySelector("[data-gdu-shell]"); bind(); paintSaveState(); hydrateOriginalImages(); };
     const sync = () => { persist(instance.document, instance); redraw(); };
     const setStatus = (message) => { const element = shell.querySelector("[data-gdu-status]"); if (element) element.textContent = message; };
     const activeSelection = () => instance.document.selectedLayerIds.length ? instance.document.selectedLayerIds : [instance.document.selectedLayerId].filter(Boolean);
@@ -1822,7 +2084,7 @@
       const references = [];
       for (const layer of instance.document.layers.filter((item) => activeSelection().includes(item.id)).slice(0, 2)) {
         const asset = instance.document.assets.find((item) => item.id === layer.assetId);
-        const stored = asset ? await getAssetBlob(asset.id).catch(() => null) : null;
+        const stored = asset ? await getAssetBlob(asset.id, instance.projectContext?.accountId).catch(() => null) : null;
         if (stored?.blob && /^image\/(png|jpeg|webp)$/i.test(stored.blob.type)) references.push({ name: asset.name, mimeType: stored.blob.type, data: await blobToBase64(stored.blob) });
       }
       return references;
@@ -1870,7 +2132,7 @@
           const mimeType = text(action.mimeType || "image/jpeg", "image/jpeg");
           const binary = Uint8Array.from(atob(action.data), (char) => char.charCodeAt(0));
           const blob = new Blob([binary], { type: mimeType });
-          const record = await assetRecordFromBlob(blob, `AI ${operationName} · ${new Date().toLocaleString("vi-VN")}`, "ai-provider");
+          const record = await assetRecordFromBlob(blob, `AI ${operationName} · ${new Date().toLocaleString("vi-VN")}`, "ai-provider", instance.projectContext?.accountId);
           instance.document = operation(instance.document, "add-asset", record);
           instance.document = operation(instance.document, "set-job", { job: { id: jobId, operation: operationName, status: "completed", provider: action.provider || "gemini-media", model: action.model, input, resultAssetIds: [record.id], latencyMs: Date.now() - startedAt, output: "Đã tạo asset. Xem diff rồi bấm Áp dụng để đặt vào canvas." } });
         } else {
@@ -1902,51 +2164,54 @@
       sync();
       toast("Đã áp dụng AI plan vào Universal Design Document.");
     };
-    const downloadSvg = (scale = 1) => {
-      const svg = qs("[data-gdu-canvas]");
-      if (!svg) return toast("Chưa có canvas để xuất.");
-      const copy = svg.cloneNode(true);
-      copy.querySelector(".gdu-selection-ui")?.remove();
-      copy.querySelector(".gdu-rulers")?.remove();
-      copy.setAttribute("width", Math.round(activeFrame(instance.document)?.width * scale || 1440 * scale));
-      copy.setAttribute("height", Math.round(activeFrame(instance.document)?.height * scale || 900 * scale));
-      download(`hh-design-${scale}x.svg`, `<?xml version="1.0" encoding="UTF-8"?>\n${new XMLSerializer().serializeToString(copy)}`, "image/svg+xml");
-      toast(`Đã xuất SVG ${scale}×.`);
+    const downloadPackage = async () => {
+      try {
+        toast("Đang đóng gói tài liệu và bản gốc tài nguyên…");
+        const packaged = await exportPackage(instance.document, { accountId: instance.projectContext?.accountId });
+        download("hh-design-document.hhdesign", packaged);
+        toast("Đã xuất gói portable gồm tài liệu, bản gốc và checksum.");
+      } catch (error) { toast(error.message); }
+    };
+    const downloadSvg = async (scale = 1) => {
+      try {
+        const result = await prepareExportSVG(instance.document, { scale, accountId: instance.projectContext?.accountId });
+        download(`hh-design-${scale}x.svg`, `<?xml version="1.0" encoding="UTF-8"?>\n${result.svg}`, "image/svg+xml");
+        toast(`Đã xuất SVG từ tài nguyên gốc${result.warnings.length ? ` · ${result.warnings.length} cảnh báo trong Design Health` : ""}.`);
+      } catch (error) { toast(error.message); }
     };
     const downloadPng = async (scale = 1) => {
-      const svg = qs("[data-gdu-canvas]");
-      if (!svg) return toast("Chưa có canvas để xuất.");
-      const width = Math.round(activeFrame(instance.document)?.width * scale || 1440 * scale);
-      const height = Math.round(activeFrame(instance.document)?.height * scale || 900 * scale);
-      const copy = svg.cloneNode(true);
-      copy.querySelector(".gdu-selection-ui")?.remove();
-      copy.querySelector(".gdu-rulers")?.remove();
-      copy.setAttribute("width", width);
-      copy.setAttribute("height", height);
-      const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(copy)], { type: "image/svg+xml" }));
-      await new Promise((resolve, reject) => {
+      let url = "";
+      try {
+        const { svg, width, height } = await prepareExportSVG(instance.document, { scale, accountId: instance.projectContext?.accountId });
+        url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+        await new Promise((resolve, reject) => {
         const image = new Image();
         image.onload = () => {
           const canvas = document.createElement("canvas");
           canvas.width = width;
           canvas.height = height;
-          canvas.getContext("2d")?.drawImage(image, 0, 0, width, height);
-          canvas.toBlob((png) => {
-            if (!png) return reject(new Error("Không tạo được PNG."));
-            download(`hh-design-${scale}x.png`, png, "image/png");
-            URL.revokeObjectURL(url);
-            resolve();
-          }, "image/png");
+          try {
+            const context = canvas.getContext("2d");
+            if (!context) throw new Error("Canvas 2D không khả dụng.");
+            context.drawImage(image, 0, 0, width, height);
+            canvas.toBlob((png) => {
+              if (!png) return reject(new Error("Không tạo được PNG."));
+              download(`hh-design-${scale}x.png`, png, "image/png"); resolve();
+            }, "image/png");
+          } catch (error) { reject(error); }
         };
-        image.onerror = () => { URL.revokeObjectURL(url); reject(new Error("SVG không thể render thành PNG.")); };
+        image.onerror = () => reject(new Error("SVG không thể render thành PNG."));
         image.src = url;
-      }).then(() => toast(`Đã xuất PNG ${scale}×.`)).catch((error) => toast(error.message));
+        });
+        toast(`Đã xuất PNG ${scale}× từ ảnh gốc.`);
+      } catch (error) { toast(error.message); }
+      finally { if (url) URL.revokeObjectURL(url); }
     };
     const importFiles = async (files) => {
       for (const file of [...files].slice(0, 20)) {
         if (file.size > 40_000_000) { toast(`${file.name}: vượt giới hạn 40MB.`); continue; }
         try {
-          const record = await assetRecordFromBlob(file, file.name);
+          const record = await assetRecordFromBlob(file, file.name, "local-device", instance.projectContext?.accountId);
           if (instance.document.assets.some((asset) => asset.checksum && asset.checksum === record.checksum)) {
             toast(`${file.name}: asset trùng checksum, không tạo bản sao.`);
             continue;
@@ -1963,9 +2228,9 @@
       const asset = instance.document.assets.find((item) => item.id === instance.relinkAssetId);
       if (!asset || !file) return toast("Không tìm thấy asset cần relink.");
       try {
-        const replacement = await assetRecordFromBlob(file, file.name, "local-device");
-        await putAssetBlob(asset.id, file, { name: replacement.name, type: replacement.type, checksum: replacement.checksum });
-        await removeAssetBlob(replacement.id).catch(() => null);
+        const replacement = await assetRecordFromBlob(file, file.name, "local-device", instance.projectContext?.accountId);
+        await putAssetBlob(asset.id, file, { name: replacement.name, type: replacement.type, checksum: replacement.checksum }, instance.projectContext?.accountId);
+        await removeAssetBlob(replacement.id, instance.projectContext?.accountId).catch(() => null);
         instance.document = operation(instance.document, "replace-asset", {
           id: asset.id,
           name: replacement.name,
@@ -1983,7 +2248,7 @@
         toast(`Relink thất bại: ${text(error.message || "Không thể đọc file.")}`);
       }
     };
-    const onCommand = (command) => {
+    const onCommand = async (command) => {
       if (command === "toggle-shell") instance.compact = !instance.compact;
       else if (command === "undo") instance.document = undo(instance.document);
       else if (command === "redo") instance.document = redo(instance.document);
@@ -2062,17 +2327,18 @@
       else if (command === "fix-all-health") {
         for (const issue of runHealthScan(instance.document).issues.filter((item) => /^(contrast|alt|touch|overflow)-/.test(item.id))) instance.document = operation(instance.document, "fix-health-issue", { issueId: issue.id });
       }
-      else if (command === "preflight") { const result = runHealthScan(instance.document); return toast(result.ok ? "Preflight đạt. Có thể export." : `Preflight chặn export: ${result.summary.errors} lỗi.`); }
+      else if (command === "preflight") { const result = await exportPreflight(instance.document, { accountId: instance.projectContext?.accountId }); return toast(result.ok ? `Preflight đạt · ${result.summary.warnings} cảnh báo trong Design Health.` : `Preflight chặn xuất: ${result.issues.filter((item) => item.severity === "error").map((item) => item.message).join(" ")}`); }
       else if (command === "command-palette") { qs("[data-gdu-command-dialog]")?.showModal?.(); return; }
       else if (command === "set-approval") instance.document = operation(instance.document, "set-approval", { status: "review" });
-      else if (command === "save") { persist(instance.document, instance); return toast("Đã lưu Universal Design Document."); }
-      else if (command === "export") { download("hh-design-document.json", exportDocument(instance.document)); return toast("Đã xuất tài liệu thiết kế."); }
+      else if (command === "save") { const result = await persist(instance.document, instance); return toast(result.ok ? "Đã lưu tài liệu thiết kế." : instance.saveState); }
+      else if (command === "export") return downloadPackage();
       else if (command === "zoom-in") instance.zoom = clamp(instance.zoom + 0.1, 0.05, 4);
       else if (command === "zoom-out") instance.zoom = clamp(instance.zoom - 0.1, 0.05, 4);
       else if (command === "pen") { instance.document.settings.activeTool = "pen"; instance.penPoints = []; }
       else if (command === "shape-builder") {
         if (instance.document.selectedLayerIds.length < 2) return toast("Shape Builder cần ít nhất hai shape.");
-        instance.document = operation(instance.document, "boolean-layers", { ids: instance.document.selectedLayerIds, mode: "union" });
+        try { instance.document = operation(instance.document, "boolean-layers", { ids: instance.document.selectedLayerIds, mode: "union" }); }
+        catch (error) { return toast(error.message); }
       }
       else return;
       instance.document.canvas.zoom = instance.zoom;
@@ -2123,7 +2389,7 @@
         const distribute = event.target.closest("[data-gdu-distribute]");
         if (distribute) { instance.document = operation(instance.document, "distribute-layers", { ids: activeSelection(), axis: distribute.dataset.gduDistribute }); return sync(); }
         const booleanButton = event.target.closest("[data-gdu-boolean]");
-        if (booleanButton) { instance.document = operation(instance.document, "boolean-layers", { ids: activeSelection(), mode: booleanButton.dataset.gduBoolean }); return sync(); }
+        if (booleanButton) { try { instance.document = operation(instance.document, "boolean-layers", { ids: activeSelection(), mode: booleanButton.dataset.gduBoolean }); return sync(); } catch (error) { return toast(error.message); } }
         const aiRun = event.target.closest("[data-gdu-ai-run]");
         if (aiRun) return runAI();
         const apply = event.target.closest("[data-gdu-apply-ai]");
@@ -2166,11 +2432,11 @@
         const assetUse = event.target.closest("[data-gdu-use-asset]");
         if (assetUse) { const asset = instance.document.assets.find((item) => item.id === assetUse.dataset.gduUseAsset); if (asset) instance.document = operation(instance.document, "add-layer", { type: asset.kind === "image" ? "image" : "rect", name: asset.name, assetId: asset.id, metadata: { dataUrl: asset.thumbnail } }); return sync(); }
         const assetRemove = event.target.closest("[data-gdu-remove-asset]");
-        if (assetRemove) { instance.document = operation(instance.document, "remove-asset", { id: assetRemove.dataset.gduRemoveAsset }); removeAssetBlob(assetRemove.dataset.gduRemoveAsset).catch(() => null); return sync(); }
+        if (assetRemove) { instance.document = operation(instance.document, "remove-asset", { id: assetRemove.dataset.gduRemoveAsset }); sync(); return toast("Đã gỡ khỏi tài liệu; bản gốc được giữ để không hỏng nhánh/phiên bản khác."); }
         const exportButton = event.target.closest("[data-gdu-export]");
         if (exportButton) {
           const kind = exportButton.dataset.gduExport;
-          if (kind === "json") download("hh-design-document.json", exportDocument(instance.document));
+          if (kind === "json") downloadPackage();
           if (kind === "svg") downloadSvg(1);
           if (kind === "png") downloadPng(1);
           if (kind === "png-2x") downloadPng(2);
@@ -2192,8 +2458,11 @@
         if (event.target.matches("[data-gdu-asset-file]")) return importFiles(event.target.files);
         if (event.target.matches("[data-gdu-relink-file]") && event.target.files?.[0]) return relinkFile(event.target.files[0]);
         if (event.target.matches("[data-gdu-import-document]") && event.target.files?.[0]) {
+          const file = event.target.files[0];
+          if (file.size > PACKAGE_LIMITS.jsonBytes) return toast("Gói vượt giới hạn 96 MiB; chưa nhập dữ liệu.");
           const reader = new FileReader();
-          reader.onload = () => { try { instance.document = importDocument(reader.result); sync(); toast("Đã nhập lại Universal Design Document."); } catch (error) { toast(error.message); } };
+          reader.onload = async () => { try { const imported = await importPackage(reader.result, { documentId: instance.projectContext?.projectId, accountId: instance.projectContext?.accountId }); instance.document = imported; if (instance.projectContext?.projectId) instance.document.id = instance.projectContext.projectId; sync(); toast("Đã nhập tài liệu và tài nguyên gốc. Kiểm tra trạng thái lưu trước khi đóng."); } catch (error) { toast(error.message); } };
+          reader.onerror = () => toast("Không thể đọc gói dự án; tài liệu đang mở được giữ nguyên.");
           reader.readAsText(event.target.files[0]);
         }
       });
@@ -2321,6 +2590,8 @@
       });
     }
     bind();
+    paintSaveState();
+    hydrateOriginalImages();
     const onKeyDown = (event) => {
       const target = event.target;
       const editing = target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
@@ -2359,7 +2630,8 @@
     globalThis.addEventListener?.("keydown", onKeyDown);
     let fpsFrameHandle = 0;
     const sampleFrame = (nowTime) => {
-      if (!host.isConnected) return;
+      fpsFrameHandle = 0;
+      if (instance.disposed || !host.isConnected || globalThis.document?.hidden) return;
       if (globalThis.document?.hidden) {
         instance.fpsFrames = 0;
         instance.fpsStartedAt = nowTime;
@@ -2371,7 +2643,7 @@
           instance.fpsFrames = 0;
           instance.fpsStartedAt = nowTime;
           const fpsNode = qs("[data-gdu-fps]");
-          if (fpsNode) fpsNode.textContent = `FPS ${instance.fps}`;
+          if (fpsNode) fpsNode.textContent = `Nhịp UI ${instance.fps} Hz · không phải FPS renderer`;
           if (instance.document.canvas.quality === "auto" && instance.fps < 30 && instance.mode === "galaxy") {
             instance.document.canvas.quality = "low";
             persist(instance.document, instance);
@@ -2380,10 +2652,21 @@
       }
       fpsFrameHandle = globalThis.requestAnimationFrame?.(sampleFrame) || 0;
     };
-    if (globalThis.requestAnimationFrame) fpsFrameHandle = globalThis.requestAnimationFrame(sampleFrame);
+    const onSampleVisibility = () => {
+      if (globalThis.document?.hidden) {
+        if (fpsFrameHandle) globalThis.cancelAnimationFrame?.(fpsFrameHandle);
+        fpsFrameHandle = 0;
+        instance.fpsFrames = 0;
+      } else if (!instance.disposed && !fpsFrameHandle) {
+        instance.fpsStartedAt = globalThis.performance?.now?.() || 0;
+        fpsFrameHandle = globalThis.requestAnimationFrame?.(sampleFrame) || 0;
+      }
+    };
+    globalThis.document?.addEventListener?.('visibilitychange', onSampleVisibility);
+    if (globalThis.requestAnimationFrame && !globalThis.document?.hidden) fpsFrameHandle = globalThis.requestAnimationFrame(sampleFrame);
     else {
       const fpsNode = qs("[data-gdu-fps]");
-      if (fpsNode) fpsNode.textContent = "FPS không được trình duyệt cung cấp";
+      if (fpsNode) fpsNode.textContent = "Nhịp UI chưa đo được";
     }
     const onGalaxyPreferences = () => redraw();
     globalThis.addEventListener?.("hh:home-galaxy-preferences-applied", onGalaxyPreferences);
@@ -2395,9 +2678,27 @@
       redo() { instance.document = redo(instance.document); sync(); return clone(instance.document); },
       health() { return runHealthScan(instance.document); },
       export() { return exportDocument(instance.document); },
-      async putAsset(id, blob, meta) { return putAssetBlob(id, blob, meta); },
-      async getAsset(id) { return getAssetBlob(id); },
+      exportPackage(options = {}) { return exportPackage(instance.document, { ...options, accountId: instance.projectContext?.accountId }); },
+      exportPreflight(options = {}) { return exportPreflight(instance.document, { ...options, accountId: instance.projectContext?.accountId }); },
+      prepareExportSVG(options = {}) { return prepareExportSVG(instance.document, { ...options, accountId: instance.projectContext?.accountId }); },
+      save() { return persist(instance.document, instance); },
+      async importPackage(input, options = {}) {
+        const restored = await importPackage(input, { ...options, documentId: instance.projectContext?.projectId || options.documentId, accountId: instance.projectContext?.accountId });
+        instance.document = restored;
+        redraw();
+        await persist(instance.document, instance);
+        return clone(instance.document);
+      },
+      get saveState() { return instance.saveState; },
+      async putAsset(id, blob, meta) { return putAssetBlob(id, blob, meta, instance.projectContext?.accountId); },
+      async getAsset(id) { return getAssetBlob(id, instance.projectContext?.accountId); },
       unmount() {
+        instance.disposed = true;
+        globalThis.document?.removeEventListener?.('visibilitychange', onSampleVisibility);
+        instance.imageHydration += 1;
+        clearTimeout(instance.toastTimer);
+        instance.imageSources.forEach((entry) => URL.revokeObjectURL(entry.url));
+        instance.imageSources.clear();
         globalThis.removeEventListener?.("hh:home-galaxy-preferences-applied", onGalaxyPreferences);
         globalThis.removeEventListener?.("keydown", onKeyDown);
         if (fpsFrameHandle) globalThis.cancelAnimationFrame?.(fpsFrameHandle);
@@ -2418,7 +2719,7 @@
     return true;
   }
 
-  const api = Object.freeze({ VERSION, FORMAT, STORAGE_KEY, GALAXY_PREF_KEY, PLANETS, defaultDocument, normalizeLayer, normalizeDocument, serializableDocument, snapshotDocument, documentChanges, applyChanges, pathFromPoints, operation, undo, redo, runHealthScan, exportDocument, importDocument, putAssetBlob, getAssetBlob, removeAssetBlob, checksumBlob, assetRecordFromBlob, mount, unmount });
+  const api = Object.freeze({ VERSION, FORMAT, PACKAGE_FORMAT, PACKAGE_LIMITS, STORAGE_KEY, GALAXY_PREF_KEY, PLANETS, defaultDocument, normalizeLayer, normalizeDocument, serializableDocument, snapshotDocument, documentChanges, applyChanges, pathFromPoints, rectangleBoolean, operation, undo, redo, runHealthScan, exportDocument, importDocument, exportPackage, importPackage, exportPreflight, prepareExportSVG, readStored, writeStored, persist, putAssetBlob, getAssetBlob, removeAssetBlob, checksumBlob, assetRecordFromBlob, mount, unmount });
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   globalThis.HHGraphicDesignUniversal = api;
 })();

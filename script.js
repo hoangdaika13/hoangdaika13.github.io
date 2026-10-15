@@ -7981,19 +7981,13 @@ function initAppShell() {
       mediaHost.dataset.mediaDesignTool = parts[1] || "";
       window.HHMediaDesignPage?.mount(mediaHost, { toolId: parts[1] || "" });
     } else if (route === "/graphic-design" || route.startsWith("/graphic-design/")) {
-      if (route === "/graphic-design") {
-        updatePageHeader("Thiết kế đồ họa", "Khám phá toàn bộ không gian vector, typography, motion, 3D, prototype, component, cộng tác và bàn giao.", route);
-        mountFeatureGroupHub("graphic-design");
-        remember("graphic-design");
-        finalizeRouteRender(route);
-        return;
-      }
       const graphicView = parts[1] || "overview";
       const graphicTitle = ({ vector: "Vector & Motion Core", nondestructive: "Non-destructive Editing", typography: "Typography Studio Pro", effects: "Node Effects Composer", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 3.0", simulation: "Simulation Lab", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", data: "Data-driven Design", components: "Component & Variant System", color: "Professional Color Pipeline", projects: "Project & Version Vault", collaboration: "Live Collaboration", review: "Review & Approval", "dev-ai": "Dev Mode & Controlled AI", export: "Export Center Pro", plugins: "Plugin & Extension SDK", performance: "Performance Workspace", composer: "Universal Scene Composer" })[graphicView] || "Thiết kế đồ họa";
       updatePageHeader(graphicTitle, "Thiết kế nhanh, animation tương tác, 3D, mockup, prototype UI/UX, motion video và nhân vật trong một studio thống nhất.", route);
       workspace.innerHTML = '<div data-graphic-design-host></div>';
       if (window.HHGraphicDesign?.mount) window.HHGraphicDesign.mount(workspace.firstElementChild, { view: graphicView, apiBase: REALTIME_URL, socketUrl: SOCKET_URL });
       else mountSimpleView("Thiết kế đồ họa", "Đang tải Graphic Design Studio...", "");
+      if (route === "/graphic-design") remember("graphic-design");
     } else if (route === "/dev-tools" || route.startsWith("/dev-tools/")) {
       if (route === "/dev-tools") {
         updatePageHeader("DEV", "Khám phá toàn bộ công cụ code, API, dữ liệu, Git, delivery, bảo mật, chẩn đoán và tiện ích lập trình.", route);

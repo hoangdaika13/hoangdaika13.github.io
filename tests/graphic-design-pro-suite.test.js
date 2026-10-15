@@ -8,17 +8,17 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
 const ENGINES = [
   ["graphic-design-nondestructive.js?v=1", "HHGraphicNondestructive", "nondestructive"],
-  ["graphic-design-typography-pro.js?v=1", "HHGraphicTypographyPro", "typography"],
+  ["graphic-design-typography-pro.js?v=2", "HHGraphicTypographyPro", "typography"],
   ["graphic-design-node-effects.js?v=1", "HHGraphicNodeEffects", "effects"],
-  ["graphic-design-character-pro.js?v=1", "HHGraphicCharacterPro", "character"],
+  ["graphic-design-character-pro.js?v=2", "HHGraphicCharacterPro", "character"],
   ["graphic-design-simulation.js?v=1", "HHGraphicSimulation", "simulation"],
   ["graphic-design-data-driven.js?v=1", "HHGraphicDataDriven", "data"],
   ["graphic-design-components.js?v=2", "HHGraphicComponents", "components"],
   ["graphic-design-color-pro.js?v=1", "HHGraphicColorPro", "color"],
-  ["graphic-design-export-center.js?v=2", "HHGraphicExportCenter", "export"],
-  ["graphic-design-plugins.js?v=1", "HHGraphicPlugins", "plugins"],
-  ["graphic-design-review.js?v=2", "HHGraphicReview", "review"],
-  ["graphic-design-performance.js?v=1", "HHGraphicPerformance", "performance"]
+  ["graphic-design-export-center.js?v=3", "HHGraphicExportCenter", "export"],
+  ["graphic-design-plugins.js?v=2", "HHGraphicPlugins", "plugins"],
+  ["graphic-design-review.js?v=3", "HHGraphicReview", "review"],
+  ["graphic-design-performance.js?v=2", "HHGraphicPerformance", "performance"]
 ];
 
 test("Graphic Design Pro engines are loaded, routed and cached", () => {

@@ -29,18 +29,21 @@
     const number = Number.parseInt(value, 10);
     return Number.isFinite(number) ? clamp(number, min, max) : fallback;
   };
-  const safeStorageRead = () => {
+  const safeStorageRead = (storage) => {
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+      return JSON.parse(storage?.getItem(STORAGE_KEY) || "null");
     } catch (_) {
       return null;
     }
   };
-  const safeStorageWrite = (value) => {
+  const safeStorageWrite = (value, storage) => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+      if (!storage?.setItem) return false;
+      storage.setItem(STORAGE_KEY, JSON.stringify(value));
+      return true;
     } catch (_) {
       // The editor remains usable when storage is disabled or full.
+      return false;
     }
   };
 
@@ -157,7 +160,7 @@
     document.head.append(node);
   }
 
-  function mount(target) {
+  function mount(target, options = {}) {
     if (typeof document === "undefined") return null;
     const host = typeof target === "string"
       ? document.querySelector(target)
@@ -165,7 +168,8 @@
     if (!host) return null;
     if (host.__hhGraphicPrototypeInstance) return host.__hhGraphicPrototypeInstance;
     injectStyles();
-    const state = normalizeState(safeStorageRead());
+    const storage = (() => { if (options.storage !== undefined) return options.storage; try { return globalThis.localStorage || null; } catch (_) { return null; } })();
+    const state = normalizeState(safeStorageRead(storage));
     let history = [];
     let future = [];
     let drag = null;
@@ -180,7 +184,13 @@
       Object.keys(state).forEach((key) => delete state[key]);
       Object.assign(state, restored);
     };
-    const persist = () => safeStorageWrite({ ...clone(state), mode: "design" });
+    const persist = () => {
+      const saved = safeStorageWrite({ ...clone(state), mode: "design" }, storage);
+      host.dataset.saveState = saved ? 'saved' : 'error';
+      const output = host.querySelector('[data-gp-save-status]');
+      if (output) output.textContent = saved ? 'Đã lưu trong dự án này.' : 'Chưa lưu được. Hãy xuất JSON trước khi rời trang.';
+      return saved;
+    };
     const pushHistory = (before) => {
       history = [...history.slice(-(MAX_HISTORY - 1)), before];
       future = [];
@@ -248,7 +258,7 @@
               </div>
             </aside>
           </div>
-          <footer class="hh-gd-statusbar"><span>● ${state.mode === "play" ? "Đang chạy prototype" : "Đã lưu local"}</span><span>Device: ${esc(DEVICES[state.device].label)} · ${history.length} thay đổi có thể hoàn tác</span></footer>
+          <footer class="hh-gd-statusbar"><span role="status" data-gp-save-status>${host.dataset.saveState === 'saved' ? 'Đã lưu trong dự án này.' : host.dataset.saveState === 'error' ? 'Chưa lưu được. Hãy xuất JSON trước khi rời trang.' : 'Bản xem trước · chưa có thay đổi được lưu.'}</span><span>Device: ${esc(DEVICES[state.device].label)} · ${history.length} thay đổi có thể hoàn tác</span></footer>
         </section>`;
     }
 

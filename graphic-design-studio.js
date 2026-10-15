@@ -66,11 +66,7 @@
 
   const DEFAULT_STATE = {
     version: 2,
-    projects: [
-      { id: "project-motion", name: "HH Motion Identity", type: "animation", size: "512 × 512", updatedAt: Date.now() - 720000, progress: 72, favorite: true, status: "Đang chỉnh", accent: "#ff5fc8" },
-      { id: "project-app", name: "HH Platform Mobile", type: "prototype", size: "390 × 844", updatedAt: Date.now() - 5400000, progress: 46, favorite: false, status: "Prototype", accent: "#63e8ff" },
-      { id: "project-scene", name: "Neon Product Stage", type: "3d", size: "Web realtime", updatedAt: Date.now() - 86400000, progress: 30, favorite: false, status: "Concept", accent: "#a58dff" }
-    ],
+    projects: [],
     brand: {
       name: "HH Neon System",
       primary: "#ff5fc8",
@@ -81,34 +77,40 @@
     },
     assets: [],
     checklist: [
-      { id: "contrast", label: "Kiểm tra tương phản và khả năng đọc", done: true },
+      { id: "contrast", label: "Kiểm tra tương phản và khả năng đọc", done: false },
       { id: "responsive", label: "Xem trước desktop, tablet và mobile", done: false },
       { id: "optimize", label: "Tối ưu dung lượng asset", done: false },
       { id: "handoff", label: "Xuất token và thông số bàn giao", done: false }
     ],
-    activity: [
-      { id: "a1", label: "Tạo Creative Hub", time: Date.now() - 300000, tone: "cyan" },
-      { id: "a2", label: "Lưu Brand Kit HH Neon", time: Date.now() - 3600000, tone: "pink" }
-    ]
+    activity: []
   };
 
   let activeRoot = null;
+  let activeContext = null;
+  let activeListeners = [];
+  let mountGeneration = 0;
+  function listen(target, type, callback, isCurrent = () => true) {
+    if (!target) return;
+    const guarded = (event) => { if (isCurrent()) callback(event); };
+    target.addEventListener(type, guarded);
+    activeListeners.push(() => target.removeEventListener(type, guarded));
+  }
   let objectUrls = [];
   const engineLoads = new Map();
   const PRO_ENGINES = Object.freeze({
-    workflow: { selector: "[data-graphic-design-workflow]", api: "HHGraphicDesignWorkflow", source: "graphic-design-workflow.js?v=1" },
+    workflow: { selector: "[data-graphic-design-workflow]", api: "HHGraphicDesignWorkflow", source: "graphic-design-workflow.js?v=3" },
     nondestructive: { selector: "[data-graphic-nondestructive]", api: "HHGraphicNondestructive", source: "graphic-design-nondestructive.js?v=1" },
-    typography: { selector: "[data-graphic-typography-pro]", api: "HHGraphicTypographyPro", source: "graphic-design-typography-pro.js?v=1" },
+    typography: { selector: "[data-graphic-typography-pro]", api: "HHGraphicTypographyPro", source: "graphic-design-typography-pro.js?v=2" },
     effects: { selector: "[data-graphic-node-effects]", api: "HHGraphicNodeEffects", source: "graphic-design-node-effects.js?v=1" },
-    character: { selector: "[data-graphic-character-pro]", api: "HHGraphicCharacterPro", source: "graphic-design-character-pro.js?v=1" },
+    character: { selector: "[data-graphic-character-pro]", api: "HHGraphicCharacterPro", source: "graphic-design-character-pro.js?v=2" },
     simulation: { selector: "[data-graphic-simulation]", api: "HHGraphicSimulation", source: "graphic-design-simulation.js?v=1" },
     data: { selector: "[data-graphic-data-driven]", api: "HHGraphicDataDriven", source: "graphic-design-data-driven.js?v=1" },
     components: { selector: "[data-graphic-components]", api: "HHGraphicComponents", source: "graphic-design-components.js?v=2" },
     color: { selector: "[data-graphic-color-pro]", api: "HHGraphicColorPro", source: "graphic-design-color-pro.js?v=1" },
-    export: { selector: "[data-graphic-export-center]", api: "HHGraphicExportCenter", source: "graphic-design-export-center.js?v=2" },
-    plugins: { selector: "[data-graphic-plugins]", api: "HHGraphicPlugins", source: "graphic-design-plugins.js?v=1" },
-    review: { selector: "[data-graphic-review]", api: "HHGraphicReview", source: "graphic-design-review.js?v=2" },
-    performance: { selector: "[data-graphic-performance]", api: "HHGraphicPerformance", source: "graphic-design-performance.js?v=1" }
+    export: { selector: "[data-graphic-export-center]", api: "HHGraphicExportCenter", source: "graphic-design-export-center.js?v=3" },
+    plugins: { selector: "[data-graphic-plugins]", api: "HHGraphicPlugins", source: "graphic-design-plugins.js?v=2" },
+    review: { selector: "[data-graphic-review]", api: "HHGraphicReview", source: "graphic-design-review.js?v=3" },
+    performance: { selector: "[data-graphic-performance]", api: "HHGraphicPerformance", source: "graphic-design-performance.js?v=2" }
   });
 
   const escapeHTML = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
@@ -126,9 +128,9 @@
     return `${Math.floor(hours / 24)} ngày trước`;
   };
 
-  function loadState() {
+  function loadState(context = activeContext) {
     try {
-      const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+      const parsed = JSON.parse(context?.storage?.getItem(context.accountKey(STORAGE_KEY)) || "null");
       if (!parsed || parsed.version !== 2) return clone(DEFAULT_STATE);
       return {
         ...clone(DEFAULT_STATE),
@@ -144,9 +146,10 @@
     }
   }
 
-  function saveState(state) {
+  function saveState(state, context = activeContext) {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      if (!context?.storage) return false;
+      context.storage.setItem(context.accountKey(STORAGE_KEY), JSON.stringify(state));
       return true;
     } catch {
       return false;
@@ -213,13 +216,13 @@
         <button type="button" class="gd-tool-context__back" data-gd-route="overview" aria-label="Về Thiết kế đồ họa">←</button>
         <span class="gd-tool-context__icon" aria-hidden="true">${escapeHTML(current.icon)}</span>
         <div class="gd-tool-context__copy"><small>THIẾT KẾ ĐỒ HỌA · WORKSPACE</small><h2 id="gdToolContextTitle">${escapeHTML(current.label)}</h2><p>${escapeHTML(current.description)}</p></div>
-        <div class="gd-tool-context__status"><span><i></i> Local autosave</span><b>${state.projects.length} dự án</b><em>${complete}% checklist</em></div>
+        <div class="gd-tool-context__status"><span><i></i> Dữ liệu theo dự án</span><b>${state.projects.length} dự án</b><em>${complete}% checklist tự đánh dấu</em></div>
         <div class="gd-tool-context__actions"><button type="button" data-command-open>⌕ Tìm công cụ</button><button type="button" class="gd-primary" data-gd-route="overview">Đổi workspace</button></div>
       </header>`;
     }
     const actions = view === "overview"
       ? `<button type="button" class="gd-primary" data-gd-action="new-project">＋ Tạo thiết kế</button>
-         <button type="button" data-gd-action="import-hub">Nhập dự án</button>
+         <button type="button" data-gd-action="import-hub">Nhập danh sách dự án</button>
          <button type="button" data-gd-action="continue-project">Tiếp tục gần nhất</button>
          <input type="file" accept="application/json,.json" data-gd-import hidden>`
       : `<button type="button" class="gd-primary" data-gd-route="overview">← Creative Hub</button>`;
@@ -231,7 +234,7 @@
           <h2>${view === "overview" ? "Thiết kế đồ họa" : escapeHTML(viewLabel(view))}</h2>
           <p>${view === "overview" ? "Từ ý tưởng đến animation, 3D, prototype, motion video và nhân vật trong một quy trình thống nhất, dễ bắt đầu." : "Không gian biên tập chuyên sâu, tự lưu trên thiết bị và có thể xuất dự án để tiếp tục ở lần sau."}</p>
           <div class="gd-hero-actions">${actions}</div>
-          <div class="gd-hero-meta"><span><i></i>Local autosave</span><span>${VIEWS.length - 1} workspace chuyên dụng</span><span>⌘ Ctrl K · tìm studio</span><span>${state.projects.length} dự án · ${complete}% checklist</span></div>
+          <div class="gd-hero-meta"><span><i></i>Local-first · kiểm tra trạng thái lưu trong editor</span><span>${VIEWS.length - 1} workspace chuyên dụng</span><span>⌘ Ctrl K · tìm studio</span><span>${state.projects.length} dự án · ${complete}% checklist tự đánh dấu</span></div>
         </div>
         <div class="gd-hero-preview" aria-label="Bản xem trước hệ thống thiết kế">
           <div class="gd-preview-bar"><span></span><span></span><span></span><b>HH Canvas</b><em>100%</em></div>
@@ -259,7 +262,7 @@
         <button type="button" data-gd-template="video"><span>▶</span><b>Video mới</b><small>16:9 · Motion</small></button>
         <button type="button" data-gd-template="web"><span>⌘</span><b>UI mới</b><small>Responsive</small></button>
         <button type="button" data-gd-template="scene"><span>◈</span><b>Scene 3D</b><small>Web realtime</small></button>
-        <button type="button" data-gd-action="export-hub"><span>⇩</span><b>Sao lưu</b><small>JSON project</small></button>
+        <button type="button" data-gd-action="export-hub"><span>⇩</span><b>Sao lưu danh sách</b><small>JSON · không gồm nội dung editor</small></button>
       </section>
 
       <section class="gd-dashboard-grid">
@@ -366,7 +369,7 @@
       <article class="gd-project-card" style="--project-accent:${escapeHTML(project.accent || "#63e8ff")}">
         <button type="button" class="gd-project-preview" data-gd-open-project="${escapeHTML(project.id)}" aria-label="Mở ${escapeHTML(project.name)}"><i></i><i></i><strong>${escapeHTML(viewLabel(project.type))}</strong><span>${escapeHTML(project.size)}</span></button>
         <div class="gd-project-copy"><div><strong>${escapeHTML(project.name)}</strong><span>${escapeHTML(project.status)} · ${timeAgo(project.updatedAt)}</span></div><button type="button" data-gd-favorite="${escapeHTML(project.id)}" aria-label="${project.favorite ? "Bỏ ghim" : "Ghim"} ${escapeHTML(project.name)}" aria-pressed="${project.favorite}">${project.favorite ? "★" : "☆"}</button></div>
-        <div class="gd-project-progress"><i style="width:${Math.max(0, Math.min(100, Number(project.progress) || 0))}%"></i><span>${Math.max(0, Math.min(100, Number(project.progress) || 0))}%</span></div>
+        <div class="gd-project-progress"><span>ID: ${escapeHTML(project.id)}</span></div>
       </article>`).join("");
   }
 
@@ -427,22 +430,23 @@
     state.activity = state.activity.slice(0, 20);
   }
 
-  function createProject(state, template) {
+  function createProject(state, template, context) {
     const project = {
       id: uid("project"),
+      documentId: "",
       name: `${template.title} ${state.projects.length + 1}`,
       type: template.view,
       size: template.size,
       updatedAt: Date.now(),
-      progress: 5,
       favorite: false,
       status: "Mới tạo",
       accent: template.accent
     };
+    project.documentId = project.id;
     state.projects.unshift(project);
     state.projects = state.projects.slice(0, MAX_PROJECTS);
     addActivity(state, `Tạo dự án ${project.name}`, "pink");
-    saveState(state);
+    saveState(state, context);
     return project;
   }
 
@@ -466,7 +470,8 @@
     showToast.timer = setTimeout(() => { toast.hidden = true; }, 2600);
   }
 
-  function bindOverview(root, state, universalController) {
+  function bindOverview(root, state, universalController, context, isCurrent) {
+    const persist = () => isCurrent() && saveState(state, context);
     const refreshProjectList = (query = "") => {
       const list = root.querySelector("[data-gd-project-list]");
       if (list) list.innerHTML = renderProjects(state.projects, query);
@@ -476,13 +481,17 @@
       if (list) list.innerHTML = renderAssets(state.assets);
     };
     const openProject = (project) => {
+      if (!isCurrent()) return;
       project.updatedAt = Date.now();
-      project.progress = Math.min(95, Math.max(8, Number(project.progress) || 0));
+      project.documentId = project.documentId || project.id;
       addActivity(state, `Mở ${project.name}`);
-      saveState(state);
+      if (!persist()) return showToast(root, "Chưa lưu được danh sách dự án. Hãy xuất bản sao trước khi chuyển trang.");
+      const selected = globalThis.HHGraphicProjectContext?.select(project.id, { storage: context.storage, accountId: context.accountId });
+      if (!selected?.ok) return showToast(root, "Chưa thể lưu dự án đang mở. Kiểm tra quyền lưu trên trình duyệt.");
       location.hash = `#${routeFor(project.type)}`;
     };
     const addFiles = (files) => {
+      if (!isCurrent()) return;
       [...files].slice(0, MAX_ASSETS).forEach((file) => {
         if (state.assets.length >= MAX_ASSETS) return showToast(root, `Đã đạt giới hạn ${MAX_ASSETS} asset.`);
         const asset = { id: uid("asset"), name: file.name.slice(0, 120), size: file.size, type: file.type || "file", dataUrl: "" };
@@ -499,24 +508,25 @@
         });
         const shouldPreview = file.type.startsWith("image/") && file.size <= MAX_ASSET_BYTES;
         if (!shouldPreview) {
-          saveState(state);
+          persist();
           refreshAssets();
           return;
         }
         const reader = new FileReader();
         reader.onload = () => {
+          if (!isCurrent()) return;
           asset.dataUrl = String(reader.result || "");
-          if (!saveState(state)) asset.dataUrl = "";
+          if (!persist()) asset.dataUrl = "";
           refreshAssets();
         };
         reader.readAsDataURL(file);
       });
       addActivity(state, `Thêm ${files.length} asset`, "lime");
-      saveState(state);
+      persist();
       refreshAssets();
     };
 
-    root.addEventListener("click", (event) => {
+    listen(root, "click", (event) => {
       const routeButton = event.target.closest("[data-gd-route]");
       if (routeButton) {
         location.hash = `#${routeFor(normalizeView(routeButton.dataset.gdRoute))}`;
@@ -525,7 +535,7 @@
       const templateButton = event.target.closest("[data-gd-template]");
       if (templateButton) {
         const template = TEMPLATES.find((item) => item.id === templateButton.dataset.gdTemplate);
-        if (template) openProject(createProject(state, template));
+        if (template) openProject(createProject(state, template, context));
         return;
       }
       const projectButton = event.target.closest("[data-gd-open-project]");
@@ -540,7 +550,7 @@
         if (project) {
           project.favorite = !project.favorite;
           state.projects.sort((a, b) => Number(b.favorite) - Number(a.favorite) || b.updatedAt - a.updatedAt);
-          saveState(state);
+          persist();
           refreshProjectList(root.querySelector("[data-gd-project-search]")?.value || "");
         }
         return;
@@ -557,13 +567,13 @@
       if (removeAsset) {
         state.assets = state.assets.filter((item) => item.id !== removeAsset.dataset.gdRemoveAsset);
         universalController?.dispatch?.("remove-asset", { id: removeAsset.dataset.gdRemoveAsset });
-        saveState(state);
+        persist();
         refreshAssets();
         return;
       }
       const action = event.target.closest("[data-gd-action]")?.dataset.gdAction;
       if (!action) return;
-      if (action === "new-project") location.hash = `#${routeFor("workflow")}`;
+      if (action === "new-project") openProject(createProject(state, { title: "Thiết kế", view: "workflow", size: "1920 × 1080", accent: state.brand.primary }, context));
       else if (action === "continue-project") state.projects[0] ? openProject(state.projects[0]) : showToast(root, "Chưa có dự án để tiếp tục.");
       else if (action === "import-hub") root.querySelector("[data-gd-import]")?.click();
       else if (action === "choose-assets") root.querySelector("[data-gd-assets]")?.click();
@@ -571,11 +581,11 @@
       else if (action === "download-tokens") download("hh-design-tokens.json", JSON.stringify({ version: 1, brand: state.brand }, null, 2));
       else if (action === "copy-tokens") {
         const css = `:root {\n  --brand-primary: ${state.brand.primary};\n  --brand-secondary: ${state.brand.secondary};\n  --brand-accent: ${state.brand.accent};\n  --font-heading: "${state.brand.heading}";\n  --font-body: "${state.brand.body}";\n}`;
-        navigator.clipboard?.writeText(css).then(() => showToast(root, "Đã sao chép CSS token.")).catch(() => download("hh-brand-tokens.css", css, "text/css"));
+        navigator.clipboard?.writeText(css).then(() => { if (isCurrent()) showToast(root, "Đã sao chép CSS token."); }).catch(() => { if (isCurrent()) download("hh-brand-tokens.css", css, "text/css"); });
       }
-    });
+    }, isCurrent);
 
-    root.addEventListener("input", (event) => {
+    listen(root, "input", (event) => {
       if (event.target.matches("[data-gd-project-search]")) refreshProjectList(event.target.value);
       if (event.target.matches("[data-gd-brand]")) {
         const brandKey = event.target.dataset.gdBrand;
@@ -587,7 +597,7 @@
         }[brandKey];
         if (tokenKey) universalController?.dispatch?.("set-brand-token", { key: tokenKey, value: event.target.value });
         if (["heading", "body"].includes(brandKey)) universalController?.dispatch?.("set-brand-font", { key: brandKey, value: event.target.value });
-        saveState(state);
+        persist();
         applyBrand(root, state.brand);
         const preview = root.querySelector(".gd-brand-preview");
         if (preview) {
@@ -596,46 +606,51 @@
           preview.style.setProperty("--brand-accent", state.brand.accent);
         }
       }
-    });
+    }, isCurrent);
 
-    root.addEventListener("change", (event) => {
+    listen(root, "change", (event) => {
       if (event.target.matches("[data-gd-assets]") && event.target.files?.length) addFiles(event.target.files);
       if (event.target.matches("[data-gd-check]")) {
         const item = state.checklist.find((entry) => entry.id === event.target.dataset.gdCheck);
         if (item) {
           item.done = event.target.checked;
-          saveState(state);
+          persist();
           showToast(root, item.done ? "Đã hoàn thành mục kiểm tra." : "Đã mở lại mục kiểm tra.");
         }
       }
       if (event.target.matches("[data-gd-import]") && event.target.files?.[0]) {
         const reader = new FileReader();
         reader.onload = () => {
+          if (!isCurrent()) return;
           try {
             const imported = JSON.parse(String(reader.result || "{}"));
             if (imported.version !== 2 || !Array.isArray(imported.projects)) throw new Error("schema");
-            saveState(imported);
+            if (!saveState(imported, context)) return showToast(root, "Chưa thể lưu danh sách đã nhập. Dữ liệu hiện tại chưa được thay thế.");
             showToast(root, "Đã nhập dữ liệu. Đang làm mới...");
-            setTimeout(() => mount(root, { view: "overview" }), 400);
+            setTimeout(() => { if (isCurrent()) mount(root, { view: "overview", accountId: context.accountId, storage: context.storage }); }, 400);
           } catch {
             showToast(root, "Tệp không đúng định dạng HH Graphic Design v2.");
           }
         };
         reader.readAsText(event.target.files[0]);
       }
-    });
+    }, isCurrent);
 
     const dropzone = root.querySelector("[data-gd-dropzone]");
-    ["dragenter", "dragover"].forEach((name) => dropzone?.addEventListener(name, (event) => { event.preventDefault(); dropzone.classList.add("is-dragging"); }));
-    ["dragleave", "drop"].forEach((name) => dropzone?.addEventListener(name, (event) => { event.preventDefault(); dropzone.classList.remove("is-dragging"); if (name === "drop" && event.dataTransfer?.files?.length) addFiles(event.dataTransfer.files); }));
-    dropzone?.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") root.querySelector("[data-gd-assets]")?.click(); });
+    ["dragenter", "dragover"].forEach((name) => listen(dropzone, name, (event) => { event.preventDefault(); dropzone.classList.add("is-dragging"); }, isCurrent));
+    ["dragleave", "drop"].forEach((name) => listen(dropzone, name, (event) => { event.preventDefault(); dropzone.classList.remove("is-dragging"); if (name === "drop" && event.dataTransfer?.files?.length) addFiles(event.dataTransfer.files); }, isCurrent));
+    listen(dropzone, "keydown", (event) => { if (event.key === "Enter" || event.key === " ") root.querySelector("[data-gd-assets]")?.click(); }, isCurrent);
   }
 
   function mount(root, options = {}) {
     if (!root) return;
     unmount();
     activeRoot = root;
-    const state = loadState();
+    activeContext = globalThis.HHGraphicProjectContext?.resolve?.(options) || null;
+    const context = activeContext;
+    const generation = mountGeneration;
+    const isCurrent = () => activeRoot === root && generation === mountGeneration;
+    const state = loadState(context);
     const view = normalizeView(options.view);
     root.className = "graphic-design-studio";
     root.dataset.graphicDesignMounted = "true";
@@ -648,20 +663,34 @@
       <footer class="gd-footer"><span><i></i> Sẵn sàng làm việc</span><span>Thiết kế được lưu trên thiết bị này</span><span data-gd-status>${escapeHTML(viewLabel(view))} · đã sẵn sàng</span></footer>
       <div class="gd-toast" data-gd-toast hidden></div>`;
 
-    const universalController = globalThis.HHGraphicDesignUniversal?.mount?.(root, options);
+    const selectedProject = state.projects.find((item) => item.id === activeContext?.projectId);
+    const contextOptions = { ...options, projectContext: activeContext, projectId: activeContext?.projectId, accountId: activeContext?.accountId, projectName: selectedProject?.name, storage: activeContext?.engineStorage ?? null };
+    const universalController = globalThis.HHGraphicDesignUniversal?.mount?.(root, contextOptions);
     const workspaceOptions = {
-      ...options,
+      ...contextOptions,
       designDocument: universalController?.document,
-      designDocumentController: universalController
+      designDocumentController: universalController,
+      onProjectSelect(project) {
+        if (!isCurrent() || !context || !project?.id) return;
+        const selected = globalThis.HHGraphicProjectContext?.select(project.id, { storage: context.storage, accountId: context.accountId });
+        if (!selected?.ok) return showToast(root, "Không thể lưu lựa chọn dự án. Kho hiện tại chưa bị thay đổi.");
+        if (!state.projects.some((item) => item.id === project.id)) {
+          state.projects.unshift({ id: project.id, documentId: project.id, name: project.name, type: "vector", size: "Theo tài liệu", updatedAt: Date.now(), favorite: false, status: "Bản nháp", accent: state.brand.primary });
+          state.projects = state.projects.slice(0, MAX_PROJECTS);
+          saveState(state, context);
+        }
+        mount(root, { ...options, projectId: project.id, projectContext: undefined, document: project.data?.designDocument });
+      }
     };
-    if (view === "overview") bindOverview(root, state, universalController);
+    globalThis.HHGraphicDesignCapabilities?.mount?.(root, { ...workspaceOptions, view });
+    if (view === "overview") bindOverview(root, state, universalController, context, isCurrent);
     else {
-      root.addEventListener("click", (event) => {
+      listen(root, "click", (event) => {
         const routeButton = event.target.closest("[data-gd-route]");
         if (routeButton) location.hash = `#${routeFor(normalizeView(routeButton.dataset.gdRoute))}`;
         const retryButton = event.target.closest("[data-gd-retry-engine]");
         if (retryButton) mountProEngine(root, normalizeView(retryButton.dataset.gdRetryEngine), workspaceOptions);
-      });
+      }, isCurrent);
       if (PRO_ENGINES[view]) mountProEngine(root, view, workspaceOptions);
       else if (view === "vector") mountChild(root, "[data-graphic-vector-core]", globalThis.HHGraphicVectorCore, workspaceOptions);
       else if (view === "quick-motion") mountChild(root, "[data-graphic-quick-motion]", globalThis.HHGraphicQuickMotion, workspaceOptions);
@@ -680,6 +709,10 @@
   }
 
   function unmount() {
+    mountGeneration += 1;
+    activeListeners.splice(0).forEach((cleanup) => cleanup());
+    clearTimeout(showToast.timer);
+    globalThis.HHGraphicDesignCapabilities?.unmount?.(activeRoot);
     globalThis.HHGraphicDesignUniversal?.unmount?.(activeRoot);
     globalThis.HHGraphicDesignWorkflow?.unmount?.(activeRoot?.querySelector("[data-graphic-design-workflow]"));
     globalThis.HHGraphicVectorCore?.unmount?.(activeRoot?.querySelector("[data-graphic-vector-core]"));
@@ -712,6 +745,7 @@
     objectUrls = [];
     if (activeRoot) activeRoot.replaceChildren();
     activeRoot = null;
+    activeContext = null;
   }
 
   globalThis.HHGraphicDesign = Object.freeze({ INTEGRATION_VERSION, mount, unmount, views: VIEWS.map((item) => ({ ...item })), templates: TEMPLATES.map((item) => ({ ...item })) });

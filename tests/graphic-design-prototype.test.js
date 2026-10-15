@@ -8,12 +8,13 @@ const prototype = fs.readFileSync(path.join(root, "graphic-design-prototype.js")
 
 test("Graphic Design Prototype exposes an idempotent local-first mount API", () => {
   assert.match(prototype, /window\.HHGraphicPrototype/);
-  assert.match(prototype, /mount\(target\)/);
+  assert.match(prototype, /mount\(target, options = \{\}\)/);
   assert.match(prototype, /\[data-graphic-prototype\]/);
   assert.match(prototype, /__hhGraphicPrototypeInstance/);
   assert.match(prototype, /hh\.graphic-design\.prototype\.v1/);
-  assert.match(prototype, /localStorage\.getItem/);
-  assert.match(prototype, /localStorage\.setItem/);
+  assert.match(prototype, /storage\?\.getItem/);
+  assert.match(prototype, /storage\.setItem/);
+  assert.match(prototype, /options\.storage !== undefined/);
 });
 
 test("Graphic Design Prototype implements frame management and a visible canvas preview", () => {

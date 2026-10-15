@@ -1031,7 +1031,7 @@
     const documentRef = root.ownerDocument || runtime.document;
     const scope = documentRef.defaultView || runtime;
     ensureStyles(documentRef);
-    const storage = options.storage || storageFor(scope);
+    const storage = Object.prototype.hasOwnProperty.call(options, 'storage') ? options.storage : storageFor(scope);
     let project = options.project ? normalizeProject(options.project) : loadProject(storage);
     let currentTime = 0;
     let playing = false;

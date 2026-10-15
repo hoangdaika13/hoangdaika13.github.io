@@ -24,6 +24,18 @@ test("Performance Workspace exposes a standalone UMD/global lifecycle", () => {
   assert.equal(typeof browserLike.HHGraphicPerformance.createFrameSampler, "function");
 });
 
+test("actual document inventories accept asset MIME and distinguish estimated texture memory", () => {
+  const assets = [{ id: "original", name: "Source", mime: "image/png", size: 123456, width: 100, height: 80 }];
+  assert.equal(performanceWorkspace.normalizeAsset(assets[0], 0).kind, "image");
+  const metrics = performanceWorkspace.calculateProjectMetrics({ layers: [{ id: "one" }, { id: "two" }], assets }, { assets });
+  assert.equal(metrics.layerCount, 2); assert.equal(metrics.assetCount, 1);
+  assert.equal(metrics.assetBytes, 123456); assert.equal(metrics.textureBytes, 100 * 80 * 4);
+  assert.equal(metrics.textureByteSource, "estimated-rgba8-inventory");
+  assert.equal(metrics.drawCalls, null);
+  assert.equal(performanceWorkspace.calculateProjectMetrics({}, { textureBytes: 456 }).textureByteSource, "renderer");
+  assert.equal(performanceWorkspace.createPersistence(null).supported, false);
+});
+
 test("capability probe distinguishes API presence from a confirmed WebGPU adapter", async () => {
   class MockOffscreenCanvas {}
   class MockWorker {}

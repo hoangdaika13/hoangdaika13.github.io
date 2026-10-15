@@ -88,6 +88,7 @@
   }
 
   function storageFrom(scope, provided) {
+    if (provided === null) return null;
     if (provided && typeof provided.getItem === "function" && typeof provided.setItem === "function") return provided;
     try {
       const storage = scope && scope.localStorage;
@@ -423,7 +424,7 @@
   }
 
   function assetKind(asset) {
-    const type = String(asset && asset.type || "").toLowerCase();
+    const type = String(asset && (asset.type || asset.mime) || "").toLowerCase();
     const name = String(asset && asset.name || "").toLowerCase();
     if (type.startsWith("image/") || /\.(png|jpe?g|webp|gif|avif|svg)$/.test(name)) return "image";
     if (type.startsWith("video/") || /\.(mp4|webm|mov|m4v|avi)$/.test(name)) return "video";
@@ -438,7 +439,7 @@
     return {
       id: cleanText(source.id, `asset-${index + 1}`, 100),
       name: cleanText(source.name, `Asset ${index + 1}`, 180),
-      type: cleanText(source.type, "application/octet-stream", 100),
+      type: cleanText(source.type || source.mime, "application/octet-stream", 100),
       kind: assetKind(source),
       size: hasSize ? Number(source.size) : null,
       width: Number.isFinite(Number(source.width)) && Number(source.width) > 0 ? Number(source.width) : null,
@@ -739,7 +740,10 @@
       projectSizeBytes,
       projectSizeSource: settings.projectSizeBytes != null ? "provided" : projectSizeBytes == null ? "unavailable" : "serialized-json",
       assetBytes,
-      unknownAssetSizes: assets.filter((asset) => asset.size == null).length
+      unknownAssetSizes: assets.filter((asset) => asset.size == null).length,
+      layerCount: Array.isArray(project?.layers) ? project.layers.length : null,
+      assetCount: assets.length,
+      textureByteSource: settings.textureBytes != null || textureList ? "renderer" : "estimated-rgba8-inventory"
     };
   }
 
@@ -916,14 +920,15 @@
     const doc = root.ownerDocument;
     const host = doc.defaultView || globalScope;
     ensureStyles(doc);
-    const persistence = createPersistence(settings.storage || storageFrom(host));
+    const persistence = createPersistence(Object.prototype.hasOwnProperty.call(settings, "storage") ? settings.storage : storageFrom(host));
     let state = normalizeWorkspaceState(settings.state || persistence.load());
     let capabilities = detectCapabilities(host);
     let renderer = selectRenderer(capabilities, state.rendererPreference);
-    let assets = Array.from(settings.assets || [], normalizeAsset);
+    let project = settings.designDocumentController?.document || settings.designDocument || settings.project || null;
+    let assets = Array.from(settings.assets || project?.assets || [], normalizeAsset);
     let metricsOverride = settings.metrics && typeof settings.metrics === "object" ? clone(settings.metrics) : {};
-    let project = settings.project || null;
     let destroyed = false;
+    let persistenceError = "";
     let hiddenWasRunning = false;
     let timelineWindow = calculateTimelineWindow({
       duration: state.timeline.duration, pixelsPerSecond: state.timeline.pixelsPerSecond,
@@ -946,7 +951,7 @@
         </header>
         <div class="hgp-statusbar"><span class="hgp-dot" data-hgp-dot aria-hidden="true"></span><span data-hgp-monitor-state>Paused</span><span>Local metrics only</span><span role="status" aria-live="polite" data-hgp-status>Ready</span></div>
         <div class="hgp-kpis" aria-label="Live performance metrics">
-          <div class="hgp-kpi"><span>FPS</span><output data-hgp-metric="fps">N/A</output><small data-hgp-fps-samples>0 frames</small></div>
+          <div class="hgp-kpi"><span>Nhịp UI (RAF), không phải FPS renderer</span><output data-hgp-metric="fps">N/A</output><small data-hgp-fps-samples>0 frames</small></div>
           <div class="hgp-kpi"><span>Frame p95</span><output data-hgp-metric="frame">N/A</output><small>milliseconds</small></div>
           <div class="hgp-kpi"><span>Long tasks</span><output data-hgp-metric="tasks">N/A</output><small data-hgp-task-duration>unsupported</small></div>
           <div class="hgp-kpi"><span>JS heap</span><output data-hgp-metric="heap">N/A</output><small data-hgp-heap-limit>API unavailable</small></div>
@@ -963,7 +968,7 @@
               <section class="hgp-section"><h3>Capability probe</h3><div class="hgp-cap-list" data-hgp-capabilities></div></section>
               <section class="hgp-section"><h3>Asset budget</h3><div class="hgp-budget-list"><div class="hgp-budget-line"><span>Known transfer</span><output data-hgp-budget-bytes>0 B</output></div><progress data-hgp-budget-progress value="0" max="100">0%</progress><div class="hgp-budget-line"><span>Project JSON</span><output data-hgp-project-size>N/A</output></div><div class="hgp-budget-line"><span>Texture memory</span><output data-hgp-texture-bytes>0 B</output></div></div><ul class="hgp-violations" data-hgp-violations></ul></section>
               <section class="hgp-section"><h3>Virtual timeline window</h3><div class="hgp-timeline-controls"><label class="hgp-compact">Scroll<input type="range" min="0" step="1" data-hgp-timeline-scroll></label><label class="hgp-compact">Scale<input type="number" min="1" max="10000" step="5" data-hgp-timeline-scale></label></div><div class="hgp-timeline" data-hgp-timeline><div class="hgp-window" data-hgp-window><span data-hgp-window-label></span></div></div></section>
-              <section class="hgp-section"><h3>Proxy plan</h3><div class="hgp-proxy-list" data-hgp-proxies></div></section>
+              <section class="hgp-section"><h3>Kế hoạch proxy, chưa tạo file</h3><div class="hgp-proxy-list" data-hgp-proxies></div></section>
             </div>
           </main>
           <aside class="hgp-side" aria-label="Performance controls">
@@ -988,16 +993,21 @@
     assets.forEach((asset, index) => queue.enqueue(asset, { priority: assets.length - index, visible: index < 6 }).catch(() => {}));
 
     function setStatus(message) {
-      if (statusNode) statusNode.textContent = message;
+      if (statusNode) { statusNode.textContent = persistenceError || message; statusNode.dataset.kind = persistenceError ? "error" : "info"; }
     }
 
     function persist() {
       const result = persistence.save(state);
-      if (!result.ok && result.reason !== "unsupported") setStatus("Local settings could not be saved.");
+      persistenceError = result.ok ? "" : "Chưa lưu cài đặt: bộ nhớ thiết bị không khả dụng hoặc đã đầy. Phiên hiện tại vẫn giữ thay đổi; có thể xuất audit JSON.";
+      if (persistenceError) setStatus(persistenceError);
       return result;
     }
 
     function currentMetrics() {
+      if (settings.designDocumentController) {
+        project = settings.designDocumentController.document;
+        assets = Array.from(project?.assets || [], normalizeAsset);
+      }
       let provided = {};
       if (typeof settings.metricsProvider === "function") {
         try { provided = settings.metricsProvider() || {}; }
@@ -1162,9 +1172,11 @@
       qs("[data-hgp-heap-limit]").textContent = heap.supported ? `${heap.utilizationPct == null ? "limit unknown" : `${heap.utilizationPct}% of limit`}` : "API unavailable";
       qs("[data-hgp-metric=\"draws\"]").textContent = metrics.drawCalls == null ? "N/A" : String(metrics.drawCalls);
       qs("[data-hgp-draw-source]").textContent = metrics.drawCallSource;
+      qs("[data-hgp-project-size]").title = `${metrics.layerCount == null ? "Chưa nối tài liệu" : `${metrics.layerCount} layer thật`} · ${metrics.assetCount} asset trong inventory`;
       qs("[data-hgp-metric=\"textures\"]").textContent = metrics.textures == null ? "N/A" : String(metrics.textures);
       qs("[data-hgp-texture-source]").textContent = metrics.textureSource;
-      qs("[data-hgp-chart-label]").textContent = fps.fps == null ? "No samples" : `${fps.fps.toFixed(1)} FPS / ${fps.p95FrameMs.toFixed(1)} ms p95`;
+      qs("[data-hgp-chart-label]").textContent = fps.fps == null ? "No samples" : `${fps.fps.toFixed(1)} UI RAF/s / ${fps.p95FrameMs.toFixed(1)} ms p95`;
+      qs("[data-hgp-texture-bytes]").title = metrics.textureByteSource === "renderer" ? "Do renderer cung cấp" : "Ước tính RGBA8 từ kích thước ảnh, không phải VRAM đã đo";
       renderBudget(metrics);
       drawChart();
     }
@@ -1255,11 +1267,11 @@
       const targetNode = event.target;
       if (targetNode.matches("[data-hgp-quality]")) {
         state.qualityPreset = Object.prototype.hasOwnProperty.call(QUALITY_PRESETS, targetNode.value) ? targetNode.value : "balanced";
-        renderQuality(); renderProxies(); persist(); setStatus("Quality preset updated.");
+        renderQuality(); renderProxies(); persist(); setStatus("Đã đổi kế hoạch chất lượng cho báo cáo; không thay renderer hoặc tạo proxy file.");
       } else if (targetNode.matches("[data-hgp-renderer]")) {
         state.rendererPreference = targetNode.value;
         renderer = selectRenderer(capabilities, state.rendererPreference);
-        renderRenderer(); persist(); setStatus(`Renderer strategy selected ${renderer.selected}.`);
+        renderRenderer(); persist(); setStatus(`Chiến lược khả năng: ${renderer.selected}; đây không phải renderer đang chạy của editor.`);
       } else if (targetNode.matches("[data-hgp-budget]")) {
         const key = targetNode.dataset.hgpBudget;
         const value = Math.max(1, numberOr(targetNode.value, 1));

@@ -102,6 +102,16 @@
     return diffValues(before, after, "$", []);
   }
 
+  function remapDocumentReferences(value, ids) {
+    if (Array.isArray(value)) return value.map((item) => remapDocumentReferences(item, ids));
+    if (!value || typeof value !== "object" || value instanceof Blob) return value;
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => {
+      if (typeof item === "string" && /(?:id|ref)$/i.test(key) && ids.has(item)) return [key, ids.get(item)];
+      if (Array.isArray(item) && /(?:ids|refs)$/i.test(key)) return [key, item.map((entry) => ids.get(entry) || entry)];
+      return [key, remapDocumentReferences(item, ids)];
+    }));
+  }
+
   function createMemoryBackend() {
     const stores = Object.fromEntries(STORE_NAMES.map((name) => [name, new Map()]));
     return {
@@ -133,15 +143,20 @@
     const db = await requestPromise(request);
     const transact = (store, mode, operation) => {
       const transaction = db.transaction(store, mode);
-      return operation(transaction.objectStore(store));
+      const operationRequest = operation(transaction.objectStore(store));
+      return new Promise((resolve, reject) => {
+        transaction.oncomplete = () => resolve(operationRequest.result);
+        transaction.onerror = () => reject(transaction.error || operationRequest.error || new Error("IndexedDB transaction failed"));
+        transaction.onabort = () => reject(transaction.error || new Error("IndexedDB transaction aborted"));
+      });
     };
     return {
       type: "indexeddb",
-      get: (store, key) => requestPromise(transact(store, "readonly", (objectStore) => objectStore.get(key))),
-      put: (store, value) => requestPromise(transact(store, "readwrite", (objectStore) => objectStore.put(value))).then(() => clone(value)),
-      delete: (store, key) => requestPromise(transact(store, "readwrite", (objectStore) => objectStore.delete(key))).then(() => true),
-      all: (store) => requestPromise(transact(store, "readonly", (objectStore) => objectStore.getAll())),
-      clear: (store) => requestPromise(transact(store, "readwrite", (objectStore) => objectStore.clear())),
+      get: (store, key) => transact(store, "readonly", (objectStore) => objectStore.get(key)),
+      put: (store, value) => transact(store, "readwrite", (objectStore) => objectStore.put(value)).then(() => clone(value)),
+      delete: (store, key) => transact(store, "readwrite", (objectStore) => objectStore.delete(key)).then(() => true),
+      all: (store) => transact(store, "readonly", (objectStore) => objectStore.getAll()),
+      clear: (store) => transact(store, "readwrite", (objectStore) => objectStore.clear()),
       close: () => db.close()
     };
   }
@@ -178,7 +193,21 @@
   }
 
   function createStore(options) {
-    const backendPromise = createBackend(options || {});
+    const account = options?.projectContext?.accountId || options?.accountId;
+    const backendPromise = createBackend(options || {}).then((backend) => {
+      if (!account) return backend;
+      // Namespaced physical IDs also isolate explicitly injected/shared backends.
+      const prefix = `account:${encodeURIComponent(String(account))}:`;
+      const unwrap = (value) => value && String(value.id).startsWith(prefix) ? { ...value, id: value.id.slice(prefix.length) } : undefined;
+      return {
+        type: backend.type,
+        get: async (store, key) => unwrap(await backend.get(store, prefix + key)),
+        put: async (store, value) => { await backend.put(store, { ...value, id: prefix + value.id }); return clone(value); },
+        delete: (store, key) => backend.delete(store, prefix + key),
+        all: async (store) => (await backend.all(store)).filter((value) => String(value.id).startsWith(prefix)).map(unwrap),
+        close: () => backend.close()
+      };
+    });
     const withBackend = async (callback) => callback(await backendPromise);
 
     async function saveProject(input) {
@@ -280,7 +309,14 @@
       const project = await getProject(projectId);
       if (!project) throw new Error("Không tìm thấy dự án");
       const branchName = String(name || "feature").trim().replace(/\s+/g, "-").slice(0, 80);
-      return saveProject({ ...project, id: uid("project"), name: `${project.name} · ${branchName}`, parentBranch: project.branch, branch: branchName, status: "draft", createdAt: now() });
+      const branchId = uid("project");
+      const ids = new Map([[projectId, branchId]]);
+      const assets = await listAssets(projectId);
+      assets.forEach((asset) => ids.set(asset.id, uid("asset")));
+      let branch = await saveProject({ ...project, id: branchId, data: remapDocumentReferences(project.data, ids), assetIds: [], name: `${project.name} · ${branchName}`, parentBranch: project.branch, branch: branchName, status: "draft", createdAt: now() });
+      for (const asset of assets) await saveAsset({ ...asset, id: ids.get(asset.id), projectId: branch.id });
+      branch = await getProject(branch.id);
+      return branch;
     }
 
     async function requestReview(projectId) {
@@ -307,14 +343,20 @@
         clearTimeout(timer);
         const payload = pending;
         pending = null;
-        const saved = await saveProject({ ...payload, id: projectId });
-        await withBackend((backend) => backend.put("sessions", { id: sessionId, projectId, savedAt: now(), data: clone(saved.data) }));
-        sessionOptions?.onSaved?.(clone(saved));
-        return saved;
+        try {
+          const saved = await saveProject({ ...payload, id: projectId });
+          await withBackend((backend) => backend.put("sessions", { id: sessionId, projectId, savedAt: now(), data: clone(saved.data) }));
+          sessionOptions?.onSaved?.(clone(saved));
+          return saved;
+        } catch (error) {
+          if (!pending) pending = payload;
+          sessionOptions?.onError?.(error);
+          throw error;
+        }
       }
       return {
         id: sessionId,
-        schedule(data) { if (disposed) return; pending = normalizeProject({ ...data, id: projectId }); clearTimeout(timer); timer = setTimeout(flush, delay); },
+        schedule(data) { if (disposed) return; pending = normalizeProject({ ...data, id: projectId }); clearTimeout(timer); timer = setTimeout(() => { void flush().catch(() => {}); }, delay); },
         flush,
         async dispose(options) { if (options?.flush !== false) await flush(); disposed = true; clearTimeout(timer); },
         get pending() { return Boolean(pending); }
@@ -336,19 +378,23 @@
 
     async function importPackage(input) {
       const parsed = typeof input === "string" ? JSON.parse(input) : input;
-      if (!parsed || parsed.format !== FORMAT || parsed.version > VERSION || !parsed.project) throw new Error("Tệp .hhdesign không hợp lệ");
+      if (!parsed || parsed.format !== FORMAT || parsed.version !== VERSION || !parsed.project || typeof parsed.project !== "object") throw new Error("Tệp .hhdesign không hợp lệ");
+      if ((parsed.assets?.length || 0) > 2000 || (parsed.snapshots?.length || 0) > 1000) throw new Error("Gói có quá nhiều tài nguyên hoặc snapshot");
+      for (const source of Array.isArray(parsed.assets) ? parsed.assets : []) {
+        if (source.dataUrl && (!/^data:[^,]*;base64,[a-z0-9+/=]*$/i.test(source.dataUrl) || source.dataUrl.length > Math.ceil(MAX_ASSET_BYTES * 1.4) + 1024)) throw new Error("Tài nguyên trong gói không hợp lệ hoặc quá lớn");
+      }
       const sourceId = parsed.project.id;
       const project = await saveProject({ ...parsed.project, id: uid("project"), name: safeName(parsed.project.name), createdAt: now() });
-      const idMap = new Map();
+      const idMap = new Map([[sourceId, project.id]]);
       for (const source of Array.isArray(parsed.assets) ? parsed.assets : []) {
         const asset = await saveAsset({ ...source, id: uid("asset"), projectId: project.id, blob: dataUrlToBlob(source.dataUrl) });
         idMap.set(source.id, asset.id);
       }
-      await saveProject({ ...project, assetIds: (parsed.project.assetIds || []).map((id) => idMap.get(id)).filter(Boolean) });
+      await saveProject({ ...project, data: remapDocumentReferences(project.data, idMap), assetIds: (parsed.project.assetIds || []).map((id) => idMap.get(id)).filter(Boolean) });
       for (const source of Array.isArray(parsed.snapshots) ? parsed.snapshots : []) {
-        await withBackend((backend) => backend.put("snapshots", { ...source, id: uid("snapshot"), projectId: project.id, project: { ...source.project, id: project.id } }));
+        await withBackend((backend) => backend.put("snapshots", { ...source, id: uid("snapshot"), projectId: project.id, project: remapDocumentReferences({ ...source.project, id: project.id }, idMap) }));
       }
-      return { project: await getProject(project.id), sourceId, importedAssets: idMap.size };
+      return { project: await getProject(project.id), sourceId, importedAssets: Math.max(0, idMap.size - 1) };
     }
 
     return {
@@ -384,10 +430,11 @@
     if (!root || typeof root.querySelector !== "function") return null;
     if (instances.has(root)) return instances.get(root);
     addStyles();
-    const store = options?.store || createStore(options);
+    const context = options?.projectContext || globalScope.HHGraphicProjectContext?.resolve?.(options || {});
+    const store = options?.store || createStore({ ...options, accountId: context?.accountId });
     root.classList.add("hps");
     root.innerHTML = `<header class="hps-head"><div><h2>Project & Version System</h2><p>IndexedDB · autosave · snapshot · branch · Asset Manager · .hhdesign</p></div><div class="hps-head-actions"><button type="button" data-hps-new>Dự án mới</button><button type="button" data-hps-import>Nhập .hhdesign</button><button type="button" class="hps-primary" data-hps-export>Xuất gói</button></div></header><div class="hps-grid"><aside class="hps-pane"><h3>Dự án</h3><div class="hps-list" data-hps-projects></div></aside><main class="hps-pane"><div data-hps-editor class="hps-empty">Đang mở kho dự án…</div></main><aside class="hps-pane"><section><h3>Phiên bản</h3><div data-hps-versions></div></section><section><h3>Cảnh báo asset</h3><div data-hps-warnings></div></section></aside></div><input hidden type="file" accept=".hhdesign,application/json" data-hps-import-file><input hidden type="file" multiple accept="image/*,video/*,.ttf,.otf,.woff,.woff2,.svg,.json,.lottie,.glb,.gltf" data-hps-asset-file><div class="hps-status" role="status" aria-live="polite" data-hps-status></div>`;
-    let selectedId = null;
+    let selectedId = options?.projectId || context?.projectId || null;
     let projects = [];
     let session = null;
     const qs = (selector) => root.querySelector(selector);
@@ -395,28 +442,32 @@
 
     async function ensureProject() {
       projects = await store.listProjects();
-      if (!projects.length) projects = [await store.saveProject({ name: "Dự án thiết kế đầu tiên", data: { canvas: { width: 1920, height: 1080 } } })];
-      if (!selectedId || !projects.some((project) => project.id === selectedId)) selectedId = projects[0].id;
+      if (selectedId && selectedId !== "workspace" && !projects.some((project) => project.id === selectedId)) {
+        const designDocument = options?.designDocumentController?.getDocument?.() || options?.designDocument;
+        projects.unshift(await store.saveProject({ id: selectedId, name: options?.projectName || designDocument?.name || "Dự án đang mở", data: designDocument ? { designDocument } : {} }));
+      }
+      if (!selectedId || !projects.some((project) => project.id === selectedId)) selectedId = projects[0]?.id || null;
     }
 
     async function renderProjects() {
       projects = await store.listProjects();
-      qs("[data-hps-projects]").innerHTML = projects.map((project) => `<button type="button" class="hps-item ${project.id === selectedId ? "is-active" : ""}" data-hps-project="${escapeHtml(project.id)}"><strong>${escapeHtml(project.name)}</strong><span>${escapeHtml(project.branch)} · ${escapeHtml(project.status)} · ${new Date(project.updatedAt).toLocaleString("vi-VN")}</span></button>`).join("");
+      qs("[data-hps-projects]").innerHTML = projects.map((project) => `<button type="button" class="hps-item ${project.id === selectedId ? "is-active" : ""}" data-hps-project="${escapeHtml(project.id)}"><strong>${escapeHtml(project.name)}</strong><span>${escapeHtml(project.branch)} · ${escapeHtml(project.status)} · ${new Date(project.updatedAt).toLocaleString("vi-VN")}</span></button>`).join("") || `<p class="hps-empty">Chưa có dự án trong tài khoản này. Chọn “Dự án mới” để bắt đầu; kho cũ chưa xác định chủ sở hữu không được tự nhập.</p>`;
     }
 
     async function renderEditor() {
       const project = await store.getProject(selectedId);
-      if (!project) return;
+      if (!project) { qs("[data-hps-editor]").textContent = "Tạo hoặc chọn dự án để sửa, lưu và đóng gói tài nguyên."; return; }
       const assets = await store.listAssets(selectedId);
       const editor = qs("[data-hps-editor]");
       editor.className = "";
       editor.innerHTML = `<section class="hps-card"><div class="hps-row"><label style="flex:1">Tên dự án<input data-hps-name value="${escapeHtml(project.name)}" maxlength="160"></label><label>Nhánh<input data-hps-branch value="${escapeHtml(project.branch)}" maxlength="80"></label><label>Trạng thái<select data-hps-review><option value="draft">Bản nháp</option><option value="review">Chờ duyệt</option><option value="approved">Đã duyệt</option><option value="changes-requested">Cần sửa</option></select></label></div><div class="hps-row"><button type="button" data-hps-snapshot>Tạo snapshot</button><button type="button" data-hps-branch-new>Tạo nhánh</button><button type="button" data-hps-review-request>Gửi duyệt</button><span class="hps-badge">Autosave phiên</span></div></section><section class="hps-card"><h3>Asset Manager</h3><button type="button" class="hps-drop" data-hps-drop><span><strong>Thả font, ảnh, video, SVG, Lottie hoặc GLB</strong><br>Hoặc bấm để chọn từ thiết bị</span></button><div data-hps-assets>${assets.map((asset) => `<div class="hps-asset"><b>${escapeHtml(asset.kind.toUpperCase())}</b><div><strong>${escapeHtml(asset.name)}</strong><small>${(asset.size / 1048576).toFixed(2)} MB · ${escapeHtml(asset.type)}</small></div><button type="button" data-hps-remove-asset="${escapeHtml(asset.id)}" aria-label="Xóa ${escapeHtml(asset.name)}">Xóa</button></div>`).join("") || `<div class="hps-empty">Chưa có asset.</div>`}</div></section>`;
       qs("[data-hps-review]").value = project.status;
       session?.dispose({ flush: true });
-      session = store.createAutosaveSession(project.id, { delay: 600, onSaved: () => status("Đã tự lưu phiên làm việc.") });
+      session = store.createAutosaveSession(project.id, { delay: 600, onSaved: () => status("Đã tự lưu phiên làm việc."), onError: () => status("Lưu thất bại; bản nháp còn trong phiên. Hãy thử lại hoặc xuất trước khi đóng.") });
     }
 
     async function renderVersions() {
+      if (!selectedId) { qs("[data-hps-versions]").textContent = "Chưa có snapshot."; qs("[data-hps-warnings]").textContent = "Chọn dự án để kiểm tra tài nguyên."; return; }
       const snapshots = await store.listSnapshots(selectedId);
       qs("[data-hps-versions]").innerHTML = snapshots.map((snapshot) => `<div class="hps-card"><strong>${escapeHtml(snapshot.label)}</strong><div class="hps-status">${new Date(snapshot.createdAt).toLocaleString("vi-VN")} · ${escapeHtml(snapshot.branch)}</div><div class="hps-row"><button type="button" data-hps-restore="${escapeHtml(snapshot.id)}">Khôi phục</button><button type="button" data-hps-diff="${escapeHtml(snapshot.id)}">So sánh</button></div></div>`).join("") || `<div class="hps-empty">Chưa có snapshot.</div>`;
       const warnings = await store.validateAssets(selectedId);
@@ -428,20 +479,21 @@
     }
 
     async function addFiles(files) {
+      if (!selectedId) return status("Tạo hoặc chọn dự án trước khi thêm tài nguyên.");
       for (const file of files) await store.saveAsset({ projectId: selectedId, name: file.name, type: file.type, size: file.size, blob: file });
       status(`Đã thêm ${files.length} asset vào IndexedDB.`); await renderEditor(); await renderVersions();
     }
 
     const onClick = async (event) => {
       const target = event.target.closest("button"); if (!target || !root.contains(target)) return;
-      if (target.dataset.hpsProject) { await session?.dispose(); selectedId = target.dataset.hpsProject; return render(); }
-      if (target.matches("[data-hps-new]")) { const project = await store.saveProject({ name: `Dự án ${projects.length + 1}` }); selectedId = project.id; return render(); }
+      if (target.dataset.hpsProject) { await session?.dispose(); selectedId = target.dataset.hpsProject; const project = await store.getProject(selectedId); if (options?.onProjectSelect) return options.onProjectSelect(project); return render(); }
+      if (target.matches("[data-hps-new]")) { const project = await store.saveProject({ name: `Dự án ${projects.length + 1}` }); selectedId = project.id; if (options?.onProjectSelect) return options.onProjectSelect(project); return render(); }
       if (target.matches("[data-hps-import]")) return qs("[data-hps-import-file]").click();
-      if (target.matches("[data-hps-export]")) { const project = await store.getProject(selectedId); download(await store.exportPackage(selectedId), `${project.name.replace(/[^a-z0-9]+/gi, "-") || "project"}.hhdesign`); return status("Đã đóng gói project và asset."); }
+      if (target.matches("[data-hps-export]")) { const project = await store.getProject(selectedId); if (!project) return status("Chọn dự án trước khi xuất gói."); await session?.flush(); download(await store.exportPackage(selectedId), `${project.name.replace(/[^a-z0-9]+/gi, "-") || "project"}.hhdesign`); return status("Đã đóng gói project và asset."); }
       if (target.matches("[data-hps-drop]")) return qs("[data-hps-asset-file]").click();
       if (target.dataset.hpsRemoveAsset) { await store.removeAsset(target.dataset.hpsRemoveAsset); return render(); }
       if (target.matches("[data-hps-snapshot]")) { await session?.flush(); await store.createSnapshot(selectedId, `Snapshot ${new Date().toLocaleTimeString("vi-VN")}`); status("Đã tạo snapshot bất biến."); return renderVersions(); }
-      if (target.matches("[data-hps-branch-new]")) { const project = await store.createBranch(selectedId, `feature-${Date.now().toString(36)}`); selectedId = project.id; status("Đã tạo nhánh thiết kế mới."); return render(); }
+      if (target.matches("[data-hps-branch-new]")) { const project = await store.createBranch(selectedId, `feature-${Date.now().toString(36)}`); selectedId = project.id; status("Đã tạo nhánh thiết kế mới."); if (options?.onProjectSelect) return options.onProjectSelect(project); return render(); }
       if (target.matches("[data-hps-review-request]")) { await store.requestReview(selectedId); status("Đã chuyển dự án sang chờ duyệt."); return render(); }
       if (target.dataset.hpsRestore) { await store.restoreSnapshot(target.dataset.hpsRestore); status("Đã khôi phục snapshot."); return render(); }
       if (target.dataset.hpsDiff) { const changes = await store.compareSnapshot(target.dataset.hpsDiff, selectedId); return status(`Có ${changes.length} thay đổi so với snapshot.`); }
@@ -455,16 +507,19 @@
     const onChange = async (event) => {
       if (event.target.matches("[data-hps-review]")) { await store.setReviewStatus(selectedId, event.target.value); status("Đã cập nhật trạng thái duyệt."); return renderProjects(); }
       if (event.target.matches("[data-hps-asset-file]") && event.target.files.length) return addFiles([...event.target.files]);
-      if (event.target.matches("[data-hps-import-file]") && event.target.files[0]) { const result = await store.importPackage(await event.target.files[0].text()); selectedId = result.project.id; status(`Đã nhập ${result.importedAssets} asset.`); return render(); }
+      if (event.target.matches("[data-hps-import-file]") && event.target.files[0]) { const result = await store.importPackage(await event.target.files[0].text()); selectedId = result.project.id; status(`Đã nhập ${result.importedAssets} asset.`); if (options?.onProjectSelect) return options.onProjectSelect(result.project); return render(); }
     };
     const dragTarget = (event) => event.target.closest && event.target.closest("[data-hps-drop]");
     const onDragOver = (event) => { const drop = dragTarget(event); if (!drop) return; event.preventDefault(); drop.classList.add("is-over"); };
     const onDragLeave = (event) => { const drop = dragTarget(event); if (drop) drop.classList.remove("is-over"); };
-    const onDrop = (event) => { const drop = dragTarget(event); if (!drop) return; event.preventDefault(); drop.classList.remove("is-over"); addFiles([...event.dataTransfer.files]); };
-    root.addEventListener("click", onClick); root.addEventListener("input", onInput); root.addEventListener("change", onChange);
+    const onDrop = (event) => { const drop = dragTarget(event); if (!drop) return; event.preventDefault(); drop.classList.remove("is-over"); void addFiles([...event.dataTransfer.files]).catch((error) => status(error.message || "Chưa lưu được tài nguyên.")); };
+    const guardedClick = (event) => { void onClick(event).catch((error) => status(error.message || "Thao tác chưa hoàn tất; dữ liệu chưa được xác nhận lưu.")); };
+    const guardedChange = (event) => { void onChange(event).catch((error) => status(error.message || "Không thể nhập hoặc lưu tệp.")); };
+    const guardedInput = (event) => { void onInput(event).catch((error) => status(error.message || "Chưa đọc được dự án để lưu.")); };
+    root.addEventListener("click", guardedClick); root.addEventListener("input", guardedInput); root.addEventListener("change", guardedChange);
     root.addEventListener("dragover", onDragOver); root.addEventListener("dragleave", onDragLeave); root.addEventListener("drop", onDrop);
     await render();
-    const controller = { store, getProject: () => store.getProject(selectedId), render, async unmount() { await session?.dispose(); root.removeEventListener("click", onClick); root.removeEventListener("input", onInput); root.removeEventListener("change", onChange); root.removeEventListener("dragover", onDragOver); root.removeEventListener("dragleave", onDragLeave); root.removeEventListener("drop", onDrop); root.replaceChildren(); root.classList.remove("hps"); instances.delete(root); } };
+    const controller = { store, getProject: () => store.getProject(selectedId), render, async unmount() { await session?.dispose(); root.removeEventListener("click", guardedClick); root.removeEventListener("input", guardedInput); root.removeEventListener("change", guardedChange); root.removeEventListener("dragover", onDragOver); root.removeEventListener("dragleave", onDragLeave); root.removeEventListener("drop", onDrop); root.replaceChildren(); root.classList.remove("hps"); instances.delete(root); } };
     instances.set(root, controller);
     return controller;
   }
@@ -472,13 +527,13 @@
   function unmount(root) {
     const controller = instances.get(root);
     if (!controller) return false;
-    controller.unmount();
+    void controller.unmount().catch((error) => { const status = root.querySelector("[data-hps-status]"); if (status) status.textContent = error.message || "Bản nháp chưa được lưu; hãy thử lại trước khi đóng."; });
     return true;
   }
 
   const api = Object.freeze({
     VERSION, FORMAT, DB_NAME, DB_VERSION, MAX_ASSET_BYTES, STORE_NAMES,
-    normalizeProject, normalizeAsset, assetKind, diff, createMemoryBackend, createStore,
+    normalizeProject, normalizeAsset, assetKind, diff, remapDocumentReferences, createMemoryBackend, createStore,
     blobToDataUrl, dataUrlToBlob, mount, unmount
   });
   if (typeof module !== "undefined" && module.exports) module.exports = api;

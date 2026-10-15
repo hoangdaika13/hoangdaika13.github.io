@@ -243,9 +243,9 @@
   }
 
   function getStorage(storage) {
-    if (storage) return storage;
-    if (hasWindow && global.localStorage) return global.localStorage;
-    return { getItem: () => null, setItem: () => {}, removeItem: () => {} };
+    if (storage !== undefined && storage !== null) return storage;
+    if (storage === undefined) { try { if (hasWindow && global.localStorage) return global.localStorage; } catch (_) {} }
+    return { getItem: () => null, setItem: () => { throw Error('Storage unavailable'); }, removeItem: () => {} };
   }
 
   function createController(host, options) {
@@ -264,7 +264,7 @@
 
     function persist() {
       project.meta.updatedAt = nowIso();
-      try { storage.setItem(STORAGE_KEY, JSON.stringify(project)); } catch (_) {}
+      try { storage.setItem(STORAGE_KEY, JSON.stringify(project)); host.dataset.saveState = 'saved'; return true; } catch (_) { host.dataset.saveState = 'error'; announce('Chưa lưu được bản nháp. Hãy xuất JSON trước khi rời trang.', 'error'); return false; }
     }
 
     function announce(message, kind) {
@@ -273,7 +273,7 @@
       status.textContent = message;
       status.dataset.kind = kind || "";
       clearTimeout(announce.timer);
-      announce.timer = setTimeout(() => { if (status) { status.textContent = "Sẵn sàng"; status.dataset.kind = ""; } }, 3600);
+      announce.timer = setTimeout(() => { if (status) { status.textContent = host.dataset.saveState === 'error' ? 'Chưa lưu được · hãy xuất JSON để giữ bản nháp.' : "Sẵn sàng"; status.dataset.kind = host.dataset.saveState === 'error' ? 'error' : ""; } }, 3600);
     }
 
     function saveSnapshot() {

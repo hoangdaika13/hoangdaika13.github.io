@@ -9,6 +9,22 @@ test("Dev Mode inspects design values and WCAG contrast", () => {
   assert.ok(dev.evaluateContrast("#777777", "#ffffff", 16, false).ratio > 4);
 });
 
+test("Dev inspect reads actual selected document and applies fields with history instead of editing a sample", () => {
+  const document = { canvas: { background: "#000000" }, selectedLayerId: "title", layers: [{ id: "title", type: "text", name: "Actual title", text: "Chữ thật", fill: "#FF00FF", width: 222, height: 40, fontSize: 30 }] };
+  const inspected = dev.documentLayerToInspect(document);
+  assert.equal(inspected.id, "title"); assert.equal(inspected.textColor, "#FF00FF"); assert.equal(inspected.width, 222);
+  const calls = [];
+  const controller = { document, dispatch(type, payload) { calls.push([type, payload]); Object.assign(document.layers[0], payload.changes); return document; } };
+  dev.applyInspectField(controller, "textColor", "#00FFFF");
+  assert.equal(document.layers[0].fill, "#00FFFF");
+  assert.equal(calls[0][0], "update-layer");
+  dev.applyInspectField(controller, "radius", 17); assert.equal(document.layers[0].cornerRadius, 17);
+  assert.throws(() => dev.applyInspectField(controller, "padding", 32), /bản xem trước/);
+  document.layers[0].locked = true;
+  assert.throws(() => dev.applyInspectField(controller, "width", 100), /khóa/);
+  assert.equal(dev.documentLayerToInspect({ layers: [] }), null);
+});
+
 test("Design tokens export to CSS, Tailwind and portable JSON", () => {
   const workspace = dev.createDefaultWorkspace();
   assert.match(dev.tokensToCss(workspace.tokens), /--hh-primary:/);

@@ -236,10 +236,59 @@ test("Mounted UI contract is local-only, responsive, keyboard-visible and motion
     "data-hgp-install", "data-hgp-file", "FileReader", "readAsText", "data-hgp-enabled", "data-hgp-uninstall",
     "data-hgp-command", "data-hgp-run", "data-hgp-audit", 'sandbox="allow-scripts"', 'referrerpolicy="no-referrer"',
     'role="status"', 'aria-live="polite"', "focus-visible", "event.key !== \"Escape\"",
-    "@media(max-width:420px)", "@media(prefers-reduced-motion:reduce)", "localStorage unsupported"
+    "@media(max-width:420px)", "@media(prefers-reduced-motion:reduce)", "Chỉ trong phiên: không thể lưu registry"
   ]) assert.ok(source.includes(token), `missing ${token}`);
   assert.doesNotMatch(source, /\beval\s*\(/);
   assert.doesNotMatch(source, /new\s+Function\b/);
   assert.doesNotMatch(source, /fetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon/);
   assert.doesNotMatch(source, /https?:\/\/[^"'\s]+\.js/);
+});
+
+test("Document host applies allowlisted operations to real controller history and rejects missing/locked layers", async () => {
+  let document = { id: "real-doc", activeFrameId: "f1", frames: [{ id: "f1", width: 800, height: 600, background: "#000000" }], layers: [{ id: "locked", name: "Locked", locked: true }], selectedLayerIds: [] };
+  const calls = [];
+  const controller = {
+    get document() { return structuredClone(document); },
+    dispatch(type, payload) {
+      calls.push([type, structuredClone(payload)]);
+      if (type === "set-frame") Object.assign(document.frames[0], payload.changes);
+      if (type === "add-layer") { document.layers.push({ ...payload, id: "generated-id" }); document.selectedLayerId = "generated-id"; }
+      if (type === "update-layer") Object.assign(document.layers.find((item) => item.id === payload.id), payload.changes);
+      return structuredClone(document);
+    },
+    select(ids) { document.selectedLayerIds = [...ids]; }
+  };
+  const host = plugins.createDocumentHost(controller);
+  host.canvas.resize(1200, 700); host.canvas.setBackground("#123456");
+  assert.deepEqual(host.canvas.getSize(), { width: 1200, height: 700 });
+  assert.equal(document.frames[0].background, "#123456");
+  assert.equal(calls[0][0], "set-frame");
+  const registry = plugins.createRegistry({ host, storage: null });
+  registry.install(createPackage());
+  const layer = await registry.executeCommand("toolkit.layer", { pluginId: "local.test.toolkit" });
+  assert.equal(layer.id, "generated-id");
+  assert.ok(document.layers.some((item) => item.name === "Test layer"));
+  host.layer.rename(layer.id, "Edited");
+  assert.equal(document.layers.at(-1).name, "Edited");
+  assert.throws(() => host.layer.rename("locked", "No"), /locked/);
+  assert.throws(() => host.layer.add({ type: "image" }), /imported/);
+  assert.throws(() => host.selection.set(["missing"]), /missing/);
+  host.selection.set([layer.id]); assert.deepEqual(document.selectedLayerIds, [layer.id]);
+  const snapshot = host.export.snapshot("Actual"); snapshot.document.layers[0].name = "Mutated clone";
+  assert.equal(document.layers[0].name, "Locked");
+  host.selection.clear(); assert.deepEqual(document.selectedLayerIds, []);
+});
+
+test("Document host integrates with Universal frame operations and undo, not an in-memory canvas shadow", () => {
+  const universal = require("../graphic-design-universal.js");
+  let document = universal.defaultDocument();
+  const controller = { get document() { return structuredClone(document); }, dispatch(type, payload) { document = universal.operation(document, type, payload); return structuredClone(document); }, select(ids) { document.selectedLayerIds = ids; } };
+  const host = plugins.createDocumentHost(controller);
+  const before = host.canvas.getSize();
+  host.canvas.resize(1333, 777);
+  assert.deepEqual(host.canvas.getSize(), { width: 1333, height: 777 });
+  host.canvas.setBackground("#123456");
+  assert.equal(document.frames.find((item) => item.id === document.activeFrameId).background, "#123456");
+  document = universal.undo(document); document = universal.undo(document);
+  assert.deepEqual(host.canvas.getSize(), before);
 });

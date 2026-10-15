@@ -225,12 +225,13 @@
     document.head.appendChild(style);
   }
 
-  function mount(root) {
+  function mount(root, options = {}) {
     if (!root || typeof root.querySelector !== "function") return null;
     if (mounted.has(root)) return mounted.get(root).api;
     ensureStyles();
 
     const storage = (() => {
+      if (options.storage !== undefined) return options.storage;
       try { return globalScope.localStorage || null; } catch (_) { return null; }
     })();
     let project = createDefaultProject("logo");
@@ -261,12 +262,12 @@
       const status = root.querySelector("[data-qm-status]");
       if (status) status.textContent = message;
       clearTimeout(statusTimer);
-      statusTimer = setTimeout(() => { if (status) status.textContent = "Đã tự lưu trên thiết bị."; }, 2600);
+      statusTimer = setTimeout(() => { if (status) status.textContent = root.dataset.qmSaveState === 'saved' ? "Đã tự lưu trong dự án này." : "Bản nháp chưa được xác nhận lưu; hãy xuất JSON trước khi rời trang."; }, 2600);
     }
 
     function persist() {
       project.meta.updatedAt = new Date().toISOString();
-      try { storage?.setItem(STORAGE_KEY, JSON.stringify(project)); } catch (_) { announce("Không thể lưu local trên trình duyệt này."); }
+      try { if (!storage?.setItem) throw Error('Storage unavailable'); storage.setItem(STORAGE_KEY, JSON.stringify(project)); root.dataset.qmSaveState = 'saved'; return true; } catch (_) { root.dataset.qmSaveState = 'error'; announce("Không thể lưu local trên trình duyệt này. Hãy xuất JSON để giữ bản nháp."); return false; }
     }
 
     function snapshot() {

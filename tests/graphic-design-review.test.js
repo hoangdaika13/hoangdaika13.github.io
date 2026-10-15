@@ -18,6 +18,31 @@ function createMemoryStorage() {
   };
 }
 
+test("Review snapshots the actual frame and storage key without leaking into another project", () => {
+  const document = { id: "doc-a", name: "Poster <actual>", activeFrameId: "frame-a", frames: [{ id: "frame-a", x: 100, y: 50, width: 800, height: 600, background: "#123456" }], layers: [{ id: "text-a", frameId: "frame-a", x: 101, y: 51, width: 100, height: 30, text: "Thật" }, { id: "other-frame", frameId: "frame-b" }] };
+  const input = reviewApi.reviewInputFromDocument(document, { id: "owner" });
+  assert.equal(input.after.data.canvas.width, 800); assert.equal(input.after.data.coordinateSpace, "pixels");
+  assert.deepEqual(input.after.data.layers.map((item) => item.id), ["text-a"]);
+  assert.equal(input.after.data.layers[0].x, 1);
+  input.after.data.layers[0].text = "changed clone";
+  assert.equal(input.before.data.layers[0].text, "Thật"); assert.equal(document.layers[0].text, "Thật");
+  const storage = createMemoryStorage();
+  const first = reviewApi.createStore({ storage, storageKey: "hh.test.review.account-one.project-one" }); first.createReview(input);
+  assert.equal(first.listReviews().length, 1);
+  const second = reviewApi.createStore({ storage, storageKey: "hh.test.review.account-one.project-two" });
+  assert.equal(second.listReviews().length, 0);
+  assert.equal(storage.value(reviewApi.STORAGE_KEY), undefined);
+  assert.equal(first.getPersistence().key, "hh.test.review.account-one.project-one");
+});
+
+test("Review quota failure preserves the in-session review while reporting unsaved memory-only state", () => {
+  const store = reviewApi.createStore({ storage: { getItem: () => null, setItem() { throw new Error("QuotaExceededError"); } } });
+  const review = createReview(store);
+  assert.equal(store.getReview(review.id).title, review.title);
+  assert.equal(store.getPersistence().type, "memory");
+  assert.match(store.getPersistence().error, /Không thể ghi/);
+});
+
 function createReview(store, actor = { id: "owner-1", name: "An <Owner>" }) {
   return store.createReview({
     title: "KV <script>alert(1)</script>",

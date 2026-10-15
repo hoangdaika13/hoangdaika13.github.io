@@ -15,9 +15,9 @@
     { id: "deliver", label: "Deliver", description: "Handoff & export" }
   ]);
   const DEPENDENCIES = Object.freeze({
-    vector: Object.freeze({ api: "HHGraphicVectorCore", source: "graphic-design-vector-core.js?v=2" }),
+    vector: Object.freeze({ api: "HHGraphicVectorCore", source: "graphic-design-vector-core.js?v=3" }),
     components: Object.freeze({ api: "HHGraphicComponents", source: "graphic-design-components.js?v=2" }),
-    collaboration: Object.freeze({ api: "HHGraphicCollaboration", source: "graphic-design-collaboration.js?v=2" })
+    collaboration: Object.freeze({ api: "HHGraphicCollaboration", source: "graphic-design-collaboration.js?v=3" })
   });
   const mounted = typeof WeakMap === "function" ? new WeakMap() : new Map();
   const dependencyLoads = new Map();
@@ -514,6 +514,7 @@
     const storageDriver = createStorageDriver(storage);
     const loaded = storageDriver.load();
     let state = loaded.state;
+    if (loaded.reason === "empty" && runtimeOptions.projectName) state.projectName = cleanText(runtimeOptions.projectName, 120);
     const controllers = { vector: null, components: null, collaboration: null };
     const apis = { vector: null, components: null, collaboration: null };
     let destroyed = false;
@@ -640,7 +641,10 @@
         loadDependency(DEPENDENCIES.components, documentObject).then((api) => {
           if (destroyed || !componentHost?.isConnected) return;
           apis.components = api;
-          controllers.components = api.mount(componentHost, { storage: runtimeOptions.componentStorage });
+          controllers.components = api.mount(componentHost, {
+            ...runtimeOptions,
+            storage: runtimeOptions.componentStorage === undefined ? runtimeOptions.storage : runtimeOptions.componentStorage
+          });
           renderCapabilities();
         }).catch((error) => {
           if (componentHost?.isConnected) componentHost.innerHTML = `<div class="gdw-engine-error" role="alert"><strong>Component System không khả dụng</strong><p>${escapeHtml(error.message)}</p></div>`;

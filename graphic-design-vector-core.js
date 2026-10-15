@@ -908,10 +908,12 @@
     return new Blob([new Uint8Array(bytes)], { type: "image/gif" });
   }
 
-  function createStorageDriver(scope) {
+  function createStorageDriver(scope, options = {}) {
     const local = (() => {
+      if (options.storage !== undefined) return options.storage;
       try { return scope.localStorage || null; } catch (_) { return null; }
     })();
+    const recordKey = options.projectContext?.storageKey?.(STORAGE_KEY) || STORAGE_KEY;
     let databasePromise = null;
     function openDatabase() {
       if (!scope.indexedDB) return Promise.reject(new Error("IndexedDB không khả dụng"));
@@ -923,6 +925,7 @@
         };
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error || new Error("Không mở được IndexedDB"));
+        request.onblocked = () => reject(new Error("IndexedDB đang bị chặn bởi phiên khác"));
       });
       return databasePromise;
     }
@@ -930,8 +933,9 @@
       const database = await openDatabase();
       return new Promise((resolve, reject) => {
         const transaction = database.transaction(STORE_NAME, action === "get" ? "readonly" : "readwrite");
-        const request = action === "get" ? transaction.objectStore(STORE_NAME).get(STORAGE_KEY) : transaction.objectStore(STORE_NAME).put(value, STORAGE_KEY);
-        request.onsuccess = () => resolve(request.result);
+        const request = action === "get" ? transaction.objectStore(STORE_NAME).get(recordKey) : transaction.objectStore(STORE_NAME).put(value, recordKey);
+        transaction.oncomplete = () => resolve(request.result);
+        transaction.onabort = () => reject(transaction.error || new Error("Giao dịch lưu đã bị hủy"));
         request.onerror = () => reject(request.error || new Error("Lỗi IndexedDB"));
       });
     }
@@ -953,9 +957,10 @@
           try { local?.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch (_) { /* IndexedDB already persisted it. */ }
           return "indexeddb";
         } catch (_) {
-          try { local?.setItem(STORAGE_KEY, JSON.stringify(payload)); return "localStorage"; } catch (_) { throw new Error("Không thể tự lưu trên thiết bị này"); }
+          try { if (!local?.setItem) throw new Error("Storage unavailable"); local.setItem(STORAGE_KEY, JSON.stringify(payload)); return "localStorage"; } catch (_) { throw new Error("Không thể tự lưu trên thiết bị này"); }
         }
-      }
+      },
+      close() { return databasePromise?.then(database => database.close()).catch(() => {}); }
     };
   }
 
@@ -1091,11 +1096,11 @@
     globalScope.document.head.appendChild(style);
   }
 
-  function mount(root) {
+  function mount(root, options = {}) {
     if (!root || typeof root.querySelector !== "function") return null;
     if (mounted.has(root)) return mounted.get(root).api;
     ensureStyles();
-    const storage = createStorageDriver(globalScope);
+    const storage = createStorageDriver(globalScope, options);
     let project = createDefaultProject();
     let selectedIds = [project.layers.find((layer) => layer.type === "text")?.id || project.layers[0].id];
     let tool = "select";
@@ -1110,6 +1115,7 @@
     let future = [];
     let saveTimer = 0;
     let statusTimer = 0;
+    let disposed = false, hydrated = false, editRevision = 0, savedRevision = 0;
     const listeners = [];
     const reducedMotion = typeof globalScope.matchMedia === "function" && globalScope.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -1132,10 +1138,15 @@
 
     function persist() {
       project.meta.updatedAt = new Date().toISOString();
+      editRevision += 1;
       globalScope.clearTimeout(saveTimer);
+      if (!hydrated || disposed) return;
       saveTimer = globalScope.setTimeout(async () => {
+        const revision = editRevision, payload = clone(project);
         try {
-          const target = await storage.save(project);
+          const target = await storage.save(payload);
+          savedRevision = Math.max(savedRevision, revision);
+          if (disposed) return;
           const status = root.querySelector("[data-vc-status]");
           if (status) status.textContent = `Đã tự lưu bằng ${target}.`;
         } catch (error) { announce(error.message); }
@@ -1595,18 +1606,24 @@
       }
     });
 
+    root.inert = true;
+    root.setAttribute('aria-busy', 'true');
     render();
-    storage.load().then((saved) => {
-      if (!saved || mounted.get(root)?.destroyed) return;
-      project = normalizeProject(saved);
-      selectedIds = [project.layers[0].id];
+    const ready = storage.load().then((saved) => {
+      if (disposed) return;
+      hydrated = true;
+      root.inert = false;
+      root.removeAttribute('aria-busy');
+      if (saved && editRevision === 0) { project = normalizeProject(saved); selectedIds = [project.layers[0].id]; }
       render();
-      announce("Đã khôi phục phiên làm việc gần nhất.");
+      if (saved && editRevision === 0) announce("Đã khôi phục phiên làm việc gần nhất.");
+      if (editRevision > savedRevision) persist();
     });
 
     const api = {
       getProject: () => clone(project),
-      setProject: (next) => { snapshot(); project = normalizeProject(next); selectedIds = [project.layers[0].id]; persist(); render(); },
+      ready,
+      setProject: (next) => { snapshot(); project = normalizeProject(next); selectedIds = [project.layers[0].id]; hydrated = true; root.inert = false; root.removeAttribute('aria-busy'); persist(); render(); },
       setTool,
       selectLayer: (id) => selectLayer(id, false),
       setTime: (time) => { currentTime = clamp(time, 0, project.timeline.duration); renderCanvas(); },
@@ -1625,10 +1642,15 @@
       listeners,
       destroyed: false,
       cleanup() {
+        disposed = true;
         this.destroyed = true;
         playing = false;
         globalScope.cancelAnimationFrame?.(raf);
         globalScope.clearTimeout(saveTimer);
+        if (hydrated && editRevision > savedRevision) void storage.save(project).catch(() => {}).finally(() => storage.close());
+        else void storage.close();
+        root.inert = false;
+        root.removeAttribute('aria-busy');
         globalScope.clearTimeout(statusTimer);
         listeners.splice(0).forEach((off) => off());
       }

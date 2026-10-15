@@ -141,9 +141,9 @@ test("CSS, handoff and workflow package outputs are generated from live controll
 
 test("the UI uses real engines, honest realtime capability and working export controls", () => {
   for (const marker of [
-    "graphic-design-vector-core.js?v=2",
+    "graphic-design-vector-core.js?v=3",
     "graphic-design-components.js?v=2",
-    "graphic-design-collaboration.js?v=2",
+    "graphic-design-collaboration.js?v=3",
     "data-gdw-vector",
     "data-gdw-components",
     "data-gdw-collaboration",
@@ -160,7 +160,7 @@ test("the UI uses real engines, honest realtime capability and working export co
 test("studio exposes workflow route and integration version without shell edits", () => {
   assert.match(studioSource, /const INTEGRATION_VERSION = 7/);
   assert.match(studioSource, /id: "workflow"/);
-  assert.match(studioSource, /graphic-design-workflow\.js\?v=1/);
+  assert.match(studioSource, /graphic-design-workflow\.js\?v=3/);
   assert.match(studioSource, /data-graphic-design-workflow/);
   assert.match(studioSource, /HHGraphicDesignWorkflow\?\.unmount/);
   assert.match(studioSource, /Object\.freeze\(\{ INTEGRATION_VERSION, mount/);

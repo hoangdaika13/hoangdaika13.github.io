@@ -77,7 +77,7 @@
     if (typeof value !== "object") return null;
     const result = {};
     Object.keys(value).slice(0, 120).forEach((key) => {
-      if (/^(?:api[_-]?key|secret|token|password|authorization)$/i.test(key)) return;
+      if (/^(?:__proto__|prototype|constructor|api[_-]?key|secret|token|password|authorization)$/i.test(key)) return;
       result[safeText(key, 80)] = key === "svg" ? sanitizeSvg(value[key]) : sanitizePayload(value[key], level + 1);
     });
     return result;
@@ -168,7 +168,7 @@
       fontSize: clamp(source.fontSize, 1, 1000, fallback.fontSize), fontWeight: clamp(source.fontWeight, 100, 900, fallback.fontWeight),
       lineHeight: clamp(source.lineHeight, 0.5, 5, fallback.lineHeight), letterSpacing: clamp(source.letterSpacing, -20, 100, fallback.letterSpacing),
       padding: clamp(source.padding, 0, 1000, fallback.padding), gap: clamp(source.gap, 0, 1000, fallback.gap),
-      text: safeText(source.text || fallback.text, 1000)
+      text: safeText(source.text == null ? fallback.text : source.text, 1000)
     };
   }
 
@@ -183,6 +183,23 @@
       border: { width: layer.borderWidth, color: layer.borderColor, radius: layer.radius },
       contrast: evaluateContrast(layer.textColor, layer.fill, layer.fontSize, layer.fontWeight >= 700)
     };
+  }
+
+  function documentLayerToInspect(documentInput) {
+    const document = documentInput || {};
+    const layer = document.layers?.find((item) => item.id === document.selectedLayerId);
+    if (!layer) return null;
+    return normalizeLayer({ ...layer, type: layer.type === "text" ? "text" : "shape", fill: layer.type === "text" ? document.canvas?.background : layer.fill, textColor: layer.type === "text" ? layer.fill : "#F4F5FB", borderColor: layer.stroke, borderWidth: layer.strokeWidth, radius: layer.cornerRadius });
+  }
+
+  function applyInspectField(controller, key, value) {
+    const document = controller?.document;
+    const layer = document?.layers?.find((item) => item.id === document.selectedLayerId);
+    if (!layer || layer.locked) throw new Error("Chọn một layer không bị khóa trong tài liệu.");
+    const mapping = { x: "x", y: "y", width: "width", height: "height", radius: "cornerRadius", borderColor: "stroke", borderWidth: "strokeWidth", fontSize: "fontSize", fontWeight: "fontWeight", fontFamily: "fontFamily", lineHeight: "lineHeight", letterSpacing: "letterSpacing", opacity: "opacity", text: "text" };
+    const property = key === "textColor" && layer.type === "text" ? "fill" : key === "fill" && layer.type !== "text" ? "fill" : mapping[key];
+    if (!property) throw new Error("Thuộc tính này chỉ có trong bản xem trước; hãy chỉnh layout trong editor chính.");
+    return controller.dispatch("update-layer", { id: layer.id, changes: { [property]: value } });
   }
 
   function normalizeTokens(input) {
@@ -489,7 +506,8 @@
   }
 
   function draftPreview(draft) {
-    if (draft.payload && draft.payload.svg) return `<div>${sanitizeSvg(draft.payload.svg)}</div>`;
+    // SVG is an image document, never active markup in the application DOM.
+    if (draft.payload && draft.payload.svg) return `<img alt="Bản nháp SVG" style="max-width:100%;height:auto" src="data:image/svg+xml;charset=utf-8,${escapeHtml(encodeURIComponent(sanitizeSvg(draft.payload.svg)))}">`;
     if (draft.action === "palette") return `<div class="hda-palette">${(draft.payload.colors || []).map((color) => `<span class="hda-color" style="background:${normalizeHex(color, "#000000")}" title="${normalizeHex(color, "#000000")}"></span>`).join("")}</div>`;
     return `<pre class="hda-code">${escapeHtml(JSON.stringify(draft.payload, null, 2))}</pre>`;
   }
@@ -520,18 +538,27 @@
     const settings = options || {};
     const doc = root.ownerDocument || globalScope.document;
     addStyles(doc);
+    let storage = null;
+    try { storage = Object.prototype.hasOwnProperty.call(settings, "storage") ? settings.storage : globalScope.localStorage; } catch (_) { /* Storage can be blocked. */ }
+    const storageKey = settings.storageKey || STORAGE_KEY;
     let workspace;
     try {
-      const stored = globalScope.localStorage && globalScope.localStorage.getItem(STORAGE_KEY);
+      const stored = storage && storage.getItem(storageKey);
       workspace = normalizeWorkspace(settings.workspace || (stored ? JSON.parse(stored) : null));
     } catch (_) { workspace = createDefaultWorkspace(); }
     const apiAdapter = settings.apiAdapter;
     let adapterAvailable = false;
     try { adapterAvailable = assertServerAdapter(apiAdapter); } catch (_) { adapterAvailable = false; }
     let destroyed = false;
+    let persistenceError = "";
+    let externalConsent = false;
+    let remotePending = false;
 
     function persist() {
-      try { if (globalScope.localStorage) globalScope.localStorage.setItem(STORAGE_KEY, serializeWorkspace(workspace)); } catch (_) { /* Private mode can reject storage. */ }
+      try {
+        if (!storage || typeof storage.setItem !== "function") throw new Error("Storage không khả dụng");
+        storage.setItem(storageKey, serializeWorkspace(workspace)); persistenceError = ""; return true;
+      } catch (_) { persistenceError = "Chưa lưu: bộ nhớ thiết bị bị chặn hoặc đã đầy. Bản đang nhập vẫn trong phiên; hãy xuất workspace JSON."; setStatus(persistenceError); return false; }
     }
 
     function feed(text) {
@@ -541,13 +568,24 @@
 
     function setStatus(message) {
       const status = root.querySelector("[data-hda-status]");
-      if (status) status.textContent = message;
+      if (status) { status.textContent = persistenceError || message; status.dataset.kind = persistenceError ? "error" : "info"; }
     }
 
     function render(message) {
       if (destroyed) return;
+      const document = settings.designDocumentController?.document || settings.designDocument;
+      const inspected = documentLayerToInspect(document);
+      if (inspected) workspace.layer = inspected;
       root.innerHTML = template(workspace, adapterAvailable);
-      if (message) setStatus(message);
+      if (document && !inspected) root.querySelectorAll("[data-hda-layer]").forEach((input) => { input.disabled = true; });
+      if (settings.designDocumentController) {
+        root.querySelectorAll('[data-hda-layer="padding"],[data-hda-layer="gap"]').forEach((input) => { input.disabled = true; input.title = "Chỉnh layout trong editor chính; Dev Mode không mô phỏng thuộc tính này."; });
+        const unsupportedColor = root.querySelector(`[data-hda-layer="${inspected?.type === "text" ? "fill" : "textColor"}"]`);
+        if (unsupportedColor) unsupportedColor.disabled = true;
+      }
+      const aiActions = root.querySelector(".hda-ai-actions");
+      if (aiActions) aiActions.insertAdjacentHTML("beforebegin", `<label class="hda-check"><input type="checkbox" data-hda-external-consent ${externalConsent ? "checked" : ""}>Tôi đồng ý gửi mô tả, layer đang chọn và design token tới backend/provider đã cấu hình. Có thể phát sinh phí dịch vụ; không gửi ảnh gốc trong yêu cầu này.</label>`);
+      setStatus(message || (document ? inspected ? "Inspect tài liệu đang mở; token/palette và heuristic cục bộ không phải kết quả AI. SVG/CSS là snippet giản lược, không thay thế bản xuất editor." : "Chưa chọn layer trong editor chính; inspector đang tắt." : "Bản mẫu Dev Mode riêng; chưa nối tài liệu. Heuristic cục bộ không phải AI."));
     }
 
     function saveAndRender(message) {
@@ -563,17 +601,23 @@
 
     async function runRemote(prompt, operation) {
       if (!adapterAvailable) return setStatus("Ứng dụng chưa truyền apiAdapter an toàn.");
+      if (!externalConsent) return setStatus("Hãy đọc dữ liệu sẽ gửi và bật đồng ý trước khi gọi provider.");
+      if (remotePending) return setStatus("Một yêu cầu provider đang xử lý; chưa gửi yêu cầu trùng.");
+      remotePending = true;
       setStatus("Đang yêu cầu adapter tạo bản nháp…");
       try {
         if (operation && CONTROLLED_AI_ACTIONS.includes(operation)) {
           const draft = await requestProviderDraft(apiAdapter, operation, prompt, { layer: clone(workspace.layer), tokens: clone(workspace.tokens) });
+          if (destroyed) return;
           return addDraft(draft, `Provider đã tạo bản nháp ${operation}; media gốc được giữ nguyên.`);
         }
         const request = { action: "design-draft", prompt: safeText(prompt, 2000), context: { layer: clone(workspace.layer), tokens: clone(workspace.tokens) } };
         const result = typeof apiAdapter === "function" ? await apiAdapter(request) : await apiAdapter.generateDraft(request);
+        if (destroyed) return;
         const payload = result && typeof result === "object" ? clone(result) : { text: safeText(result, 6000) };
-        addDraft({ id: uid("draft"), action: "remote", prompt, createdAt: new Date().toISOString(), status: "draft", source: "adapter", payload }, "Gemini adapter đã trả về một bản nháp mới.");
-      } catch (error) { setStatus(`Adapter không thể tạo draft: ${safeText(error && error.message || "Lỗi không xác định", 160)}`); }
+        addDraft({ id: uid("draft"), action: "remote", prompt, createdAt: new Date().toISOString(), status: "draft", source: "adapter", payload }, "Provider adapter đã trả về một bản nháp mới.");
+      } catch (error) { if (!destroyed) setStatus(`Adapter không thể tạo draft: ${safeText(error && error.message || "Lỗi không xác định", 160)}`); }
+      finally { remotePending = false; }
     }
 
     async function paletteFromFile(file) {
@@ -624,7 +668,12 @@
     function onInput(event) {
       const layerKey = event.target.dataset.hdaLayer;
       if (layerKey) {
-        workspace.layer[layerKey] = event.target.type === "number" ? Number(event.target.value) : event.target.value;
+        const value = event.target.type === "number" ? Number(event.target.value) : event.target.value;
+        if (settings.designDocumentController) {
+          try { applyInspectField(settings.designDocumentController, layerKey, value); }
+          catch (error) { return setStatus(error.message); }
+        }
+        workspace.layer[layerKey] = value;
         workspace.layer = normalizeLayer(workspace.layer); persist(); return render("Đã cập nhật inspect và tự lưu.");
       }
       const tokenPath = event.target.dataset.hdaToken;
@@ -633,6 +682,7 @@
     }
 
     function onChange(event) {
+      if (event.target.matches("[data-hda-external-consent]")) { externalConsent = event.target.checked; return; }
       if (event.target.dataset.hdaCheck) {
         const item = workspace.handoff.checklist.find((entry) => entry.id === event.target.dataset.hdaCheck);
         if (item) item.done = event.target.checked;
@@ -648,7 +698,7 @@
 
     root.classList.add("hda");
     root.addEventListener("click", onClick); root.addEventListener("input", onInput); root.addEventListener("change", onChange);
-    render(); persist();
+    render(); persist(); setStatus(persistenceError || "Đã lưu workspace trên thiết bị. Heuristic cục bộ không phải AI; snippet không bao gồm mọi hiệu ứng của tài liệu.");
     const controller = {
       getWorkspace: () => clone(workspace),
       setWorkspace(next) { workspace = normalizeWorkspace(next); persist(); render("Đã nạp workspace mới."); },
@@ -673,7 +723,7 @@
   const api = Object.freeze({
     VERSION, FORMAT, STORAGE_KEY, HANDOFF_ITEMS, DEFAULT_TOKENS,
     normalizeHex, hexToRgb, relativeLuminance, contrastRatio, evaluateContrast,
-    defaultLayer, normalizeLayer, inspectLayer, normalizeTokens, tokensToCss, tokensToTailwind, tokensToJson, componentSnippets,
+    defaultLayer, normalizeLayer, inspectLayer, documentLayerToInspect, applyInspectField, normalizeTokens, tokensToCss, tokensToTailwind, tokensToJson, componentSnippets,
     hashString, createVectorDraft, extractPaletteFromPixels, suggestKeyframes, suggestRig, suggestExpressionPose, storyboardToScenes, auditLayout,
     CONTROLLED_AI_ACTIONS, sanitizeSvg, sanitizePayload, assertServerAdapter, controlledDraftPayload, requestProviderDraft,
     createDraft, createDefaultWorkspace, normalizeWorkspace, serializeWorkspace, mount, unmount

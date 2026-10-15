@@ -349,6 +349,40 @@
     context.roundRect ? context.roundRect(x, y, width, height, r) : context.rect(x, y, width, height);
   }
 
+  function sceneFromDocument(input) {
+    if (!input || !Array.isArray(input.layers)) return null;
+    const frames = Array.isArray(input.frames) && input.frames.length ? input.frames : [{ id: "canvas", ...input.canvas }];
+    const active = frames.find((item) => item.id === input.activeFrameId) || frames[0];
+    return normalizeScene({
+      meta: { name: `${input.name || "Tài liệu"} · bản dựng Composer`, description: "Bản dựng riêng từ frame đang mở; nguồn gốc không bị ghi đè. Chỉ rect/ellipse/text/path đơn giản được vẽ trực tiếp. Các frame khác chưa nhập layer." },
+      artboards: frames.map((frame) => ({ ...frame, background: frame.background || input.canvas?.background })), activeArtboardId: active.id,
+      layers: input.layers.filter((layer) => !layer.frameId || layer.frameId === active.id).map((layer) => ({
+        id: layer.id, name: layer.name, type: "vector", visible: layer.visible, locked: layer.locked,
+        transform: { ...layer, x: (layer.x || 0) - (active.x || 0), y: (layer.y || 0) - (active.y || 0) },
+        style: { fill: layer.fill === "none" ? "transparent" : layer.fill, stroke: layer.stroke === "none" ? "transparent" : layer.stroke, strokeWidth: layer.stroke === "none" ? 0 : layer.strokeWidth, fontSize: layer.fontSize, color: layer.fill },
+        source: { module: "HHUniversalDesign", format: "hh-design-document-layer", payload: clone(layer) },
+        metadata: { documentId: input.id, documentLayer: clone(layer) }
+      }))
+    });
+  }
+
+  function nativeDocumentLayer(source) {
+    return source && ["rect", "ellipse", "text", "path"].includes(source.type) && (source.type !== "path" || typeof globalScope.Path2D === "function") && !source.gradient && !(source.adjustments?.length) && !(source.masks?.length) && !source.textPathLayerId;
+  }
+
+  function renderCapabilities(sceneInput) {
+    const scene = normalizeScene(sceneInput);
+    const native = [], proxy = [], dataOnly = [];
+    for (const layer of scene.layers.filter((item) => item.visible)) {
+      const source = layer.metadata.documentLayer;
+      const supported = nativeDocumentLayer(source);
+      if (["audio", "animation"].includes(layer.type)) dataOnly.push(layer.id);
+      else if (supported || layer.type === "ui") native.push(layer.id);
+      else proxy.push({ id: layer.id, type: source?.type || layer.type, reason: "Hình đại diện/schematic; renderer gốc và media chưa được nhúng." });
+    }
+    return { native, proxy, dataOnly, complete: !proxy.length && !dataOnly.length, sourcePreserved: true };
+  }
+
   function renderSceneToCanvas(sceneInput, canvas, time, options) {
     const scene = normalizeScene(sceneInput);
     const bounds = sceneBounds(scene);
@@ -378,7 +412,27 @@
       context.rotate(t.rotation * Math.PI / 180);
       context.scale(t.scaleX, t.scaleY);
       context.translate(-t.width / 2, -t.height / 2);
-      if (layer.type === "scene3d") {
+      const native = layer.metadata.documentLayer;
+      if (nativeDocumentLayer(native)) {
+        context.fillStyle = layer.style.fill; context.strokeStyle = layer.style.stroke; context.lineWidth = layer.style.strokeWidth;
+        if (native.type === "text") {
+          context.font = `${clamp(native.fontWeight || 400, 100, 900)} ${layer.style.fontSize}px ${safeText(native.fontFamily, "system-ui", 160)}`;
+          context.textBaseline = "top";
+          String(native.text || "").split("\n").forEach((line, index) => context.fillText(line, 0, index * layer.style.fontSize * (native.lineHeight || 1.2), t.width));
+        } else if (native.type === "path" && typeof globalScope.Path2D === "function") {
+          context.translate(-(native.x || 0), -(native.y || 0));
+          const path = new globalScope.Path2D(native.pathData || "");
+          if (layer.style.fill !== "transparent") context.fill(path);
+          if (layer.style.strokeWidth) context.stroke(path);
+        } else if (native.type === "path") {
+          context.fillText("Path: cần Path2D", 8, 24);
+        } else {
+          context.beginPath();
+          if (native.type === "ellipse") context.ellipse(t.width / 2, t.height / 2, t.width / 2, t.height / 2, 0, 0, Math.PI * 2);
+          else drawRoundedRect(context, 0, 0, t.width, t.height, native.cornerRadius || 0);
+          context.fill(); if (layer.style.strokeWidth) context.stroke();
+        }
+      } else if (layer.type === "scene3d") {
         const gradient = context.createLinearGradient(0, 0, t.width, t.height);
         gradient.addColorStop(0, "#07101f");
         gradient.addColorStop(.55, layer.style.fill);
@@ -478,7 +532,33 @@
   function exportWebComponent(sceneInput) {
     const scene = normalizeScene(sceneInput);
     const payload = safeJsonForScript(scene);
-    return `<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(scene.meta.name)}</title><style>html,body{margin:0;min-height:100%;background:#07101f;color:#fff;font:16px system-ui}hh-universal-scene{display:block;min-height:100vh}</style><hh-universal-scene></hh-universal-scene><script>const SCENE=${payload};class HHUniversalScene extends HTMLElement{constructor(){super();this.scene=structuredClone(SCENE);this.time=0;this.playing=false;this.raf=0;this.values={...this.scene.stateMachine.values};this.attachShadow({mode:"open"})}connectedCallback(){this.render();this.dispatchEvent(new CustomEvent("hh-scene-ready",{detail:{format:this.scene.format}}))}render(){const a=this.scene.artboards.find(x=>x.id===this.scene.activeArtboardId)||this.scene.artboards[0];const layers=this.scene.layers.filter(x=>x.visible&&!['audio','animation'].includes(x.type));this.shadowRoot.innerHTML='<style>:host{display:grid;place-items:center;min-height:100vh;background:#030712}.stage{position:relative;width:min(96vw,'+a.width+'px);aspect-ratio:'+a.width+'/'+a.height+';overflow:hidden;background:'+a.background+'}.layer{position:absolute;box-sizing:border-box;transform-origin:center;white-space:pre-wrap}.scene3d{display:grid;place-items:center;background:linear-gradient(135deg,#07101f,#153054,#210b2e);color:#9deffc}.character{border-radius:45%;background:#ff78cc;border:2px solid #ffd9f1}.ui{display:grid;align-items:center;padding:18px;border:2px solid #62d7e7;border-radius:18px;background:#0b1728e6}.vector{border:3px dashed #62d7e7;border-radius:50%}</style><div class="stage">'+layers.map(l=>'<div class="layer '+l.type+'" data-id="'+l.id+'" style="left:'+l.transform.x/a.width*100+'%;top:'+l.transform.y/a.height*100+'%;width:'+l.transform.width/a.width*100+'%;height:'+l.transform.height/a.height*100+'%;opacity:'+l.transform.opacity+';transform:rotate('+l.transform.rotation+'deg) scale('+l.transform.scaleX+','+l.transform.scaleY+');color:'+l.style.color+'">'+(l.type==='scene3d'?'3D payload · cần HHGraphic3D':l.content||l.name)+'</div>').join('')+'</div>';this.shadowRoot.querySelectorAll('[data-id]').forEach(el=>el.addEventListener('click',()=>this.trigger('click',el.dataset.id)))}play(){if(this.playing)return;this.playing=true;this.trigger('play','');let last=performance.now();const tick=now=>{if(!this.playing)return;this.time+=(now-last)/1000;last=now;if(this.time>=this.scene.timeline.duration)this.time=this.scene.timeline.loop?0:this.scene.timeline.duration;this.raf=requestAnimationFrame(tick)};this.raf=requestAnimationFrame(tick)}pause(){this.playing=false;cancelAnimationFrame(this.raf)}seek(time){this.time=Math.max(0,Math.min(this.scene.timeline.duration,Number(time)||0));return this.time}trigger(eventName,targetId){const t=this.scene.stateMachine.transitions.find(x=>x.from===this.scene.stateMachine.current&&x.event===eventName&&(!x.targetId||x.targetId===targetId));if(!t)return false;this.scene.stateMachine.current=t.to;this.dispatchEvent(new CustomEvent('hh-scene-state',{detail:{state:t.to,transition:t.id}}));return true}setBinding(name,value){this.values[name]=value;this.scene.stateMachine.bindings.filter(x=>x.property===name).forEach(b=>{const l=this.scene.layers.find(x=>x.id===b.layerId);if(!l)return;if(b.target==='content')l.content=String(value);else if(b.target==='fill')l.style.fill=String(value)});this.render()}getState(){return structuredClone({time:this.time,state:this.scene.stateMachine.current,values:this.values})}getScene(){return structuredClone(this.scene)}}customElements.define('hh-universal-scene',HHUniversalScene);<\/script></html>`;
+    return `<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(scene.meta.name)}</title><style>html,body{margin:0;background:#07101f;color:#fff;font:16px system-ui}hh-universal-scene{display:block;min-height:100vh}</style><hh-universal-scene></hh-universal-scene><script>
+const SCENE=${payload};
+class HHUniversalScene extends HTMLElement {
+  constructor(){super();this.scene=structuredClone(SCENE);this.time=0;this.playing=false;this.raf=0;this.values={...this.scene.stateMachine.values};this.attachShadow({mode:'open'});this.onVisibility=()=>{if(document.hidden)this.pause()}}
+  connectedCallback(){this.render();document.addEventListener('visibilitychange',this.onVisibility);this.dispatchEvent(new CustomEvent('hh-scene-ready',{detail:{format:this.scene.format}}))}
+  disconnectedCallback(){this.pause();document.removeEventListener('visibilitychange',this.onVisibility)}
+  render(){
+    const a=this.scene.artboards.find(x=>x.id===this.scene.activeArtboardId)||this.scene.artboards[0];
+    const style=document.createElement('style');style.textContent=':host{display:grid;place-items:center;gap:16px;padding:16px;box-sizing:border-box}.stage{position:relative;overflow:hidden;max-width:100%}.layer{position:absolute;box-sizing:border-box;transform-origin:center;white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid #62d7e7;padding:8px}button{min-height:44px;margin:4px;padding:8px 16px}button:focus-visible{outline:3px solid #ffb85c}.notice{max-width:70ch}';
+    const notice=document.createElement('p');notice.className='notice';notice.textContent='HTML preview giản lược: khung đại diện, text, transform/keyframe số và binding. Không nhúng renderer 3D, vector gốc, nhân vật rig hoặc media; không phải bản xuất hoàn chỉnh.';
+    const stage=document.createElement('div');stage.className='stage';stage.style.width='min(94vw,'+a.width+'px)';stage.style.aspectRatio=a.width+'/'+a.height;stage.style.background=a.background;
+    this.nodes=new Map();
+    this.scene.layers.filter(l=>l.visible&&!['audio','animation'].includes(l.type)).forEach(l=>{const el=document.createElement('div');el.className='layer';el.dataset.id=l.id;el.textContent=l.content||l.name;el.style.color=l.style.color;el.style.background=l.style.fill;el.addEventListener('click',()=>this.trigger('click',l.id));this.nodes.set(l.id,el);stage.appendChild(el)});
+    const controls=document.createElement('div');[['Phát',()=>this.play()],['Dừng',()=>this.pause()],['Về đầu',()=>{this.pause();this.seek(0)}]].forEach(([label,action])=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.addEventListener('click',action);controls.appendChild(button)});
+    this.shadowRoot.replaceChildren(style,notice,stage,controls);this.renderFrame();
+  }
+  renderFrame(){const a=this.scene.artboards.find(x=>x.id===this.scene.activeArtboardId)||this.scene.artboards[0];this.scene.layers.forEach(l=>{const el=this.nodes.get(l.id);if(!el)return;const t={...l.transform};['x','y','width','height','rotation','scaleX','scaleY','opacity'].forEach(property=>{const keys=this.scene.timeline.keyframes.filter(k=>k.layerId===l.id&&k.property===property).sort((x,y)=>x.time-y.time);if(!keys.length)return;const after=keys.find(k=>k.time>=this.time)||keys[keys.length-1];const before=keys.filter(k=>k.time<=this.time).pop()||keys[0];const ratio=after.time===before.time?0:Math.max(0,Math.min(1,(this.time-before.time)/(after.time-before.time)));t[property]=before.value+(after.value-before.value)*ratio});Object.assign(el.style,{left:t.x/a.width*100+'%',top:t.y/a.height*100+'%',width:t.width/a.width*100+'%',height:t.height/a.height*100+'%',opacity:t.opacity,transform:'rotate('+t.rotation+'deg) scale('+t.scaleX+','+t.scaleY+')'})})}
+  play(){if(this.playing||document.hidden)return;this.playing=true;this.trigger('play','');let last=performance.now();const tick=now=>{if(!this.playing)return;this.time+=(now-last)/1000;last=now;if(this.time>=this.scene.timeline.duration){if(this.scene.timeline.loop)this.time%=this.scene.timeline.duration;else{this.time=this.scene.timeline.duration;this.pause()}}this.renderFrame();if(this.playing)this.raf=requestAnimationFrame(tick)};this.raf=requestAnimationFrame(tick)}
+  pause(){this.playing=false;cancelAnimationFrame(this.raf);this.raf=0}
+  seek(time){this.time=Math.max(0,Math.min(this.scene.timeline.duration,Number(time)||0));this.renderFrame();return this.time}
+  trigger(eventName,targetId){const t=this.scene.stateMachine.transitions.find(x=>x.from===this.scene.stateMachine.current&&x.event===eventName&&(!x.targetId||x.targetId===targetId));if(!t)return false;this.scene.stateMachine.current=t.to;this.dispatchEvent(new CustomEvent('hh-scene-state',{detail:{state:t.to,transition:t.id}}));return true}
+  setBinding(name,value){this.values[name]=value;this.scene.stateMachine.bindings.filter(x=>x.property===name).forEach(b=>{const l=this.scene.layers.find(x=>x.id===b.layerId);if(!l)return;if(b.target==='content')l.content=String(value);else if(b.target==='fill'&&CSS.supports('color',String(value)))l.style.fill=String(value)});this.render()}
+  getState(){return structuredClone({time:this.time,state:this.scene.stateMachine.current,values:this.values})}
+  getScene(){return structuredClone(this.scene)}
+}
+customElements.define('hh-universal-scene',HHUniversalScene);
+<\/script></html>`;
   }
 
   function createWaveform(samples, buckets) {
@@ -512,9 +592,14 @@
     if (!root || typeof root.innerHTML !== "string") throw new TypeError("HHGraphicComposer.mount cần một root element hợp lệ");
     if (mounted.has(root)) return mounted.get(root).api;
     injectStyles();
-    let scene = normalizeScene(initialScene || (() => {
-      try { return JSON.parse(globalScope.localStorage?.getItem(STORAGE_KEY) || "null"); } catch (_) { return null; }
-    })() || createStarterScene());
+    const isScene = initialScene && (initialScene.format === FORMAT || Array.isArray(initialScene.layers));
+    const settings = initialScene && !isScene ? initialScene : {};
+    let storage = null;
+    try { storage = Object.prototype.hasOwnProperty.call(settings, "storage") ? settings.storage : globalScope.localStorage; } catch (_) { /* Blocked storage remains unavailable. */ }
+    const storageKey = settings.storageKey || STORAGE_KEY;
+    let scene = normalizeScene(settings.scene || (isScene ? initialScene : null) || (() => {
+      try { return JSON.parse(storage?.getItem(storageKey) || "null"); } catch (_) { return null; }
+    })() || sceneFromDocument(settings.designDocumentController?.document || settings.designDocument) || createStarterScene());
     let selectedId = scene.layers.find((item) => !["audio", "animation"].includes(item.type))?.id || scene.layers[0]?.id || null;
     let history = [clone(scene)];
     let historyIndex = 0;
@@ -524,6 +609,8 @@
     let pointer = null;
     let saveTimer = 0;
     let audioUrl = "";
+    let destroyed = false;
+    const audioContexts = new Set();
     const listeners = [];
 
     root.classList.add("hhc");
@@ -566,11 +653,15 @@
     function announce(message) { status.textContent = message; }
     function activeArtboard() { return scene.artboards.find((item) => item.id === scene.activeArtboardId) || scene.artboards[0]; }
     function selected() { return scene.layers.find((item) => item.id === selectedId) || null; }
+    function saveScene() {
+      try {
+        if (!storage || typeof storage.setItem !== "function") throw new Error("Storage không khả dụng");
+        storage.setItem(storageKey, JSON.stringify(scene)); announce("Đã lưu bản dựng Composer trên thiết bị; tài liệu nguồn không bị ghi đè."); return true;
+      } catch (_) { announce("Chưa lưu: bộ nhớ bị chặn hoặc đầy. Bản dựng vẫn trong phiên; hãy xuất .hhscene."); return false; }
+    }
     function scheduleSave() {
       clearTimeout(saveTimer);
-      saveTimer = setTimeout(() => {
-        try { globalScope.localStorage?.setItem(STORAGE_KEY, JSON.stringify(scene)); announce("Đã tự lưu phiên trên thiết bị."); } catch (_) { announce("Không thể tự lưu. Hãy xuất .hhscene."); }
-      }, 280);
+      saveTimer = setTimeout(saveScene, 280);
     }
     function commit(label, mutate) {
       mutate();
@@ -628,7 +719,7 @@
       const trackHost = root.querySelector("[data-hhc-tracks]");
       trackHost.innerHTML = scene.layers.map((layer) => `<div class="hhc-track"><div class="hhc-track-name">${escapeHtml(layer.name)}</div><div class="hhc-track-rail">${scene.timeline.keyframes.filter((key) => key.layerId === layer.id).map((key) => `<i class="hhc-key" title="${escapeHtml(key.property)} · ${key.time}s" style="left:${key.time / scene.timeline.duration * 100}%"></i>`).join("")}${scene.timeline.markers.map((marker) => `<i class="hhc-marker" title="${escapeHtml(marker.type)} · ${escapeHtml(marker.label)}" style="left:${marker.time / scene.timeline.duration * 100}%"></i>`).join("")}</div></div>`).join("");
       timeRange.max = scene.timeline.duration; timeRange.value = scene.timeline.currentTime; root.querySelector("[data-hhc-time]").textContent = formatTime(scene.timeline.currentTime);
-      root.querySelector('[data-hhc-action="play"]').textContent = playing ? "Tạm dừng" : "Phát";
+      root.querySelector('[data-hhc-action="play"]').textContent = playing ? "Tạm dừng" : "Phát timeline (không âm thanh)";
       const artboardSelect = root.querySelector('[data-hhc-scene-field="activeArtboardId"]'); artboardSelect.innerHTML = scene.artboards.map((item) => `<option value="${item.id}"${item.id === scene.activeArtboardId ? " selected" : ""}>${escapeHtml(item.name)} · ${item.width}×${item.height}</option>`).join("");
       const cameraSelect = root.querySelector('[data-hhc-scene-field="activeCameraId"]'); cameraSelect.innerHTML = scene.cameras.map((item) => `<option value="${item.id}"${item.id === scene.activeCameraId ? " selected" : ""}>${escapeHtml(item.name)}</option>`).join("");
       root.querySelector('[data-hhc-timeline-field="fps"]').value = scene.timeline.fps; root.querySelector('[data-hhc-timeline-field="duration"]').value = scene.timeline.duration;
@@ -655,22 +746,34 @@
     }
 
     async function loadAudio(file) {
-      if (!file) return;
+      if (!file || destroyed) return;
+      let context = null;
       try {
         const buffer = await file.arrayBuffer();
+        if (destroyed) return;
         const AudioContextCtor = globalScope.AudioContext || globalScope.webkitAudioContext;
         let waveform = [];
         let duration = 0;
         if (AudioContextCtor) {
-          const context = new AudioContextCtor(); const decoded = await context.decodeAudioData(buffer.slice(0)); duration = decoded.duration; waveform = createWaveform(decoded.getChannelData(0), 96); await context.close();
+          context = new AudioContextCtor(); audioContexts.add(context);
+          const decoded = await context.decodeAudioData(buffer.slice(0));
+          if (destroyed) return;
+          duration = decoded.duration; waveform = createWaveform(decoded.getChannelData(0), 96);
         }
+        if (destroyed) return;
         if (audioUrl) URL.revokeObjectURL(audioUrl); audioUrl = URL.createObjectURL(file);
         commit("Đã phân tích waveform cục bộ", () => {
           let layer = scene.layers.find((item) => item.type === "audio");
           if (!layer) { layer = normalizeLayer({ id: uid("audio"), type: "audio", name: file.name, locked: true }, scene.layers.length); scene.layers.push(layer); }
           layer.name = file.name; layer.source.assetName = file.name; layer.source.assetType = file.type; layer.source.duration = duration; layer.source.waveform = waveform;
         });
-      } catch (_) { announce("Không đọc được tệp âm thanh trên thiết bị này."); }
+      } catch (_) { if (!destroyed) announce("Không đọc được tệp âm thanh trên thiết bị này."); }
+      finally { await closeAudioContext(context); }
+    }
+
+    async function closeAudioContext(context) {
+      if (!context || !audioContexts.delete(context)) return;
+      try { await context.close(); } catch (_) { /* Closing an already failed device must not leak a rejection. */ }
     }
 
     listen(root, "click", (event) => {
@@ -680,7 +783,7 @@
       const action = target.dataset.hhcAction;
       if (action === "new") setScene(createStarterScene());
       else if (action === "import") root.querySelector('[data-hhc-file="scene"]').click();
-      else if (action === "save") { try { globalScope.localStorage?.setItem(STORAGE_KEY, JSON.stringify(scene)); announce("Đã lưu trên thiết bị."); } catch (_) { announce("Không thể lưu trên thiết bị."); } }
+      else if (action === "save") saveScene();
       else if (action === "export") download(`${safeId(scene.meta.name, "scene")}.hhscene`, exportScene(scene));
       else if (action === "component") download(`${safeId(scene.meta.name, "scene")}-component.html`, exportWebComponent(scene), "text/html");
       else if (action === "png") exportPng();
@@ -732,19 +835,29 @@
       render();
     });
     listen(stage, "pointerup", () => { if (!pointer) return; pointer = null; scene = normalizeScene(scene); history = history.slice(0, historyIndex + 1); history.push(clone(scene)); historyIndex += 1; scheduleSave(); announce("Đã cập nhật transform trên canvas."); });
-    listen(root, "keydown", (event) => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") { event.preventDefault(); restore(event.shiftKey ? historyIndex + 1 : historyIndex - 1); } if (event.key === "Delete" && selected() && !selected().locked) { event.preventDefault(); commit("Đã xóa layer", () => { scene.layers = scene.layers.filter((item) => item.id !== selectedId); selectedId = scene.layers[0]?.id || null; }); } if (event.code === "Space" && !/input|textarea|select/i.test(event.target.tagName)) { event.preventDefault(); playPause(); } });
+    listen(root, "keydown", (event) => {
+      if (/input|textarea|select/i.test(event.target.tagName) || event.target.isContentEditable) return;
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") { event.preventDefault(); restore(event.shiftKey ? historyIndex + 1 : historyIndex - 1); }
+      if (event.key === "Delete" && selected() && !selected().locked) { event.preventDefault(); commit("Đã xóa layer", () => { scene.layers = scene.layers.filter((item) => item.id !== selectedId); selectedId = scene.layers[0]?.id || null; }); }
+      if (event.code === "Space") { event.preventDefault(); playPause(); }
+    });
 
     let resizeObserver = null;
     if (typeof ResizeObserver !== "undefined") { resizeObserver = new ResizeObserver(() => render()); resizeObserver.observe(stage.parentElement); }
     render();
+    const coverage = renderCapabilities(scene);
+    announce(`Bản dựng riêng · ${coverage.native.length} layer trực tiếp · ${coverage.proxy.length} hình đại diện · ${coverage.dataOnly.length} layer dữ liệu. PNG/HTML là preview giản lược, không phải render đa engine hoàn chỉnh.`);
+    root.querySelector('[data-hhc-action="png"]').textContent = "PNG preview";
+    root.querySelector('[data-hhc-action="component"]').textContent = "HTML preview";
 
     const api = {
-      getScene: () => clone(scene), setScene, selectLayer: (id) => { if (scene.layers.some((item) => item.id === id)) { selectedId = id; render(); return true; } return false; },
+      getScene: () => clone(scene), getCapabilities: () => renderCapabilities(scene), save: saveScene, setScene, selectLayer: (id) => { if (scene.layers.some((item) => item.id === id)) { selectedId = id; render(); return true; } return false; },
       addLayer, play: () => { if (!playing) playPause(); }, pause: () => { if (playing) playPause(); }, seek: (time) => { scene.timeline.currentTime = clamp(time, 0, scene.timeline.duration); render(); },
       trigger: (eventName, targetId) => { const result = dispatchEvent(scene, eventName, targetId); scene = result.scene; render(); return result; }, setBinding: (name, value) => { scene = applyBinding(scene, name, value); render(); },
       undo: () => restore(historyIndex - 1), redo: () => restore(historyIndex + 1), exportScene: () => exportScene(scene), exportWebComponent: () => exportWebComponent(scene), handoff: (layerId) => handoffPayload(scene, layerId), renderPng: () => exportPng(), unmount: () => unmount(root)
     };
-    mounted.set(root, { api, cleanup() { playing = false; globalScope.cancelAnimationFrame?.(raf); clearTimeout(saveTimer); if (audioUrl) URL.revokeObjectURL(audioUrl); resizeObserver?.disconnect(); listeners.splice(0).forEach((off) => off()); } });
+    listen(globalScope.document, "visibilitychange", () => { if (globalScope.document.hidden && playing) playPause(); });
+    mounted.set(root, { api, cleanup() { destroyed = true; playing = false; globalScope.cancelAnimationFrame?.(raf); if (saveTimer) saveScene(); clearTimeout(saveTimer); audioContexts.forEach((context) => { void closeAudioContext(context); }); if (audioUrl) URL.revokeObjectURL(audioUrl); resizeObserver?.disconnect(); listeners.splice(0).forEach((off) => off()); } });
     return api;
   }
 
@@ -753,7 +866,7 @@
     state.cleanup(); mounted.delete(root); root.classList.remove("hhc"); root.removeAttribute("data-graphic-composer"); root.removeAttribute("aria-label"); root.innerHTML = ""; return true;
   }
 
-  const api = { VERSION, FORMAT, STORAGE_KEY, LAYER_TYPES, createStarterScene, normalizeScene, normalizeLayer, evaluateLayer, renderSceneToCanvas, createWaveform, handoffPayload, applyBinding, dispatchEvent, exportScene, exportWebComponent, mount, unmount };
+  const api = { VERSION, FORMAT, STORAGE_KEY, LAYER_TYPES, createStarterScene, normalizeScene, normalizeLayer, evaluateLayer, sceneFromDocument, renderCapabilities, renderSceneToCanvas, createWaveform, handoffPayload, applyBinding, dispatchEvent, exportScene, exportWebComponent, mount, unmount };
   globalScope.HHGraphicComposer = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

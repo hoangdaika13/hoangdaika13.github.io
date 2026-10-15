@@ -1113,6 +1113,18 @@
     }).join("");
   }
 
+  async function exportSharedDocument(controller, kind, options = {}) {
+    if (kind === 'svg' && typeof controller?.prepareExportSVG === 'function') {
+      const result = await controller.prepareExportSVG(options);
+      return { blob: new Blob([result.svg], { type: 'image/svg+xml' }), filename: 'hh-shared-design.svg' };
+    }
+    if (kind === 'package' && typeof controller?.exportPackage === 'function') {
+      const packaged = await controller.exportPackage(options);
+      return { blob: new Blob([typeof packaged === 'string' ? packaged : JSON.stringify(packaged)], { type: 'application/json' }), filename: 'hh-shared-design.hhdesign' };
+    }
+    throw new Error('Tài liệu chung hoặc định dạng chưa được cấu hình. Không có file nào được xuất.');
+  }
+
   function mount(root, options) {
     if (!root || typeof root.querySelector !== "function") return null;
     if (instances.has(root)) return instances.get(root);
@@ -1288,6 +1300,13 @@
       return text;
     }
 
+    const sharedController = config.designDocumentController;
+    if (sharedController) {
+      const shared = documentRef.createElement('section');
+      shared.className = 'hec-section hec-shared-source';
+      shared.innerHTML = '<h2>Tài liệu thiết kế chung</h2><p>Hai nút này xuất document đang mở và asset gốc. Queue bên dưới dùng artboard của riêng Export Center, không tự chuyển đổi mọi engine.</p><div class="hec-top-actions"><button type="button" class="hec-btn" data-hec-action="shared-svg">SVG tài liệu chung</button><button type="button" class="hec-btn" data-hec-action="shared-package">Gói .hhdesign kèm asset</button></div>';
+      root.querySelector('.hec-top')?.after(shared);
+    }
     const onClick = (event) => {
       const target = event.target.closest("button,[data-hec-artboard]");
       if (!target || !root.contains(target)) return;
@@ -1296,6 +1315,15 @@
       if (target.dataset.hecRetry) { queue.retry(target.dataset.hecRetry); return announce("Đã đưa job trở lại queue."); }
       if (target.dataset.hecRemove) { queue.remove(target.dataset.hecRemove); return announce("Đã xóa job khỏi queue."); }
       const action = target.dataset.hecAction;
+      if (action === 'shared-svg' || action === 'shared-package') {
+        target.disabled = true;
+        announce('Đang kiểm tra tài liệu và đọc asset gốc…');
+        void exportSharedDocument(sharedController, action === 'shared-svg' ? 'svg' : 'package', { accountId: config.projectContext?.accountId })
+          .then(result => { if (root.isConnected) { const downloaded = downloadBlob(result.blob, result.filename, runtime); announce(downloaded.ok ? 'Đã tạo file từ tài liệu chung. Hãy mở file để kiểm tra.' : 'Trình duyệt chưa hỗ trợ tải file.'); } })
+          .catch(error => { if (root.isConnected) announce(error.message); })
+          .finally(() => { target.disabled = false; });
+        return;
+      }
       if (action === "enqueue") return enqueueSelected();
       if (action === "start") return void startQueue();
       if (action === "clear") { const count = queue.clearCompleted(); return announce(`Đã dọn ${count} job.`); }
@@ -1412,7 +1440,7 @@
     createExportQueue, createQueue: createExportQueue,
     createExportManifest, exportManifest,
     normalizeWorkspace, saveWorkspace, loadWorkspace, saveState: saveWorkspace, loadState: loadWorkspace,
-    downloadBlob, mount, unmount
+    downloadBlob, exportSharedDocument, mount, unmount
   });
 
   if (typeof module !== "undefined" && module.exports) module.exports = api;

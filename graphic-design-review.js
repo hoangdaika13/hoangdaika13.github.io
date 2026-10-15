@@ -213,10 +213,11 @@
       const y = Number(layer.y);
       const layerWidth = Number(layer.width);
       const layerHeight = Number(layer.height);
-      const normalizedX = Number.isFinite(x) ? (Math.abs(x) <= 1 ? x : x / sourceWidth) : 0.08 + (index % 5) * 0.04;
-      const normalizedY = Number.isFinite(y) ? (Math.abs(y) <= 1 ? y : y / sourceHeight) : 0.1 + (index % 7) * 0.06;
-      const normalizedWidth = Number.isFinite(layerWidth) ? (Math.abs(layerWidth) <= 1 ? layerWidth : layerWidth / sourceWidth) : 0.42;
-      const normalizedHeight = Number.isFinite(layerHeight) ? (Math.abs(layerHeight) <= 1 ? layerHeight : layerHeight / sourceHeight) : 0.12;
+      const pixels = data.coordinateSpace === "pixels";
+      const normalizedX = Number.isFinite(x) ? (!pixels && Math.abs(x) <= 1 ? x : x / sourceWidth) : 0.08 + (index % 5) * 0.04;
+      const normalizedY = Number.isFinite(y) ? (!pixels && Math.abs(y) <= 1 ? y : y / sourceHeight) : 0.1 + (index % 7) * 0.06;
+      const normalizedWidth = Number.isFinite(layerWidth) ? (!pixels && Math.abs(layerWidth) <= 1 ? layerWidth : layerWidth / sourceWidth) : 0.42;
+      const normalizedHeight = Number.isFinite(layerHeight) ? (!pixels && Math.abs(layerHeight) <= 1 ? layerHeight : layerHeight / sourceHeight) : 0.12;
       const drawX = left + clamp(normalizedX, 0, 1) * width;
       const drawY = top + clamp(normalizedY, 0, 1) * height;
       const drawWidth = Math.max(2, clamp(normalizedWidth, 0.005, 1) * width);
@@ -339,6 +340,7 @@
 
   function createStore(options) {
     const settings = options || {};
+    const storageKey = settings.storageKey || STORAGE_KEY;
     const now = typeof settings.now === "function" ? settings.now : () => new Date();
     const cryptoApi = Object.prototype.hasOwnProperty.call(settings, "crypto") ? settings.crypto : globalScope.crypto;
     let storage = null;
@@ -352,7 +354,7 @@
 
     if (storage) {
       try {
-        const raw = storage.getItem(STORAGE_KEY);
+        const raw = storage.getItem(storageKey);
         const parsed = raw ? JSON.parse(raw) : null;
         if (parsed && parsed.version === VERSION && Array.isArray(parsed.reviews) && Array.isArray(parsed.shareLinks)) state = parsed;
       } catch (error) {
@@ -369,7 +371,7 @@
     const idFactory = (prefix) => randomId(prefix, cryptoApi);
     const save = () => {
       if (!storage) return;
-      try { storage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+      try { storage.setItem(storageKey, JSON.stringify(state)); }
       catch (_) {
         persistenceError = "Không thể ghi localStorage; thay đổi mới chỉ còn trong phiên hiện tại.";
         persistence = "memory";
@@ -666,7 +668,7 @@
     }
 
     return Object.freeze({
-      getPersistence: () => ({ type: persistence, key: STORAGE_KEY, version: VERSION, error: persistenceError }),
+      getPersistence: () => ({ type: persistence, key: storageKey, version: VERSION, error: persistenceError }),
       createReview, getReview, listReviews, removeReview, updateSnapshots, compareSnapshots,
       addThread, addReply, resolveThread, transition, addVersion, compareVersions, setParticipantRole, authorize,
       createShareLink, listShareLinks, accessShareLink, revokeShareLink,
@@ -693,9 +695,16 @@
     doc.head.appendChild(style);
   }
 
+  function reviewInputFromDocument(documentInput, actor) {
+    const document = documentInput || {};
+    const frame = document.frames?.find((item) => item.id === document.activeFrameId) || document.canvas || {};
+    const data = clone({ ...document, coordinateSpace: "pixels", canvas: { ...document.canvas, width: frame.width, height: frame.height, background: frame.background || document.canvas?.background }, layers: (document.layers || []).filter((layer) => !frame.id || layer.frameId === frame.id).map((layer) => ({ ...layer, x: layer.x - (frame.x || 0), y: layer.y - (frame.y || 0) })) });
+    return { title: `Duyệt: ${cleanText(document.name || "Tài liệu đang mở", 180)}`, description: "Snapshot từ tài liệu thật, lưu cục bộ. Preview giản lược không thể hiện đầy đủ image/path/3D/effect; hãy dùng bản xuất editor để duyệt hình ảnh cuối.", actor, before: { label: "Bản gốc", data }, after: { label: "Bản đang duyệt", data: clone(data) } };
+  }
+
   function defaultReviewInput(actor) {
     return {
-      title: "Duyệt key visual chiến dịch",
+      title: "Mẫu: Duyệt key visual chiến dịch",
       description: "Bản review cục bộ cho vòng phê duyệt thiết kế.",
       actor,
       before: { label: "Trước", data: { canvas: { width: 1200, height: 675, background: "#f5f7fa" }, layers: [{ id: "title", name: "Headline", text: "Create with clarity", x: 0.08, y: 0.18, width: 0.42, height: 0.16, fill: "#5ed0df" }] } },
@@ -722,9 +731,10 @@
     injectStyles(doc);
     const actor = normalizeAuthor(settings.actor);
     const store = settings.store || createStore(settings);
+    const designDocument = () => settings.designDocumentController?.document || settings.designDocument || null;
     let review = settings.reviewId ? store.getReview(settings.reviewId) : null;
     if (!review && settings.review) review = store.createReview({ ...settings.review, actor });
-    if (!review) review = store.listReviews()[0] || store.createReview(defaultReviewInput(actor));
+    if (!review) review = store.listReviews()[0] || store.createReview(designDocument() ? reviewInputFromDocument(designDocument(), actor) : defaultReviewInput(actor));
     let tab = "comments";
     let selectedThreadId = "";
     let pinDraft = null;
@@ -792,10 +802,22 @@
     function render(focusKey) {
       if (destroyed) return;
       review = current();
+      if (store.getPersistence().error) { message = store.getPersistence().error; messageKind = "error"; }
       const panels = { comments: commentsPanel, compare: comparePanel, activity: activityPanel, share: sharePanel };
       root.setAttribute("data-hh-graphic-review", "");
       root.innerHTML = `${headerTemplate(review)}${message ? `<div class="hgr-notice" data-kind="${escapeHtml(messageKind)}" role="status" aria-live="polite">${escapeHtml(message)}</div>` : ""}<div class="hgr-grid">${stageTemplate(review)}<aside class="hgr-side"><div class="hgr-tabs" role="tablist" aria-label="Chi tiết review">${[["comments", "Bình luận"], ["compare", "So sánh"], ["activity", "Nhật ký"], ["share", "Chia sẻ"]].map(([id, label]) => `<button type="button" role="tab" aria-selected="${tab === id}" tabindex="${tab === id ? "0" : "-1"}" data-hgr-tab="${id}" data-hgr-focus="tab-${id}">${label}</button>`).join("")}</div><div class="hgr-panel" role="tabpanel">${panels[tab](review)}</div></aside></div>`;
+      const subtitle = root.querySelector(".hgr-title p");
+      if (subtitle) subtitle.textContent = "Review cục bộ · preview giản lược, không phải render cuối · link chỉ mở được trong hồ sơ trình duyệt này, không bảo mật chia sẻ qua server.";
       if (tab === "compare") drawComparison(review);
+      const stage = root.querySelector(".hgr-artboard");
+      if (stage && doc?.createElement) {
+        stage.replaceChildren();
+        const preview = doc.createElement("canvas");
+        preview.setAttribute("aria-label", "Snapshot giản lược; không phải bản xuất cuối");
+        preview.style.cssText = "display:block;width:100%;height:100%;object-fit:contain";
+        stage.appendChild(preview);
+        renderSnapshotPreview(preview, review.snapshots.after, { width: 960, height: 600 });
+      }
       focusAfterRender(focusKey);
     }
 
@@ -822,7 +844,10 @@
         if (target.dataset.hgrRevoke) { store.revokeShareLink(target.dataset.hgrRevoke, actor); setMessage("Đã thu hồi link."); return render(); }
         if (target.dataset.hgrCopy) { await copyLink(target.dataset.hgrCopy); return render(); }
         if (target.hasAttribute("data-hgr-timeline-pin")) { pinDraft = { kind: "timeline", sequenceId: "main", timeMs: 0, x: 0.5, y: 0.5 }; tab = "comments"; return render("comment-body"); }
-        if (target.hasAttribute("data-hgr-version")) { store.addVersion(review.id, { label: `Phiên bản ${new Date().toLocaleTimeString("vi-VN")}`, snapshot: review.snapshots.after }, actor); setMessage("Đã lưu phiên bản để so sánh."); return render(); }
+        if (target.hasAttribute("data-hgr-version")) {
+          if (designDocument()) { const next = reviewInputFromDocument(designDocument(), actor); store.updateSnapshots(review.id, { before: review.snapshots.after, after: next.after }, actor); review = current(); }
+          store.addVersion(review.id, { label: `Phiên bản ${new Date().toLocaleTimeString("vi-VN")}`, snapshot: review.snapshots.after }, actor); setMessage("Đã lưu snapshot cục bộ để so sánh; preview là bản giản lược."); return render();
+        }
         if (target.hasAttribute("data-hgr-export")) {
           const html = store.exportReport(review.id, "html");
           const downloaded = downloadText(doc, html, `${review.title.replace(/[^a-z0-9]+/gi, "-") || "review"}-report.html`, "text/html;charset=utf-8");
@@ -921,7 +946,7 @@
     VERSION, STORAGE_KEY, FORMAT, STATUSES, STATUS_LABELS, TRANSITIONS, PERMISSIONS, ROLES, ROLE_CAPABILITIES,
     escapeHtml, normalizePoint, normalizeCommentTarget, positionFromEvent, normalizeRole, canRole, canTransition, diffData,
     renderSnapshotPreview, renderDiffPreview, hashPassword, verifyPassword,
-    normalizePermissions, createStore, mount, unmount
+    normalizePermissions, reviewInputFromDocument, createStore, mount, unmount
   });
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   globalScope.HHGraphicReview = api;

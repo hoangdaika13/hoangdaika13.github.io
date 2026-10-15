@@ -279,8 +279,8 @@
   const STYLE_ID = "hh-graphic-animation-style";
   const text = (value, fallback = "") => String(value ?? fallback);
   const safeParse = (value, fallback) => { try { return JSON.parse(value); } catch { return fallback; } };
-  const readProject = () => normalizeProject(safeParse(globalScope.localStorage?.getItem(STORAGE_KEY), defaultProject()));
-  const saveProject = (project) => { const normalized = normalizeProject(project); globalScope.localStorage?.setItem(STORAGE_KEY, JSON.stringify(normalized)); return normalized; };
+  const readStoredProject = (storage) => normalizeProject(safeParse(storage?.getItem(STORAGE_KEY), defaultProject()));
+  const saveStoredProject = (project, storage) => { const normalized = normalizeProject(project); if (!storage?.setItem) throw new Error("Storage unavailable"); storage.setItem(STORAGE_KEY, JSON.stringify(normalized)); return normalized; };
   const downloadJson = (filename, value) => { const blob = new Blob([value], { type: "application/json" }); const url = URL.createObjectURL(blob); const anchor = document.createElement("a"); anchor.href = url; anchor.download = filename; anchor.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); };
 
   function addStyles() {
@@ -307,11 +307,18 @@
   function parseValue(value) { const trimmed = String(value ?? "").trim(); if (!trimmed) return 0; try { return JSON.parse(trimmed); } catch { const number = Number(trimmed); return Number.isFinite(number) ? number : trimmed; } }
   function stateName(project, id) { return project.stateMachine.states.find((state) => state.id === id)?.name || id; }
 
-  function mount(root) {
+  function mount(root, options = {}) {
     if (!root || root.dataset.graphicAnimationMounted === "true") return root?.__hhGraphicAnimation || null;
     root.dataset.graphicAnimationMounted = "true";
     addStyles();
     root.innerHTML = markup();
+    const storage = (() => { if (options.storage !== undefined) return options.storage; try { return globalScope.localStorage || null; } catch (_) { return null; } })();
+    root.insertAdjacentHTML('afterbegin', '<p role="status" aria-live="polite" data-ga-save-status>Bản nháp trên thiết bị.</p>');
+    const readProject = () => { try { return readStoredProject(storage); } catch (_) { return defaultProject(); } };
+    const saveProject = (value) => {
+      try { const saved = saveStoredProject(value, storage); root.querySelector('[data-ga-save-status]').textContent = 'Đã lưu bản nháp trong dự án này.'; return saved; }
+      catch (_) { root.querySelector('[data-ga-save-status]').textContent = 'Chưa lưu được bản nháp. Hãy xuất JSON trước khi rời trang.'; return normalizeProject(value); }
+    };
     const project = saveProject(readProject());
     const instance = { root, project, activeTab: "timeline", selectedTargetId: project.targets[0]?.id || null, selectedTrackId: project.tracks[0]?.id || null, selectedKeyframeId: project.tracks[0]?.keyframes[0]?.id || null, currentTime: 0, playing: false, raf: 0, lastFrame: 0, zoom: 1, stateId: project.stateMachine.initial, history: [], historyIndex: -1, dragging: null, mountedAt: Date.now() };
     root.__hhGraphicAnimation = instance;
