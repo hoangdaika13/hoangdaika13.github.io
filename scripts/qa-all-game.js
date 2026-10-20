@@ -1,0 +1,78 @@
+'use strict';
+// Real browser + real game engines. Backend readiness replies are explicit doubles.
+const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict'),{execFileSync}=require('node:child_process');
+const {chromium}=require(process.env.HH_QA_PLAYWRIGHT||'playwright');const repo=path.resolve(__dirname,'..'),output=path.join(repo,'.study-local/all-game-1058');
+const head=file=>execFileSync('git',['show','HEAD:'+file],{cwd:repo,maxBuffer:10*1048576});
+const csp=JSON.parse(head('vercel.json')).headers.flatMap(h=>h.headers).find(h=>h.key==='Content-Security-Policy').value;
+const errors=[],blocked=[],results=[],requests=[];let browser;
+const server=http.createServer((req,res)=>{
+  const url=new URL(req.url,'http://localhost'),name=decodeURIComponent(url.pathname),relative=name.slice(1);
+  if(name==='/tests/fixtures/all-game-probe.html'){res.setHeader('Content-Type','text/html');res.setHeader('Content-Security-Policy',csp);return res.end('<!doctype html><html lang="vi"><meta charset="utf-8"><base href="/"><meta name="viewport" content="width=device-width,initial-scale=1"><title>All Game real engine probe</title><link rel="stylesheet" href="/all-game.css"><body style="margin:0;background:#080e20"><main id="probe"></main><script src="/all-game-catalog.js"></script><script src="/all-game-scenes.js"></script><script src="/all-game.js"></script></body></html>');}
+  const file=path.resolve(repo,'.'+name);if(!file.startsWith(repo+path.sep)||name.split('/').some(p=>p.startsWith('.')||['api','utils','node_modules'].includes(p)))return res.writeHead(403).end();
+  if(!fs.existsSync(file)||!fs.statSync(file).isFile())return res.writeHead(404).end();res.setHeader('Cache-Control','no-store');res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.json':'application/json','.webp':'image/webp','.png':'image/png','.woff2':'font/woff2','.md':'text/plain'})[path.extname(file)]||'application/octet-stream');
+  if(relative==='index.html')res.setHeader('Content-Security-Policy',csp);
+  if(['auth-platform.js','auth-neon-gateway.css'].includes(relative))return res.end(head(relative));
+  if(relative==='config.js')return res.end(head(relative).toString().replace('"http://127.0.0.1:4000"','"https://hoangdaika13-astra-realtime.onrender.com"'));
+  fs.createReadStream(file).pipe(res);
+});
+const pass=label=>{results.push(label);console.log('PASS '+label);};
+async function run(){fs.mkdirSync(output,{recursive:true});await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port;
+try{
+  browser=await chromium.launch({headless:true,executablePath:process.env.HH_QA_CHROMIUM});const context=await browser.newContext({viewport:{width:1440,height:1000},serviceWorkers:'block',reducedMotion:'reduce'});
+  context.on('page',p=>{p.on('pageerror',e=>errors.push(e.message));p.on('console',m=>{if(m.type()==='error'&&/Content Security Policy/.test(m.text()))errors.push(m.text());});p.on('request',r=>requests.push(r.url()));});
+  await context.route('**/*',route=>{const url=route.request().url();if(url.startsWith(origin)&&!url.includes('/api/'))return route.continue();if(/^(data|blob):/.test(url)||/^https:\/\/fonts\.(gstatic|googleapis)\.com\//.test(url))return route.continue();blocked.push(new URL(url).pathname);return route.fulfill({status:url.includes('/providers')?200:503,contentType:'application/json',body:JSON.stringify({google:false,facebook:false,error:'QA backend unavailable'})});});
+  const page=await context.newPage();await page.goto(origin+'/index.html?api=local#/platform',{waitUntil:'domcontentloaded'});await page.locator('[data-guest-login]').click();await page.locator('.app-main .php').waitFor({timeout:45000});const reject=page.getByRole('button',{name:'Từ chối tùy chọn',exact:true});if(await reject.isVisible())await reject.click();
+  await page.evaluate(()=>{window.qaShellHeader=document.querySelector('.app-header');window.qaShellSidebar=document.querySelector('.app-sidebar');});
+  await page.evaluate(()=>location.hash='#/all-game');await page.locator('.ag-card').first().waitFor({timeout:45000});assert.equal(await page.locator('.ag-card').count(),59);
+  assert.ok(await page.evaluate(()=>qaShellHeader===document.querySelector('.app-header')&&qaShellSidebar===document.querySelector('.app-sidebar')));
+  const registry=await page.evaluate(()=>HHNavigationCatalog.getSections());assert.ok(JSON.stringify(registry).includes('/all-game'));const entertainment=page.locator('[data-sidebar-section-toggle="entertainment"]');if(await entertainment.getAttribute('aria-expanded')==='false')await entertainment.click();assert.ok(await page.locator('.app-sidebar').innerText().then(t=>t.includes('All Game')));
+  assert.equal(requests.filter(url=>/\/all-game-(arcade|puzzles|adventure)\.js/.test(url)).length,0,'Library must not load all game engines');
+  pass('Guest→Platform→All Game:59 real destinations in registry/sidebar, outer shell retained and no engine bundle loaded for catalog');
+  await page.locator('[data-ag-search]').fill('RẮN');assert.equal(await page.locator('.ag-card').count(),1);await page.locator('[data-ag-search]').fill('not-a-game');assert.equal(await page.locator('.ag-card').count(),0);await page.locator('[data-ag-search]').fill('');
+  await page.locator('[data-ag-favorite="memory"]').click();await page.locator('[data-ag-only-favorites]').click();assert.equal(await page.locator('.ag-card').count(),1);await page.reload({waitUntil:'domcontentloaded'});await page.locator('[data-ag-favorite="memory"]').waitFor({timeout:45000});assert.equal(await page.locator('[data-ag-favorite="memory"]').getAttribute('aria-pressed'),'true');
+  for(const width of [1440,768,375]){await page.setViewportSize({width,height:1000});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));await page.screenshot({path:path.join(output,'library-'+width+'.png'),fullPage:false});}
+  await page.evaluate(()=>document.documentElement.style.zoom='2');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));await page.evaluate(()=>document.documentElement.style.zoom='1');await page.setViewportSize({width:1440,height:1000});
+  pass('Search/empty/favorite persistence, 1440/768/375 library and CSSzoom200 have no page overflow');
+  await page.evaluate(()=>{window.qaShellHeader=document.querySelector('.app-header');window.qaShellSidebar=document.querySelector('.app-sidebar');});
+  const ids=await page.evaluate(()=>HHAllGame.CATALOG.map(g=>g.id));
+  for(const id of ids){
+    await page.evaluate(id=>location.hash='#/all-game/'+id,id);await page.locator('[data-ag-start]:not([disabled])').waitFor({timeout:30000});await page.locator('[data-ag-start]').click();await page.waitForTimeout(80);
+    assert.equal(await page.locator('[data-ag-curtain]').isVisible(),false,id+' must start');
+    await page.setViewportSize({width:375,height:900});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Mobile '+id);
+    await page.locator('[data-ag-pause]').click();assert.ok(await page.locator('[data-ag-curtain]').isVisible());await page.locator('[data-ag-start]').click();
+    if(await page.locator('[data-ag-cell]').count()){await page.locator('[data-ag-cell]').first().focus();await page.keyboard.press('ArrowRight');await page.keyboard.press('Enter');}
+    else {await page.locator('[data-ag-canvas]').focus();await page.keyboard.press('ArrowRight');await page.keyboard.press('Space');}
+    assert.notEqual(await page.locator('[data-ag-game-status]').textContent(),'Đang tải game…',id+' active');
+    await page.locator('[data-ag-stage]').scrollIntoViewIfNeeded();await page.screenshot({path:path.join(output,'game-'+id+'-375.png'),fullPage:false});await page.setViewportSize({width:1440,height:1000});
+  }
+  assert.ok(await page.evaluate(()=>qaShellHeader===document.querySelector('.app-header')&&qaShellSidebar===document.querySelector('.app-sidebar')));
+  await page.evaluate(()=>location.hash='#/all-game');await page.locator('.ag-card').first().waitFor();await page.goBack();await page.locator('[data-ag-start]:not([disabled])').waitFor();assert.ok(await page.locator('[data-ag-curtain]').isVisible(),'Return never auto plays');await page.goForward();await page.locator('.ag-card').first().waitFor();
+  pass('All59 real games load/start/pause/resume/input at375px; leaving and browser Back/Forward keep shell and return paused');
+  const probe=await context.newPage();await probe.goto(origin+'/tests/fixtures/all-game-probe.html');
+  await probe.evaluate(()=>{window.qaController=HHAllGame.mount(document.querySelector('#probe'),{gameId:'mines',currentUser:{id:'qa-alice'}});});await probe.locator('[data-ag-start]:not([disabled])').waitFor();await probe.locator('[data-ag-start]').click();
+  await probe.locator('[data-ag-cell="0"]').focus();await probe.keyboard.press('ArrowRight');assert.equal(await probe.evaluate(()=>document.activeElement.dataset.agCell),'1');await probe.keyboard.press('Enter');
+  assert.ok(await probe.evaluate(()=>qaController.getState().board[1].revealed));assert.equal(await probe.evaluate(()=>qaController.getState().board[1].mine),false);
+  const unopened=await probe.evaluate(()=>qaController.getState().board.findIndex(c=>!c.revealed&&!c.flagged));await probe.locator('[data-ag-flag]').click();await probe.locator('[data-ag-cell="'+unopened+'"]').click();assert.equal(await probe.evaluate(i=>qaController.getState().board[i].flagged,unopened),true);
+  assert.match(await probe.locator('[data-ag-cell="'+unopened+'"]').getAttribute('aria-label'),/đã cắm cờ/);
+  await probe.evaluate(()=>{qaController=HHAllGame.mount(document.querySelector('#probe'),{gameId:'memory',currentUser:{id:'qa-alice'}});});await probe.locator('[data-ag-start]:not([disabled])').waitFor();await probe.locator('[data-ag-start]').click();
+  const pair=await probe.evaluate(()=>{const state=qaController.getState();return[0,state.board.findIndex((c,i)=>i>0&&c.face===state.board[0].face)];});for(const index of pair)await probe.locator('[data-ag-cell="'+index+'"]').click();assert.equal(await probe.evaluate(()=>qaController.getState().matchedPairs),1);
+  await probe.evaluate(()=>{HHAllGame.unmount();qaController=HHAllGame.mount(document.querySelector('#probe'),{gameId:'memory',currentUser:{id:'qa-bob'}});});await probe.locator('[data-ag-start]:not([disabled])').waitFor();assert.equal(await probe.locator('[data-ag-best]').textContent(),'0');
+  await probe.evaluate(()=>{qaController=HHAllGame.mount(document.querySelector('#probe'),{gameId:'memory',currentUser:{id:'qa-alice'}});});await probe.locator('[data-ag-start]:not([disabled])').waitFor();assert.equal(await probe.evaluate(()=>qaController.getState().matchedPairs),1);
+  pass('Real accessible Mines keyboard reveal/flags and Memory matching; same-account paused session restored and another account sees no record');
+  const memoryScore=await probe.evaluate(()=>qaController.getState().score);await probe.reload();await probe.evaluate(()=>{qaController=HHAllGame.mount(document.querySelector('#probe'),{gameId:'memory',currentUser:{id:'qa-alice'}});});await probe.locator('[data-ag-start]:not([disabled])').waitFor();assert.equal(Number(await probe.locator('[data-ag-best]').textContent()),memoryScore);assert.equal(await probe.evaluate(()=>qaController.getState().matchedPairs),0);
+  await probe.route('**/all-game-pack-puzzles.js*',r=>r.abort());await probe.evaluate(()=>{qaController=HHAllGame.mount(document.querySelector('#probe'),{gameId:'lights-out',currentUser:{id:'qa-load'}});});await probe.locator('[data-ag-retry]:not([hidden])').waitFor();assert.match(await probe.locator('[data-ag-curtain-title]').textContent(),/Chưa tải/);await probe.unroute('**/all-game-pack-puzzles.js*');await probe.locator('[data-ag-retry]').click();await probe.locator('[data-ag-start]:not([disabled])').waitFor();await probe.locator('[data-ag-start]').click();
+  const solution=await probe.evaluate(()=>qaController.getState().solution);for(const index of solution){if(await probe.evaluate(()=>qaController.getState().status==='won'))break;await probe.locator('[data-ag-cell="'+index+'"]').click();}assert.equal(await probe.evaluate(()=>qaController.getState().status),'won');
+  pass('Reload retains real score but starts a new round; failed lazy bundle shows error/retry, then Lights Out completes through actual DOM clicks');
+  await probe.evaluate(()=>{qaController=HHAllGame.mount(document.querySelector('#probe'),{gameId:'breakout',currentUser:{id:'qa-lifecycle'}});});await probe.locator('[data-ag-start]:not([disabled])').waitFor();await probe.locator('[data-ag-start]').click();await probe.locator('[data-ag-control="action"]').focus();await probe.keyboard.press('Enter');
+  assert.equal(await probe.evaluate(()=>qaController.getState().launched),true);
+  await probe.evaluate(()=>{window.qaPrior=qaController.getFrameCount();HHAllGame.unmount();});await probe.waitForTimeout(150);assert.equal(await probe.evaluate(()=>qaController.getFrameCount()),await probe.evaluate(()=>qaPrior));
+  await probe.evaluate(()=>{qaController=HHAllGame.mount(document.querySelector('#probe'),{gameId:'snake',currentUser:{id:'qa-lifecycle'}});});await probe.locator('[data-ag-start]:not([disabled])').waitFor();await probe.locator('[data-ag-start]').click();
+  await probe.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));window.qaPrior=qaController.getFrameCount();});await probe.waitForTimeout(150);assert.equal(await probe.evaluate(()=>qaController.getFrameCount()),await probe.evaluate(()=>qaPrior));assert.ok(await probe.locator('[data-ag-curtain]').isVisible());
+  await probe.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));});await probe.waitForTimeout(80);assert.equal(await probe.evaluate(()=>qaController.getFrameCount()),await probe.evaluate(()=>qaPrior));
+  await probe.emulateMedia({forcedColors:'active'});await probe.keyboard.press('Tab');await probe.locator('[data-ag-start]').focus();assert.notEqual(await probe.evaluate(()=>getComputedStyle(document.activeElement).outlineStyle),'none');
+  pass('D-pad keyboard launch works; unmount/controlled hidden-tab stop loop and do not auto-resume; forced-color keyboard focus visible');
+  await probe.evaluate(()=>{HHAllGame.mount(document.querySelector('#probe'),{currentUser:{id:'qa-quota'},storage:{getItem:()=>null,setItem(){throw Error('quota')}}});});await probe.locator('[data-ag-favorite="snake"]').click();assert.match(await probe.locator('[data-ag-storage]').textContent(),/Chưa lưu/);
+  assert.deepEqual(errors,[]);pass('Storage failure is visible; no uncaught JavaScript/CSP errors; no gameplay APIs or paid services');
+  await context.close();
+}catch(error){for(const ctx of browser?.contexts()||[])for(const p of ctx.pages()){console.error(await p.evaluate(()=>({route:location.hash,workspace:document.querySelector('.app-workspace')?.textContent?.slice(0,500),allGame:!!window.HHAllGame,loader:window.HHAssetLoader?.groupsForRoute?.(location.hash)})).catch(()=>null));await p.screenshot({path:path.join(output,'failure.png'),fullPage:false}).catch(()=>{});}throw error;}finally{await browser?.close();await new Promise(r=>server.close(r));fs.writeFileSync(path.join(output,'results.json'),JSON.stringify({at:new Date().toISOString(),results,errors,blocked},null,2));}}
+run().catch(e=>{console.error(e);process.exitCode=1;});

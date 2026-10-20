@@ -25,6 +25,7 @@
     remote: "Chia sẻ màn hình máy tính và điện thoại bằng WebRTC, mã phiên và PIN một lần.",
     "cosmic-observatory": "Hệ Mặt Trời 3D, bầu trời đêm, DSN, ngoại hành tinh, nhiệm vụ và dữ liệu thiên văn.",
     "play-center": "Arcade, party, truyện tương tác, escape room, nhịp điệu, thú cưng, chill và quiz.",
+    "all-game": "59 mini-game 2D nguyên bản: arcade, đua xe, thể thao, chiến thuật, giải đố, giáo dục và mô phỏng. Chơi cục bộ với kỷ lục riêng trên thiết bị.",
     "eonwild-game": "Khám phá thế giới sinh tồn, loài, hệ sinh thái, thời đại địa chất, dòng gene và replay.",
     "comic-reader": "Thư viện truyện và sách có nguồn; tìm kiếm, theo dõi, lịch sử và nhiều chế độ đọc.",
     cinema: "Khám phá phim Public Domain và Creative Commons với nguồn và điều kiện giấy phép.",

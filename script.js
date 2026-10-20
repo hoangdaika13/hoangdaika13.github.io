@@ -5788,6 +5788,18 @@ function initAppShell() {
         { id: "data-control", title: "Tủ dữ liệu", route: "/phat-phap/data-control", icon: "庫" }
       ]
     },
+    { id: "all-game", label: "All Game", icon: "▦", accent: "#96eaff", route: "/all-game", items: [], pages: [
+      { id: "snake", title: "Neon Snake", route: "/all-game/snake" },
+      { id: "breakout", title: "Prism Breaker", route: "/all-game/breakout" },
+      { id: "star-guard", title: "Star Guard", route: "/all-game/star-guard" },
+      { id: "merge", title: "Neon Merge", route: "/all-game/merge" },
+      { id: "mines", title: "Crystal Mines", route: "/all-game/mines" },
+      { id: "memory", title: "Memory Constellation", route: "/all-game/memory" },
+      { id: "block-drop", title: "Block Drop", route: "/all-game/block-drop" },
+      { id: "crate-lab", title: "Crate Lab", route: "/all-game/crate-lab" },
+      { id: "orbit-runner", title: "Orbit Runner", route: "/all-game/orbit-runner" },
+      ...(window.HHAllGameCatalog || []).map(game => ({ id: game.id, title: game.title, route: game.route }))
+    ] },
     { id: "patin", label: "Patin", icon: "🛼", accent: "#63ead5", route: "/patin", items: [], pages: [
       { id: "home", title: "Trung tâm Patin", route: "/patin" },
       { id: "skills", title: "Thư viện kỹ năng", route: "/patin/skills" },
@@ -5841,7 +5853,7 @@ function initAppShell() {
       icon: "▶",
       accent: "#ff6f82",
       accentSecondary: "#ffc65c",
-      groupIds: ["cosmic-observatory", "play-center", "eonwild-game", "comic-reader", "cinema", "music-library", "patin", "fortune"]
+      groupIds: ["cosmic-observatory", "play-center", "all-game", "eonwild-game", "comic-reader", "cinema", "music-library", "patin", "fortune"]
     },
     {
       id: "work-tech",
@@ -5887,6 +5899,7 @@ function initAppShell() {
     "play-center": "hh play game arcade trò chơi party room watch party truyện tương tác escape rhythm karaoke pet chill quiz giải trí nhiều người",
     "cosmic-observatory": "vũ trụ hh universe thiên văn nasa jpl hệ mặt trời hành tinh bầu trời sao đài quan sát dsn bề mặt dòng thời gian phòng học tiểu hành tinh ngoại hành tinh asteroid exoplanet solar system observatory",
     "eonwild-game": "game eonwild động vật muôn loài khủng long sinh tồn thế giới mở cổ sinh trung sinh tân sinh hiện đại không con người ecology survival",
+    "all-game": "all game arcade 2d snake rắn phá gạch breakout bắn tàu ghép số 2048 dò mìn mines lật thẻ trí nhớ xếp khối đẩy thùng sokoban platformer runner trò chơi",
     patin: "patin trượt inline roller skating rollerblade quad giày bảo hộ phanh rẽ slalom freestyle fitness speed slide double push soul acid magic parallel ufo nelson crazy luồn cọc nhật ký tập video tua chậm lặp a b học trực quan performance arena thi đấu matrix classic battle bản đồ tổ hợp checklist",
     fortune: "xem bói tarot tử vi chiêm tinh kinh dịch",
     work: "công việc dự án task ghi chú lịch",
@@ -6852,6 +6865,7 @@ function initAppShell() {
     crumbLabels["focus-room"] = "Phòng học tập trung";
     crumbLabels["study-together"] = "Học cùng nhau";
     crumbLabels.platform = "Trang chủ";
+    if (crumbs[0] === "all-game") { crumbLabels["all-game"] = "All Game"; (groups.find(item => item.id === "all-game")?.pages || []).forEach(item => { crumbLabels[item.id] = item.title; }); }
     if (crumbs[0] === "patin") Object.assign(crumbLabels, { patin: "Patin", videos: "Học qua video", map: "Bản đồ nền tảng", competition: "Thi đấu", routine: "Tổ hợp & chuẩn bị", skills: "Kỹ năng", disciplines: "Bộ môn", speed: "Speed", slide: "Slide", slalom: "Slalom", studio: "Minh họa", path: "Lộ trình", gear: "Giày & an toàn", journal: "Nhật ký tập", resources: "Tra cứu" });
     const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIAllPageItems, ...workGalaxyPageItems, ...davinciResolvePages];
     const routeTools = crumbs[0] === "patin" ? (groups.find((item) => item.id === "patin")?.pages || []) : crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIAllPageItems : crumbs[0] === "davinci-resolve" ? davinciResolvePages : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "graphic-design" ? graphicDesignPages : crumbs[0] === "dev-tools" ? developerAllToolItems : crumbs[0] === "work" ? workGalaxyPageItems : knownTools;
@@ -6943,6 +6957,7 @@ function initAppShell() {
     patin: "Đang tải thư viện kỹ năng, thiết bị và nhật ký Patin...",
     fortune: "Đang mở không gian Tarot, cung hoàng đạo và nhật ký suy ngẫm...",
     "play-center": "Đang mở HH Play, khôi phục điểm số và chuẩn bị trải nghiệm giải trí cục bộ...",
+    "all-game": "Đang mở All Game và thư viện trò chơi 2D cục bộ...",
     "eonwild-game": "Đang tái tạo Trái Đất Muôn Thời, lưới sinh thái và vòng đời động vật...",
     draw: "Đang mở Chromatic Studio và chuẩn bị 16 brush engine đa sắc...",
     remote: "Đang thiết lập không gian Remote, WebRTC và kết nối thiết bị P2P...",
@@ -7374,6 +7389,7 @@ function initAppShell() {
     if (route !== "/patin" && !route.startsWith("/patin/")) window.HHPatin?.unmount?.();
     if (route !== "/fortune" && !route.startsWith("/fortune/")) window.HHFortuneHub?.unmount?.();
     if (route !== "/play" && !route.startsWith("/play/")) window.HHPlay?.unmount?.();
+    window.HHAllGame?.unmount?.();
     if (route !== "/universe" && !route.startsWith("/universe/")) window.HHUniverse?.unmount?.();
     window.HHEonWild?.unmount?.();
     if (route !== "/draw" && !route.startsWith("/draw/")) window.HHDrawStudio?.unmount?.();
@@ -7775,6 +7791,15 @@ function initAppShell() {
       });
       else mountSimpleView("Vũ trụ HH", "Đang tải trung tâm dữ liệu thiên văn và renderer…", "");
       remember("cosmic-observatory");
+    } else if (route === "/all-game" || route.startsWith("/all-game/")) {
+      const gameId = parts[1] || "";
+      const gameMeta = groups.find(item => item.id === "all-game")?.pages?.find(item => item.id === gameId);
+      updatePageHeader(gameMeta?.title || "All Game", "Thư viện game 2D nguyên bản: phản xạ, hành động, trí tuệ và thư giãn. Chơi cục bộ, không iframe và không đối thủ giả.", route);
+      pageActions.innerHTML = '<button type="button" data-app-route="/all-game">Thư viện game</button><button type="button" data-app-route="/all-game/merge">Ghép số</button><button type="button" data-app-route="/all-game/snake">Neon Snake</button>';
+      workspace.innerHTML = '<div data-all-game-host></div>';
+      if (window.HHAllGame?.mount) window.HHAllGame.mount(workspace.firstElementChild, { gameId, currentUser: readCurrentAuthUser() });
+      else mountSimpleView("All Game", "Chưa tải được thư viện game. Hãy thử tải lại trang.", "");
+      remember("all-game");
     } else if (route === "/play" || route.startsWith("/play/")) {
       const playView = parts[1] || "today";
       const playPage = groups.find((item) => item.id === "play-center")?.pages?.find((item) => item.id === playView);
