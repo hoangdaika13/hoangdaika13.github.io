@@ -197,14 +197,14 @@ test('difficulty changes real time, treasure and constellation budgets; essentia
 });
 
 test('all sixteen renderers are canvas-only, scalable and leave state unchanged', () => {
-  const context = new Proxy({}, { get(target, name) { if (!(name in target)) target[name] = () => {}; return target[name]; }, set(target, name, value) { target[name] = value; return true; } });
+  const context = new Proxy({ createLinearGradient: () => ({ addColorStop() {} }), createRadialGradient: () => ({ addColorStop() {} }) }, { get(target, name) { if (!(name in target)) target[name] = () => {}; return target[name]; }, set(target, name, value) { target[name] = value; return true; } });
   for (const game of Object.values(games)) { const state = game.create(), original = copy(state); game.draw(context, state, { width: 720, height: 480, reducedMotion: false }); game.draw(context, state, { width: 375, height: 250, reducedMotion: true }); assert.deepEqual(state, original); }
 });
 
 test('all sixteen renderers preserve individualized scene callbacks without filling over the background', () => {
   for (const game of Object.values(games)) {
     const state = game.create(), original = copy(state), calls = [], fills = [];
-    const context = new Proxy({ fillRect(...args) { fills.push(args); } }, { get(target, key) { if (!(key in target)) target[key] = () => {}; return target[key]; }, set(target, key, value) { target[key] = value; return true; } });
+    const context = new Proxy({ createLinearGradient: () => ({ addColorStop() {} }), createRadialGradient: () => ({ addColorStop() {} }), fillRect(...args) { fills.push(args); } }, { get(target, key) { if (!(key in target)) target[key] = () => {}; return target[key]; }, set(target, key, value) { target[key] = value; return true; } });
     game.draw(context, state, { width: 720, height: 480, reducedMotion: true, paintScene(ctx, id, current) { calls.push({ ctx, id, current }); } });
     assert.equal(calls.length, 1); assert.equal(calls[0].ctx, context); assert.equal(calls[0].id, game.id); assert.equal(calls[0].current, state);
     assert.equal(fills.filter(args => args[0] === 0 && args[1] === 0 && args[2] === 720 && args[3] === 480).length, 0); assert.deepEqual(state, original);

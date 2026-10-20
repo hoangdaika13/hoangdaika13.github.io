@@ -207,7 +207,7 @@ test('runner cannot finish by falling underneath a portal', () => {
 
 test('draw functions are canvas-only, support reduced motion and never mutate game state', () => {
   const gradient = { addColorStop() {} };
-  const context = new Proxy({}, { get(target, property) { if (String(property).startsWith('create')) return () => gradient; if (!(property in target)) target[property] = () => {}; return target[property]; }, set(target, property, value) { target[property] = value; return true; } });
+  const context = new Proxy({ createLinearGradient: () => ({ addColorStop() {} }), createRadialGradient: () => ({ addColorStop() {} }) }, { get(target, property) { if (String(property).startsWith('create')) return () => gradient; if (!(property in target)) target[property] = () => {}; return target[property]; }, set(target, property, value) { target[property] = value; return true; } });
   for (const engine of Object.values(games)) {
     const state = engine.create(), original = copy(state);
     engine.draw(context, state, { width: 720, height: 480, reducedMotion: false });
@@ -219,7 +219,7 @@ test('draw functions are canvas-only, support reduced motion and never mutate ga
 test('every adventure renderer delegates the scene once without an opaque fallback overpaint', () => {
   for (const engine of Object.values(games)) {
     const state = engine.create(), original = copy(state), fills = [], calls = [];
-    const context = new Proxy({ fillRect(...args) { fills.push(args); } }, { get(target, key) { if (!(key in target)) target[key] = () => {}; return target[key]; }, set(target, key, value) { target[key] = value; return true; } });
+    const context = new Proxy({ createLinearGradient: () => ({ addColorStop() {} }), createRadialGradient: () => ({ addColorStop() {} }), fillRect(...args) { fills.push(args); } }, { get(target, key) { if (!(key in target)) target[key] = () => {}; return target[key]; }, set(target, key, value) { target[key] = value; return true; } });
     engine.draw(context, state, { width: 720, height: 480, reducedMotion: true, paintScene(ctx, id, current) { calls.push({ ctx, id, current }); } });
     assert.equal(calls.length, 1); assert.equal(calls[0].ctx, context); assert.equal(calls[0].id, engine.id); assert.equal(calls[0].current, state);
     assert.equal(fills.filter(args => args[0] === 0 && args[1] === 0 && args[2] === 720 && args[3] === 480).length, 0);

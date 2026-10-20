@@ -27,8 +27,8 @@ test('All Game is a separate Entertainment route, searchable registry and lifecy
   for(const id of ['all-game','play-center','eonwild-game','patin'])assert.ok(section.includes('"'+id+'"'));
   assert.match(router,/id: "all-game", label: "All Game"/);assert.match(router,/window\.HHAllGame\?\.mount/);assert.match(router,/window\.HHAllGame\?\.unmount/);
   assert.match(router,/gameId, currentUser: readCurrentAuthUser\(\)/);assert.match(router,/"all-game": "all game arcade/);
-  const loader=read('performance-loader.js');assert.match(loader,/"all-game": \{ styles: \["all-game\.css\?v=1"\], scripts: \["all-game-scenes\.js\?v=1", "all-game\.js\?v=1"\]/);assert.match(loader,/value === "\/all-game" \|\| value.startsWith\("\/all-game\/"\)/);
-  for(const file of ['all-game.css','all-game.js','all-game-puzzles.js','all-game-arcade.js','all-game-adventure.js'])assert.match(read('sw.js'),new RegExp(file.replaceAll('.','\\.')+'\\?v=1'));
+  const loader=read('performance-loader.js');assert.match(loader,/"all-game": \{ styles: \["all-game\.css\?v=2"\], scripts: \["all-game-scenes\.js\?v=2", "all-game\.js\?v=2"\]/);assert.match(loader,/value === "\/all-game" \|\| value.startsWith\("\/all-game\/"\)/);
+  for(const file of ['all-game.css','all-game.js','all-game-puzzles.js','all-game-arcade.js','all-game-adventure.js'])assert.match(read('sw.js'),new RegExp(file.replaceAll('.','\\.')+'\\?v=2'));
 });
 test('Host has one explicit frame owner and keyboard/mobile/visibility cleanup without global scroll locks',()=>{
   const source=read('all-game.js'),css=read('all-game.css');

@@ -20,16 +20,22 @@
   function cell(index, text, description, disabled, pressed) { return { index: index, text: String(text), label: description, description: description, disabled: !!disabled, pressed: !!pressed }; }
   function desc(s, summary, columns, cells) { return { summary: summary + (s.message ? ' ' + s.message : ''), columns: columns, cells: cells }; }
   var MATERIALS = {
-    'lights-out': ['#192e45', '#ffd974'], 'slide-tiles': ['#2c4b70', '#a5e9ff'], 'peg-solitaire': ['#654633', '#f2cd88'],
-    'n-queens': ['#263852', '#ffd88a'], nonogram: ['#e8e0f3', '#8654bd'], 'towers-hanoi': ['#4d3546', '#ffc67b'],
-    'maze-path': ['#244c4c', '#b3efca'], 'connect-four': ['#294f8e', '#ffd778'], 'tic-tac-toe': ['#163c43', '#98ead7'],
-    'reversi-mini': ['#21574c', '#e5eadc'], 'word-search': ['#e5dccb', '#473955'], 'number-order': ['#29465a', '#b2eff8'],
-    'sudoku-mini': ['#ede8df', '#423b61'], 'color-flood': ['#2d304e', '#ffd795'], 'pipe-link': ['#273f54', '#90e6ea'],
-    'code-breaker': ['#373451', '#dcb6ff'], 'knights-tour': ['#3c435c', '#f2d6a2']
+    'lights-out': ['#283a60', '#ffd166'], 'slide-tiles': ['#5a6db1', '#bcf4ff'], 'peg-solitaire': ['#76518d', '#ffdc92'],
+    'n-queens': ['#3d568a', '#ffe195'], nonogram: ['#f3eafa', '#9158ca'], 'towers-hanoi': ['#613d78', '#ffb57f'],
+    'maze-path': ['#2b6e78', '#a4ffd0'], 'connect-four': ['#3467c2', '#ffd166'], 'tic-tac-toe': ['#225a70', '#90ffe4'],
+    'reversi-mini': ['#1d8b7c', '#fcf4e5'], 'word-search': ['#f0e9ff', '#40306a'], 'number-order': ['#3c5b96', '#bcf3ff'],
+    'sudoku-mini': ['#faf2ff', '#443564'], 'color-flood': ['#454e89', '#ffdc89'], 'pipe-link': ['#344976', '#6ef2ea'],
+    'code-breaker': ['#5a4190', '#edc6ff'], 'knights-tour': ['#555e89', '#ffe09a']
   };
+  function material(ctx,x,y,w,h,color){
+    if(!/^#[a-f0-9]{6}$/i.test(color))return color;
+    var gradient=ctx.createLinearGradient(x,y,x+w,y+h);
+    gradient.addColorStop(0,color);gradient.addColorStop(.65,color);gradient.addColorStop(1,'#252d4b');
+    return gradient;
+  }
   function surface(ctx, x, y, w, h, fill, edge, radius) {
     ctx.beginPath(); if (typeof ctx.roundRect === 'function') ctx.roundRect(x, y, w, h, radius || 0); else ctx.rect(x, y, w, h);
-    ctx.fillStyle = fill; ctx.fill(); if (edge) { ctx.strokeStyle = edge; ctx.lineWidth = 1; ctx.stroke(); }
+    ctx.fillStyle = material(ctx,x,y,w,h,fill); ctx.fill(); if (edge) { ctx.strokeStyle = edge; ctx.lineWidth = 1; ctx.stroke(); }
   }
   function circle(ctx, x, y, radius, fill, edge) { ctx.beginPath(); ctx.arc(x, y, Math.max(.1, radius), 0, Math.PI * 2); ctx.fillStyle = fill; ctx.fill(); if (edge) { ctx.strokeStyle = edge; ctx.lineWidth = 1; ctx.stroke(); } }
   function beam(ctx, points, color, width) { if (!points.length) return; ctx.beginPath(); ctx.moveTo(points[0][0], points[0][1]); points.slice(1).forEach(function (p) { ctx.lineTo(p[0], p[1]); }); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke(); }
@@ -42,7 +48,7 @@
     if (accent) surface(ctx, x + gap + 2, y + gap + 2, size - gap * 2 - 4, size - gap * 2 - 6, '#ffffff00', accent, Math.max(0, radius - 1));
   }
   function drawHanoi(ctx, s, w, h) {
-    var base = h * .78, spacing = w / 3, diskH = Math.min(30, h * .07), colors = ['#ab83d6', '#72bbd3', '#76bd9b', '#e4b66d', '#db8fa6'];
+    var base = h * .78, spacing = w / 3, diskH = Math.min(30, h * .07), colors = ['#b18aff', '#63def5', '#70e7ad', '#ffd166', '#ff91b8'];
     surface(ctx, w * .05, base, w * .9, 17, '#735548', '#d7ad83', 6);
     s.towers.forEach(function (stack, tower) {
       var cx = spacing * (tower + .5); surface(ctx, cx - 5, base - diskH * (s.count + 1.4), 10, diskH * (s.count + 1.4), '#a57d58', '#f1c990', 4);
@@ -54,25 +60,25 @@
     var id = s.id, i = c.index, cx = x + size / 2, cy = y + size / 2, material = MATERIALS[id], fill = c.background || material[0], ink = c.color || '#f6efff', accent = material[1], font = Math.min(30, size * .42), value = s.board && s.board[i];
     if (id === 'peg-solitaire') {
       if (value < 0) return;
-      keycap(ctx, x, y, size, '#674b38'); circle(ctx, cx, cy + 1, size * .31, '#2a211d', '#b18a60');
-      if (value) { circle(ctx, cx, cy - size * .025, size * .23, '#d9b87e', c.pressed ? '#fff1b1' : '#f7d8a3'); circle(ctx, cx - size * .065, cy - size * .09, size * .055, '#ffffff65'); } return;
+      keycap(ctx, x, y, size, '#785d94'); circle(ctx, cx, cy + 1, size * .31, '#322744', '#b18a60');
+      if (value) { circle(ctx, cx, cy - size * .025, size * .23, '#ffd166', c.pressed ? '#fff1b1' : '#f7d8a3'); circle(ctx, cx - size * .065, cy - size * .09, size * .055, '#ffffff65'); } return;
     }
     if (id === 'n-queens' || id === 'knights-tour') {
-      surface(ctx, x + 1, y + 1, size - 2, size - 2, (Math.floor(i / s.columns) + i % s.columns) % 2 ? '#334159' : '#657086', '#c5cfda26', 2);
+      surface(ctx, x + 1, y + 1, size - 2, size - 2, (Math.floor(i / s.columns) + i % s.columns) % 2 ? '#3e4d84' : '#8a76ad', '#c5cfda26', 2);
       ink = c.pressed || c.text.includes('♛') ? '#ffe2a4' : '#e9edf5'; if (c.text.includes('!')) ink = '#ffb6b6';
       if (c.pressed) surface(ctx, x + 4, y + 4, size - 8, size - 8, '#ffe0a01c', '#ffe0a0', 5);
       lettering(ctx, c.text, cx, cy, font, ink, size - 7); return;
     }
     if (id === 'connect-four' || id === 'reversi-mini') {
       surface(ctx, x + 1, y + 1, size - 2, size - 2, fill, '#ffffff18', 3);
-      if (id === 'connect-four') { circle(ctx, cx, cy + 1, size * .34, '#0a1937', '#91c3ef55'); if (value) { circle(ctx, cx, cy, size * .29, value === 1 ? '#f3c763' : '#d97bba', '#ffffff66'); circle(ctx, cx, cy, size * .21, value === 1 ? '#e4af46' : '#b7619b', '#ffffff35'); } }
+      if (id === 'connect-four') { circle(ctx, cx, cy + 1, size * .34, '#0a1937', '#91c3ef55'); if (value) { circle(ctx, cx, cy, size * .29, value === 1 ? '#ffd166' : '#ff78b2', '#ffffff66'); circle(ctx, cx, cy, size * .21, value === 1 ? '#e5a43d' : '#db4b94', '#ffffff35'); } }
       else if (value) { circle(ctx, cx, cy + 2, size * .33, '#071a1d', null); circle(ctx, cx, cy, size * .32, value === 1 ? '#12262c' : '#e8ecdf', value === 1 ? '#82968a' : '#ffffff'); circle(ctx, cx - size * .09, cy - size * .1, size * .07, value === 1 ? '#ffffff16' : '#ffffff90', null); }
       else if (!c.disabled) circle(ctx, cx, cy, size * .07, '#bdeac58a', null);
       return;
     }
     if (id === 'maze-path') {
-      if (value) keycap(ctx, x, y, size, '#3d6664'); else surface(ctx, x + 1, y + 1, size - 2, size - 2, '#08262caa', null, 2);
-      if (i === s.player) { circle(ctx, cx, cy, size * .27, '#8de5dc', '#f2ffeb'); circle(ctx, cx - size * .065, cy - size * .08, size * .06, '#ffffff', null); }
+      if (value) keycap(ctx, x, y, size, '#428e9a'); else surface(ctx, x + 1, y + 1, size - 2, size - 2, '#08262caa', null, 2);
+      if (i === s.player) { circle(ctx, cx, cy, size * .27, '#46e9df', '#f2ffeb'); circle(ctx, cx - size * .065, cy - size * .08, size * .06, '#ffffff', null); }
       else if (i === s.exit) lettering(ctx, '★', cx, cy, size * .7, '#ffe5a2', size - 4);
       else if (s.visited.includes(i)) circle(ctx, cx, cy, size * .055, '#8fe2cb99', null);
       return;
@@ -80,15 +86,15 @@
     if (id === 'pipe-link') {
       keycap(ctx, x, y, size, '#263b4d'); var segments = [];
       for (var d = 0; d < 4; d++) if (value & 1 << d) segments.push([[cx, cy], [cx + DIRS[d][0] * size * .5, cy + DIRS[d][1] * size * .5]]);
-      segments.forEach(function (points) { beam(ctx, points, '#091d2e', size * .28); beam(ctx, points, c.pressed ? '#9ce5de' : '#697f94', size * .16); beam(ctx, points, c.pressed ? '#e0fff7' : '#a7b6c5', Math.max(1, size * .025)); });
+      segments.forEach(function (points) { beam(ctx, points, '#091d2e', size * .28); beam(ctx, points, c.pressed ? '#9ce5de' : '#7f94be', size * .16); beam(ctx, points, c.pressed ? '#e0fff7' : '#a7b6c5', Math.max(1, size * .025)); });
       if (i === 0 || i === 24) circle(ctx, cx, cy, size * .12, i === 0 ? '#ffe39b' : '#eeb4df', '#ffffff99'); return;
     }
     if (id === 'nonogram' || id === 'word-search' || id === 'sudoku-mini') {
       var paper = id === 'sudoku-mini' && (Math.floor(Math.floor(i / 4) / 2) + Math.floor(i % 4 / 2)) % 2 ? '#d8d4e2' : material[0];
-      surface(ctx, x + 1, y + 1, size - 2, size - 2, id === 'nonogram' && value === 1 ? '#78569f' : c.pressed && id === 'word-search' ? '#c4b0db' : paper, '#32294b3a', 3);
+      surface(ctx, x + 1, y + 1, size - 2, size - 2, id === 'nonogram' && value === 1 ? '#985dcc' : c.pressed && id === 'word-search' ? '#c4b0db' : paper, '#32294b3a', 3);
       ink = id === 'nonogram' && value === 1 ? '#fff5ff' : c.text.includes('!') ? '#96354f' : accent;
       if (id === 'sudoku-mini') font = Math.min(32, size * .46);
-      if (id === 'nonogram' && value === 1) surface(ctx, x + size * .2, y + size * .2, size * .6, size * .6, '#a482c4', '#e3d3f166', 2);
+      if (id === 'nonogram' && value === 1) surface(ctx, x + size * .2, y + size * .2, size * .6, size * .6, '#cb8ce8', '#e3d3f166', 2);
       else lettering(ctx, c.text, cx, cy, font, ink, size - 7);
       if (id === 'sudoku-mini') { if (i % 4 === 1) beam(ctx, [[x + size - 1, y], [x + size - 1, y + size]], '#625276', 2); if (Math.floor(i / 4) === 1) beam(ctx, [[x, y + size - 1], [x + size, y + size - 1]], '#625276', 2); }
       return;
@@ -98,9 +104,9 @@
       if (value === 1) { beam(ctx, [[x + size * .3, y + size * .3], [x + size * .7, y + size * .7]], '#f6d48d', Math.max(3, size * .055)); beam(ctx, [[x + size * .7, y + size * .3], [x + size * .3, y + size * .7]], '#f6d48d', Math.max(3, size * .055)); }
       else if (value === 2) { ctx.beginPath(); ctx.arc(cx, cy, size * .24, 0, Math.PI * 2); ctx.lineWidth = Math.max(3, size * .055); ctx.strokeStyle = '#9ae3d1'; ctx.stroke(); } return;
     }
-    if (id === 'lights-out') { keycap(ctx, x, y, size, value ? '#8f7138' : '#1c3042', value ? '#ffe7a8' : null); circle(ctx, cx, cy, size * .23, value ? '#ffd874' : '#102438', value ? '#fff5cb' : '#687c8e'); if (value) circle(ctx, cx - size * .06, cy - size * .07, size * .06, '#fff7d9', null); return; }
+    if (id === 'lights-out') { keycap(ctx, x, y, size, value ? '#b38c46' : '#2d3f65', value ? '#ffe7a8' : null); circle(ctx, cx, cy, size * .23, value ? '#ffe082' : '#102438', value ? '#fff5cb' : '#687c8e'); if (value) circle(ctx, cx - size * .06, cy - size * .07, size * .06, '#fff7d9', null); return; }
     if (id === 'slide-tiles' && !value) { surface(ctx, x + 4, y + 4, size - 8, size - 8, '#0b1f35aa', '#b3d8f328', 8); return; }
-    if (id === 'number-order' && c.pressed) { fill = '#315d4c'; ink = '#bce7c9'; }
+    if (id === 'number-order' && c.pressed) { fill = '#22755f'; ink = '#bce7c9'; }
     keycap(ctx, x, y, size, fill, id === 'color-flood' && c.pressed ? '#ffffff99' : null);
     if (id === 'code-breaker' && i < 4) { circle(ctx, cx, cy - size * .08, size * .22, fill, '#ffffff55'); font = Math.min(23, size * .24); }
     lettering(ctx, c.text, cx, cy + (id === 'code-breaker' && i < 4 ? size * .25 : 0), font, ink, size - 7);
@@ -269,7 +275,7 @@
     if (s.board.every(function (v, i) { return v && sudokuAllowed(s.board, i, v); })) finish(s, 1200);
   }, function (s) { return desc(s, 'Điền 1–4: không trùng trong hàng, cột hoặc khối 2×2. Bấm ô để đổi ·→1→2→3→4; chuột phải xóa. Dấu ! là số xung đột.', 4, s.board.map(function (v, i) { var invalid = v && !sudokuAllowed(s.board, i, v); return cell(i, (v || '·') + (invalid ? '!' : ''), 'Hàng ' + (Math.floor(i / 4) + 1) + ', cột ' + (i % 4 + 1) + ': ' + (v || 'trống') + (s.givens[i] ? ', số cho sẵn' : invalid ? ', xung đột' : ', có thể sửa'), s.givens[i] || s.status !== 'playing', s.givens[i]); })); });
 
-  var COLORS = ['Tím', 'Lam', 'Lục', 'Vàng', 'Hồng'], PALETTE = ['#6d3f99', '#2256a0', '#176c59', '#d5ab37', '#ad3976', '#b75c25'];
+  var COLORS = ['Tím', 'Lam', 'Lục', 'Vàng', 'Hồng'], PALETTE = ['#8b5ed1', '#3476c8', '#208563', '#ffd166', '#b94386', '#d56c41'];
   function floodRegion(board) { var found = new Set([0]), pending = [0], color = board[0]; while (pending.length) { var i = pending.pop(); DIRS.forEach(function (_, d) { var n = neighbor(i, d, 8, 8); if (n >= 0 && !found.has(n) && board[n] === color) { found.add(n); pending.push(n); } }); } return Array.from(found); }
   function floodApply(board, color) { floodRegion(board).forEach(function (i) { board[i] = color; }); }
   attach('color-flood', function (s) {
@@ -278,7 +284,7 @@
   }, function (s, a, before) {
     if (a.type !== 'cell' || !indexOK(a.index, 64)) return; var color = s.board[a.index]; if (color === s.board[0]) return; remember(s, before); s.selected = a.index; floodApply(s.board, color); s.moves++; s.score = floodRegion(s.board).length * 10;
     if (floodRegion(s.board).length === 64) finish(s, 1000 + Math.max(0, s.limit - s.moves) * 20); else if (s.moves >= s.limit) s.status = 'lost';
-  }, function (s) { var region = floodRegion(s.board); return desc(s, 'Từ góc trên trái, chọn màu bất kỳ trên bàn để lan vùng liên thông. Màu: 1 Tím, 2 Lam, 3 Lục, 4 Vàng, 5 Hồng. Phủ một màu toàn bàn trong ' + s.limit + ' lượt. Đã dùng ' + s.moves + '; vùng hiện tại ' + region.length + '/64 ô.', 8, s.board.map(function (v, i) { return Object.assign(cell(i, v + 1, 'Ô ' + (i + 1) + ', màu ' + COLORS[v] + ', ký hiệu ' + (v + 1) + (region.includes(i) ? ', thuộc vùng đã phủ' : ''), s.status !== 'playing', region.includes(i)), { color: v === 3 ? '#111827' : '#ffffff', background: PALETTE[v] }); })); });
+  }, function (s) { var region = floodRegion(s.board); return desc(s, 'Từ góc trên trái, chọn màu bất kỳ trên bàn để lan vùng liên thông. Màu: 1 Tím, 2 Lam, 3 Lục, 4 Vàng, 5 Hồng. Phủ một màu toàn bàn trong ' + s.limit + ' lượt. Đã dùng ' + s.moves + '; vùng hiện tại ' + region.length + '/64 ô.', 8, s.board.map(function (v, i) { return Object.assign(cell(i, v + 1, 'Ô ' + (i + 1) + ', màu ' + COLORS[v] + ', ký hiệu ' + (v + 1) + (region.includes(i) ? ', thuộc vùng đã phủ' : ''), s.status !== 'playing', region.includes(i)), { color: v === 3 || v === 5 ? '#111827' : '#ffffff', background: PALETTE[v] }); })); });
 
   function rotate(mask) { return (mask << 1 & 15) | (mask >> 3 & 1); }
   function connectedPipes(board) { var found = new Set([0]), queue = [0]; while (queue.length) { var i = queue.pop(); for (var d = 0; d < 4; d++) if (board[i] & 1 << d) { var n = neighbor(i, d, 5, 5); if (n >= 0 && board[n] & 1 << (d + 2) % 4 && !found.has(n)) { found.add(n); queue.push(n); } } } return Array.from(found); }
@@ -301,7 +307,7 @@
     if (a.index === 5) { s.guess = [0, 0, 0, 0]; return; }
     remember(s, before); var feedback = codeFeedback(s.secret, s.guess); s.attempts.push({ guess: s.guess.slice(), exact: feedback.exact, near: feedback.near }); s.moves++;
     if (feedback.exact === 4) finish(s, (9 - s.attempts.length) * 150); else if (s.attempts.length >= s.limit) { s.status = 'lost'; s.message = 'Mật mã là ' + s.secret.map(function (n) { return CODE_NAMES[n]; }).join(' / ') + '.'; }
-  }, function (s) { return desc(s, 'Đoán 4 màu trong 8 lượt, màu được phép lặp. Bấm từng vị trí để đổi qua 6 màu, rồi Chốt. Đúng = đúng màu và vị trí; lệch = đúng màu sai vị trí, không đếm trùng. ' + s.attempts.map(function (a, i) { return 'Lượt ' + (i + 1) + ': ' + a.guess.map(function (n) { return CODE_NAMES[n]; }).join('-') + ' → ' + a.exact + ' đúng, ' + a.near + ' lệch'; }).join('; '), 4, s.guess.map(function (v, i) { return Object.assign(cell(i, CODE_NAMES[v], 'Vị trí ' + (i + 1) + ': ' + CODE_NAMES[v] + ', bấm để đổi màu', s.status !== 'playing', false), { color: v === 3 ? '#111827' : '#ffffff', background: PALETTE[v] }); }).concat([cell(4, 'Chốt', 'Chốt lần đoán, còn ' + (8 - s.attempts.length) + ' lượt', s.status !== 'playing', false), cell(5, 'Xóa', 'Đặt bốn vị trí về màu Tím', s.status !== 'playing', false)])); });
+  }, function (s) { return desc(s, 'Đoán 4 màu trong 8 lượt, màu được phép lặp. Bấm từng vị trí để đổi qua 6 màu, rồi Chốt. Đúng = đúng màu và vị trí; lệch = đúng màu sai vị trí, không đếm trùng. ' + s.attempts.map(function (a, i) { return 'Lượt ' + (i + 1) + ': ' + a.guess.map(function (n) { return CODE_NAMES[n]; }).join('-') + ' → ' + a.exact + ' đúng, ' + a.near + ' lệch'; }).join('; '), 4, s.guess.map(function (v, i) { return Object.assign(cell(i, CODE_NAMES[v], 'Vị trí ' + (i + 1) + ': ' + CODE_NAMES[v] + ', bấm để đổi màu', s.status !== 'playing', false), { color: v === 3 || v === 5 ? '#111827' : '#ffffff', background: PALETTE[v] }); }).concat([cell(4, 'Chốt', 'Chốt lần đoán, còn ' + (8 - s.attempts.length) + ' lượt', s.status !== 'playing', false), cell(5, 'Xóa', 'Đặt bốn vị trí về màu Tím', s.status !== 'playing', false)])); });
 
   function knightLegal(from, to) { var dx = Math.abs(from % 5 - to % 5), dy = Math.abs(Math.floor(from / 5) - Math.floor(to / 5)); return dx * dy === 2; }
   attach('knights-tour', function (s) {

@@ -48,7 +48,8 @@
     ctx.beginPath();
     if (typeof ctx.roundRect === 'function') ctx.roundRect(x + inset, y + inset, width - inset * 2, height - inset * 2, radius);
     else ctx.rect(x + inset, y + inset, width - inset * 2, height - inset * 2);
-    ctx.fillStyle = color; ctx.fill(); ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+    var bevel=ctx.createLinearGradient(x,y,x+width,y+height);bevel.addColorStop(0,color);bevel.addColorStop(.68,color);bevel.addColorStop(1,'#28305a');
+    ctx.fillStyle=bevel;ctx.fill();ctx.shadowBlur=0; ctx.shadowOffsetY = 0;
     ctx.strokeStyle = '#ffffff30'; ctx.lineWidth = 1; ctx.stroke();
     ctx.beginPath(); ctx.moveTo(x + inset + radius, y + inset + 2); ctx.lineTo(x + width - inset - radius, y + inset + 2); ctx.strokeStyle = '#ffffff38'; ctx.stroke();
     ctx.restore();
@@ -125,7 +126,7 @@
     },
     describe: function (state) {
       var message = state.status === 'won' ? 'Đã ghép được 2048! Bạn có thể tiếp tục hoặc hoàn tác.' : state.status === 'lost' ? 'Hết nước đi. Hoàn tác để thử hướng khác hoặc chơi lại.' : 'Dùng bốn phím mũi tên hoặc nút hướng để ghép các ô cùng số. Mỗi ô chỉ ghép một lần trong một lượt.';
-      return { summary: message + ' Điểm ' + state.score + ', ' + state.moves + ' lượt. Mục tiêu 2048.', columns: 4, cells: state.board.map(function (value, index) { return { index: index, label: value ? String(value) : 'Trống', disabled: true, pressed: false }; }) };
+      return { summary: message + ' Điểm ' + state.score + ', ' + state.moves + ' lượt. Mục tiêu 2048.', columns: 4, cells: state.board.map(function (value, index) { return { index: index, text: value ? String(value) : '', label: value ? String(value) : 'Trống', disabled: true, pressed: false }; }) };
     },
     draw: function (ctx, state, options) {
       options = options || {}; var width = options.width || 720, height = options.height || 480;
@@ -133,7 +134,7 @@
       state.board.forEach(function (value, index) {
         var x = layout.x + index % 4 * layout.size, y = layout.y + Math.floor(index / 4) * layout.size;
         var hue = value ? (Math.log2(value) * 29 + 155) % 360 : 230;
-        tile(ctx, x, y, layout.size, layout.size, value ? 'hsl(' + hue + ', 62%, 36%)' : '#19223f');
+        tile(ctx, x, y, layout.size, layout.size, value ? 'hsl(' + hue + ', 78%, 47%)' : '#19223f');
         if (value) { ctx.save(); ctx.shadowColor = '#050817'; ctx.shadowBlur = 2; ctx.shadowOffsetY = 2; text(ctx, value, x + layout.size / 2, y + layout.size / 2, Math.max(14, layout.size * (value >= 1000 ? 0.27 : 0.36))); ctx.restore(); }
       }); ctx.restore();
     }
@@ -209,7 +210,7 @@
       ctx.save(); background(ctx, width, height, options, state); var layout = boardLayout(width, height, state.columns, state.rows);
       state.board.forEach(function (cell, index) {
         var x = layout.x + index % state.columns * layout.size, y = layout.y + Math.floor(index / state.columns) * layout.size;
-        tile(ctx, x, y, layout.size, layout.size, cell.revealed ? cell.mine ? '#82364c' : '#142d32' : '#34466b');
+        tile(ctx, x, y, layout.size, layout.size, cell.revealed ? cell.mine ? '#a83d67' : '#214658' : '#5f69b3');
         if (!cell.revealed && !cell.flagged) { ctx.beginPath(); ctx.moveTo(x + layout.size * .5, y + layout.size * .34); ctx.lineTo(x + layout.size * .65, y + layout.size * .5); ctx.lineTo(x + layout.size * .5, y + layout.size * .66); ctx.lineTo(x + layout.size * .35, y + layout.size * .5); ctx.closePath(); ctx.strokeStyle = '#bcdcff24'; ctx.lineWidth = 1; ctx.stroke(); }
         if (cell.flagged || cell.revealed && (cell.mine || cell.adjacent)) text(ctx, cell.flagged ? '⚑' : cell.mine ? '✹' : cell.adjacent, x + layout.size / 2, y + layout.size / 2, Math.max(12, layout.size * 0.5), cell.flagged ? '#ffda7a' : cell.adjacent > 2 ? '#f4bdcf' : '#b3f2ef');
         if (index === state.selected && state.status === 'playing') { ctx.strokeStyle = '#f8d87a'; ctx.lineWidth = 2; ctx.strokeRect(x + 3, y + 3, layout.size - 6, layout.size - 6); }
@@ -265,7 +266,7 @@
       ctx.save(); background(ctx, width, height, options, state); var layout = boardLayout(width, height, state.columns, Math.ceil(state.board.length / state.columns));
       state.board.forEach(function (card, index) {
         var open = card.matched || state.open.indexOf(index) !== -1, x = layout.x + index % state.columns * layout.size, y = layout.y + Math.floor(index / state.columns) * layout.size;
-        tile(ctx, x, y, layout.size, layout.size, card.matched ? '#23635e' : open ? '#604885' : '#263555');
+        tile(ctx, x, y, layout.size, layout.size, card.matched ? '#2e9285' : open ? '#b17aca' : '#6b59a5');
         if (!open) {
           ctx.beginPath(); ctx.arc(x + layout.size / 2, y + layout.size / 2, layout.size * .27, 0, Math.PI * 2); ctx.strokeStyle = '#c4b1ef45'; ctx.lineWidth = 1; ctx.stroke();
           ctx.beginPath(); ctx.moveTo(x + layout.size * .5, y + layout.size * .18); ctx.lineTo(x + layout.size * .82, y + layout.size * .5); ctx.lineTo(x + layout.size * .5, y + layout.size * .82); ctx.lineTo(x + layout.size * .18, y + layout.size * .5); ctx.closePath(); ctx.strokeStyle = '#85d7ef45'; ctx.stroke();

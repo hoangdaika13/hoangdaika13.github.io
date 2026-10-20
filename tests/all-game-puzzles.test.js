@@ -203,7 +203,7 @@ test('memory invalid actions cannot uncover cards or advance the clock', () => {
 });
 
 test('every engine step and canvas draw preserve deeply frozen input state', () => {
-  const ctx = new Proxy({}, { get: (target, key) => key in target ? target[key] : () => {}, set: (target, key, value) => { target[key] = value; return true; } });
+  const ctx = new Proxy({ createLinearGradient: () => ({ addColorStop() {} }), createRadialGradient: () => ({ addColorStop() {} }) }, { get: (target, key) => key in target ? target[key] : () => {}, set: (target, key, value) => { target[key] = value; return true; } });
   for (const engine of Object.values(games)) {
     const state = freeze(engine.create({ seed: 'immutable' })), snapshot = JSON.stringify(state);
     for (const action of [{ type: 'left' }, { type: 'right' }, { type: 'up' }, { type: 'down' }, { type: 'action' }, { type: 'cell', index: 4 }, { type: 'cell', index: 4, alternate: true }, { type: 'tick', held: {} }, { type: 'undo' }, { type: 'continue' }]) {
@@ -217,7 +217,7 @@ test('every engine step and canvas draw preserve deeply frozen input state', () 
 test('three puzzle renderers paint the shared individual scene once without covering it', () => {
   for (const engine of Object.values(games)) {
     const state = freeze(engine.create({ seed: 'materials' })), before = JSON.stringify(state), calls = [];
-    const ctx = new Proxy({}, { get: (target, name) => name in target ? target[name] : (...args) => calls.push({ name, args }), set: (target, name, value) => (target[name] = value, true) });
+    const ctx = new Proxy({ createLinearGradient: () => ({ addColorStop() {} }), createRadialGradient: () => ({ addColorStop() {} }) }, { get: (target, name) => name in target ? target[name] : (...args) => calls.push({ name, args }), set: (target, name, value) => (target[name] = value, true) });
     let painted = 0;
     engine.draw(ctx, state, { width: 375, height: 480, reducedMotion: true, paintScene: (context, id, source) => { painted++; assert.equal(context, ctx); assert.equal(id, engine.id); assert.equal(source, state); context.fillRect(0, 0, 375, 480); } });
     assert.equal(painted, 1); assert.equal(JSON.stringify(state), before);

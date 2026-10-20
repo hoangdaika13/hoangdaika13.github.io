@@ -128,7 +128,7 @@
   function snakeDraw(ctx, state, options = {}) {
     background(ctx, options, '#13293c', state);
     grid(ctx, 24, 0.12);
-    ctx.strokeStyle = '#51768c';
+    ctx.strokeStyle = '#62b8ad';
     ctx.lineWidth = 2;
     rounded(ctx, 23, 23, 674, 434, 8);
     ctx.stroke();
@@ -136,7 +136,7 @@
       const x = 36 + state.food.x * 24;
       const y = 36 + state.food.y * 24;
       const apple = ctx.createRadialGradient(x - 3, y - 4, 1, x, y, 10);
-      apple.addColorStop(0, '#ffe7c1'); apple.addColorStop(0.3, '#f17b70'); apple.addColorStop(1, '#a83c57');
+      apple.addColorStop(0, '#fff2be'); apple.addColorStop(0.3, '#ff806f'); apple.addColorStop(1, '#c94175');
       ctx.fillStyle = apple;
       ctx.shadowColor = '#f55291';
       ctx.shadowBlur = options.reducedMotion ? 0 : 16;
@@ -148,15 +148,15 @@
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(x, y - 8); ctx.quadraticCurveTo(x + 4, y - 14, x + 8, y - 12); ctx.stroke();
-      ctx.fillStyle = '#a9d783'; ctx.beginPath(); ctx.ellipse(x + 6, y - 10, 4.5, 2.2, -0.6, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#79f3a1'; ctx.beginPath(); ctx.ellipse(x + 6, y - 10, 4.5, 2.2, -0.6, 0, Math.PI * 2); ctx.fill();
     }
-    ctx.lineWidth = 19; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#286e58';
+    ctx.lineWidth = 19; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#167f67';
     ctx.beginPath(); state.body.forEach((part, index) => { const x = 36 + part.x * 24, y = 36 + part.y * 24; if (!index) ctx.moveTo(x, y); else ctx.lineTo(x, y); }); ctx.stroke();
     state.body.slice().reverse().forEach((part, reverseIndex) => {
       const index = state.body.length - reverseIndex - 1;
       const x = 36 + part.x * 24, y = 36 + part.y * 24;
       const skin = ctx.createRadialGradient(x - 3, y - 5, 1, x, y, 13);
-      skin.addColorStop(0, index === 0 ? '#d8f4a4' : '#92ce90'); skin.addColorStop(0.55, index === 0 ? '#7bbd8b' : '#5eac83'); skin.addColorStop(1, '#276755');
+      skin.addColorStop(0, index === 0 ? '#c0ffd6' : '#7bf3af'); skin.addColorStop(0.55, index === 0 ? '#51e6a2' : '#2dc596'); skin.addColorStop(1, '#127169');
       ctx.fillStyle = skin;
       rounded(ctx, 26 + part.x * 24, 26 + part.y * 24, 20, 20, 8);
       ctx.fill();
@@ -184,7 +184,7 @@
   // Breakout: bounded substeps keep a fast ball from tunneling through the bricks.
   function breakoutBricks(level) {
     const result = [];
-    const colors = ['#ec8aad', '#b2a0ff', '#72c7f2', '#71e4bc', '#f2cf7d'];
+    const colors = ['#ff78b2', '#a684ff', '#25d9f8', '#63edb1', '#ffd166'];
     for (let row = 0; row < level + 2; row += 1) {
       for (let col = 0; col < 10; col += 1) {
         result.push({ id: row * 10 + col, x: 36 + col * 65.4, y: 48 + row * 27, w: 59.4, h: 20, hp: level >= 2 && row === 0 ? 2 : 1, color: colors[row] });
@@ -298,13 +298,13 @@
   function breakoutDraw(ctx, state, options = {}) {
     background(ctx, options, '#271e47', state);
     grid(ctx, 48, 0.07);
-    ctx.strokeStyle = '#51576e';
+    ctx.strokeStyle = '#8b9de0';
     ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(12, 464); ctx.lineTo(12, 16); ctx.lineTo(708, 16); ctx.lineTo(708, 464); ctx.stroke();
     state.bricks.forEach((brick) => {
       ctx.fillStyle = 'rgba(1,6,15,.6)'; rounded(ctx, brick.x + 2, brick.y + 4, brick.w, brick.h, 5); ctx.fill();
       const material = ctx.createLinearGradient(brick.x, brick.y, brick.x, brick.y + brick.h);
-      material.addColorStop(0, '#f5e7e6'); material.addColorStop(0.18, brick.color); material.addColorStop(1, '#394d72');
+      material.addColorStop(0, '#fff1f8'); material.addColorStop(0.18, brick.color); material.addColorStop(1, '#39447e');
       ctx.fillStyle = material;
       rounded(ctx, brick.x, brick.y, brick.w, brick.h, 5);
       ctx.fill();
@@ -318,7 +318,7 @@
       }
     });
     const paddle = state.paddle;
-    ctx.fillStyle = '#8cf8e2';
+    ctx.fillStyle = '#89ffe4';
     ctx.shadowColor = '#41edce';
     ctx.shadowBlur = options.reducedMotion ? 0 : 14;
     rounded(ctx, paddle.x, paddle.y, paddle.w, paddle.h, 7); ctx.fill();
@@ -483,7 +483,7 @@
       ctx.save();
       ctx.translate(enemy.x, enemy.y);
       const hull = ctx.createLinearGradient(-52, -25, 52, 25);
-      hull.addColorStop(0, boss ? '#d6c7e9' : '#f1d2b0'); hull.addColorStop(0.4, boss ? '#8a81ac' : enemy.kind === 'kite' ? '#bc8298' : '#b7a07a'); hull.addColorStop(1, '#3e4565');
+      hull.addColorStop(0, boss ? '#efceff' : '#ffd6a3'); hull.addColorStop(0.4, boss ? '#9b75de' : enemy.kind === 'kite' ? '#e965a3' : '#e5a66c'); hull.addColorStop(1, '#4c397a');
       ctx.fillStyle = hull;
       ctx.strokeStyle = '#f3e9ff';
       ctx.lineWidth = 1.5;
@@ -493,13 +493,13 @@
       ctx.closePath(); ctx.fill(); ctx.stroke();
       ctx.strokeStyle = 'rgba(30,40,65,.8)'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(-enemy.r, -6); ctx.lineTo(-8, 7); ctx.lineTo(8, 7); ctx.lineTo(enemy.r, -6); ctx.stroke();
-      const cockpit = ctx.createRadialGradient(-3, -2, 1, 0, 1, boss ? 18 : 8); cockpit.addColorStop(0, '#d5f6fb'); cockpit.addColorStop(0.3, '#6aafc5'); cockpit.addColorStop(1, '#163147'); ctx.fillStyle = cockpit;
+      const cockpit = ctx.createRadialGradient(-3, -2, 1, 0, 1, boss ? 18 : 8); cockpit.addColorStop(0, '#d5f6fb'); cockpit.addColorStop(0.3, '#32bbec'); cockpit.addColorStop(1, '#163147'); ctx.fillStyle = cockpit;
       ctx.beginPath(); ctx.ellipse(0, 1, boss ? 17 : 6, boss ? 9 : 4, 0, 0, Math.PI * 2); ctx.fill();
-      [-1, 1].forEach((side) => { ctx.fillStyle = '#eaba96'; rounded(ctx, side * (boss ? 32 : 13) - 3, boss ? 8 : -10, 6, boss ? 10 : 5, 2); ctx.fill(); });
-      if (boss) { ctx.strokeStyle = '#c1c1d5'; ctx.beginPath(); ctx.moveTo(-31, -10); ctx.lineTo(-20, 4); ctx.moveTo(31, -10); ctx.lineTo(20, 4); ctx.stroke(); }
+      [-1, 1].forEach((side) => { ctx.fillStyle = '#ffbf79'; rounded(ctx, side * (boss ? 32 : 13) - 3, boss ? 8 : -10, 6, boss ? 10 : 5, 2); ctx.fill(); });
+      if (boss) { ctx.strokeStyle = '#d4b4ff'; ctx.beginPath(); ctx.moveTo(-31, -10); ctx.lineTo(-20, 4); ctx.moveTo(31, -10); ctx.lineTo(20, 4); ctx.stroke(); }
       if (enemy.hp < enemy.maxHp || boss) {
         ctx.fillStyle = '#253049'; ctx.fillRect(-enemy.r, -enemy.r - 12, enemy.r * 2, 4);
-        ctx.fillStyle = '#a3f5ed'; ctx.fillRect(-enemy.r, -enemy.r - 12, enemy.r * 2 * enemy.hp / enemy.maxHp, 4);
+        ctx.fillStyle = '#70ffdc'; ctx.fillRect(-enemy.r, -enemy.r - 12, enemy.r * 2 * enemy.hp / enemy.maxHp, 4);
       }
       ctx.restore();
     });
@@ -513,7 +513,7 @@
       ctx.strokeStyle = '#b3f9ff'; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.arc(0, 0, 25, 0, Math.PI * 2); ctx.stroke();
     }
-    const playerHull = ctx.createLinearGradient(-22, -20, 22, 20); playerHull.addColorStop(0, '#e0eced'); playerHull.addColorStop(0.45, '#89b8b5'); playerHull.addColorStop(1, '#365c74');
+    const playerHull = ctx.createLinearGradient(-22, -20, 22, 20); playerHull.addColorStop(0, '#e0eced'); playerHull.addColorStop(0.45, '#53d7dd'); playerHull.addColorStop(1, '#2d518a');
     ctx.fillStyle = playerHull; ctx.strokeStyle = '#e1fffa'; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(0, -23); ctx.lineTo(12, -1); ctx.lineTo(21, 15); ctx.lineTo(7, 11); ctx.lineTo(0, 16); ctx.lineTo(-7, 11); ctx.lineTo(-21, 15); ctx.lineTo(-12, -1); ctx.closePath(); ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#28465f';

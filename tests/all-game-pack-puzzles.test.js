@@ -29,7 +29,7 @@ for (const [id, engine] of Object.entries(games)) {
       const next = engine.step(state, action, .05); assert.notEqual(next, state); assert.equal(JSON.stringify(state), json);
       assert.deepEqual(engine.step(next, { type: 'reset-level' }), state);
     }
-    const ctx = new Proxy({}, { get: (t, p) => p in t ? t[p] : () => {}, set: (t, p, v) => (t[p] = v, true) });
+    const ctx = new Proxy({ createLinearGradient: () => ({ addColorStop() {} }), createRadialGradient: () => ({ addColorStop() {} }) }, { get: (t, p) => p in t ? t[p] : () => {}, set: (t, p, v) => (t[p] = v, true) });
     engine.draw(ctx, state, { width: 375, height: 480, reducedMotion: true }); assert.equal(JSON.stringify(state), json);
   });
 }
@@ -200,7 +200,7 @@ test('17 scene-aware material renderers invoke background once, retain standalon
   const renderSignatures = new Set();
   for (const engine of Object.values(games)) {
     const state = freeze(engine.create({ seed: 'art-direction' })), before = JSON.stringify(state), calls = [];
-    const ctx = new Proxy({}, { get: (target, name) => name in target ? target[name] : (...args) => calls.push([name, args, target.fillStyle, target.strokeStyle]), set: (target, name, value) => (target[name] = value, true) });
+    const ctx = new Proxy({ createLinearGradient: () => ({ addColorStop() {} }), createRadialGradient: () => ({ addColorStop() {} }) }, { get: (target, name) => name in target ? target[name] : (...args) => calls.push([name, args, target.fillStyle, target.strokeStyle]), set: (target, name, value) => (target[name] = value, true) });
     let painted = 0;
     engine.draw(ctx, state, { width: 375, height: 480, reducedMotion: true, paintScene: (context, id, source) => { painted++; assert.equal(context, ctx); assert.equal(id, engine.id); assert.equal(source, state); context.fillRect(0, 0, 375, 480); } });
     assert.equal(painted, 1); assert.equal(JSON.stringify(state), before);

@@ -290,7 +290,7 @@
       styles: ["cosmic-observatory.css?v=4", "cosmic-solar-system-3d.css?v=3"],
       scripts: ["vendor/astronomy-engine-2.1.19.min.js?v=1", "cosmic-solar-system-3d.js?v=3", "cosmic-observatory.js?v=5"]
     },
-    "all-game": { styles: ["all-game.css?v=1"], scripts: ["all-game-scenes.js?v=1", "all-game.js?v=1"] },
+    "all-game": { styles: ["all-game.css?v=2"], scripts: ["all-game-scenes.js?v=2", "all-game.js?v=2"] },
     play: {
       styles: ["hh-play.css?v=8&build=4"],
       scripts: ["hh-play.js?v=7&build=4"]

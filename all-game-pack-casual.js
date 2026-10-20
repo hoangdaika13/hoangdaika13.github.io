@@ -9,7 +9,7 @@
   const clone = state => JSON.parse(JSON.stringify(state));
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const inputOf = input => typeof input === 'string' ? { type: input } : (input || { type: 'tick' });
-  const COLORS = ['#65deef', '#bd8aff', '#ff90bc', '#ffe088'];
+  const COLORS = ['#25d9f8', '#b18aff', '#ff88bb', '#ffd166'];
   const COLOR_NAMES = ['Xanh ngọc', 'Tím', 'Hồng', 'Vàng'];
   const CANVAS_CUES = new Set(['rhythm-tap', 'color-word', 'lock-timing', 'stack-tower', 'constellation-trace', 'pixel-painter', 'garden-care', 'cafe-orders']);
   function seedValue(seed) { let value = 2166136261; for (const char of String(seed === undefined ? 'hh-casual' : seed)) value = Math.imul(value ^ char.charCodeAt(0), 16777619) >>> 0; return value || 1; }
@@ -69,7 +69,7 @@
     init(state) { state.period = 2 / 3; state.beat = 1; state.nextBeat = 1; state.hits = 0; state.mistakes = 0; state.message = 'Chạm khi con trỏ tới vạch giữa, sai số tối đa 0,17 giây.'; },
     tick(state) { if (state.elapsed > state.nextBeat + .17) { state.message = 'Bỏ lỡ một nhịp.'; rhythmAdvance(state); } },
     action(state, action) { if (!isTap(action)) return; if (Math.abs(state.elapsed - state.nextBeat) <= .17) { state.hits++; state.score += 100; state.message = 'Đúng nhịp!'; rhythmAdvance(state); } else { mistake(state, 4, 'Chạm ngoài cửa sổ nhịp.'); } },
-    describe(state) { return { summary: 'Nhịp sao 90 BPM: nhịp ' + Math.min(12, state.beat) + '/12, đúng ' + state.hits + ', chạm lệch ' + state.mistakes + '/4.', columns: 1, cells: [cell(0, 'CHẠM NHỊP', 'Chạm theo nhịp, mục tiêu ít nhất 9 trên 12', state.status !== 'playing', false, '#bd8aff')] }; }
+    describe(state) { return { summary: 'Nhịp sao 90 BPM: nhịp ' + Math.min(12, state.beat) + '/12, đúng ' + state.hits + ', chạm lệch ' + state.mistakes + '/4.', columns: 1, cells: [cell(0, 'CHẠM NHỊP', 'Chạm theo nhịp, mục tiêu ít nhất 9 trên 12', state.status !== 'playing', false, '#b18aff')] }; }
   });
 
   function newWhack(state) { const previous = state.target; do { state.target = integer(state, 9); } while (state.target === previous); state.targetTime = Math.max(.6, 1.2 - state.hits * .035); }
@@ -78,7 +78,7 @@
     init(state) { state.hits = 0; state.mistakes = 0; state.target = -1; newWhack(state); state.message = 'Chọn đúng quả cầu trước khi nó biến mất; cần 12 lần trúng.'; },
     tick(state, dt) { state.targetTime -= dt; if (state.targetTime <= 0) { mistake(state, 4, 'Quả cầu đã biến mất.'); if (state.status === 'playing') newWhack(state); } },
     action(state, action) { if (action.type !== 'cell' || !Number.isInteger(action.index) || action.index < 0 || action.index >= 9) return; if (action.index !== state.target) { mistake(state, 4, 'Bạn chọn ô trống.'); return; } state.hits++; state.score += 50; state.message = 'Bắt trúng quả cầu!'; if (state.hits === 12) finish(state, 'Đã bắt đủ 12 quả cầu chuyển động!'); else newWhack(state); },
-    describe(state) { return { summary: 'Bắt quả cầu: ' + state.hits + '/12, lỗi ' + state.mistakes + '/4.', columns: 3, cells: Array.from({ length: 9 }, (_, i) => cell(i, i === state.target ? '●' : '·', 'Ô ' + (i + 1) + (i === state.target ? ', có quả cầu' : ', trống'), state.status !== 'playing', i === state.target, '#ff90bc')) }; }
+    describe(state) { return { summary: 'Bắt quả cầu: ' + state.hits + '/12, lỗi ' + state.mistakes + '/4.', columns: 3, cells: Array.from({ length: 9 }, (_, i) => cell(i, i === state.target ? '●' : '·', 'Ô ' + (i + 1) + (i === state.target ? ', có quả cầu' : ', trống'), state.status !== 'playing', i === state.target, '#ff88bb')) }; }
   });
 
   function nextAim(state) { const before = state.target; do { state.target = integer(state, 20); } while (state.target === before); }
@@ -86,7 +86,7 @@
     id: 'aim-trainer', duration: 25,
     init(state) { state.hits = 0; state.mistakes = 0; state.target = -1; nextAim(state); state.message = 'Chọn tâm mục tiêu nhỏ; hoàn thành 15 mục tiêu trong 25 giây.'; },
     action(state, action) { if (action.type !== 'cell' || !Number.isInteger(action.index) || action.index < 0 || action.index >= 20) return; if (action.index !== state.target) { mistake(state, 8, 'Chưa trúng ô mục tiêu.'); return; } state.hits++; state.score += 100; if (state.hits === 15) finish(state, 'Đã nhắm trúng đủ 15 mục tiêu!'); else { nextAim(state); state.message = 'Trúng tâm. Mục tiêu đã chuyển vị trí.'; } },
-    describe(state) { return { summary: 'Nhắm sao: ' + state.hits + '/15, trượt ' + state.mistakes + '/8.', columns: 5, cells: Array.from({ length: 20 }, (_, i) => cell(i, i === state.target ? '⊙' : '·', 'Vị trí ' + (i + 1) + (i === state.target ? ', tâm mục tiêu' : ', không có mục tiêu'), state.status !== 'playing', i === state.target, '#65deef')) }; }
+    describe(state) { return { summary: 'Nhắm sao: ' + state.hits + '/15, trượt ' + state.mistakes + '/8.', columns: 5, cells: Array.from({ length: 20 }, (_, i) => cell(i, i === state.target ? '⊙' : '·', 'Vị trí ' + (i + 1) + (i === state.target ? ', tâm mục tiêu' : ', không có mục tiêu'), state.status !== 'playing', i === state.target, '#25d9f8')) }; }
   });
 
   function nextMath(state) {
@@ -129,7 +129,7 @@
       if (action.type === 'cell' && Number.isInteger(action.index) && action.index >= 0 && action.index < 16) { const selected = state.selected.indexOf(action.index); if (selected >= 0) state.selected.splice(selected, 1); else state.selected.push(action.index); }
       if (action.type === 'action' || (action.type === 'cell' && action.index === 16)) { const correct = state.selected.length === state.pattern.length && state.pattern.every(index => state.selected.includes(index)); if (!correct) lose(state, 'Mẫu được chọn chưa khớp với mẫu đã trình chiếu.'); else { state.score += state.pattern.length * 50; if (state.round === 3) finish(state, 'Đã tái tạo chính xác 3 mẫu sao!'); else { state.round++; state.level = state.round; newPattern(state); state.message = 'Đúng mẫu! Quan sát mẫu tiếp theo.'; } } }
     },
-    describe(state) { return { summary: 'Nhớ mẫu: vòng ' + state.round + '/3, ' + state.pattern.length + ' ô. ' + (state.phase === 'show' ? 'Đang trình chiếu.' : 'Đã chọn ' + state.selected.length + ' ô. Chọn Kiểm tra hoặc Hành động để nộp mẫu.'), columns: 4, cells: [...Array.from({ length: 16 }, (_, i) => { const lit = state.phase === 'show' ? state.pattern.includes(i) : state.selected.includes(i); return { ...cell(i, lit ? '●' : '·', 'Ô ' + (i + 1) + (lit ? ', sáng' : ', tắt'), state.phase === 'show' || state.status !== 'playing', lit, lit ? '#0b1025' : '#85e8c3'), background: lit ? '#85e8c3' : '#15213a' }; }), cell(16, 'Kiểm tra', 'Kiểm tra mẫu đã chọn', state.phase === 'show' || state.status !== 'playing', false, '#ffe088')] }; }
+    describe(state) { return { summary: 'Nhớ mẫu: vòng ' + state.round + '/3, ' + state.pattern.length + ' ô. ' + (state.phase === 'show' ? 'Đang trình chiếu.' : 'Đã chọn ' + state.selected.length + ' ô. Chọn Kiểm tra hoặc Hành động để nộp mẫu.'), columns: 4, cells: [...Array.from({ length: 16 }, (_, i) => { const lit = state.phase === 'show' ? state.pattern.includes(i) : state.selected.includes(i); return { ...cell(i, lit ? '●' : '·', 'Ô ' + (i + 1) + (lit ? ', sáng' : ', tắt'), state.phase === 'show' || state.status !== 'playing', lit, lit ? '#0b1025' : '#85e8c3'), background: lit ? '#85e8c3' : '#15213a' }; }), cell(16, 'Kiểm tra', 'Kiểm tra mẫu đã chọn', state.phase === 'show' || state.status !== 'playing', false, '#ffd166')] }; }
   });
 
   function neighbors(index, width, count) { return [index - width, index + width, index % width ? index - 1 : -1, index % width < width - 1 ? index + 1 : -1].filter(i => i >= 0 && i < count); }
@@ -150,7 +150,7 @@
       else if (index === 35 && state.collected.length === 3) { state.score += state.maxMoves - state.moves; finish(state, 'Đã mang đủ 3 kho báu về cổng!'); }
       else if (state.moves >= state.maxMoves) lose(state, 'Đã hết giới hạn ' + state.maxMoves + ' bước.');
     },
-    describe(state) { return { summary: 'Bản đồ kho báu: ' + state.collected.length + '/3 kho báu, ' + state.lives + ' lá chắn, ' + state.moves + '/' + state.maxMoves + ' bước.', columns: 6, cells: Array.from({ length: 36 }, (_, index) => { const known = state.revealed.includes(index); const label = index === state.player ? 'bạn đang ở đây' : index === 35 ? 'cổng về' : known && state.traps.includes(index) ? 'hố đã khám phá' : known && state.treasures.includes(index) ? 'kho báu đã lấy' : known ? 'đã khám phá' : 'chưa khám phá'; return cell(index, index === state.player ? '●' : index === 35 ? '⌂' : known && state.traps.includes(index) ? '×' : known && state.treasures.includes(index) ? '◆' : known ? '·' : '?', 'Ô ' + (index + 1) + ', ' + label, state.status !== 'playing' || !neighbors(state.player, 6, 36).includes(index), index === state.player, '#ffe088'); }) }; }
+    describe(state) { return { summary: 'Bản đồ kho báu: ' + state.collected.length + '/3 kho báu, ' + state.lives + ' lá chắn, ' + state.moves + '/' + state.maxMoves + ' bước.', columns: 6, cells: Array.from({ length: 36 }, (_, index) => { const known = state.revealed.includes(index); const label = index === state.player ? 'bạn đang ở đây' : index === 35 ? 'cổng về' : known && state.traps.includes(index) ? 'hố đã khám phá' : known && state.treasures.includes(index) ? 'kho báu đã lấy' : known ? 'đã khám phá' : 'chưa khám phá'; return cell(index, index === state.player ? '●' : index === 35 ? '⌂' : known && state.traps.includes(index) ? '×' : known && state.treasures.includes(index) ? '◆' : known ? '·' : '?', 'Ô ' + (index + 1) + ', ' + label, state.status !== 'playing' || !neighbors(state.player, 6, 36).includes(index), index === state.player, '#ffd166'); }) }; }
   });
 
   const angularDistance = (a, b) => Math.min(Math.abs(a - b), 1 - Math.abs(a - b));
@@ -160,7 +160,7 @@
     init(state) { state.mistakes = 0; newLock(state); state.message = 'Chạm khi kim chạy vào cung sáng. Mở đủ 5 vòng khóa.'; },
     tick(state, dt) { state.phase = (state.phase + dt * (.32 + state.level * .06)) % 1; },
     action(state, action) { if (!isTap(action)) return; if (angularDistance(state.phase, state.target) > state.window / 2) { mistake(state, 3, 'Kim đang ngoài vùng mở khóa.'); return; } state.score += 100; if (state.level === 5) finish(state, 'Đã mở đủ 5 vòng khóa quỹ đạo!'); else { state.level++; newLock(state); state.message = 'Mở được một vòng khóa. Cung sáng tiếp theo hẹp hơn.'; } },
-    describe(state) { return { summary: 'Khóa quỹ đạo: vòng ' + state.level + '/5, lỗi ' + state.mistakes + '/3. Kim ' + Math.round(state.phase * 360) + ' độ; tâm cung ' + Math.round(state.target * 360) + ' độ, rộng ' + Math.round(state.window * 360) + ' độ.', columns: 1, cells: [cell(0, 'DỪNG KIM', 'Dừng kim trong cung sáng', state.status !== 'playing', false, '#ffe088')] }; }
+    describe(state) { return { summary: 'Khóa quỹ đạo: vòng ' + state.level + '/5, lỗi ' + state.mistakes + '/3. Kim ' + Math.round(state.phase * 360) + ' độ; tâm cung ' + Math.round(state.target * 360) + ' độ, rộng ' + Math.round(state.window * 360) + ' độ.', columns: 1, cells: [cell(0, 'DỪNG KIM', 'Dừng kim trong cung sáng', state.status !== 'playing', false, '#ffd166')] }; }
   });
 
   const stack = makeGame({
@@ -184,7 +184,7 @@
     ['00022000', '00222200', '02233220', '02233220', '00222200', '00011000', '00111000', '00011000'],
     ['00000000', '00011110', '00111310', '01113100', '01131000', '01310000', '01100000', '01000000']
   ];
-  const PAINT_COLORS = ['#15233c', '#65deef', '#ff90bc', '#ffe088'];
+  const PAINT_COLORS = ['#15233c', '#25d9f8', '#ff88bb', '#ffd166'];
   const painter = makeGame({
     id: 'pixel-painter',
     init(state) { state.targetId = integer(state, PIXEL_PATTERNS.length); state.target = PIXEL_PATTERNS[state.targetId].join('').split('').map(Number); state.pixels = Array(64).fill(0); state.ink = 1; state.attempts = 0; state.message = 'Chọn mực 0–3, tô lại mẫu bên trái. Trái/phải đổi mực; Hành động kiểm tra; thao tác phụ xóa ô.'; },
@@ -194,7 +194,7 @@
       if (action.type === 'cell' && Number.isInteger(action.index)) { if (action.index >= 64 && action.index < 68) state.ink = action.index - 64; else if (action.index >= 0 && action.index < 64) state.pixels[action.index] = action.alternate ? 0 : state.ink; }
       if (action.type === 'action' || (action.type === 'cell' && action.index === 68)) { state.attempts++; const correct = state.pixels.filter((value, i) => value === state.target[i]).length; state.score = correct * 10; if (correct === 64) finish(state, 'Bức tranh khớp đủ 64 ô!'); else state.message = 'Đã khớp ' + correct + '/64 ô. Có thể sửa tiếp, không bị trừ lượt.'; }
     },
-    describe(state) { return { summary: 'Họa sĩ pixel: mẫu ' + ['Tên lửa', 'Bông hoa', 'Chiếc lá'][state.targetId] + ', đang chọn mực ' + state.ink + '. Chọn mực, tô ô rồi Kiểm tra hoặc Hành động để nộp tranh. Mẫu từng hàng: ' + PIXEL_PATTERNS[state.targetId].join(' / ') + '.', columns: 8, cells: [...state.pixels.map((color, index) => ({ ...cell(index, String(color), 'Ô hàng ' + (Math.floor(index / 8) + 1) + ', cột ' + (index % 8 + 1) + ', mực ' + color + ', mẫu cần ' + state.target[index], state.status !== 'playing', false, color ? '#0b1025' : '#eef4ff'), background: PAINT_COLORS[color] })), ...PAINT_COLORS.map((color, index) => ({ ...cell(64 + index, 'Mực ' + index, 'Chọn mực ' + index, state.status !== 'playing', state.ink === index, index ? '#0b1025' : '#eef4ff'), background: color })), cell(68, 'Kiểm tra', 'Kiểm tra tranh đã tô có khớp mẫu', state.status !== 'playing', false, '#ffe088')] }; }
+    describe(state) { return { summary: 'Họa sĩ pixel: mẫu ' + ['Tên lửa', 'Bông hoa', 'Chiếc lá'][state.targetId] + ', đang chọn mực ' + state.ink + '. Chọn mực, tô ô rồi Kiểm tra hoặc Hành động để nộp tranh. Mẫu từng hàng: ' + PIXEL_PATTERNS[state.targetId].join(' / ') + '.', columns: 8, cells: [...state.pixels.map((color, index) => ({ ...cell(index, String(color), 'Ô hàng ' + (Math.floor(index / 8) + 1) + ', cột ' + (index % 8 + 1) + ', mực ' + color + ', mẫu cần ' + state.target[index], state.status !== 'playing', false, color ? '#0b1025' : '#eef4ff'), background: PAINT_COLORS[color] })), ...PAINT_COLORS.map((color, index) => ({ ...cell(64 + index, 'Mực ' + index, 'Chọn mực ' + index, state.status !== 'playing', state.ink === index, index ? '#0b1025' : '#eef4ff'), background: color })), cell(68, 'Kiểm tra', 'Kiểm tra tranh đã tô có khớp mẫu', state.status !== 'playing', false, '#ffd166')] }; }
   });
 
   const PLANT_NAMES = ['Mầm bạc hà', 'Hoa sao', 'Cây ngọc'];
@@ -211,7 +211,7 @@
       else if (state.reservoir > 0) { plant.water = Math.min(1, plant.water + .23); state.reservoir--; state.message = 'Đã tưới ' + PLANT_NAMES[action.index] + '. Tránh tưới quá 80%.'; }
       else state.message = 'Bình đã hết nước. Chọn Nạp bình hoặc Hành động.';
     },
-    describe(state) { return { summary: 'Khu vườn: thu hoạch ' + state.harvested + '/3, bình còn ' + state.reservoir + '/6. Nạp lại sau ' + Math.ceil(state.refillCooldown) + ' giây.', columns: 2, cells: [...state.plants.map((plant, i) => cell(i, plant.harvested ? '✓ Đã hái' : plant.growth >= 1 ? 'Thu hoạch' : 'Tưới cây ' + (i + 1), PLANT_NAMES[i] + ': nước ' + Math.round(plant.water * 100) + '%, lớn ' + Math.round(plant.growth * 100) + '%, sức sống ' + Math.round(plant.health * 100) + '%', state.status !== 'playing' || plant.harvested, plant.harvested, '#94e8b0')), cell(3, 'Nạp bình', 'Nạp 6 lượt nước, chờ 8 giây giữa hai lần', state.status !== 'playing' || state.refillCooldown > 0, false, '#65deef')] }; }
+    describe(state) { return { summary: 'Khu vườn: thu hoạch ' + state.harvested + '/3, bình còn ' + state.reservoir + '/6. Nạp lại sau ' + Math.ceil(state.refillCooldown) + ' giây.', columns: 2, cells: [...state.plants.map((plant, i) => cell(i, plant.harvested ? '✓ Đã hái' : plant.growth >= 1 ? 'Thu hoạch' : 'Tưới cây ' + (i + 1), PLANT_NAMES[i] + ': nước ' + Math.round(plant.water * 100) + '%, lớn ' + Math.round(plant.growth * 100) + '%, sức sống ' + Math.round(plant.health * 100) + '%', state.status !== 'playing' || plant.harvested, plant.harvested, '#94e8b0')), cell(3, 'Nạp bình', 'Nạp 6 lượt nước, chờ 8 giây giữa hai lần', state.status !== 'playing' || state.refillCooldown > 0, false, '#25d9f8')] }; }
   });
 
   const INGREDIENTS = ['Cà phê', 'Sữa', 'Trà', 'Nước', 'Đá', 'Siro'];
@@ -226,8 +226,8 @@
     describe(state) { const recipe = RECIPES[state.order]; return { summary: 'Quầy cà phê: đã giao ' + state.served + '/8, lỗi ' + state.mistakes + '/3. Món: ' + recipe.name + '. Công thức: ' + recipe.parts.map(i => INGREDIENTS[i]).join(' → ') + '. Cốc: ' + (state.cup.map(i => INGREDIENTS[i]).join(' → ') || 'trống') + '. Khách chờ ' + Math.ceil(state.patience) + ' giây.', columns: 4, cells: [...INGREDIENTS.map((name, index) => cell(index, name, 'Thêm ' + name, state.status !== 'playing', false, COLORS[index % 4])), cell(6, 'Pha lại', 'Đổ cốc hiện tại để pha lại', state.status !== 'playing', false, '#ffb1a9'), cell(7, 'Giao món', 'Giao cốc hiện tại cho khách', state.status !== 'playing', false, '#94e8b0')] }; }
   });
 
-  function rounded(ctx, x, y, width, height, fill, stroke, radius) { ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, width, height, radius || 8); else ctx.rect(x, y, width, height); ctx.fillStyle = fill; ctx.fill(); if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1.5; ctx.stroke(); } }
-  function label(ctx, text, x, y, size, color, align) { ctx.font = '600 ' + size + 'px system-ui, sans-serif'; ctx.fillStyle = color || '#edf4ff'; ctx.textAlign = align || 'left'; ctx.textBaseline = 'middle'; ctx.fillText(text, x, y); }
+  function rounded(ctx, x, y, width, height, fill, stroke, radius) { ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, width, height, radius || 8); else ctx.rect(x, y, width, height); if(/^#[a-f0-9]{6}$/i.test(fill)){const paint=ctx.createLinearGradient(x,y,x+width,y+height);paint.addColorStop(0,fill);paint.addColorStop(.7,fill);paint.addColorStop(1,'#263151');ctx.fillStyle=paint;}else ctx.fillStyle=fill;ctx.fill();if(stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1.5; ctx.stroke(); } }
+  function label(ctx, text, x, y, size, color, align) { ctx.font = '750 ' + size + 'px system-ui, sans-serif'; ctx.fillStyle = color || '#edf4ff'; ctx.textAlign = align || 'left'; ctx.textBaseline = 'middle'; ctx.fillText(text, x, y); }
   const NAMES = { 'simon-sequence': 'DÃY TÍN HIỆU', 'reaction-stop': 'BẮT TÍN HIỆU XANH', 'rhythm-tap': 'NHỊP SAO', 'whack-orb': 'BẮT QUẢ CẦU', 'aim-trainer': 'NHẮM SAO', 'math-sprint': 'TOÁN NHANH', 'color-word': 'MÀU VÀ CHỮ', 'odd-one-out': 'TÌM KHÁC BIỆT', 'pattern-recall': 'NHỚ MẪU SAO', 'treasure-grid': 'BẢN ĐỒ KHO BÁU', 'lock-timing': 'KHÓA QUỸ ĐẠO', 'stack-tower': 'THÁP NEON', 'constellation-trace': 'NỐI CHÒM SAO', 'pixel-painter': 'HỌA SĨ PIXEL', 'garden-care': 'KHU VƯỜN NHỎ', 'cafe-orders': 'QUẦY CÀ PHÊ' };
   function drawGame(ctx, state, options, config) {
     ctx.save(); ctx.scale((options.width || 720) / 720, (options.height || 480) / 480);
@@ -236,7 +236,7 @@
       ctx.fillStyle = '#0b1025'; ctx.fillRect(0, 0, 720, 480);
       for (let i = 0; i < 44; i++) { ctx.fillStyle = i % 2 ? '#394263' : '#263b5c'; ctx.fillRect((i * 137 + 29) % 720, (i * 71 + 10) % 480, 2, 2); }
     }
-    rounded(ctx, 16, 14, 688, 52, '#141d36', '#4b527b', 12); label(ctx, NAMES[state.id], 32, 39, 21, '#d6c6ff'); label(ctx, state.score + ' điểm' + (state.timeLeft === null ? '' : ' · ' + Math.ceil(state.timeLeft) + 's'), 687, 39, 17, '#b6efe6', 'right');
+    rounded(ctx, 16, 14, 688, 52, '#232d54', '#8183c4', 12); label(ctx, NAMES[state.id], 32, 39, 21, '#e2ccff'); label(ctx, state.score + ' điểm' + (state.timeLeft === null ? '' : ' · ' + Math.ceil(state.timeLeft) + 's'), 687, 39, 17, '#b6efe6', 'right');
     const info = config.describe(state);
     if (state.id === 'lock-timing') drawLock(ctx, state);
     else if (state.id === 'stack-tower') drawStack(ctx, state);
@@ -247,7 +247,7 @@
     else if (state.id === 'rhythm-tap') drawRhythm(ctx, state);
     else {
       let top = 105;
-      if (state.id === 'math-sprint') { label(ctx, state.question.prompt + ' = ?', 360, 116, 38, '#ffe088', 'center'); top = 175; }
+      if (state.id === 'math-sprint') { label(ctx, state.question.prompt + ' = ?', 360, 116, 38, '#ffd166', 'center'); top = 175; }
       if (state.id === 'color-word') { label(ctx, COLOR_NAMES[state.word], 360, 116, 42, COLORS[state.ink], 'center'); label(ctx, 'Chọn màu mực, không chọn nghĩa của chữ', 360, 154, 14, '#bec9e2', 'center'); top = 185; }
       drawCells(ctx, info.cells || [], info.columns || 1, top, state.id === 'aim-trainer');
     }
@@ -282,8 +282,8 @@
       if (next) { ctx.beginPath(); ctx.arc(point.x, point.y, 24, 0, Math.PI * 2); ctx.strokeStyle = '#97ece5'; ctx.lineWidth = 2; ctx.stroke(); }
       ctx.beginPath();
       for (let tip = 0; tip < 8; tip++) { const angle = tip * Math.PI / 4 - Math.PI / 2, radius = tip % 2 ? 7 : 18; const x = point.x + Math.cos(angle) * radius, y = point.y + Math.sin(angle) * radius; if (tip) ctx.lineTo(x, y); else ctx.moveTo(x, y); }
-      ctx.closePath(); ctx.fillStyle = visited ? '#ffe088' : '#c6d4ef'; ctx.fill();
-      rounded(ctx, point.x - 10, point.y + 19, 20, 19, '#13213ae8', visited ? '#e4be69' : '#5b739e', 5); label(ctx, index + 1, point.x, point.y + 29, 13, visited ? '#ffe088' : '#e0ebff', 'center');
+      ctx.closePath(); ctx.fillStyle = visited ? '#ffd166' : '#c6d4ef'; ctx.fill();
+      rounded(ctx, point.x - 10, point.y + 19, 20, 19, '#13213ae8', visited ? '#ffd166' : '#5b739e', 5); label(ctx, index + 1, point.x, point.y + 29, 13, visited ? '#ffd166' : '#e0ebff', 'center');
     });
     rounded(ctx, 168, 80, 384, 27, '#141e36ed', '#57618a', 9); label(ctx, state.order.map(i => i + 1).join(' → '), 360, 94, 18, '#bceee9', 'center');
     // An original small observatory prop; it does not introduce another control.
@@ -293,33 +293,33 @@
   }
   function drawPainter(ctx, state) {
     rounded(ctx, 25, 369, 670, 71, '#3e3852e8', '#88749d', 14);
-    label(ctx, 'BẢN MẪU', 198, 94, 17, '#d6c6ff', 'center'); label(ctx, 'XƯỞNG PIXEL', 518, 94, 17, '#b4f2e8', 'center');
+    label(ctx, 'BẢN MẪU', 198, 94, 17, '#e2ccff', 'center'); label(ctx, 'XƯỞNG PIXEL', 518, 94, 17, '#b4f2e8', 'center');
     [state.target, state.pixels].forEach((pixels, group) => {
       const left = 69 + group * 320;
       rounded(ctx, left, 112, 258, 258, '#d3d4e1', '#eef0ff', 10); rounded(ctx, left + 7, 119, 244, 244, '#1e2d48', '#7689ad', 6);
       pixels.forEach((value, index) => rounded(ctx, 82 + group * 320 + index % 8 * 29, 130 + Math.floor(index / 8) * 29, 27, 27, PAINT_COLORS[value], '#4a5981', 2));
       for (let mark = 0; mark < 8; mark++) { ctx.fillStyle = '#72809c'; ctx.fillRect(left + 20 + mark * 29, 114, 2, 4); }
-      rounded(ctx, left + 109, 365, 40, 17, '#7e849e', '#a1abc4', 3);
+      rounded(ctx, left + 109, 365, 40, 17, '#aaa4d6', '#a1abc4', 3);
     });
     PAINT_COLORS.forEach((color, index) => { rounded(ctx, 236 + index * 65, 389, 53, 35, '#1c2c48', state.ink === index ? '#ffffff' : '#7c7191', 8); ctx.beginPath(); ctx.arc(262 + index * 65, 407, 13, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill(); label(ctx, index, 262 + index * 65, 407, 15, index ? '#101b30' : '#eef3ff', 'center'); });
-    ctx.save(); ctx.translate(126, 408); ctx.rotate(-.35); rounded(ctx, -42, -5, 76, 10, '#bc9fe8', '#eddcff', 3); ctx.beginPath(); ctx.moveTo(34, -5); ctx.lineTo(48, 0); ctx.lineTo(34, 5); ctx.fillStyle = '#fff1cc'; ctx.fill(); ctx.restore();
+    ctx.save(); ctx.translate(126, 408); ctx.rotate(-.35); rounded(ctx, -42, -5, 76, 10, '#c3a0ff', '#eddcff', 3); ctx.beginPath(); ctx.moveTo(34, -5); ctx.lineTo(48, 0); ctx.lineTo(34, 5); ctx.fillStyle = '#fff1cc'; ctx.fill(); ctx.restore();
     label(ctx, 'Mực ' + state.ink, 581, 407, 17, '#e8daff', 'center');
   }
   function drawGarden(ctx, state) {
-    rounded(ctx, 29, 346, 662, 21, '#876d54', '#c6a47c', 7); rounded(ctx, 49, 365, 25, 67, '#695443', '#a18261', 5); rounded(ctx, 648, 365, 25, 67, '#695443', '#a18261', 5);
+    rounded(ctx, 29, 346, 662, 21, '#ad7089', '#ffd4b1', 7); rounded(ctx, 49, 365, 25, 67, '#695443', '#a18261', 5); rounded(ctx, 648, 365, 25, 67, '#695443', '#a18261', 5);
     state.plants.forEach((plant, index) => {
       const x = 150 + index * 210;
       ctx.beginPath(); ctx.ellipse(x, 351, 65, 10, 0, 0, Math.PI * 2); ctx.fillStyle = '#152b304f'; ctx.fill();
-      rounded(ctx, x - 45, 292, 90, 58, ['#be8174', '#8d91b8', '#9f8a65'][index], '#f0ceae', 12);
+      rounded(ctx, x - 45, 292, 90, 58, ['#f38da9', '#a595e1', '#e7b56f'][index], '#f0ceae', 12);
       rounded(ctx, x - 52, 285, 104, 18, '#cba88c', '#e8d0af', 7);
       ctx.beginPath(); ctx.ellipse(x, 290, 43, 7, 0, 0, Math.PI * 2); ctx.fillStyle = '#503e39'; ctx.fill();
       for (let grain = 0; grain < 7; grain++) { ctx.fillStyle = '#967466'; ctx.fillRect(x - 33 + grain * 10, 289 + grain % 2 * 2, 3, 2); }
       const height = plant.harvested ? 27 : 31 + plant.growth * 139;
-      ctx.strokeStyle = plant.health > .35 ? '#95c888' : '#b59e6d'; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(x, 289); ctx.bezierCurveTo(x - 11, 263, x + 7, 289 - height + 20, x, 289 - height); ctx.stroke();
+      ctx.strokeStyle = plant.health > .35 ? '#98f4ac' : '#b59e6d'; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(x, 289); ctx.bezierCurveTo(x - 11, 263, x + 7, 289 - height + 20, x, 289 - height); ctx.stroke();
       const leafCount = plant.harvested ? 2 : 2 + Math.floor(plant.growth * 5);
       for (let leaf = 0; leaf < leafCount; leaf++) {
         const y = 282 - height * (leaf + 1) / (leafCount + 1), sign = leaf % 2 ? 1 : -1, spread = 13 + plant.growth * 16;
-        ctx.beginPath(); ctx.ellipse(x + sign * spread * .6, y - 2, spread, 9 + index * 2, sign * -.5, 0, Math.PI * 2); ctx.fillStyle = plant.health > .35 ? ['#80bf90', '#8ac3a9', '#7ab8a7'][index] : '#a49c66'; ctx.fill();
+        ctx.beginPath(); ctx.ellipse(x + sign * spread * .6, y - 2, spread, 9 + index * 2, sign * -.5, 0, Math.PI * 2); ctx.fillStyle = plant.health > .35 ? ['#6add9f', '#68d8b5', '#48bea8'][index] : '#a49c66'; ctx.fill();
         ctx.beginPath(); ctx.moveTo(x, y + 4); ctx.lineTo(x + sign * spread * 1.2, y - 8); ctx.strokeStyle = '#d0e8b477'; ctx.lineWidth = 1; ctx.stroke();
       }
       if (plant.growth >= 1 && !plant.harvested) {
@@ -328,19 +328,19 @@
       }
       rounded(ctx, x - 30, 315, 60, 22, '#f4e2bc', '#fef0d3', 5); label(ctx, index + 1, x, 327, 14, '#604d4d', 'center');
       label(ctx, PLANT_NAMES[index], x, 98, 16, '#e8f3d3', 'center');
-      rounded(ctx, x - 55, 379, 110, 9, '#18384a', '#6b9eb5', 4); rounded(ctx, x - 54, 380, Math.max(1, 108 * plant.water), 7, plant.water > .8 || plant.water < .25 ? '#efb783' : '#93dfea', null, 3);
+      rounded(ctx, x - 55, 379, 110, 9, '#18384a', '#6b9eb5', 4); rounded(ctx, x - 54, 380, Math.max(1, 108 * plant.water), 7, plant.water > .8 || plant.water < .25 ? '#ffb46f' : '#93dfea', null, 3);
       label(ctx, 'Nước ' + Math.round(plant.water * 100) + '%', x, 404, 15, '#d1eef5', 'center'); label(ctx, plant.harvested ? '✓ Đã thu hoạch' : 'Lớn ' + Math.round(plant.growth * 100) + '%', x, 427, 15, '#d9edd5', 'center');
     });
   }
   function drawCafe(ctx, state, options) {
-    const recipe = RECIPES[state.order], ingredientColors = ['#715148', '#f2dfbc', '#9c9e67', '#95cddd', '#c5eef3', '#c995b2'];
+    const recipe = RECIPES[state.order], ingredientColors = ['#715148', '#f2dfbc', '#9c9e67', '#95cddd', '#c5eef3', '#f994c9'];
     rounded(ctx, 29, 86, 314, 228, '#263b3aee', '#bb9d7a', 13); rounded(ctx, 37, 94, 298, 212, '#193536', '#7f9183', 7);
-    label(ctx, recipe.name, 186, 124, 25, '#ffe8bd', 'center'); label(ctx, 'PHA ĐÚNG THỨ TỰ', 186, 157, 13, '#b3d3c7', 'center');
+    label(ctx, recipe.name, 186, 124, 25, '#ffe8bd', 'center'); label(ctx, 'PHA ĐÚNG THỨ TỰ', 186, 157, 13, '#b1f0db', 'center');
     recipe.parts.forEach((part, i) => { rounded(ctx, 62, 181 + i * 34, 25, 24, '#405b52', '#8da893', 6); label(ctx, i + 1, 75, 193 + i * 34, 13, '#f0e6c6', 'center'); label(ctx, INGREDIENTS[part], 103, 193 + i * 34, 19, '#e4eee2'); });
     rounded(ctx, 408, 104, 233, 120, '#737e8de8', '#dce1e8', 14); rounded(ctx, 426, 120, 93, 43, '#203f48', '#a4bec5', 6); label(ctx, 'HH CAFÉ', 472, 142, 16, '#b5ece6', 'center');
     for (let light = 0; light < 3; light++) { ctx.beginPath(); ctx.arc(553 + light * 25, 140, 5, 0, Math.PI * 2); ctx.fillStyle = COLORS[light]; ctx.fill(); }
     rounded(ctx, 482, 181, 79, 15, '#394f60', '#b0c6d0', 4); rounded(ctx, 511, 194, 20, 21, '#c0c8d1', '#e6f5f4', 4);
-    rounded(ctx, 20, 348, 680, 61, '#9a755bd9', '#e1bd99', 10); ctx.fillStyle = '#e3c09c'; ctx.fillRect(22, 349, 676, 7);
+    rounded(ctx, 20, 348, 680, 61, '#9a755bd9', '#e1bd99', 10); ctx.fillStyle = '#ffd1a9'; ctx.fillRect(22, 349, 676, 7);
     for (let grain = 0; grain < 12; grain++) { ctx.fillStyle = '#735f4a66'; ctx.fillRect(42 + grain * 54, 375 + grain % 2 * 10, 32, 2); }
     ctx.beginPath(); ctx.ellipse(523, 349, 77, 12, 0, 0, Math.PI * 2); ctx.fillStyle = '#cfd7d4'; ctx.fill();
     rounded(ctx, 474, 235, 98, 107, '#f0e8d7', '#fff6e7', 13); rounded(ctx, 565, 255, 30, 45, '#92a8af33', '#f9f0e1', 10);
@@ -357,13 +357,13 @@
   function drawRhythm(ctx, state) {
     rounded(ctx, 48, 89, 624, 335, '#16213de3', '#8d84b8', 25); rounded(ctx, 99, 117, 522, 112, '#091831', '#6a6d9f', 14);
     const left = 120, width = 480, relative = clamp((state.elapsed - state.nextBeat + .45) / .9, 0, 1), inside = Math.abs(state.elapsed - state.nextBeat) <= .17;
-    rounded(ctx, left + width * (.5 - .17 / .9), 137, width * .34 / .9, 70, inside ? '#518d83' : '#315e62', '#82dbbd', 8);
-    ctx.strokeStyle = '#8592c3'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(360, 128); ctx.lineTo(360, 219); ctx.stroke();
+    rounded(ctx, left + width * (.5 - .17 / .9), 137, width * .34 / .9, 70, inside ? '#2fae98' : '#227e88', '#82dbbd', 8);
+    ctx.strokeStyle = '#b4a4eb'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(360, 128); ctx.lineTo(360, 219); ctx.stroke();
     for (let dash = 0; dash < 9; dash++) { ctx.fillStyle = '#8fa6c933'; ctx.fillRect(left + dash * width / 8, 149, 1, 47); }
     const x = left + relative * width;
     ctx.beginPath(); ctx.arc(x, 171, 16, 0, Math.PI * 2); ctx.fillStyle = '#ffe099'; ctx.fill(); ctx.beginPath(); ctx.arc(x, 171, 23, 0, Math.PI * 2); ctx.strokeStyle = '#ffe09955'; ctx.lineWidth = 4; ctx.stroke();
     for (const speakerX of [127, 593]) { rounded(ctx, speakerX - 41, 260, 82, 126, '#233451', '#6f7e9f', 12); for (const [y, r] of [[289, 17], [344, 26]]) { ctx.beginPath(); ctx.arc(speakerX, y, r, 0, Math.PI * 2); ctx.fillStyle = '#0e1a31'; ctx.fill(); ctx.strokeStyle = '#9e98bf'; ctx.lineWidth = 2; ctx.stroke(); ctx.beginPath(); ctx.arc(speakerX, y, r * .42, 0, Math.PI * 2); ctx.fillStyle = inside ? '#8fc7c1' : '#4e6086'; ctx.fill(); } }
-    rounded(ctx, 237, 268, 246, 102, '#30365a', inside ? '#b9eadb' : '#8580b3', 20); label(ctx, inside ? 'CHẠM ĐÚNG VÙNG' : 'THEO CON TRỎ', 360, 301, 19, inside ? '#bdf5d9' : '#d6cff3', 'center'); label(ctx, 'Nhịp ' + Math.min(12, state.beat) + ' / 12', 360, 339, 24, '#ffe2a1', 'center');
+    rounded(ctx, 237, 268, 246, 102, '#514781', inside ? '#b9eadb' : '#8580b3', 20); label(ctx, inside ? 'CHẠM ĐÚNG VÙNG' : 'THEO CON TRỎ', 360, 301, 19, inside ? '#bdf5d9' : '#d6cff3', 'center'); label(ctx, 'Nhịp ' + Math.min(12, state.beat) + ' / 12', 360, 339, 24, '#ffe2a1', 'center');
     for (let beat = 0; beat < 12; beat++) rounded(ctx, 227 + beat * 23, 393, 15, 8, beat < state.hits ? '#a5ebca' : '#415272', null, 3);
   }
 
