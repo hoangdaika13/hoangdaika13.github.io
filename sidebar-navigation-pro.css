@@ -74,9 +74,10 @@
 .app-sidebar__category.is-expanded .app-sidebar__chevron{color:var(--nav-accent);transform:rotate(90deg)}
 .app-sidebar__submenu{
   display:grid;max-height:0;gap:3px;margin:0 4px 0 20px;padding:0 0 0 12px;overflow:hidden;border-left:1px solid transparent;opacity:0;visibility:hidden;transform:translateY(-5px);pointer-events:none;
-  transition:max-height .28s cubic-bezier(.2,.8,.2,1),opacity .18s ease,transform .22s ease,padding .22s ease,margin .22s ease,border-color .2s ease,visibility 0s linear .28s
+  transition:opacity .18s ease,transform .22s ease,padding .22s ease,margin .22s ease,border-color .2s ease,visibility 0s linear .28s
 }
-.app-sidebar__category.is-expanded>.app-sidebar__submenu{max-height:380px;margin-top:4px;margin-bottom:6px;padding-top:4px;padding-bottom:5px;border-left-color:color-mix(in srgb,var(--nav-accent) 33%,#2a3a4c);opacity:1;visibility:visible;transform:translateY(0);pointer-events:auto;transition-delay:0s}
+/* Let every function fit; the shared sidebar scroll region handles long groups. */
+.app-sidebar__category.is-expanded>.app-sidebar__submenu{max-height:none;margin-top:4px;margin-bottom:6px;padding-top:4px;padding-bottom:5px;border-left-color:color-mix(in srgb,var(--nav-accent) 33%,#2a3a4c);opacity:1;visibility:visible;transform:translateY(0);pointer-events:auto;transition-delay:0s}
 .app-sidebar__tool-row{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 30px;min-width:0;align-items:center;border:1px solid transparent;border-radius:10px;transition:border-color .16s ease,background .16s ease,box-shadow .16s ease,opacity .16s ease}
 .app-sidebar__tool-row[hidden]{display:none!important}
 .app-sidebar__tool-row:hover,.app-sidebar__tool-row.is-active{border-color:color-mix(in srgb,var(--nav-accent) 27%,#26384a);background:linear-gradient(90deg,color-mix(in srgb,var(--nav-accent) 10%,#0e1925),rgba(9,16,27,.86))}
@@ -139,7 +140,6 @@ body.app-sidebar-collapsed .app-sidebar__footer>.app-sidebar__item>b{display:non
   body.app-sidebar-collapsed .app-sidebar__footer{grid-template-columns:repeat(3,minmax(0,1fr));padding-inline:9px}body.app-sidebar-collapsed .app-sidebar__footer>.app-sidebar__item>b{display:block}
   .app-sidebar-backdrop{position:fixed;z-index:51;inset:var(--header-height,58px) 0 68px;display:block;border:0;background:rgba(1,5,12,.64);opacity:0;visibility:hidden;pointer-events:none;backdrop-filter:blur(4px);transition:opacity .2s ease,visibility .2s}
   body:not(.app-sidebar-collapsed) .app-sidebar-backdrop{opacity:1;visibility:visible;pointer-events:auto}body:not(.app-sidebar-collapsed) .app-main{filter:none}
-  .app-sidebar__category.is-expanded>.app-sidebar__submenu{max-height:380px}
 }
 @media(max-width:390px){.app-sidebar{height:min(82dvh,720px)!important;border-radius:18px 18px 0 0}.app-sidebar__search-panel kbd{display:none}.app-sidebar__section-toggle>b{font-size:14px}}
 
@@ -189,7 +189,7 @@ body.app-sidebar-collapsed .app-sidebar__footer>.app-sidebar__item>b{display:non
 .app-sidebar__category[data-nav-section="learning"]>.app-sidebar__section-toggle::after{animation:hh-sidebar-constellation 4s ease-in-out infinite}
 .app-sidebar__category[data-nav-section="system-admin"]>.app-sidebar__section-toggle::after{animation:hh-sidebar-radar 5.6s linear infinite}
 
-.app-sidebar__category.is-expanded>.app-sidebar__submenu{max-height:430px;gap:4px;animation:hh-sidebar-accordion-in .22s ease both}
+.app-sidebar__category.is-expanded>.app-sidebar__submenu{gap:4px;animation:hh-sidebar-accordion-in .22s ease both}
 .app-sidebar__submenu{position:relative}
 .app-sidebar__category.is-expanded>.app-sidebar__submenu::before{position:absolute;z-index:2;top:0;left:-1px;width:2px;height:34px;border-radius:999px;background:linear-gradient(transparent,var(--nav-accent),#fff,transparent);content:"";pointer-events:none;filter:drop-shadow(0 0 6px var(--nav-accent));animation:hh-sidebar-energy-trace 2.8s ease-in-out infinite}
 .app-sidebar__category.is-expanded>.app-sidebar__submenu>.app-sidebar__tool-row{animation:hh-sidebar-tool-in .22s both;animation-delay:calc(var(--tool-index,0) * 22ms)}
@@ -199,7 +199,7 @@ body.app-sidebar-collapsed .app-sidebar__footer>.app-sidebar__item>b{display:non
 .app-sidebar__tool-row::before{position:absolute;z-index:0;inset:0 32px 0 0;background:linear-gradient(100deg,transparent 8%,color-mix(in srgb,var(--nav-accent) 18%,transparent) 48%,transparent 88%);content:"";opacity:0;transform:translateX(-110%);pointer-events:none}
 .app-sidebar__tool-row:hover::before,.app-sidebar__tool-row:focus-within::before{animation:hh-sidebar-tool-sweep .62s ease-out both}
 .app-sidebar__subitem{position:relative;z-index:1;grid-template-columns:32px minmax(0,1fr) 9px!important;min-height:46px!important;gap:9px!important;color:color-mix(in srgb,var(--nav-accent) 24%,#d7e4f2)!important}
-.app-sidebar__subitem>b{display:-webkit-box;min-width:0;overflow:hidden;font-size:14.5px!important;line-height:1.26;text-overflow:clip;white-space:normal;overflow-wrap:anywhere;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+.app-sidebar__subitem>b{display:block;min-width:0;overflow:visible;font-size:14.5px!important;line-height:1.26;text-overflow:clip;white-space:normal;overflow-wrap:anywhere}
 .app-sidebar__tool-icon{position:relative;width:32px;height:32px;overflow:hidden;font-size:12px;transition:transform .28s cubic-bezier(.2,.8,.2,1),filter .25s ease,box-shadow .25s ease}
 .app-sidebar__tool-icon::before{position:absolute;inset:-45%;border-radius:inherit;background:conic-gradient(transparent 0 38%,color-mix(in srgb,var(--nav-accent) 58%,#fff) 48%,transparent 60%);content:"";opacity:.22;pointer-events:none}
 .app-sidebar__svg-icon{display:block;width:18px;height:18px;overflow:visible;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 4px color-mix(in srgb,currentColor 34%,transparent))}

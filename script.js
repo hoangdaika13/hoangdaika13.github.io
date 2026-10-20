@@ -6342,7 +6342,9 @@ function initAppShell() {
     const regionRect = scrollRegion.getBoundingClientRect();
     const sectionRect = section.getBoundingClientRect();
     let delta = 0;
-    if (sectionRect.top < regionRect.top + 6) delta = sectionRect.top - regionRect.top - 8;
+    // Long groups cannot fit at once: reveal their heading and scroll through the items.
+    if (sectionRect.height > regionRect.height - 16) delta = sectionRect.top - regionRect.top - 8;
+    else if (sectionRect.top < regionRect.top + 6) delta = sectionRect.top - regionRect.top - 8;
     else if (sectionRect.bottom > regionRect.bottom - 6) delta = sectionRect.bottom - regionRect.bottom + 8;
     if (delta) scrollRegion.scrollTo({ top: scrollRegion.scrollTop + delta, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   };

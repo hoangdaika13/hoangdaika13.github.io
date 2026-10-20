@@ -71,7 +71,7 @@ test("primary navigation is grouped into focused categories with user-controlled
   assert.match(client, /expandedNavigationSections/);
   assert.match(client, /saveExpandedNavigationSections/);
   assert.match(client, /navigationSectionForRoute\(route\)/);
-  assert.match(css, /\.app-sidebar__category\.is-expanded>\.app-sidebar__submenu\{max-height:380px/);
+  assert.match(css, /\.app-sidebar__category\.is-expanded>\.app-sidebar__submenu\{max-height:none/);
   assert.match(css, /\.app-sidebar__primary[\s\S]*?overflow-y:auto/);
   assert.match(css, /@media\(max-width:760px\)[\s\S]*?translateY\(105%\)/);
 });

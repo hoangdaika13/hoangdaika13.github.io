@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1058";
+const CACHE = "hh-identity-portal-v1059";
+// Previous release: hh-identity-portal-v1058; ./sidebar-navigation-pro.css?v=30; ./script.js?v=293.
 // Previous release: hh-identity-portal-v1057; ./performance-loader.js?v=719; ./script.js?v=292; ./platform-home.js?v=18.
 // Previous release: hh-identity-portal-v1056; ./performance-loader.js?v=718; ./script.js?v=292.
 // Previous release: hh-identity-portal-v1055; ./performance-loader.js?v=717; ./script.js?v=291; ./galaxy-living-universe.js?v=9; ./galaxy-stable-chrome.css?v=5.
@@ -803,7 +804,7 @@ const CORE = [
   "./index.html",
   "./app-shell.css?v=67",
   "./app-theme-system.css?v=9",
-  "./sidebar-navigation-pro.css?v=30",
+  "./sidebar-navigation-pro.css?v=31",
   "./auth-experience.css?v=6",
   "./auth-neon-gateway.css?v=9",
   "./auth-zoom-resilience.css?v=3",
@@ -819,7 +820,7 @@ const CORE = [
   "./performance-loader.js?v=720",
   "./auth-platform.js?v=22",
   "./auth-neon-gateway.js?v=35",
-  "./script.js?v=293"
+  "./script.js?v=294"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime
