@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),scene=require('../all-game-scenes.js'),{CATALOG}=require('../all-game.js');
-test('All59 games have deterministic, distinct original SVG scenery in12 context families',()=>{
-  assert.equal(Object.keys(scene.profiles).length,59);assert.equal(new Set(Object.values(scene.profiles).map(p=>p.theme)).size,12);
-  const posters=CATALOG.map(g=>{assert.equal(scene.profiles[g.id].id,g.id);const svg=scene.thumbnail(g.id);assert.equal(svg,scene.thumbnail(g.id));assert.match(svg,/viewBox="0 0 720 480"/);assert.doesNotMatch(svg,/<script|<foreignObject|<image|href=|undefined|NaN/);return svg;});assert.equal(new Set(posters).size,59);
+test('All109 games have deterministic, distinct original SVG scenery in12 context families',()=>{
+  assert.equal(Object.keys(scene.profiles).length,109);assert.equal(new Set(Object.values(scene.profiles).map(p=>p.theme)).size,12);
+  const posters=CATALOG.map(g=>{assert.equal(scene.profiles[g.id].id,g.id);const svg=scene.thumbnail(g.id);assert.equal(svg,scene.thumbnail(g.id));assert.match(svg,/viewBox="0 0 720 480"/);assert.doesNotMatch(svg,/<script|<foreignObject|<image|href=|undefined|NaN/);return svg;});assert.equal(new Set(posters).size,109);
 });
 test('Shared Canvas scenery is finite, balanced and never alters gameplay state',()=>{
   let balance=0,draws=0;const gradient={addColorStop(i,c){assert.ok(i>=0&&i<=1);assert.match(c,/^#[a-f0-9]+$/i);}};

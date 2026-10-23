@@ -5899,7 +5899,7 @@ function initAppShell() {
     "play-center": "hh play game arcade trò chơi party room watch party truyện tương tác escape rhythm karaoke pet chill quiz giải trí nhiều người",
     "cosmic-observatory": "vũ trụ hh universe thiên văn nasa jpl hệ mặt trời hành tinh bầu trời sao đài quan sát dsn bề mặt dòng thời gian phòng học tiểu hành tinh ngoại hành tinh asteroid exoplanet solar system observatory",
     "eonwild-game": "game eonwild động vật muôn loài khủng long sinh tồn thế giới mở cổ sinh trung sinh tân sinh hiện đại không con người ecology survival",
-    "all-game": "all game arcade 2d snake rắn phá gạch breakout bắn tàu ghép số 2048 dò mìn mines lật thẻ trí nhớ xếp khối đẩy thùng sokoban platformer runner trò chơi",
+    "all-game": "all game arcade chiến thuật phòng thủ rts cờ vua cờ vây pinball drift mô tô lập trình drone factory nhà máy hành động niệm lực 2d snake rắn phá gạch breakout bắn tàu ghép số 2048 dò mìn mines lật thẻ trí nhớ xếp khối đẩy thùng sokoban platformer runner trò chơi",
     patin: "patin trượt inline roller skating rollerblade quad giày bảo hộ phanh rẽ slalom freestyle fitness speed slide double push soul acid magic parallel ufo nelson crazy luồn cọc nhật ký tập video tua chậm lặp a b học trực quan performance arena thi đấu matrix classic battle bản đồ tổ hợp checklist",
     fortune: "xem bói tarot tử vi chiêm tinh kinh dịch",
     work: "công việc dự án task ghi chú lịch",
@@ -7796,7 +7796,7 @@ function initAppShell() {
     } else if (route === "/all-game" || route.startsWith("/all-game/")) {
       const gameId = parts[1] || "";
       const gameMeta = groups.find(item => item.id === "all-game")?.pages?.find(item => item.id === gameId);
-      updatePageHeader(gameMeta?.title || "All Game", "Thư viện game 2D nguyên bản: phản xạ, hành động, trí tuệ và thư giãn. Chơi cục bộ, không iframe và không đối thủ giả.", route);
+      updatePageHeader(gameMeta?.title || "All Game", "Thư viện game 2D: chiến thuật, hành động, giải đố và mô phỏng. Kỷ lục và điểm tiếp tục lưu trên thiết bị theo tài khoản.", route);
       pageActions.innerHTML = '<button type="button" data-app-route="/all-game">Thư viện game</button><button type="button" data-app-route="/all-game/merge">Ghép số</button><button type="button" data-app-route="/all-game/snake">Neon Snake</button>';
       workspace.innerHTML = '<div data-all-game-host></div>';
       if (window.HHAllGame?.mount) window.HHAllGame.mount(workspace.firstElementChild, { gameId, currentUser: readCurrentAuthUser() });

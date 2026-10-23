@@ -2,7 +2,7 @@
 // Real renderers and real DOM input; isolated local storage, no live account.
 const fs = require("node:fs"), path = require("node:path"), assert = require("node:assert/strict");
 const { chromium } = require(process.env.HH_QA_PLAYWRIGHT || "playwright");
-const root = path.resolve(__dirname, ".."), output = path.join(root, ".study-local/all-game-color-1060");
+const root = path.resolve(__dirname, ".."), output = path.resolve(root, process.env.HH_QA_OUTPUT || ".study-local/all-game-studio-1061");
 const results = [], errors = [];
 let browser, page;
 async function mount(id) {
@@ -25,11 +25,11 @@ async function run() {
     page.on("pageerror", e => errors.push(e.message));
     await page.setContent('<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#080f25"><main id="probe"></main></body></html>');
     await page.addStyleTag({ path: path.join(root, "all-game.css") });
-    for (const file of ["all-game-catalog.js", "all-game-scenes.js", "all-game-arcade.js", "all-game-puzzles.js", "all-game-adventure.js", "all-game-pack-puzzles.js", "all-game-pack-arcade.js", "all-game-pack-casual.js", "all-game.js"]) await page.addScriptTag({ path: path.join(root, file) });
+    for (const file of ["all-game-studio-catalog.js", "all-game-studio-core.js", "all-game-studio-art.js", "all-game-catalog.js", "all-game-scenes.js", "all-game-arcade.js", "all-game-puzzles.js", "all-game-adventure.js", "all-game-pack-puzzles.js", "all-game-pack-arcade.js", "all-game-pack-casual.js", "all-game-strategy-fields.js", "all-game-strategy-combat.js", "all-game-strategy-board.js", "all-game-strategy-table.js", "all-game-action-combat.js", "all-game-action-world.js", "all-game-action-physics.js", "all-game-action-motion.js", "all-game-management-workshop.js", "all-game-management-world.js", "all-game.js"]) await page.addScriptTag({ path: path.join(root, file) });
     await page.evaluate(() => { window.qaStorage = new Map(); });
     await mount();
-    assert.equal(await page.locator(".ag-card").count(), 59);
-    assert.equal(await page.locator(".ag-card [data-game-art]").count(), 59);
+    assert.equal(await page.locator(".ag-card").count(), 109);
+    assert.equal(await page.locator(".ag-card [data-game-art]").count(), 109);
     const duplicateIDs = await page.locator("[id]").evaluateAll(nodes => nodes.map(n => n.id).filter((id, i, ids) => ids.indexOf(id) !== i));
     assert.deepEqual(duplicateIDs, []);
     for (const width of [1440, 768, 375]) {
@@ -45,7 +45,7 @@ async function run() {
     await page.locator("[data-ag-search]").fill("khong-co-game");
     assert.ok(await page.locator(".ag-empty").isVisible());
     await page.locator("[data-ag-clear-filters]").click();
-    assert.equal(await page.locator(".ag-card").count(), 59);
+    assert.equal(await page.locator(".ag-card").count(), 109);
     await page.locator("[data-ag-only-favorites]").click();
     assert.ok(await page.locator(".ag-empty").isVisible());
     await page.locator("[data-ag-clear-filters]").click();
@@ -54,7 +54,7 @@ async function run() {
     assert.equal(await page.locator(".ag-card").count(), 1);
     await mount();
     assert.equal(await page.locator('[data-ag-favorite="memory"]').getAttribute("aria-pressed"), "true");
-    results.push({ library: "59 unique gameplay illustrations, synchronized filters, empty recovery and favorite persistence" });
+    results.push({ library: "109 unique gameplay illustrations, synchronized filters, empty recovery and favorite persistence" });
     const entries = await page.evaluate(() => HHAllGame.CATALOG.map(g => ({ id: g.id, bundle: g.bundle })));
     const limit = Number(process.env.HH_QA_ALL_GAME_LIMIT) || entries.length;
     for (const entry of entries.slice(0, limit)) {

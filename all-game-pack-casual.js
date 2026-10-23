@@ -9,7 +9,7 @@
   const clone = state => JSON.parse(JSON.stringify(state));
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const inputOf = input => typeof input === 'string' ? { type: input } : (input || { type: 'tick' });
-  const COLORS = ['#25d9f8', '#b18aff', '#ff88bb', '#ffd166'];
+  const COLORS = ['#25d9f8', '#b08aff', '#ff77bd', '#ffd166'];
   const COLOR_NAMES = ['Xanh ngọc', 'Tím', 'Hồng', 'Vàng'];
   const CANVAS_CUES = new Set(['rhythm-tap', 'color-word', 'lock-timing', 'stack-tower', 'constellation-trace', 'pixel-painter', 'garden-care', 'cafe-orders']);
   function seedValue(seed) { let value = 2166136261; for (const char of String(seed === undefined ? 'hh-casual' : seed)) value = Math.imul(value ^ char.charCodeAt(0), 16777619) >>> 0; return value || 1; }
@@ -226,7 +226,7 @@
     describe(state) { const recipe = RECIPES[state.order]; return { summary: 'Quầy cà phê: đã giao ' + state.served + '/8, lỗi ' + state.mistakes + '/3. Món: ' + recipe.name + '. Công thức: ' + recipe.parts.map(i => INGREDIENTS[i]).join(' → ') + '. Cốc: ' + (state.cup.map(i => INGREDIENTS[i]).join(' → ') || 'trống') + '. Khách chờ ' + Math.ceil(state.patience) + ' giây.', columns: 4, cells: [...INGREDIENTS.map((name, index) => cell(index, name, 'Thêm ' + name, state.status !== 'playing', false, COLORS[index % 4])), cell(6, 'Pha lại', 'Đổ cốc hiện tại để pha lại', state.status !== 'playing', false, '#ffb1a9'), cell(7, 'Giao món', 'Giao cốc hiện tại cho khách', state.status !== 'playing', false, '#94e8b0')] }; }
   });
 
-  function rounded(ctx, x, y, width, height, fill, stroke, radius) { ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, width, height, radius || 8); else ctx.rect(x, y, width, height); if(/^#[a-f0-9]{6}$/i.test(fill)){const paint=ctx.createLinearGradient(x,y,x+width,y+height);paint.addColorStop(0,fill);paint.addColorStop(.7,fill);paint.addColorStop(1,'#263151');ctx.fillStyle=paint;}else ctx.fillStyle=fill;ctx.fill();if(stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1.5; ctx.stroke(); } }
+  function rounded(ctx, x, y, width, height, fill, stroke, radius) { ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, width, height, radius || 8); else ctx.rect(x, y, width, height); if(/^#[a-f0-9]{6}$/i.test(fill)){const paint=ctx.createLinearGradient(x,y,x+width,y+height);paint.addColorStop(0,fill);paint.addColorStop(.55,fill);paint.addColorStop(1,'#263151');ctx.fillStyle=paint;}else ctx.fillStyle=fill;ctx.fill();if(stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1.5; ctx.stroke(); } }
   function label(ctx, text, x, y, size, color, align) { ctx.font = '750 ' + size + 'px system-ui, sans-serif'; ctx.fillStyle = color || '#edf4ff'; ctx.textAlign = align || 'left'; ctx.textBaseline = 'middle'; ctx.fillText(text, x, y); }
   const NAMES = { 'simon-sequence': 'DÃY TÍN HIỆU', 'reaction-stop': 'BẮT TÍN HIỆU XANH', 'rhythm-tap': 'NHỊP SAO', 'whack-orb': 'BẮT QUẢ CẦU', 'aim-trainer': 'NHẮM SAO', 'math-sprint': 'TOÁN NHANH', 'color-word': 'MÀU VÀ CHỮ', 'odd-one-out': 'TÌM KHÁC BIỆT', 'pattern-recall': 'NHỚ MẪU SAO', 'treasure-grid': 'BẢN ĐỒ KHO BÁU', 'lock-timing': 'KHÓA QUỸ ĐẠO', 'stack-tower': 'THÁP NEON', 'constellation-trace': 'NỐI CHÒM SAO', 'pixel-painter': 'HỌA SĨ PIXEL', 'garden-care': 'KHU VƯỜN NHỎ', 'cafe-orders': 'QUẦY CÀ PHÊ' };
   function drawGame(ctx, state, options, config) {
@@ -236,7 +236,7 @@
       ctx.fillStyle = '#0b1025'; ctx.fillRect(0, 0, 720, 480);
       for (let i = 0; i < 44; i++) { ctx.fillStyle = i % 2 ? '#394263' : '#263b5c'; ctx.fillRect((i * 137 + 29) % 720, (i * 71 + 10) % 480, 2, 2); }
     }
-    rounded(ctx, 16, 14, 688, 52, '#232d54', '#8183c4', 12); label(ctx, NAMES[state.id], 32, 39, 21, '#e2ccff'); label(ctx, state.score + ' điểm' + (state.timeLeft === null ? '' : ' · ' + Math.ceil(state.timeLeft) + 's'), 687, 39, 17, '#b6efe6', 'right');
+    rounded(ctx, 16, 14, 688, 52, '#304578', '#a6b5ee', 12); label(ctx, NAMES[state.id], 32, 39, 21, '#e2ccff'); label(ctx, state.score + ' điểm' + (state.timeLeft === null ? '' : ' · ' + Math.ceil(state.timeLeft) + 's'), 687, 39, 17, '#b6efe6', 'right');
     const info = config.describe(state);
     if (state.id === 'lock-timing') drawLock(ctx, state);
     else if (state.id === 'stack-tower') drawStack(ctx, state);
@@ -266,7 +266,7 @@
   function drawLock(ctx, state) {
     const cx = 360, cy = 255, radius = 125;
     ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.strokeStyle = '#2b3e61'; ctx.lineWidth = 22; ctx.stroke();
-    ctx.beginPath(); ctx.arc(cx, cy, radius, (state.target - state.window / 2) * Math.PI * 2 - Math.PI / 2, (state.target + state.window / 2) * Math.PI * 2 - Math.PI / 2); ctx.strokeStyle = '#98e8ba'; ctx.lineWidth = 22; ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, cy, radius, (state.target - state.window / 2) * Math.PI * 2 - Math.PI / 2, (state.target + state.window / 2) * Math.PI * 2 - Math.PI / 2); ctx.strokeStyle = '#64e4ae'; ctx.lineWidth = 22; ctx.stroke();
     const angle = state.phase * Math.PI * 2 - Math.PI / 2;
     ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(angle) * 145, cy + Math.sin(angle) * 145); ctx.strokeStyle = '#ffdc8c'; ctx.lineWidth = 6; ctx.stroke(); label(ctx, state.level + ' / 5', cx, cy + 30, 28, '#fff0c0', 'center');
   }
@@ -301,7 +301,7 @@
       for (let mark = 0; mark < 8; mark++) { ctx.fillStyle = '#72809c'; ctx.fillRect(left + 20 + mark * 29, 114, 2, 4); }
       rounded(ctx, left + 109, 365, 40, 17, '#aaa4d6', '#a1abc4', 3);
     });
-    PAINT_COLORS.forEach((color, index) => { rounded(ctx, 236 + index * 65, 389, 53, 35, '#1c2c48', state.ink === index ? '#ffffff' : '#7c7191', 8); ctx.beginPath(); ctx.arc(262 + index * 65, 407, 13, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill(); label(ctx, index, 262 + index * 65, 407, 15, index ? '#101b30' : '#eef3ff', 'center'); });
+    PAINT_COLORS.forEach((color, index) => { rounded(ctx, 236 + index * 65, 389, 53, 35, '#253f69', state.ink === index ? '#ffffff' : '#7c7191', 8); ctx.beginPath(); ctx.arc(262 + index * 65, 407, 13, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill(); label(ctx, index, 262 + index * 65, 407, 15, index ? '#101b30' : '#eef3ff', 'center'); });
     ctx.save(); ctx.translate(126, 408); ctx.rotate(-.35); rounded(ctx, -42, -5, 76, 10, '#c3a0ff', '#eddcff', 3); ctx.beginPath(); ctx.moveTo(34, -5); ctx.lineTo(48, 0); ctx.lineTo(34, 5); ctx.fillStyle = '#fff1cc'; ctx.fill(); ctx.restore();
     label(ctx, 'Mực ' + state.ink, 581, 407, 17, '#e8daff', 'center');
   }

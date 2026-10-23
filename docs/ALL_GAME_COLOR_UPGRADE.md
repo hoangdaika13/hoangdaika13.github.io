@@ -1,5 +1,7 @@
 # All Game Color Arcade — release 1060
 
+Lịch sử nâng cấp 59 game. Bản tiếp theo: [Arcade Studio 109 game, release 1061](ALL_GAME_STUDIO_UPGRADE.md).
+
 Đã nâng cấp thư viện và giao diện bên trong đủ 59 game. Hình ảnh được dựng từ SVG, Canvas và DOM trong project; mỗi game có minh họa gameplay riêng, thuộc một trong 12 nhóm cảnh nền.
 
 ## Thay đổi

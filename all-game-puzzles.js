@@ -48,9 +48,9 @@
     ctx.beginPath();
     if (typeof ctx.roundRect === 'function') ctx.roundRect(x + inset, y + inset, width - inset * 2, height - inset * 2, radius);
     else ctx.rect(x + inset, y + inset, width - inset * 2, height - inset * 2);
-    var bevel=ctx.createLinearGradient(x,y,x+width,y+height);bevel.addColorStop(0,color);bevel.addColorStop(.68,color);bevel.addColorStop(1,'#28305a');
+    var bevel=ctx.createLinearGradient(x,y,x+width,y+height);bevel.addColorStop(0,color);bevel.addColorStop(.52,color);bevel.addColorStop(1,'#28305a');
     ctx.fillStyle=bevel;ctx.fill();ctx.shadowBlur=0; ctx.shadowOffsetY = 0;
-    ctx.strokeStyle = '#ffffff30'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.strokeStyle = '#ffffff65'; ctx.lineWidth = 1; ctx.stroke();
     ctx.beginPath(); ctx.moveTo(x + inset + radius, y + inset + 2); ctx.lineTo(x + width - inset - radius, y + inset + 2); ctx.strokeStyle = '#ffffff38'; ctx.stroke();
     ctx.restore();
   }
@@ -210,7 +210,7 @@
       ctx.save(); background(ctx, width, height, options, state); var layout = boardLayout(width, height, state.columns, state.rows);
       state.board.forEach(function (cell, index) {
         var x = layout.x + index % state.columns * layout.size, y = layout.y + Math.floor(index / state.columns) * layout.size;
-        tile(ctx, x, y, layout.size, layout.size, cell.revealed ? cell.mine ? '#a83d67' : '#214658' : '#5f69b3');
+        tile(ctx, x, y, layout.size, layout.size, cell.revealed ? cell.mine ? '#a83d67' : '#214658' : '#6177d2');
         if (!cell.revealed && !cell.flagged) { ctx.beginPath(); ctx.moveTo(x + layout.size * .5, y + layout.size * .34); ctx.lineTo(x + layout.size * .65, y + layout.size * .5); ctx.lineTo(x + layout.size * .5, y + layout.size * .66); ctx.lineTo(x + layout.size * .35, y + layout.size * .5); ctx.closePath(); ctx.strokeStyle = '#bcdcff24'; ctx.lineWidth = 1; ctx.stroke(); }
         if (cell.flagged || cell.revealed && (cell.mine || cell.adjacent)) text(ctx, cell.flagged ? '⚑' : cell.mine ? '✹' : cell.adjacent, x + layout.size / 2, y + layout.size / 2, Math.max(12, layout.size * 0.5), cell.flagged ? '#ffda7a' : cell.adjacent > 2 ? '#f4bdcf' : '#b3f2ef');
         if (index === state.selected && state.status === 'playing') { ctx.strokeStyle = '#f8d87a'; ctx.lineWidth = 2; ctx.strokeRect(x + 3, y + 3, layout.size - 6, layout.size - 6); }
@@ -258,7 +258,7 @@
       var summary = state.status === 'won' ? 'Bạn đã tìm đủ các cặp!' : state.mismatchRemaining > 0 ? 'Hai thẻ khác nhau. Quan sát trước khi chúng úp lại.' : 'Lật hai thẻ để tìm cặp biểu tượng giống nhau. Không giới hạn thời gian.';
       return { summary: summary + ' Đã ghép ' + state.matchedPairs + '/' + state.pairs + ' cặp, ' + state.moves + ' lượt.', columns: state.columns, cells: state.board.map(function (card, index) {
         var open = card.matched || state.open.indexOf(index) !== -1;
-        return { index: index, label: open ? MEMORY_FACES[card.face] : '?', description: 'Thẻ ' + (index + 1) + ': ' + (card.matched ? 'đã ghép, ' + MEMORY_FACES[card.face] : open ? MEMORY_FACES[card.face] : 'đang úp'), disabled: card.matched || state.status !== 'playing' || state.mismatchRemaining > 0, pressed: open };
+        return { index: index, label: open ? MEMORY_FACES[card.face] : '?', description: 'Thẻ ' + (index + 1) + ': ' + (card.matched ? 'đã ghép, ' + MEMORY_FACES[card.face] : open ? MEMORY_FACES[card.face] : 'đang úp'), disabled: card.matched || state.status !== 'playing' || state.mismatchRemaining > 0, pressed: open, tone:card.matched?'matched':open?'open':'covered' };
       }) };
     },
     draw: function (ctx, state, options) {
@@ -266,7 +266,7 @@
       ctx.save(); background(ctx, width, height, options, state); var layout = boardLayout(width, height, state.columns, Math.ceil(state.board.length / state.columns));
       state.board.forEach(function (card, index) {
         var open = card.matched || state.open.indexOf(index) !== -1, x = layout.x + index % state.columns * layout.size, y = layout.y + Math.floor(index / state.columns) * layout.size;
-        tile(ctx, x, y, layout.size, layout.size, card.matched ? '#2e9285' : open ? '#b17aca' : '#6b59a5');
+        tile(ctx, x, y, layout.size, layout.size, card.matched ? '#2caa94' : open ? '#b578e4' : '#7353be');
         if (!open) {
           ctx.beginPath(); ctx.arc(x + layout.size / 2, y + layout.size / 2, layout.size * .27, 0, Math.PI * 2); ctx.strokeStyle = '#c4b1ef45'; ctx.lineWidth = 1; ctx.stroke();
           ctx.beginPath(); ctx.moveTo(x + layout.size * .5, y + layout.size * .18); ctx.lineTo(x + layout.size * .82, y + layout.size * .5); ctx.lineTo(x + layout.size * .5, y + layout.size * .82); ctx.lineTo(x + layout.size * .18, y + layout.size * .5); ctx.closePath(); ctx.strokeStyle = '#85d7ef45'; ctx.stroke();

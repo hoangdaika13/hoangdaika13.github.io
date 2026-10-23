@@ -27,7 +27,7 @@ test('independent browser audit: DOM puzzle clues, color alternatives, focus and
     const errors = []; page.on('pageerror', error => errors.push(error.message));
     await page.setContent('<!doctype html><html lang="vi"><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0"><main id="root"></main></body></html>');
     await page.addStyleTag({ path: path.join(root, 'all-game.css') });
-    for (const file of ['all-game-scenes.js', 'all-game-catalog.js', 'all-game-puzzles.js', 'all-game-pack-puzzles.js', 'all-game-adventure.js', 'all-game.js']) await page.addScriptTag({ path: path.join(root, file) });
+    for (const file of ['all-game-studio-catalog.js', 'all-game-studio-core.js', 'all-game-studio-art.js', 'all-game-scenes.js', 'all-game-catalog.js', 'all-game-puzzles.js', 'all-game-pack-puzzles.js', 'all-game-adventure.js', 'all-game.js']) await page.addScriptTag({ path: path.join(root, file) });
     const entries = host.CATALOG.filter(entry => entry.bundle in puzzlePacks);
     for (const width of [375, 768, 1280]) {
       await page.setViewportSize({ width, height: 900 });

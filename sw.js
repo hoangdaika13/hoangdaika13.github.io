@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1060";
+const CACHE = "hh-identity-portal-v1061";
+// Previous release: hh-identity-portal-v1060; ./performance-loader.js?v=721; ./all-game.js?v=2; ./all-game.css?v=2;
 // Previous release: hh-identity-portal-v1059; ./performance-loader.js?v=720; ./sidebar-navigation-pro.css?v=31; ./script.js?v=294.
 // Previous release: hh-identity-portal-v1058; ./sidebar-navigation-pro.css?v=30; ./script.js?v=293.
 // Previous release: hh-identity-portal-v1057; ./performance-loader.js?v=719; ./script.js?v=292; ./platform-home.js?v=18.
@@ -132,15 +133,27 @@ const EONWILD_CINEMATIC_CACHE = "hh-eonwild-cinematic-assets-v1";
 // HH School v1 replaces the former Learning OS bundle; legacy caches are removed during activation.
 // HH English compatibility: app-shell.css?v=64 script.js?v=179 script.js?v=232 sidebar-navigation-pro.css?v=29 motion-comfort.css?v=1 auth-experience.js?v=9 english-learning.css?v=17 english-learning.js?v=22 english-learning.js?v=24 english-learning.js?v=28 english-learning-os.js?v=7 english-learning-os.css?v=3 english-galaxy.css?v=1 english-galaxy.js?v=2 english-learning-galaxy.css?v=6 english-learning-galaxy.js?v=5 english-vocabulary.css?v=1 english-vocabulary.js?v=2 english-for-everyone.css?v=1 english-for-everyone.js?v=2; current language cockpit loads the versioned Learning OS bundle below.
 const RUNTIME_ASSETS = [
-  "./all-game-pack-puzzles.js?v=2",
-  "./all-game-pack-arcade.js?v=2",
-  "./all-game-pack-casual.js?v=2",
-  "./all-game.css?v=2",
-  "./all-game-scenes.js?v=2",
-  "./all-game.js?v=2",
-  "./all-game-arcade.js?v=2",
-  "./all-game-puzzles.js?v=2",
-  "./all-game-adventure.js?v=2",
+  "./all-game-studio-core.js?v=1",
+  "./all-game-studio-art.js?v=1",
+  "./all-game-strategy-fields.js?v=1",
+  "./all-game-strategy-combat.js?v=1",
+  "./all-game-strategy-board.js?v=1",
+  "./all-game-strategy-table.js?v=1",
+  "./all-game-action-combat.js?v=1",
+  "./all-game-action-physics.js?v=1",
+  "./all-game-action-world.js?v=1",
+  "./all-game-action-motion.js?v=1",
+  "./all-game-management-workshop.js?v=1",
+  "./all-game-management-world.js?v=1",
+  "./all-game-pack-puzzles.js?v=3",
+  "./all-game-pack-arcade.js?v=3",
+  "./all-game-pack-casual.js?v=3",
+  "./all-game.css?v=3",
+  "./all-game-scenes.js?v=3",
+  "./all-game.js?v=3",
+  "./all-game-arcade.js?v=3",
+  "./all-game-puzzles.js?v=3",
+  "./all-game-adventure.js?v=3",
   "./patin.css?v=5",
   "./patin-arena.css?v=1",
   "./patin-guide.css?v=1",
@@ -177,7 +190,7 @@ const RUNTIME_ASSETS = [
   "./home-cosmos-motion.css?v=5",
   "./home-cosmos-motion.js?v=3",
   "./platform-home.css?v=9",
-  "./platform-home.js?v=19",
+  "./platform-home.js?v=20",
   "./focus-study-room.css?v=2",
   "./focus-study-room.js?v=1",
   "./",
@@ -801,7 +814,8 @@ const RUNTIME_ASSETS = [
   "./data/ai-super-platform-modules.json"
 ];
 const CORE = [
-  "./all-game-catalog.js?v=1",
+  "./all-game-studio-catalog.js?v=1",
+  "./all-game-catalog.js?v=2",
   "./index.html",
   "./app-shell.css?v=67",
   "./app-theme-system.css?v=9",
@@ -818,10 +832,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=721",
+  "./performance-loader.js?v=722",
   "./auth-platform.js?v=22",
   "./auth-neon-gateway.js?v=35",
-  "./script.js?v=294"
+  "./script.js?v=295"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

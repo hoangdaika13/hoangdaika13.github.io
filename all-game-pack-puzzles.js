@@ -20,12 +20,12 @@
   function cell(index, text, description, disabled, pressed) { return { index: index, text: String(text), label: description, description: description, disabled: !!disabled, pressed: !!pressed }; }
   function desc(s, summary, columns, cells) { return { summary: summary + (s.message ? ' ' + s.message : ''), columns: columns, cells: cells }; }
   var MATERIALS = {
-    'lights-out': ['#283a60', '#ffd166'], 'slide-tiles': ['#5a6db1', '#bcf4ff'], 'peg-solitaire': ['#76518d', '#ffdc92'],
-    'n-queens': ['#3d568a', '#ffe195'], nonogram: ['#f3eafa', '#9158ca'], 'towers-hanoi': ['#613d78', '#ffb57f'],
-    'maze-path': ['#2b6e78', '#a4ffd0'], 'connect-four': ['#3467c2', '#ffd166'], 'tic-tac-toe': ['#225a70', '#90ffe4'],
-    'reversi-mini': ['#1d8b7c', '#fcf4e5'], 'word-search': ['#f0e9ff', '#40306a'], 'number-order': ['#3c5b96', '#bcf3ff'],
-    'sudoku-mini': ['#faf2ff', '#443564'], 'color-flood': ['#454e89', '#ffdc89'], 'pipe-link': ['#344976', '#6ef2ea'],
-    'code-breaker': ['#5a4190', '#edc6ff'], 'knights-tour': ['#555e89', '#ffe09a']
+    'lights-out': ['#304b87', '#ffe1a3'], 'slide-tiles': ['#4776ff', '#d4faff'], 'peg-solitaire': ['#9361ff', '#ffe0a3'],
+    'n-queens': ['#414d93', '#ffe195'], nonogram: ['#f3eafa', '#9158ca'], 'towers-hanoi': ['#613d78', '#ffb57f'],
+    'maze-path': ['#2b6e78', '#a4ffd0'], 'connect-four': ['#4776ff', '#ffd166'], 'tic-tac-toe': ['#225a70', '#90ffe4'],
+    'reversi-mini': ['#169c88', '#fff2d6'], 'word-search': ['#f0e9ff', '#40306a'], 'number-order': ['#3c5b96', '#bcf3ff'],
+    'sudoku-mini': ['#faf2ff', '#443564'], 'color-flood': ['#5863ba', '#ffdc89'], 'pipe-link': ['#3d5896', '#6ef2ea'],
+    'code-breaker': ['#774fc5', '#edc6ff'], 'knights-tour': ['#5f66aa', '#ffe09a']
   };
   function material(ctx,x,y,w,h,color){
     if(!/^#[a-f0-9]{6}$/i.test(color))return color;
@@ -44,11 +44,12 @@
     var gap = Math.max(2, size * .045), radius = Math.min(10, size * .12);
     surface(ctx, x + gap, y + gap + 3, size - gap * 2, size - gap * 2, '#03081966', null, radius);
     surface(ctx, x + gap, y + gap, size - gap * 2, size - gap * 2 - 2, fill, '#ffffff26', radius);
-    beam(ctx, [[x + gap + radius, y + gap + 2], [x + size - gap - radius, y + gap + 2]], '#ffffff32', 1);
-    if (accent) surface(ctx, x + gap + 2, y + gap + 2, size - gap * 2 - 4, size - gap * 2 - 6, '#ffffff00', accent, Math.max(0, radius - 1));
+    beam(ctx, [[x + gap + radius, y + gap + 2], [x + size - gap - radius, y + gap + 2]], '#ffffff60', 1);
+    beam(ctx, [[x+gap+4,y+size-gap-5],[x+size-gap-4,y+size-gap-5]], '#0c1c3c66', 2);
+    if (accent) surface(ctx, x + gap + 2, y + gap + 2, size - gap * 2 - 4, size - gap * 2 - 6, '#ffffff06', accent, Math.max(0, radius - 1));
   }
   function drawHanoi(ctx, s, w, h) {
-    var base = h * .78, spacing = w / 3, diskH = Math.min(30, h * .07), colors = ['#b18aff', '#63def5', '#70e7ad', '#ffd166', '#ff91b8'];
+    var base = h * .78, spacing = w / 3, diskH = Math.min(30, h * .07), colors = ['#a47bff', '#25d9f8', '#64e4ae', '#ffd166', '#ff77bd'];
     surface(ctx, w * .05, base, w * .9, 17, '#735548', '#d7ad83', 6);
     s.towers.forEach(function (stack, tower) {
       var cx = spacing * (tower + .5); surface(ctx, cx - 5, base - diskH * (s.count + 1.4), 10, diskH * (s.count + 1.4), '#a57d58', '#f1c990', 4);
@@ -64,7 +65,7 @@
       if (value) { circle(ctx, cx, cy - size * .025, size * .23, '#ffd166', c.pressed ? '#fff1b1' : '#f7d8a3'); circle(ctx, cx - size * .065, cy - size * .09, size * .055, '#ffffff65'); } return;
     }
     if (id === 'n-queens' || id === 'knights-tour') {
-      surface(ctx, x + 1, y + 1, size - 2, size - 2, (Math.floor(i / s.columns) + i % s.columns) % 2 ? '#3e4d84' : '#8a76ad', '#c5cfda26', 2);
+      surface(ctx, x + 1, y + 1, size - 2, size - 2, (Math.floor(i / s.columns) + i % s.columns) % 2 ? '#4758a5' : '#b8a2e2', '#c5cfda26', 2);
       ink = c.pressed || c.text.includes('♛') ? '#ffe2a4' : '#e9edf5'; if (c.text.includes('!')) ink = '#ffb6b6';
       if (c.pressed) surface(ctx, x + 4, y + 4, size - 8, size - 8, '#ffe0a01c', '#ffe0a0', 5);
       lettering(ctx, c.text, cx, cy, font, ink, size - 7); return;

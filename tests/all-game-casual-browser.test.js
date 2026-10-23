@@ -18,7 +18,7 @@ test('All Game casual pack: real host UI, controls, winning paths and accessibil
     const pathname = new URL(request.url, 'http://localhost').pathname;
     if (pathname === '/') {
       response.setHeader('Content-Type', 'text/html; charset=utf-8');
-      return response.end('<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>All Game casual browser audit</title><link rel="stylesheet" href="/all-game.css"><body style="margin:0;background:#080e20"><main id="probe"></main><script src="/all-game-catalog.js"></script><script src="/all-game-scenes.js"></script><script src="/all-game.js"></script></body></html>');
+      return response.end('<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>All Game casual browser audit</title><link rel="stylesheet" href="/all-game.css"><body style="margin:0;background:#080e20"><main id="probe"></main><script src="/all-game-studio-catalog.js"></script><script src="/all-game-studio-core.js"></script><script src="/all-game-studio-art.js"></script><script src="/all-game-catalog.js"></script><script src="/all-game-scenes.js"></script><script src="/all-game.js"></script></body></html>');
     }
     if (!/^\/all-game(?:-[a-z-]+)?\.(?:js|css)$/.test(pathname)) return response.writeHead(404).end();
     const file = path.join(repo, pathname.slice(1));

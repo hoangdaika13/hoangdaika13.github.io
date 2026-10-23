@@ -10,7 +10,7 @@ function luminance(hex) {
   });
   return rgb[0] * .2126 + rgb[1] * .7152 + rgb[2] * .0722;
 }
-test("all 59 destinations have individual gameplay artwork and isolated SVG namespaces", () => {
+test("all 109 destinations have individual gameplay artwork and isolated SVG namespaces", () => {
   const art = new Set();
   for (const game of CATALOG) {
     const body = scenes.illustration(game.id), card = scenes.thumbnail(game.id, "card"), hero = scenes.thumbnail(game.id, "hero");
@@ -23,7 +23,7 @@ test("all 59 destinations have individual gameplay artwork and isolated SVG name
     assert.ok(!scenes.backdrop(game.id).includes("data-game-art"), "board background does not duplicate poster gameplay");
     assert.doesNotMatch(card, /undefined|NaN|Infinity|<image|<script|foreignObject|href=/);
   }
-  assert.equal(art.size, 59, "every game has a distinct subject");
+  assert.equal(art.size, 109, "every game has a distinct subject");
 });
 
 test("all game CTA gradient endpoints contrast with the shared dark text", () => {

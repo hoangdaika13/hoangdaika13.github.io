@@ -44,7 +44,7 @@
   }
   function gemBlock(ctx, x, y, size, color) {
     const material=ctx.createLinearGradient(x,y,x+size,y+size);
-    material.addColorStop(0,color);material.addColorStop(.65,color);material.addColorStop(1,'#22375b');
+    material.addColorStop(0,color);material.addColorStop(.5,color);material.addColorStop(1,'#22375b');
     box(ctx,x,y,size,size,material,'#ffffffb0',Math.min(6,size*.13));
     ctx.beginPath();ctx.moveTo(x+size*.12,y+size*.15);ctx.lineTo(x+size*.45,y+size*.15);ctx.lineTo(x+size*.15,y+size*.45);ctx.closePath();ctx.fillStyle='#ffffff48';ctx.fill();
     ctx.fillStyle = '#ffffff4d'; ctx.fillRect(x + 3, y + 3, size - 6, 3);
@@ -58,7 +58,7 @@
     L: [[2, 0], [0, 1], [1, 1], [2, 1]], S: [[1, 0], [2, 0], [0, 1], [1, 1]],
     Z: [[0, 0], [1, 0], [1, 1], [2, 1]]
   };
-  const BLOCK_COLORS = { I: '#25d9f8', O: '#ffd166', T: '#a684ff', J: '#4776ff', L: '#ff997f', S: '#68edaf', Z: '#ff78b2' };
+  const BLOCK_COLORS = { I: '#25d9f8', O: '#ffd166', T: '#9361ff', J: '#4776ff', L: '#ff8066', S: '#68edaf', Z: '#ff66b3' };
   function blockCells(piece) {
     let cells = SHAPES[piece.kind].map(cell => cell.slice());
     if (piece.kind !== 'O') for (let i = 0; i < piece.rotation; i++) cells = cells.map(([x, y]) => [(piece.kind === 'I' ? 3 : 2) - y, x]);
@@ -248,13 +248,13 @@
         else { ctx.fillStyle = '#49726c'; ctx.fillRect(x + 5, y + 5, 2, 2); ctx.fillRect(x + size - 7, y + size - 7, 2, 2); }
         if (state.goals.includes(index)) { ctx.beginPath(); ctx.arc(x + size / 2, y + size / 2, size * .29, 0, Math.PI * 2); ctx.strokeStyle = '#8df3bf'; ctx.lineWidth = 3; ctx.stroke(); ctx.beginPath(); ctx.arc(x + size / 2, y + size / 2, size * .37, 0, Math.PI * 2); ctx.strokeStyle = '#8df3bf33'; ctx.lineWidth = 2; ctx.stroke(); }
         if (state.crates.includes(index)) {
-          box(ctx, x + 7, y + 7, size - 14, size - 14, state.goals.includes(index) ? '#a1f8b3' : '#f2bd71', '#fce5b2', 5);
+          box(ctx, x + 7, y + 7, size - 14, size - 14, state.goals.includes(index) ? '#8bffd1' : '#ffd166', '#fce5b2', 5);
           ctx.fillStyle = '#fff0c795'; ctx.fillRect(x + 10, y + 10, size - 20, 3);
           ctx.beginPath(); ctx.moveTo(x + 12, y + 12); ctx.lineTo(x + size - 12, y + size - 12); ctx.moveTo(x + size - 12, y + 12); ctx.lineTo(x + 12, y + size - 12); ctx.strokeStyle = '#80623b'; ctx.lineWidth = 2; ctx.stroke();
         }
         if (state.player === index) {
           ctx.beginPath(); ctx.ellipse(x + size / 2, y + size * .76, size * .27, size * .09, 0, 0, Math.PI * 2); ctx.fillStyle = '#0000005c'; ctx.fill();
-          box(ctx, x + size * .23, y + size * .24, size * .54, size * .49, '#8bd8ff', '#d7f5ff', 8);
+          box(ctx, x + size * .23, y + size * .24, size * .54, size * .49, '#25d9f8', '#d7f5ff', 8);
           box(ctx, x + size * .32, y + size * .38, size * .36, size * .15, '#123152', null, 2);
           ctx.beginPath(); ctx.moveTo(x + size / 2, y + size * .25); ctx.lineTo(x + size / 2, y + size * .13); ctx.strokeStyle = '#c7f5ff'; ctx.lineWidth = 2; ctx.stroke();
           box(ctx, x + size * .45, y + size * .09, size * .1, size * .08, '#9af4ca', null, 2);
@@ -361,7 +361,7 @@
         ctx.beginPath(); ctx.arc(x, 274 + marker % 2 * 20, 10, 0, Math.PI * 2); ctx.strokeStyle = '#8eece860'; ctx.lineWidth = 2; ctx.stroke();
       }
       course.platforms.forEach(([x, y, w, h]) => {
-        box(ctx, x, y, w, h, ['#285377', '#514878', '#287a68'][state.level - 1], '#7bffe6', 3);
+        box(ctx, x, y, w, h, ['#366eb3', '#7955ba', '#25a38a'][state.level - 1], '#7bffe6', 3);
         ctx.fillStyle = '#b1ffe5'; ctx.fillRect(x, y, w, 3);
         ctx.fillStyle = '#041e3380'; ctx.fillRect(x + 2, y + h - 7, w - 4, 5);
         for (let tile = 12; tile < w - 10; tile += 44) { ctx.fillStyle = '#72e3db33'; ctx.fillRect(x + tile, y + 7, 18, 2); if (h > 20) { ctx.fillStyle = '#092a3a'; ctx.fillRect(x + tile + 8, y + 24, 2, h - 28); } }

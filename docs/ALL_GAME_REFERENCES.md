@@ -1,5 +1,7 @@
 # All Game · Neon Arcade
 
+Tài liệu gốc của thư viện 59 game. Bản mở rộng hiện tại: [Arcade Studio 109 game, release 1061](ALL_GAME_STUDIO_UPGRADE.md) và [nguồn tham khảo/giấy phép](ALL_GAME_STUDIO_REFERENCES.md).
+
 Thiết kế và triển khai: 16/10/2026. Mục con độc lập của **Giải trí & Nội dung**, route `/all-game`, dùng nguyên shell HH Platform. Không thay HH Play hoặc EonWild.
 
 ## Thư viện 59 game

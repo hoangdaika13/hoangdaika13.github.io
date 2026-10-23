@@ -128,7 +128,7 @@
   function snakeDraw(ctx, state, options = {}) {
     background(ctx, options, '#13293c', state);
     grid(ctx, 24, 0.12);
-    ctx.strokeStyle = '#62b8ad';
+    ctx.strokeStyle = '#86eacb';
     ctx.lineWidth = 2;
     rounded(ctx, 23, 23, 674, 434, 8);
     ctx.stroke();
@@ -156,7 +156,7 @@
       const index = state.body.length - reverseIndex - 1;
       const x = 36 + part.x * 24, y = 36 + part.y * 24;
       const skin = ctx.createRadialGradient(x - 3, y - 5, 1, x, y, 13);
-      skin.addColorStop(0, index === 0 ? '#c0ffd6' : '#7bf3af'); skin.addColorStop(0.55, index === 0 ? '#51e6a2' : '#2dc596'); skin.addColorStop(1, '#127169');
+      skin.addColorStop(0, index === 0 ? '#c0ffd6' : '#8bffd0'); skin.addColorStop(0.55, index === 0 ? '#51e6a2' : '#25d9b2'); skin.addColorStop(1, '#127169');
       ctx.fillStyle = skin;
       rounded(ctx, 26 + part.x * 24, 26 + part.y * 24, 20, 20, 8);
       ctx.fill();
@@ -184,7 +184,7 @@
   // Breakout: bounded substeps keep a fast ball from tunneling through the bricks.
   function breakoutBricks(level) {
     const result = [];
-    const colors = ['#ff78b2', '#a684ff', '#25d9f8', '#63edb1', '#ffd166'];
+    const colors = ['#ff66b3', '#9361ff', '#25d9f8', '#64e4ae', '#ffd166'];
     for (let row = 0; row < level + 2; row += 1) {
       for (let col = 0; col < 10; col += 1) {
         result.push({ id: row * 10 + col, x: 36 + col * 65.4, y: 48 + row * 27, w: 59.4, h: 20, hp: level >= 2 && row === 0 ? 2 : 1, color: colors[row] });
@@ -483,9 +483,9 @@
       ctx.save();
       ctx.translate(enemy.x, enemy.y);
       const hull = ctx.createLinearGradient(-52, -25, 52, 25);
-      hull.addColorStop(0, boss ? '#efceff' : '#ffd6a3'); hull.addColorStop(0.4, boss ? '#9b75de' : enemy.kind === 'kite' ? '#e965a3' : '#e5a66c'); hull.addColorStop(1, '#4c397a');
+      hull.addColorStop(0, boss ? '#efceff' : '#ffd6a3'); hull.addColorStop(0.4, boss ? '#9361ff' : enemy.kind === 'kite' ? '#ff66b3' : '#ff8066'); hull.addColorStop(1, '#4c397a');
       ctx.fillStyle = hull;
-      ctx.strokeStyle = '#f3e9ff';
+      ctx.strokeStyle = '#fff0fa';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       if (boss) { ctx.moveTo(-52, 6); ctx.lineTo(-33, -17); ctx.lineTo(-17, -9); ctx.lineTo(0, -30); ctx.lineTo(17, -9); ctx.lineTo(33, -17); ctx.lineTo(52, 6); ctx.lineTo(28, 24); ctx.lineTo(0, 17); ctx.lineTo(-28, 24); }
@@ -513,7 +513,7 @@
       ctx.strokeStyle = '#b3f9ff'; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.arc(0, 0, 25, 0, Math.PI * 2); ctx.stroke();
     }
-    const playerHull = ctx.createLinearGradient(-22, -20, 22, 20); playerHull.addColorStop(0, '#e0eced'); playerHull.addColorStop(0.45, '#53d7dd'); playerHull.addColorStop(1, '#2d518a');
+    const playerHull = ctx.createLinearGradient(-22, -20, 22, 20); playerHull.addColorStop(0, '#e0eced'); playerHull.addColorStop(0.45, '#25d9f8'); playerHull.addColorStop(1, '#2d518a');
     ctx.fillStyle = playerHull; ctx.strokeStyle = '#e1fffa'; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(0, -23); ctx.lineTo(12, -1); ctx.lineTo(21, 15); ctx.lineTo(7, 11); ctx.lineTo(0, 16); ctx.lineTo(-7, 11); ctx.lineTo(-21, 15); ctx.lineTo(-12, -1); ctx.closePath(); ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#28465f';
