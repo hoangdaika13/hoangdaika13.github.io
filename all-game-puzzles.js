@@ -48,10 +48,10 @@
     ctx.beginPath();
     if (typeof ctx.roundRect === 'function') ctx.roundRect(x + inset, y + inset, width - inset * 2, height - inset * 2, radius);
     else ctx.rect(x + inset, y + inset, width - inset * 2, height - inset * 2);
-    var bevel=ctx.createLinearGradient(x,y,x+width,y+height);bevel.addColorStop(0,color);bevel.addColorStop(.52,color);bevel.addColorStop(1,'#28305a');
+    var bevel=ctx.createLinearGradient(x,y,x+width,y+height);bevel.addColorStop(0,color);bevel.addColorStop(.35,color);bevel.addColorStop(1,'#394576');
     ctx.fillStyle=bevel;ctx.fill();ctx.shadowBlur=0; ctx.shadowOffsetY = 0;
     ctx.strokeStyle = '#ffffff65'; ctx.lineWidth = 1; ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(x + inset + radius, y + inset + 2); ctx.lineTo(x + width - inset - radius, y + inset + 2); ctx.strokeStyle = '#ffffff38'; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x + inset + radius, y + inset + 2); ctx.lineTo(x + width - inset - radius, y + inset + 2); ctx.strokeStyle = '#ffffff88'; ctx.stroke();
     ctx.restore();
   }
   function text(ctx, value, x, y, size, color) {

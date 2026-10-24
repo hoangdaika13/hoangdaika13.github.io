@@ -236,7 +236,7 @@
       ctx.fillStyle = '#0b1025'; ctx.fillRect(0, 0, 720, 480);
       for (let i = 0; i < 44; i++) { ctx.fillStyle = i % 2 ? '#394263' : '#263b5c'; ctx.fillRect((i * 137 + 29) % 720, (i * 71 + 10) % 480, 2, 2); }
     }
-    rounded(ctx, 16, 14, 688, 52, '#304578', '#a6b5ee', 12); label(ctx, NAMES[state.id], 32, 39, 21, '#e2ccff'); label(ctx, state.score + ' điểm' + (state.timeLeft === null ? '' : ' · ' + Math.ceil(state.timeLeft) + 's'), 687, 39, 17, '#b6efe6', 'right');
+    rounded(ctx, 16, 14, 688, 52, '#374d86', '#bad6ff', 12); label(ctx, NAMES[state.id], 32, 39, 21, '#f2e5ff'); label(ctx, state.score + ' điểm' + (state.timeLeft === null ? '' : ' · ' + Math.ceil(state.timeLeft) + 's'), 687, 39, 17, '#b6efe6', 'right');
     const info = config.describe(state);
     if (state.id === 'lock-timing') drawLock(ctx, state);
     else if (state.id === 'stack-tower') drawStack(ctx, state);
@@ -258,7 +258,7 @@
     const total = columns * cellSize, left = (720 - total) / 2;
     cells.forEach((item, i) => {
       const x = left + i % columns * cellSize, y = top + Math.floor(i / columns) * cellSize;
-      rounded(ctx, x + gap / 2, y + gap / 2, cellSize - gap, cellSize - gap, item.pressed ? (item.color || '#b78aff') + '55' : '#15213a', item.pressed ? item.color || '#b78aff' : '#3b4d72', 9);
+      rounded(ctx, x + gap / 2, y + gap / 2, cellSize - gap, cellSize - gap, item.pressed ? (item.color || '#b78aff') + '55' : '#23365b', item.pressed ? '#ffdf9a' : '#7898cd', 9);
       if (tinyTarget && item.pressed) { ctx.beginPath(); ctx.arc(x + cellSize / 2, y + cellSize / 2, 9, 0, Math.PI * 2); ctx.strokeStyle = '#91f2e8'; ctx.lineWidth = 3; ctx.stroke(); ctx.fillStyle = '#ffffff'; ctx.fillRect(x + cellSize / 2 - 1, y + cellSize / 2 - 1, 2, 2); }
       else label(ctx, item.text, x + cellSize / 2, y + cellSize / 2, Math.min(24, cellSize * .28, (cellSize - gap - 12) / Math.max(1, item.text.length * .6)), item.color || '#e0ebff', 'center');
     });

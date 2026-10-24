@@ -1,0 +1,133 @@
+{
+  "release": 1062,
+  "date": "2026-10-24",
+  "total": 209,
+  "new": 100,
+  "newBundles": 20,
+  "unitTests": {
+    "allGame": 674,
+    "allTools": 241,
+    "skipped": 0
+  },
+  "browser": {
+    "fullShell": {
+      "games": 209,
+      "checks": [
+        "Guest→Platform→All Game:209 real destinations in registry/sidebar, outer shell retained and no engine bundle loaded for catalog",
+        "Search/empty/favorite persistence, 1440/768/375 library and CSSzoom200 have no page overflow",
+        "All209 real games load/start/pause/resume/input at375px; leaving and browser Back/Forward keep shell and return paused",
+        "Real accessible Mines keyboard reveal/flags and Memory matching; same-account paused session restored and another account sees no record",
+        "Reload restores the paused checkpoint and real score; failed lazy bundle shows error/retry, then Lights Out completes through actual DOM clicks",
+        "D-pad keyboard launch works; unmount/controlled hidden-tab stop loop and do not auto-resume; forced-color keyboard focus visible",
+        "Storage failure is visible; no uncaught JavaScript/CSP errors; no gameplay APIs or paid services"
+      ],
+      "errors": [],
+      "authentication": "Guest login; backend readiness endpoints explicitly doubled; real local engines and CSP"
+    },
+    "responsive": {
+      "games": 209,
+      "widths": [
+        1440,
+        768,
+        375
+      ],
+      "DPR": 2,
+      "errors": []
+    },
+    "specificNewGames": {
+      "games": 100,
+      "widths": [
+        1440,
+        768,
+        375
+      ],
+      "results": [
+        {
+          "group": "play",
+          "games": 35,
+          "errors": []
+        },
+        {
+          "group": "lab",
+          "games": 35,
+          "errors": []
+        },
+        {
+          "group": "story",
+          "games": 30,
+          "errors": []
+        }
+      ]
+    },
+    "sharedHost": [
+      {
+        "library": "latest100,local5,text5 and checkpoint empty state"
+      },
+      {
+        "checkpoint": "saved-game card chooses actual hard checkpoint after another global difficulty; reload restores exact state paused"
+      },
+      {
+        "input": "native CDP IME commits once, input arrows do not move board, Enter submits, one-level game is labelled honestly,375px/DPR2/zoom200"
+      },
+      {
+        "keyboard": "aim-mode uses M while R remains the shoot shortcut"
+      },
+      {
+        "performance": {
+          "samples": 74,
+          "medianMs": 0.5,
+          "p95Ms": 0.6999999284744263,
+          "loadedResourceCount": 20,
+          "decodedBytes": 450340
+        },
+        "limits": "Chromium desktop runtime on the QA host, not a universal frame-rate guarantee"
+      },
+      {
+        "fault": "injected descriptor failure is contained, RAF stops, no uncaught page error"
+      }
+    ],
+    "nativeAudio": {
+      "passed": true,
+      "starts": 3,
+      "playedDelta": 1.0583000000000007,
+      "checks": [
+        "gesture-only native context",
+        "native oscillator voices",
+        "zero-gain deck silence",
+        "50% master volume and keyboard range",
+        "±100ms alignment preserves state",
+        "bounded native scheduling",
+        "monotonic clock",
+        "pause stops and freezes",
+        "resume without catchup",
+        "mute suspension",
+        "unmount close"
+      ],
+      "errors": []
+    }
+  },
+  "limits": [
+    "Short original2D mini-games and bounded localAI; no network multiplayer",
+    "Account-scoped local device storage,8checkpoints; no cloud or cross-device sync",
+    "STEM models are simplified educational game models; vocabulary is deliberately bounded",
+    "Fresh-state completions are engine controllers/solvers. Some competitive Play proofs are legal losses/draws, not claims of optimal play",
+    "Desktop Chromium/emulated viewports; physical phones and subjective hardware audio latency remain untested"
+  ],
+  "evidence": {
+    "library": [
+      "docs/media/all-game-library-1440-1062.webp",
+      "docs/media/all-game-library-768-1062.webp",
+      "docs/media/all-game-library-375-1062.webp"
+    ],
+    "newGames": "docs/media/all-game-atlas-100-games-1062.webp",
+    "rawLocalFolders": [
+      ".study-local/all-game-shell-final-1062",
+      ".study-local/all-game-color-final-1062",
+      ".study-local/all-game-expansion-play-final",
+      ".study-local/all-game-expansion-lab-final",
+      ".study-local/all-game-expansion-story-final",
+      ".study-local/all-game-audio-final",
+      ".study-local/all-game-host-1062"
+    ]
+  }
+}

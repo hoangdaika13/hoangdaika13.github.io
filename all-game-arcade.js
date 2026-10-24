@@ -128,7 +128,7 @@
   function snakeDraw(ctx, state, options = {}) {
     background(ctx, options, '#13293c', state);
     grid(ctx, 24, 0.12);
-    ctx.strokeStyle = '#86eacb';
+    ctx.strokeStyle = '#b1ffe8';
     ctx.lineWidth = 2;
     rounded(ctx, 23, 23, 674, 434, 8);
     ctx.stroke();
@@ -150,7 +150,7 @@
       ctx.moveTo(x, y - 8); ctx.quadraticCurveTo(x + 4, y - 14, x + 8, y - 12); ctx.stroke();
       ctx.fillStyle = '#79f3a1'; ctx.beginPath(); ctx.ellipse(x + 6, y - 10, 4.5, 2.2, -0.6, 0, Math.PI * 2); ctx.fill();
     }
-    ctx.lineWidth = 19; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#167f67';
+    ctx.lineWidth = 19; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#24599b';
     ctx.beginPath(); state.body.forEach((part, index) => { const x = 36 + part.x * 24, y = 36 + part.y * 24; if (!index) ctx.moveTo(x, y); else ctx.lineTo(x, y); }); ctx.stroke();
     state.body.slice().reverse().forEach((part, reverseIndex) => {
       const index = state.body.length - reverseIndex - 1;

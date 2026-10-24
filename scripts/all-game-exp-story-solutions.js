@@ -1,0 +1,43 @@
+'use strict';
+// Reproducible legal-input walkthroughs. No fixture/state injection is used.
+const C=require('../all-game-studio-core.js'),catalog=require('../all-game-exp-catalog-story.js');
+const engines=Object.assign({},...['narrative','rpg','action','coop','language','creative'].map(v=>require('../all-game-exp-'+v+'.js').games));
+function walkthrough(id,options={seed:id==='word-tiles'?1:'story-proof',difficulty:'normal'}){
+ const g=engines[id],trace=[];let s=g.create(options);
+ const act=(a,dt=0)=>{if(trace.length>24000)throw Error('Walkthrough action budget '+id);trace.push({action:a,dt});s=g.step(s,a,dt);return s;},command=id=>act({type:'command',id}),cell=index=>act({type:'cell',index}),text=value=>act({type:'text',value}),tick=(held={},dt=.05)=>act({type:'tick',held},dt),point=(x,y)=>act({type:'pointer',phase:'down',x,y});
+ function walk(target,n,field='player'){for(let limit=0;s[field]!==target&&limit<70;limit++){const route=C.path(s[field],target,i=>C.neighbors(i,n),()=>true);if(!route.length)throw Error('No path');cell(route[1]);}}
+ const scripts={
+ 'station-detective'(){for(let i=0;i<5;i++){cell(i);command('inspect');}g.rules.solution.forEach((v,i)=>{cell(v);command('slot-'+i);});command('accuse-0');command('conclude');},
+ 'relic-room'(){for(let n=0;n<3;n++){cell(0);command('inspect');cell(1);command('inspect');command('combine');cell(2);command('use');}},
+ 'clockloop-story'(){cell(1);command('inspect');cell(2);command('inspect');command('reset');cell(3);command('warn');cell(4);command('signal');},
+ 'treaty-dialogue'(){for(let i=0;i<3;i++){cell(i);command('listen');}command('disclose');for(const id of ['water','passage','neutral','sign'])command(id);},
+ 'cartographer-expedition'(){for(const target of [6,8,18]){walk(target,5);command('survey');}command('chart');for(let i=0;i<3;i++){cell(s.notes[i]);command('next');}command('chart');walk(0,5);command('return');},
+ 'party-jrpg'(){for(let i=0;i<150&&s.status==='playing';i++){cell(Math.max(0,s.enemies.findIndex(v=>v.hp>0)));const h=s.heroes[s.actor];if(s.actor===2&&h.mana>=2&&s.heroes.some(v=>v.hp>0&&v.hp<v.max-5))command('skill');else command(s.actor===1&&h.mana>=2?'skill':'attack');}},
+ 'ability-gated-quest'(){for(const i of [1,4])cell(i);command('interact');cell(1);cell(2);command('interact');cell(5);command('interact');command('rest');cell(8);for(let i=0;i<3;i++)command('strike');},
+ 'survivor-camp'(){cell(6);command('gather');cell(5);cell(9);command('gather');cell(5);command('shelter');command('eat');command('fire');for(let i=0;i<3;i++)command('rest');},
+ 'creature-tamer'(){for(const p of g.rules.species){command('observe');command('bait-'+p.bait);command('env-'+p.env);command('offer');command('offer');command('befriend');command('ability');}},
+ 'wildlife-tracker'(){for(let round=0;round<3;round++){command('observe');for(let step=0;g.rules.photoQuality(s)===0&&step<12;step++){const candidates=C.neighbors(s.player,6).filter(i=>i<24).map(i=>({i,t:g.step(s,{type:'cell',index:i})})).sort((a,b)=>g.rules.photoQuality(b.t)-g.rules.photoQuality(a.t)||a.t.alert-b.t.alert||Math.abs(a.i%6-a.t.animal%6)+Math.abs((a.i/6|0)-(a.t.animal/6|0))-Math.abs(b.i%6-b.t.animal%6)-Math.abs((b.i/6|0)-(b.t.animal/6|0)));cell(candidates[0].i);}command('photo');}},
+ 'rewind-warden'(){for(let n=0;n<3;n++)for(const i of [16,17,18,19,14,9,4])cell(i);},
+ 'time-slice-arena'(){for(let n=0;n<3;n++){cell(28);command('fire');act({type:'up'});act({type:'up'});for(let i=0;i<6;i++)act({type:'right'});cell(13);command('fire');}},
+ 'rune-gesture'(){for(let i=0;i<30&&s.status==='playing';i++){const spell=i%2?'frost':'bolt',indices=spell==='frost'?[0,7,2]:[0,2,6,8];for(const index of indices)cell(index);command('cast');}},
+ 'swarm-conductor'(){command('line');for(const target of [[180,230],[285,230],[345,300],[465,300],[520,180],[665,180],[695,180]]){point(...target);for(let i=0;i<280&&s.status==='playing';i++){tick();if(s.flock.length&&s.flock.every(b=>Math.abs(b.x-target[0])<65&&Math.abs(b.y-target[1])<30))break;}}},
+ 'paint-skirmish'(){for(let i=0;Math.hypot(s.player.x-360,s.player.y-240)>10&&i<100;i++){point(360,240);tick({right:s.player.x<355,left:s.player.x>365,up:s.player.y>245,down:s.player.y<235,action:true});}command('hide');for(let i=1;i<1000&&s.status==='playing';i++){point(s.player.x+180*Math.cos(i*.1),s.player.y+180*Math.sin(i*.1));tick({action:true});}},
+ 'twin-keepers'(){command('p2right');command('p2right');for(let i=0;i<4;i++)command('p1right');if(s.role!==0)command('swap');command('power');command('p1right');command('latch');command('p2right');command('p2right');command('swap');command('power');command('p2right');},
+ 'manual-defuse'(){for(let n=0;n<3;n++){command('handover');command('reveal');command('handover');command('reveal');for(const v of g.rules.moduleCode(s))command('wire-'+v);command('submit');}},
+ 'crew-coop'(){command('cruise');for(let i=0;i<400&&s.status==='playing';i++){const b=g.rules.beacons[Math.min(s.passed,2)];point(200,b.y);tick();}},
+ 'cargo-duo'(){const pair=id=>{command('force-'+id);command('force-'+id);};for(let i=0;i<16;i++)pair('right');for(let i=0;i<6;i++)pair('down');for(let i=0;i<16;i++)pair('right');},
+ 'kitchen-coop'(){function role(r){if(s.role!==r)command('swap');}function move(r,to){role(r);for(let k=0;s.people[r]!==to&&k<30;k++){const path=C.path(s.people[r],to,i=>C.neighbors(i,5),i=>i<15);cell(path[1]);}}for(let n=0;n<3;n++){move(1,0);command('interact');move(1,7);command('interact');move(0,7);command('interact');move(0,5);command('interact');command('interact');move(0,9);command('interact');for(let i=0;i<82;i++)tick();command('interact');move(0,7);command('interact');move(1,7);command('interact');move(1,14);command('interact');}},
+ 'vietnamese-crossword'(){for(let n=0;n<3;n++)for(let w=0;w<3;w++){command('word-'+w);text(g.rules.data[n][w][0]);command('submit');}},
+ 'word-tiles'(){for(let i=0;i<7&&s.status==='playing';i++){const m=g.rules.tileMoves(s,s.racks[0])[0];if(m){cell(m.pos);if(s.vertical!==m.vertical)command('rotate');text(m.word);command('submit');}else command('pass');}},
+ 'sentence-weaver'(){for(let n=0;n<3;n++)for(let i=0;i<3;i++){command('verb-'+i);command('object-'+i);command('append');}},
+ 'cipher-workbench'(){for(let n=0;n<3;n++){const phrase=g.rules.phrases[n],done=new Set();for(let i=0;i<phrase.length;i++){if(phrase[i]===' '||done.has(s.cipher[i]))continue;done.add(s.cipher[i]);cell(i);text(phrase[i]);command('assign');}command('submit');}},
+ 'typing-constellation'(){for(const value of g.rules.texts){for(let i=0;i<20;i++)tick();text(value);command('submit');}},
+ 'pottery-wheel'(){for(const order of g.rules.orders){for(let i=0;i<8;i++){cell(i);for(let k=0;Math.abs(s.radii[i]-order[i])>1&&k<30;k++)command(s.radii[i]>order[i]?'narrow':'widen');}command('fire');}},
+ 'stained-glass'(){for(let n=1;n<=3;n++){for(let i=0;i<4;i++){command('piece-'+i);const goal=g.rules.goal(n,i);point(goal.x,goal.y);for(let k=0;k<24&&s.pieces[i].a!==goal.a;k++)command('rotate');for(let k=0;k<3&&s.pieces[i].color!==goal.color;k++)command('color');command('alpha');}command('check');}},
+ 'bonsai-topiary'(){command('branch-3');command('prune');for(let i=0;i<3;i++)command('season');command('finish');},
+ 'perspective-camera'(){for(let level=1;level<=3;level++){let best=null;search:for(let x=-6;x<=6;x+=.5)for(let z=0;z<=4;z+=.5)for(let yaw=-.65;yaw<=.65;yaw+=.05)for(let focal=40;focal<=120;focal+=5){const v={...s,camera:{x,z},yaw,focal,exposure:1/120},m=g.rules.metrics(v),b=g.rules.briefs[level-1];if(m.valid&&m.error<18&&Math.abs(m.size-b.size)<10&&m.occlusion<.1&&m.blur<3){best=v;break search;}}if(!best)throw Error('No camera composition '+level);for(let k=0;Math.abs(s.camera.x-best.camera.x)>.1&&k<60;k++)command(s.camera.x<best.camera.x?'right':'left');for(let k=0;Math.abs(s.camera.z-best.camera.z)>.1&&k<30;k++)command(s.camera.z<best.camera.z?'up':'down');for(let k=0;Math.abs(s.yaw-best.yaw)>.02&&k<40;k++)command(s.yaw<best.yaw?'yaw-right':'yaw-left');for(let k=0;Math.abs(s.focal-best.focal)>1&&k<30;k++)command(s.focal<best.focal?'zoom-in':'zoom-out');while(s.exposure>1/120+.00001)command('faster');command('capture');}},
+ 'print-register'(){for(const order of g.rules.orders){for(let i=0;i<4;i++){command('plate-'+i);for(let k=0;s.plates[i].x!==0&&k<20;k++)command(s.plates[i].x>0?'left':'right');for(let k=0;s.plates[i].y!==0&&k<20;k++)command(s.plates[i].y>0?'up':'down');for(let k=0;s.plates[i].a!==0&&k<20;k++)command(s.plates[i].a>0?'rotate-left':'rotate-right');for(let k=0;Math.abs(s.plates[i].ink-order[i])>.001&&k<30;k++)command(s.plates[i].ink>order[i]?'ink-down':'ink-up');}command('print');}}
+ };
+ scripts[id]();return{state:s,trace,game:g,options};
+}
+module.exports={engines,walkthrough,catalog};

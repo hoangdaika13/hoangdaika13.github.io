@@ -20,7 +20,9 @@
     sea:['ball-balance','sudoku-mini','nonogram'],solar:['mines','simon-sequence','color-word']
   };
   const expansion=scope.HHAllGameStudioCatalog||(typeof require==='function'?require('./all-game-studio-catalog.js'):[]);
-  for(const game of expansion)(families[game.theme]||families.space).push(game.id);
+  const additions=scope.HHAllGameExpansionCatalog||(typeof require==='function'?require('./all-game-expansion-catalog.js'):[]);
+  for(const game of [...expansion,...additions])(families[game.theme]||families.space).push(game.id);
+  const expansionArt=scope.HHAllGameExpansionArt||(typeof require==='function'?require('./all-game-expansion-art.js'):null);
   const studioArt=scope.HHAllGameStudioArt||(typeof require==='function'?require('./all-game-studio-art.js'):null);
   const profiles=Object.freeze(Object.fromEntries(Object.entries(families).flatMap(([theme,ids])=>ids.map((id,index)=>[id,Object.freeze({id,theme,variant:index,palette:Object.freeze([...themes[theme]])})]))));
   const cache=new Map();
@@ -179,7 +181,7 @@
       'garden-care':()=>plants(),
       'cafe-orders':()=>r(208,137,125,152,ink,18)+line('M230 168H311M230 196H295M230 225H302',gold,5)+r(372,207,122,120,paper,22)+'<ellipse cx="433" cy="207" rx="61" ry="16" fill="#765047" stroke="'+gold+'" stroke-width="4"/>'+line('M495 226Q551 221 529 272Q517 291 495 280',paper,13)+line('M403 175q-18-23 0-43M438 170q18-25 0-44M472 178q-18-26 0-44',pink,6)
     };
-    return art[id]?art[id]():(scope.HHAllGameStudioArt||studioArt)?.illustration(id)||'';
+    return art[id]?art[id]():(scope.HHAllGameStudioArt||studioArt)?.illustration(id)||(scope.HHAllGameExpansionArt||expansionArt)?.illustration(id)||'';
   }
   const posterCache=new Map();
   function thumbnail(id,namespace='card'){

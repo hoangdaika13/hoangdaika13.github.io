@@ -54,6 +54,7 @@ const rows=[
 const staticIds=new Set(['treasure-grid','constellation-trace','pixel-painter']);
 const catalog=Object.freeze(rows.map(([id,title,bundle,category,description,controls],i)=>Object.freeze({id,title,bundle,category,description,controls,accent:['#90e4ff','#c3a4ff','#f5b1dc','#9ae3b1','#ffcc88'][i%5],icon:['✧','▦','◈','◎','↗'][i%5],length:'Mini-game',route:'/all-game/'+id,realtime:bundle==='pack-arcade'||bundle==='pack-casual'&&!staticIds.has(id),undo:bundle==='pack-puzzles',reset:bundle==='pack-puzzles',boardNavigation:bundle!=='pack-arcade'&&!['maze-path','slide-tiles'].includes(id)})));
 const studio=scope.HHAllGameStudioCatalog||(typeof require==='function'?require('./all-game-studio-catalog.js'):[]);
-const full=Object.freeze([...catalog,...studio]);
+const expansion=scope.HHAllGameExpansionCatalog||(typeof require==='function'?require('./all-game-expansion-catalog.js'):[]);
+const full=Object.freeze([...catalog,...studio,...expansion]);
 scope.HHAllGameCatalog=full;if(typeof module!=='undefined'&&module.exports)module.exports=full;
 })(typeof globalThis!=='undefined'?globalThis:this);

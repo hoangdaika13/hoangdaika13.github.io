@@ -30,7 +30,7 @@
   function material(ctx,x,y,w,h,color){
     if(!/^#[a-f0-9]{6}$/i.test(color))return color;
     var gradient=ctx.createLinearGradient(x,y,x+w,y+h);
-    gradient.addColorStop(0,color);gradient.addColorStop(.65,color);gradient.addColorStop(1,'#252d4b');
+    gradient.addColorStop(0,color);gradient.addColorStop(.4,color);gradient.addColorStop(1,'#38446e');
     return gradient;
   }
   function surface(ctx, x, y, w, h, fill, edge, radius) {
@@ -43,8 +43,8 @@
   function keycap(ctx, x, y, size, fill, accent) {
     var gap = Math.max(2, size * .045), radius = Math.min(10, size * .12);
     surface(ctx, x + gap, y + gap + 3, size - gap * 2, size - gap * 2, '#03081966', null, radius);
-    surface(ctx, x + gap, y + gap, size - gap * 2, size - gap * 2 - 2, fill, '#ffffff26', radius);
-    beam(ctx, [[x + gap + radius, y + gap + 2], [x + size - gap - radius, y + gap + 2]], '#ffffff60', 1);
+    surface(ctx, x + gap, y + gap, size - gap * 2, size - gap * 2 - 2, fill, '#ffffff65', radius);
+    beam(ctx, [[x + gap + radius, y + gap + 2], [x + size - gap - radius, y + gap + 2]], '#ffffffa0', 1);
     beam(ctx, [[x+gap+4,y+size-gap-5],[x+size-gap-4,y+size-gap-5]], '#0c1c3c66', 2);
     if (accent) surface(ctx, x + gap + 2, y + gap + 2, size - gap * 2 - 4, size - gap * 2 - 6, '#ffffff06', accent, Math.max(0, radius - 1));
   }

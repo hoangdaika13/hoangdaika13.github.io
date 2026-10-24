@@ -40,11 +40,12 @@
     ctx.beginPath();
     if (ctx.roundRect) ctx.roundRect(x, y, w, h, radius || 5); else ctx.rect(x, y, w, h);
     ctx.fillStyle = fill; ctx.fill();
+    if(w>18&&h>18){ctx.fillStyle='#ffffff0d';ctx.fillRect(x+3,y+3,w-6,Math.min(h*.25,16));}
     if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1.5; ctx.stroke(); }
   }
   function gemBlock(ctx, x, y, size, color) {
     const material=ctx.createLinearGradient(x,y,x+size,y+size);
-    material.addColorStop(0,color);material.addColorStop(.5,color);material.addColorStop(1,'#22375b');
+    material.addColorStop(0,color);material.addColorStop(.3,color);material.addColorStop(1,'#344779');
     box(ctx,x,y,size,size,material,'#ffffffb0',Math.min(6,size*.13));
     ctx.beginPath();ctx.moveTo(x+size*.12,y+size*.15);ctx.lineTo(x+size*.45,y+size*.15);ctx.lineTo(x+size*.15,y+size*.45);ctx.closePath();ctx.fillStyle='#ffffff48';ctx.fill();
     ctx.fillStyle = '#ffffff4d'; ctx.fillRect(x + 3, y + 3, size - 6, 3);

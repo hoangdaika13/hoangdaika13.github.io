@@ -1,0 +1,42 @@
+'use strict';
+// Browser assertions use real controls. No state injection, synthetic win or direct engine stepping.
+const assert=require('node:assert/strict');
+const logic=require('../all-game-exp-logic.js').games,science=require('../all-game-exp-science.js').games;
+const checks={
+ 'dj-transition':async(page,h)=>{const s=await h.state();await h.command('slower');assert.equal((await h.state()).tempoB,s.tempoB-1);await h.command('jogback');await h.command('eq');await h.command('fade');assert.equal((await h.state()).fader,.125);await h.command('play');await page.waitForTimeout(160);assert.ok((await h.state()).musicTime>0);},
+ 'loop-band':async(page,h)=>{await h.cell(0,8,3);await h.cell(10,8,3);const s=await h.state();assert.equal(s.notes[0],1);assert.equal(s.notes[10],1);await h.command('play');await page.waitForTimeout(100);assert.ok((await h.state()).musicTime>0);},
+ 'pitch-glider':async(page,h)=>{await h.point(240,240);assert.ok(Math.abs((await h.state()).pitch-66)<.1);await h.command('play');await page.waitForTimeout(150);assert.ok((await h.state()).sampled>0);},
+ 'harmony-workshop':async(page,h)=>{await h.cell(0,4,1);await h.command('chord1');await h.command('invert');const s=await h.state();assert.equal(s.chords[0],1);assert.equal(s.inversions[0],1);await h.command('play');},
+ 'orchestra-cues':async(page,h)=>{await h.command('section0');assert.equal((await h.state()).sections[0],true);assert.equal((await h.state()).events,1);await h.command('play');await page.waitForTimeout(100);assert.ok((await h.state()).musicTime>0);},
+ 'slither-loop':async(page,h)=>{const p=logic['slither-loop'].rules.proofs[0];for(let i=0;i<p.length;i++)if(p[i])await h.cell(i,6,4);await h.command('check');assert.equal((await h.state()).cleared,true);},
+ 'hashi-islands':async(page,h)=>{const p=logic['hashi-islands'].rules.proofs[0];for(let i=0;i<p.length;i++)for(let n=0;n<p[i];n++)await h.cell(i,4,3);await h.command('check');assert.equal((await h.state()).cleared,true);},
+ 'nurikabe-coast':async(page,h)=>{const p=logic['nurikabe-coast'].rules.proofs[0],s=await h.state();for(let i=0;i<p.length;i++)if(p[i]&&!s.land[i])await h.cell(i,4);await h.command('check');assert.equal((await h.state()).cleared,true);},
+ 'kakuro-sums':async(page,h)=>{const p=logic['kakuro-sums'].rules.proofs[0];for(let i=0;i<4;i++){await h.cell(i,2);await h.command('digit'+p[i]);}await h.command('check');assert.equal((await h.state()).cleared,true);},
+ 'logic-grid':async(page,h)=>{const p=logic['logic-grid'].rules.proofs[0];for(let i=0;i<3;i++)await h.cell(i*3+p[i],3);await h.command('check');assert.equal((await h.state()).cleared,true);},
+ 'rope-cut-puzzle':async(page,h)=>{await h.command('cut0');await h.command('cut1');const y=(await h.state()).ball.y;await h.command('run');await page.waitForTimeout(180);assert.ok((await h.state()).ball.y>y);},
+ 'fluid-gates':async(page,h)=>{await h.command('lower');await h.command('valve');await h.command('run');await page.waitForTimeout(180);const s=await h.state();assert.ok(s.water[1]>0);assert.ok(Math.abs(s.water.reduce((a,b)=>a+b)-16)<1e-6);},
+ 'gearworks':async(page,h)=>{await h.cell(1,3,1);await h.command('teeth');await h.cell(2,3,1);await h.command('teeth');await h.command('clutch');await h.command('test');assert.equal((await h.state()).cleared,true);},
+ 'counterweight-rig':async(page,h)=>{await h.command('mass');await h.command('mass');for(let i=0;i<3;i++)await h.command('arm');await h.command('pulley');await h.command('release');await page.waitForTimeout(160);assert.ok((await h.state()).lift>0);},
+ 'domino-machine':async(page,h)=>{for(let i=1;i<8;i++){await h.cell(i,9,1);if(i===3)await h.cell(i,9,1);}await h.command('run');await page.waitForTimeout(200);assert.ok((await h.state()).angles[0]>0);},
+ 'vertical-mall':async(page,h)=>{await h.cell(0,3);await h.command('build');const cash=(await h.state()).cash;await h.command('day');const s=await h.state();assert.equal(s.day,1);assert.ok(s.totalServed>0);assert.ok(s.cash>cash);},
+ 'pet-care-clinic':async(page,h)=>{await h.cell(0,3,1);await h.command('exam');assert.ok((await h.state()).stations.exam);await h.command('wait');assert.equal((await h.state()).patients[0].stage,1);},
+ 'hotel-manager':async(page,h)=>{await h.cell(0,3,3);await h.cell(6,3,3);await h.command('reserve');assert.equal((await h.state()).assign[0],0);await h.cell(1,3,3);await h.cell(7,3,3);await h.command('reserve');await h.command('day');await h.command('admit');assert.equal((await h.state()).served,2);},
+ 'airport-terminal':async(page,h)=>{await h.cell(0,3,2);await h.command('checkin');assert.deepEqual((await h.state()).queues.checkin,[0]);await h.command('minute');assert.equal((await h.state()).groups[0].stage,1);},
+ 'coaster-designer':async(page,h)=>{await h.cell(2,8,1);await h.command('down');assert.equal((await h.state()).heights[2],70);await h.command('test');await page.waitForTimeout(700);assert.ok((await h.state()).segment>1);},
+ 'bakery-shift':async(page,h)=>{await h.command('mix');const s=await h.state();assert.equal(s.flour,15);assert.equal(s.batches[0].state,'ferment');await h.command('minute');await h.command('oven');await h.command('minute');await h.command('minute');assert.equal((await h.state()).batches[0].state,'baked');await h.command('deliver');assert.equal((await h.state()).orders[0],true);},
+ 'seasonal-farm':async(page,h)=>{await h.cell(0,2);await h.command('crop0');await h.command('harvest');const s=await h.state();assert.equal(s.stock[0],2);assert.equal(s.soil[0],5);assert.equal(s.season,1);},
+ 'woodcut-planner':async(page,h)=>{await h.cell(0,3,1);await h.command('cut');const s=await h.state();assert.equal(s.boards[0].left,58);assert.equal(s.parts[0],true);assert.equal(s.kerf,2);},
+ 'power-grid':async(page,h)=>{await h.command('up');await h.command('dispatch');const s=await h.state();assert.equal(s.hour,1);assert.equal(s.generator,7);assert.ok(s.cost>0);},
+ 'water-utility':async(page,h)=>{await h.command('dose');await h.command('pump');await h.command('treat');const s=await h.state();assert.equal(s.storage.volume,2);assert.ok(s.storage.mass>0&&s.storage.mass<16);assert.equal(s.raw.volume,0);},
+ 'logic-circuit':async(page,h)=>{for(const [i,n] of [[0,1],[2,2]]){await h.cell(i,4,1);for(let k=0;k<n;k++)await h.command('gate');}await h.command('test');assert.equal((await h.state()).cleared,true);},
+ 'packet-router':async(page,h)=>{await h.cell(0,3,2);await h.command('to1');assert.equal((await h.state()).packets[0].ttl,3);await h.command('minute');await h.command('to4');await h.command('minute');assert.equal((await h.state()).delivered,1);},
+ 'orbital-transfer':async(page,h)=>{const before=await h.state();await h.command('burn');assert.ok((await h.state()).budget<before.budget);await h.command('run');await page.waitForTimeout(160);assert.ok((await h.state()).elapsed>0);assert.notEqual((await h.state()).ship.y,before.ship.y);},
+ 'lens-bench':async(page,h)=>{await h.command('f1');await h.command('test');assert.equal((await h.state()).cleared,true);},
+ 'radar-triangulation':async(page,h)=>{for(let i=0;i<3;i++)await h.command('measure'+i);await h.command('fit');await h.command('verify');assert.equal((await h.state()).cleared,true);},
+ 'reaction-lab':async(page,h)=>{await h.command('A');await h.command('A');await h.command('heat');await h.command('dissolve');await h.command('B');await h.command('B');await h.command('heat');await h.command('react');assert.equal((await h.state()).cleared,true);},
+ 'genetics-garden':async(page,h)=>{await h.command('sample');const s=await h.state();assert.equal(s.samples[0].white+s.samples[0].purple,32);if(s.samples[0].white)await h.command('guess');await h.command('infer');assert.equal((await h.state()).phase,'breed');await h.command('parentA');await h.command('parentB');await h.command('breed');assert.equal((await h.state()).cleared,true);},
+ 'geology-strata':async(page,h)=>{for(const id of science['geology-strata'].rules.proofs[0])await h.command(id);await h.command('check');assert.equal((await h.state()).cleared,true);},
+ 'thermal-transit':async(page,h)=>{await h.cell(0,4,1);await h.command('material');await h.command('material');await h.command('run');await h.command('send');await page.waitForTimeout(160);const s=await h.state();assert.ok(s.energy[1]>20);assert.ok(Math.abs(s.energy.reduce((a,b)=>a+b)-s.initialEnergy)<1e-6);},
+ 'crystal-symmetry':async(page,h)=>{await h.command('rotate');await h.command('shiftx');await h.command('check');assert.equal((await h.state()).cleared,true);}
+};
+module.exports=checks;

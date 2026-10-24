@@ -6,7 +6,7 @@ const games=Object.assign({},...Object.values(bundles).map(b=>b.games));
 const command=(id)=>({type:'command',id}),cell=index=>({type:'cell',index}),tick=(held={})=>({type:'tick',held});
 function finite(value){if(typeof value==='number')assert.ok(Number.isFinite(value));else if(value&&typeof value==='object')Object.values(value).forEach(finite);}
 test('50 additions are separate mechanics in ten lazy bundles; all59 stable IDs and routes survive',()=>{
-  assert.equal(catalog.length,50);assert.equal(Object.keys(games).length,50);assert.equal(host.CATALOG.length,109);assert.equal(new Set(host.CATALOG.map(g=>g.id)).size,109);
+  assert.equal(catalog.length,50);assert.equal(Object.keys(games).length,50);assert.equal(host.CATALOG.length,209);assert.equal(new Set(host.CATALOG.map(g=>g.id)).size,209);
   const legacy='snake breakout star-guard merge mines memory block-drop crate-lab orbit-runner lights-out slide-tiles peg-solitaire n-queens nonogram towers-hanoi maze-path connect-four tic-tac-toe reversi-mini word-search number-order sudoku-mini color-flood pipe-link code-breaker knights-tour paddle-duel sky-glider meteor-dodge coin-catcher road-rush river-cross asteroid-drift gravity-flip ball-balance jump-tower laser-dash orbit-collect shield-defense target-range penalty-kick mini-golf basket-shot simon-sequence reaction-stop rhythm-tap whack-orb aim-trainer math-sprint color-word odd-one-out pattern-recall treasure-grid lock-timing stack-tower constellation-trace pixel-painter garden-care cafe-orders'.split(' ');
   assert.deepEqual(host.CATALOG.filter(g=>!g.isNew).map(g=>g.id),legacy);
   assert.equal(new Set(catalog.map(g=>g.mechanic)).size,50);assert.equal(Object.keys(bundles).length,10);

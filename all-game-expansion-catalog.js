@@ -1,0 +1,10 @@
+(function(scope){'use strict';
+  const get=(name,file)=>{const value=scope[name]||(typeof require==='function'?require('./'+file):[]);return Array.isArray(value)?value:value.CATALOG||[];};
+  const rows=[...get('HHAllGameExpCatalogPlay','all-game-exp-catalog-play.js'),...get('HHAllGameExpCatalogLab','all-game-exp-catalog-lab.js'),...get('HHAllGameExpCatalogStory','all-game-exp-catalog-story.js')];
+  const colors=['#4776ff','#25d9f8','#9361ff','#ff66b3','#ff8066','#ffd166'];
+  const fixedGroups=new Set(['music','logic','physics','services','production','engineering','science','narrative','rpg','action','coop','language','creative']);
+  const fixedPlay=new Set(['air-traffic-control','pit-strategy','klondike-table','rummy-meld','hearts-table','spades-partners','chromatic-shedding','domino-chain','backgammon-race','attribute-triads','gesture-tactics','festival-draft','confidence-estimator']);
+  const varied=new Set(['pet-care-clinic','swarm-conductor','paint-skirmish','kitchen-coop']);
+  const catalog=Object.freeze(rows.map((g,i)=>{const single=fixedPlay.has(g.id)||fixedGroups.has(g.bundle.slice(4))&&!varied.has(g.id);return Object.freeze(Object.assign({accent:colors[i%6],icon:'✦',length:g.duration||'5–10 phút',route:'/all-game/'+g.id},g,{supportedInputs:g.input,input:Array.isArray(g.input)?g.input.includes('text')?'text':g.boardNavigation?'board':g.realtime?'hybrid':'pointer':g.input,difficultyModes:single?['normal']:['easy','normal','hard'],difficultyNotes:single?'Một mức luật cố định. Tiến trình và mục tiêu được thể hiện trên sân chơi.':g.difficultyNotes,release:'expansion',isNew:true}));}));
+  scope.HHAllGameExpansionCatalog=catalog;if(typeof module==='object'&&module.exports)module.exports=catalog;
+})(typeof globalThis!=='undefined'?globalThis:this);
