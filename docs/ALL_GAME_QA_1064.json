@@ -1,0 +1,385 @@
+{
+  "release": 1064,
+  "date": "2026-10-26",
+  "baseline": "a08455a76172ea33e64f4dd5365998fbc88d420c",
+  "totalGames": 209,
+  "mandatoryMissions": 4636,
+  "contentLedger": "ALL_GAME_JOURNEYS_CHECKLIST_1063.json",
+  "changes": [
+    "Merge: four-direction native touch swipes, cancellation and zoom panning",
+    "Canvas: cancel active drags before pause/checkpoint, primary pointer ownership and assistive D-pad click",
+    "Klondike: validate internal tableau suffix; Hearts: new hands open with2clubs, retain legacy checkpoint convention",
+    "Trust Lab: grim strategy remembers defections within campaign scenario history",
+    "Rune Gesture: canceled pointer ends stroke without casting",
+    "IndexedDB: validate nested schema/content and checkpoint mission, atomic preservation, late connection cleanup",
+    "Story: retain keyboard focus on rerender",
+    "3D: aiming guides, target markers, ball-number atlas, felt-plane picking and clean pockets"
+  ],
+  "unitTests": {
+    "allGame": 1003,
+    "allTools": 241,
+    "failed": 0,
+    "skipped": 0,
+    "optionalBrowserSuitesEnabled": true
+  },
+  "browser": {
+    "fullShell": {
+      "at": "2026-10-26T06:53:14.675Z",
+      "results": [
+        "Guest→Platform→All Game:209 real destinations in registry/sidebar, outer shell retained and no engine bundle loaded for catalog",
+        "Search/empty/favorite persistence, 1440/768/375 library and CSSzoom200 have no page overflow",
+        "All209 real games load/start/pause/resume/input at375px; leaving and browser Back/Forward keep shell and return paused",
+        "Real accessible Mines keyboard reveal/flags and Memory matching; same-account paused session restored and another account sees no record",
+        "Reload restores the paused checkpoint and real score; failed lazy bundle shows error/retry, then Lights Out completes through actual DOM clicks",
+        "D-pad keyboard launch works; unmount/controlled hidden-tab stop loop and do not auto-resume; forced-color keyboard focus visible",
+        "Storage failure is visible; no uncaught JavaScript/CSP errors; no gameplay APIs or paid services"
+      ],
+      "errors": [],
+      "blocked": [
+        "/api/auth/providers",
+        "/api/auth/me",
+        "/api/votes",
+        "/socket.io/socket.io.js",
+        "/api/privacy/consent",
+        "/api/auth/providers",
+        "/socket.io/socket.io.js",
+        "/api/votes",
+        "/api/votes",
+        "/api/votes",
+        "/api/votes",
+        "/api/votes",
+        "/api/votes",
+        "/api/votes",
+        "/api/votes",
+        "/api/votes",
+        "/api/votes",
+        "/api/votes"
+      ]
+    },
+    "campaignSample": {
+      "at": "2026-10-26T07:02:01.557Z",
+      "results": [
+        {
+          "id": "merge",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "memory",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "hearts-table",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "klondike-table",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "trust-lab",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "rune-gesture",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "pottery-wheel",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "station-detective",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "storage": {
+      "results": [
+        {
+          "passed": true,
+          "games": 209,
+          "totalProgressChars": 1039424,
+          "maxProgressChars": 6161,
+          "checkpoints": 32,
+          "maxSnapshotChars": 144568,
+          "quotaReported": "QA quota exhausted",
+          "futureSchemaPreserved": true,
+          "futureCheckpointAtomicGuard": true,
+          "pendingReadDoubleClick": true,
+          "ownerIsolation": true
+        }
+      ],
+      "errors": []
+    },
+    "inputLifecycle": {
+      "at": "2026-10-26T06:59:47.230Z",
+      "results": [
+        {
+          "id": "merge",
+          "input": "native vertical touch swipe",
+          "beforeMoves": 0,
+          "afterMoves": 1,
+          "events": [
+            {
+              "type": "pointerdown",
+              "pointerId": 2
+            },
+            {
+              "type": "pointerup",
+              "pointerId": 2
+            }
+          ]
+        },
+        {
+          "id": "merge",
+          "input": "cancelled native touch",
+          "unchanged": true
+        },
+        {
+          "id": "merge",
+          "input": "pause mid touch and resume",
+          "unchanged": true
+        },
+        {
+          "id": "merge",
+          "input": "zoomed board",
+          "touchAction": "pan-x pan-y"
+        },
+        {
+          "id": "merge",
+          "input": "assistive click-only D-pad activation",
+          "beforeMoves": 1,
+          "afterMoves": 2
+        },
+        {
+          "id": "merge",
+          "input": "D-pad Enter",
+          "movesAdded": 1
+        },
+        {
+          "id": "pottery-wheel",
+          "input": "pause mid drag / release / resume / hover",
+          "draggingBeforeHover": false,
+          "radiiChanged": false
+        },
+        {
+          "id": "pottery-wheel",
+          "input": "zoomed two-finger secondary release",
+          "secondaryReleaseUnchanged": true
+        }
+      ],
+      "errors": []
+    },
+    "webgl": {
+      "at": "2026-10-26T07:02:09.271Z",
+      "results": [
+        {
+          "id": "tenpin-bowling",
+          "passed": true,
+          "checks": [
+            "native Three184 WebGL2",
+            "visible aiming guide and legal keyboard aim",
+            "statepreservation",
+            "camerachange",
+            "desktop/mobile",
+            "controls",
+            "contextloss/restoration",
+            "2Dfallback",
+            "cleanup"
+          ]
+        },
+        {
+          "id": "eight-ball",
+          "passed": true,
+          "checks": [
+            "native Three184 WebGL2",
+            "visible aiming guide and legal keyboard aim",
+            "bounded ball-number atlas",
+            "ray picking on felt at zoom100/200",
+            "statepreservation",
+            "camerachange",
+            "desktop/mobile",
+            "controls",
+            "contextloss/restoration",
+            "2Dfallback",
+            "cleanup"
+          ]
+        },
+        {
+          "id": "pottery-wheel",
+          "passed": true,
+          "checks": [
+            "native Three184 WebGL2",
+            "statepreservation",
+            "camerachange",
+            "desktop/mobile",
+            "controls",
+            "contextloss/restoration",
+            "2Dfallback",
+            "cleanup"
+          ]
+        },
+        {
+          "passed": true,
+          "noWebGLFallback": true
+        },
+        {
+          "passed": true,
+          "rendererSwitches": 20,
+          "resourcesBounded": true
+        }
+      ],
+      "errors": []
+    },
+    "readability": {
+      "themes": 16,
+      "states": 30,
+      "layouts": 4,
+      "cards": 209,
+      "checks": 71060,
+      "minContrast": {
+        "title": 13.0427,
+        "link": 13.0427,
+        "description": 6.8882,
+        "metadata": 5.9722,
+        "journey": 9.2904,
+        "estimate": 6.8882,
+        "cta": 4.9839,
+        "favorite": 5.387
+      },
+      "errors": []
+    },
+    "sharedHost": {
+      "at": "2026-10-26T07:05:03.585Z",
+      "results": [
+        {
+          "library": "latest100,local5,text5 and checkpoint empty state"
+        },
+        {
+          "checkpoint": "saved-game card chooses actual hard checkpoint after another global difficulty; reload restores exact state paused"
+        },
+        {
+          "input": "native CDP IME commits once, input arrows do not move board, Enter submits, one-level game is labelled honestly,375px/DPR2/zoom200"
+        },
+        {
+          "keyboard": "aim-mode uses M while R remains the shoot shortcut"
+        },
+        {
+          "performance": {
+            "samples": 75,
+            "medianMs": 0.3999999761581421,
+            "p95Ms": 0.5,
+            "loadedResourceCount": 20,
+            "decodedBytes": 475546
+          },
+          "limits": "Chromium desktop runtime on the QA host, not a universal frame-rate guarantee"
+        },
+        {
+          "fault": "injected descriptor failure is contained, RAF stops, no uncaught page error"
+        }
+      ],
+      "errors": []
+    }
+  },
+  "environment": "Installed headless Chromium, native Canvas/IndexedDB/touch/CDP and WebGL2 software graphics; local assets/CSP real, backend readiness explicitly doubled.",
+  "screenshots": [
+    "media/all-game-pool-aim-1064.webp",
+    "media/all-game-bowling-aim-mobile-1064.webp"
+  ],
+  "visualReview": {
+    "opened": true,
+    "adjustments": [
+      "Darker dashed aim line on bright play surface",
+      "Raised pocket caps to remove coplanar flicker",
+      "Closer bowling framing on mobile"
+    ]
+  },
+  "baselineCI": {
+    "run": "https://github.com/hoangdaika13/hoangdaika13.github.io/actions/runs/40257300618",
+    "sha": "a08455a76172ea33e64f4dd5365998fbc88d420c",
+    "codeql": "success",
+    "applicationSecurity": "failure",
+    "failedStep": "Audit production dependency graph",
+    "dependencyFilesChanged": false
+  },
+  "limits": [
+    "Human campaign duration/fun unmeasured; no solver timing presented as human playtime",
+    "No physical iOS/Android or independent hardware GPU testing",
+    "3D is a mesh renderer over the original2D simulation",
+    "Local device/account saves, no cloud synchronization",
+    "RAF metrics measure callback CPU duration, not frame interval or GPU time"
+  ]
+}

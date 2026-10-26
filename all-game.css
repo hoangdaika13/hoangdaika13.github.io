@@ -186,3 +186,6 @@
 @container(max-width:280px){.all-game[data-game=library] .ag-topbar{flex-wrap:wrap}.all-game[data-game=library] .ag-topbar :is(a,button){flex:1 1 110px;white-space:normal}.all-game .ag-card-journey{font-size:12px}}
 
 .ag-story-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}.ag-story-heading>span{color:#ffe4a2;font-weight:800;font-size:13px}.ag-story .ag-story-heading button{flex:0 0 auto;font-size:12px;padding:8px 12px;background:#293e62}.ag-story .ag-story-recap{font-size:12px;color:#c5dcee}.ag-story p[hidden]{display:none}@media(forced-colors:active){.ag-story-heading>span,.ag-story .ag-story-recap{color:CanvasText}}
+
+/* Merge owns four-direction swipes; the zoomed board keeps native panning. */
+.all-game[data-game=merge][data-board-zoom=false] .ag-board{touch-action:none}

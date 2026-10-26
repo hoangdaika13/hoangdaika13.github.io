@@ -290,7 +290,7 @@
       styles: ["cosmic-observatory.css?v=4", "cosmic-solar-system-3d.css?v=3"],
       scripts: ["vendor/astronomy-engine-2.1.19.min.js?v=1", "cosmic-solar-system-3d.js?v=3", "cosmic-observatory.js?v=5"]
     },
-    "all-game": { styles: ["all-game.css?v=5"], scripts: ["all-game-studio-core.js?v=3", "all-game-studio-art.js?v=1", "all-game-exp-art-play.js?v=2", "all-game-exp-art-lab.js?v=1", "all-game-exp-art-story.js?v=1", "all-game-expansion-art.js?v=1", "all-game-audio.js?v=1", "all-game-scenes.js?v=5", "all-game-campaign-catalog.js?v=1", "all-game-campaign-core.js?v=1", "all-game-campaign-store.js?v=1", "all-game-campaign-ui.js?v=1", "all-game-view-3d.js?v=1", "all-game.js?v=5"] },
+    "all-game": { styles: ["all-game.css?v=6"], scripts: ["all-game-studio-core.js?v=3", "all-game-studio-art.js?v=1", "all-game-exp-art-play.js?v=2", "all-game-exp-art-lab.js?v=1", "all-game-exp-art-story.js?v=1", "all-game-expansion-art.js?v=1", "all-game-audio.js?v=1", "all-game-scenes.js?v=5", "all-game-campaign-catalog.js?v=1", "all-game-campaign-core.js?v=1", "all-game-campaign-store.js?v=2", "all-game-campaign-ui.js?v=2", "all-game-view-3d.js?v=2", "all-game.js?v=6"] },
     play: {
       styles: ["hh-play.css?v=8&build=4"],
       scripts: ["hh-play.js?v=7&build=4"]
