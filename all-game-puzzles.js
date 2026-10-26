@@ -64,6 +64,7 @@
   }
 
   function mergeSpawn(state) {
+    if (state.supply) { if (state.supplyIndex >= state.supply.length) return; var planned = state.supply[state.supplyIndex++], free = []; state.board.forEach(function (value, i) { if (!value) free.push(i); }); if (free.length) state.board[free[planned.slot % free.length]] = planned.value; return; }
     var empty = [];
     state.board.forEach(function (value, index) { if (!value) empty.push(index); });
     if (empty.length) state.board[empty[Math.floor(random(state) * empty.length)]] = random(state) < 0.9 ? 2 : 4;
@@ -77,7 +78,9 @@
     return false;
   }
   function mergeSnapshot(state) {
-    return { board: state.board.slice(), rng: state.rng, score: state.score, moves: state.moves, level: state.level, status: state.status, keepPlaying: state.keepPlaying };
+    var snapshot = { board: state.board.slice(), rng: state.rng, score: state.score, moves: state.moves, level: state.level, status: state.status, keepPlaying: state.keepPlaying };
+    if (Number.isFinite(state.supplyIndex)) snapshot.supplyIndex = state.supplyIndex;
+    return snapshot;
   }
   var merge = {
     id: 'merge',
@@ -121,12 +124,12 @@
       mergeSpawn(next);
       var largest = Math.max.apply(Math, next.board);
       next.level = Math.max(1, Math.round(Math.log2(largest)) - 1);
-      next.status = largest >= 2048 && !next.keepPlaying ? 'won' : mergeCanMove(next.board) ? 'playing' : 'lost';
+      next.status = largest >= (next.targetValue || 2048) && !next.keepPlaying ? 'won' : mergeCanMove(next.board) ? 'playing' : 'lost';
       return next;
     },
     describe: function (state) {
       var message = state.status === 'won' ? 'Đã ghép được 2048! Bạn có thể tiếp tục hoặc hoàn tác.' : state.status === 'lost' ? 'Hết nước đi. Hoàn tác để thử hướng khác hoặc chơi lại.' : 'Dùng bốn phím mũi tên hoặc nút hướng để ghép các ô cùng số. Mỗi ô chỉ ghép một lần trong một lượt.';
-      return { summary: message + ' Điểm ' + state.score + ', ' + state.moves + ' lượt. Mục tiêu 2048.', columns: 4, cells: state.board.map(function (value, index) { return { index: index, text: value ? String(value) : '', label: value ? String(value) : 'Trống', disabled: true, pressed: false }; }) };
+      return { summary: message + ' Điểm ' + state.score + ', ' + state.moves + ' lượt. Mục tiêu ' + (state.targetValue || 2048) + '.', columns: 4, cells: state.board.map(function (value, index) { return { index: index, text: value ? String(value) : '', label: value ? String(value) : 'Trống', disabled: true, pressed: false }; }) };
     },
     draw: function (ctx, state, options) {
       options = options || {}; var width = options.width || 720, height = options.height || 480;
@@ -177,7 +180,15 @@
       var index = action.type === 'action' ? state.selected : action.index;
       if (!validIndex(index, state.board.length)) return next;
       next.selected = index;
-      if (state.board[index].revealed) return next;
+      if (state.board[index].revealed) {
+        if (!state.chordEnabled || !state.board[index].adjacent) return next;
+        var adjacent = neighbors(index, state.columns, state.rows), flagged = adjacent.filter(function (i) { return state.board[i].flagged; }).length;
+        if (flagged !== state.board[index].adjacent) return next;
+        next.board = copyCells(state.board); next.moves++;
+        adjacent.forEach(function (i) { if (next.board[i].flagged || next.board[i].revealed) return; if (next.board[i].mine) { next.status = 'lost'; next.exploded = i; } else revealMines(next, i); });
+        if (next.status === 'playing' && next.revealed === next.board.length - next.mineCount) { next.status = 'won'; next.flags = next.mineCount; next.board.forEach(function (cell) { if (cell.mine) cell.flagged = true; }); }
+        next.score = next.revealed * 10; return next;
+      }
       next.board = copyCells(state.board); var cell = next.board[index];
       if (action.alternate) {
         if (!cell.flagged && next.flags >= next.mineCount) return next;
@@ -232,6 +243,7 @@
       action = action || {}; var next = Object.assign({}, state, { open: state.open.slice() });
       if (directions(action.type)) { next.selected = moveSelection(state.selected, state.columns, state.board.length, action.type); return next; }
       if (state.status !== 'playing') return next;
+      if (state.previewRemaining > 0) { if (action.type === 'tick') { next.previewRemaining = Math.max(0, state.previewRemaining - finiteTime(dtSeconds)); next.elapsed += finiteTime(dtSeconds); } return next; }
       if (action.type === 'tick') {
         var dt = finiteTime(dtSeconds); next.elapsed += dt;
         if (state.mismatchRemaining > 0) {
@@ -257,7 +269,7 @@
     describe: function (state) {
       var summary = state.status === 'won' ? 'Bạn đã tìm đủ các cặp!' : state.mismatchRemaining > 0 ? 'Hai thẻ khác nhau. Quan sát trước khi chúng úp lại.' : 'Lật hai thẻ để tìm cặp biểu tượng giống nhau. Không giới hạn thời gian.';
       return { summary: summary + ' Đã ghép ' + state.matchedPairs + '/' + state.pairs + ' cặp, ' + state.moves + ' lượt.', columns: state.columns, cells: state.board.map(function (card, index) {
-        var open = card.matched || state.open.indexOf(index) !== -1;
+        var open = state.previewRemaining > 0 || card.matched || state.open.indexOf(index) !== -1;
         return { index: index, label: open ? MEMORY_FACES[card.face] : '?', description: 'Thẻ ' + (index + 1) + ': ' + (card.matched ? 'đã ghép, ' + MEMORY_FACES[card.face] : open ? MEMORY_FACES[card.face] : 'đang úp'), disabled: card.matched || state.status !== 'playing' || state.mismatchRemaining > 0, pressed: open, tone:card.matched?'matched':open?'open':'covered' };
       }) };
     },
@@ -265,7 +277,7 @@
       options = options || {}; var width = options.width || 720, height = options.height || 480;
       ctx.save(); background(ctx, width, height, options, state); var layout = boardLayout(width, height, state.columns, Math.ceil(state.board.length / state.columns));
       state.board.forEach(function (card, index) {
-        var open = card.matched || state.open.indexOf(index) !== -1, x = layout.x + index % state.columns * layout.size, y = layout.y + Math.floor(index / state.columns) * layout.size;
+        var open = state.previewRemaining > 0 || card.matched || state.open.indexOf(index) !== -1, x = layout.x + index % state.columns * layout.size, y = layout.y + Math.floor(index / state.columns) * layout.size;
         tile(ctx, x, y, layout.size, layout.size, card.matched ? '#2caa94' : open ? '#b578e4' : '#7353be');
         if (!open) {
           ctx.beginPath(); ctx.arc(x + layout.size / 2, y + layout.size / 2, layout.size * .27, 0, Math.PI * 2); ctx.strokeStyle = '#c4b1ef45'; ctx.lineWidth = 1; ctx.stroke();

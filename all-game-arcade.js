@@ -104,10 +104,11 @@
       state.elapsed = Math.max(0, state.elapsed - state.interval);
       state.direction = state.queuedDirection;
       const vector = DIRECTIONS[state.direction];
-      const head = { x: state.body[0].x + vector.x, y: state.body[0].y + vector.y };
+      let head = { x: state.body[0].x + vector.x, y: state.body[0].y + vector.y };
+      const portal = (state.portals || []).find(item => item.from.x === head.x && item.from.y === head.y); if (portal) head = { x: portal.to.x, y: portal.to.y };
       const eats = !!state.food && head.x === state.food.x && head.y === state.food.y;
       const collisionBody = eats ? state.body : state.body.slice(0, -1);
-      if (head.x < 0 || head.y < 0 || head.x >= state.cols || head.y >= state.rows || collisionBody.some((part) => part.x === head.x && part.y === head.y)) {
+      if (head.x < 0 || head.y < 0 || head.x >= state.cols || head.y >= state.rows || (state.obstacles || []).some(part => part.x === head.x && part.y === head.y) || collisionBody.some((part) => part.x === head.x && part.y === head.y)) {
         state.status = 'lost';
         break;
       }
@@ -282,7 +283,7 @@
         state.score += 10;
         if (brick.hp <= 0) { state.bricks = state.bricks.filter((candidate) => candidate.id !== brick.id); state.broken += 1; state.score += 25; }
         if (!state.bricks.length) {
-          if (state.level >= 3) state.status = 'won';
+          if (state.singleField || state.level >= 3) state.status = 'won';
           else { state.level += 1; state.bricks = breakoutBricks(state.level); breakoutAttach(state); }
         }
       }
@@ -339,7 +340,7 @@
   }
 
   function breakoutDescribe(state) {
-    return { summary: 'Phá gạch: màn ' + state.level + '/3, còn ' + state.bricks.length + ' viên gạch và ' + state.lives + ' mạng. ' + (state.status === 'won' ? 'Đã vượt qua ba màn.' : state.status === 'lost' ? 'Đã hết mạng.' : state.launched ? 'Di chuyển thanh đỡ bằng trái/phải hoặc con trỏ.' : 'Nhấn nút hành động hoặc phím Space để thả bóng.') };
+    return { needsFrame: state.status === 'playing' && state.launched, summary: 'Phá gạch: màn ' + state.level + '/3, còn ' + state.bricks.length + ' viên gạch và ' + state.lives + ' mạng. ' + (state.status === 'won' ? 'Đã vượt qua ba màn.' : state.status === 'lost' ? 'Đã hết mạng.' : state.launched ? 'Di chuyển thanh đỡ bằng trái/phải hoặc con trỏ.' : 'Nhấn nút hành động hoặc phím Space để thả bóng.') };
   }
 
   // Star Guard: three finite formations and one boss, using real projectiles/collisions.
@@ -388,7 +389,7 @@
 
   function enemyFire(state, enemy) {
     const speed = { easy: 142, normal: 176, hard: 210 }[state.difficulty];
-    const count = enemy.kind === 'boss' ? 5 : 1;
+    const count = enemy.firePattern === 'fan' ? 3 : enemy.kind === 'boss' ? 5 : 1;
     const aim = clamp((state.player.x - enemy.x) / 600, -0.5, 0.5);
     for (let index = 0; index < count && state.enemyBullets.length < 128; index += 1) {
       const angle = aim + (index - (count - 1) / 2) * 0.23;
@@ -424,8 +425,8 @@
       state.player.y = clamp(state.player.y + dy * 315 * step, 270, HEIGHT - 26);
       if (held.action && state.enemies.length) shooterFire(state);
       state.enemies.forEach((enemy) => {
-        enemy.x = enemy.baseX + Math.sin(state.waveAge * (enemy.kind === 'boss' ? 0.65 : 1.05) + enemy.phase) * (enemy.kind === 'boss' ? 228 : 28);
-        enemy.y = enemy.baseY + Math.sin(state.waveAge * 1.1 + enemy.phase) * 10;
+        enemy.x = enemy.baseX + Math.sin(state.waveAge * (enemy.kind === 'boss' ? 0.65 : 1.05) + enemy.phase) * (enemy.motion === 'sweep' ? 95 : enemy.kind === 'boss' ? 228 : 28);
+        enemy.y = enemy.baseY + (enemy.motion === 'dive' ? Math.abs(Math.sin(state.waveAge * .6 + enemy.phase)) * 145 : Math.sin(state.waveAge * 1.1 + enemy.phase) * 10);
         enemy.cooldown -= step;
         if (enemy.cooldown <= 0) enemyFire(state, enemy);
       });
@@ -435,6 +436,7 @@
         if (bullet.y < -12) return false;
         const enemy = state.enemies.find((candidate) => candidate.hp > 0 && circles(bullet, candidate));
         if (!enemy) return true;
+        if (enemy.shield && (state.waveAge + enemy.phase) % 3 < 1.1) { state.shieldBlocks = (state.shieldBlocks || 0) + 1; return false; }
         enemy.hp -= 1;
         state.score += 10;
         if (enemy.hp <= 0) { state.defeated += 1; state.score += enemy.kind === 'boss' ? 1000 : 90; }
@@ -451,7 +453,7 @@
       if (state.status === 'playing' && !state.enemies.length) {
         state.enemyBullets = [];
         state.bullets = [];
-        if (state.wave >= 4) state.status = 'won';
+        if (state.singleWave || state.wave >= 4) state.status = 'won';
         else {
           state.transition += step;
           if (state.transition + 1e-9 >= 0.85) shooterWave(state, state.wave + 1);
@@ -480,6 +482,7 @@
     starField(ctx, state, options.reducedMotion);
     state.enemies.forEach((enemy) => {
       const boss = enemy.kind === 'boss';
+      if (enemy.shield && (state.waveAge + enemy.phase) % 3 < 1.1) { ctx.strokeStyle = '#b9f4ff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(enemy.x, enemy.y, enemy.r + 9, 0, Math.PI * 2); ctx.stroke(); }
       ctx.save();
       ctx.translate(enemy.x, enemy.y);
       const hull = ctx.createLinearGradient(-52, -25, 52, 25);

@@ -1,0 +1,1 @@
+(function(g,f){'use strict';const a=f(g.HHAllGameCampaignStudioRuntime||(typeof require==='function'?require('./all-game-campaign-studio-runtime.js'):null));g.HHAllGameCampaignActionMotion=a;if(typeof module==='object'&&module.exports)module.exports=a;})(typeof globalThis!=='undefined'?globalThis:this,function(R){'use strict';return R.makeBundle('action-motion');});

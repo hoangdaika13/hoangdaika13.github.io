@@ -90,7 +90,7 @@
     state.board = remaining; state.blocks++;
     if (cleared) { state.score += [0, 100, 300, 500, 800][cleared] * state.level; state.lines += cleared; state.message = 'Đã xóa ' + cleared + ' hàng!'; }
     else state.message = 'Xếp kín một hàng để ghi điểm.';
-    state.level = 1 + Math.floor(state.lines / 10); spawnBlock(state);
+    state.level = 1 + Math.floor(state.lines / 10); if (state.targetLines && state.lines >= state.targetLines) { state.status = 'won'; state.message = 'Đã hoàn thành mục tiêu xóa hàng của tình huống.'; } else if (state.blockBudget && state.blocks >= state.blockBudget) { state.status = 'lost'; state.message = 'Đã dùng hết số khối được cấp.'; } else spawnBlock(state);
   }
   function moveBlock(state, dx, dy) {
     const candidate = { ...state.piece, x: state.piece.x + dx, y: state.piece.y + dy };
@@ -212,7 +212,7 @@
     state.message = 'Đẩy tất cả kiện hàng tới vòng sáng. Có thể hoàn tác nếu bị kẹt.';
     if (state.goals.every(goal => state.crates.includes(goal))) {
       state.totalMoves += state.moves; state.solved++; state.score += Math.max(30, 150 - state.moves);
-      if (state.level === CRATE_LEVELS.length) { state.status = 'won'; state.message = 'Đã hoàn thành cả 7 trạm vận chuyển!'; }
+      if (state.singleBoard || state.level === CRATE_LEVELS.length) { state.status = 'won'; state.message = 'Đã hoàn thành cả 7 trạm vận chuyển!'; }
       else { state.level++; loadCrateLevel(state); state.message = 'Hoàn thành trạm trước! Bắt đầu trạm ' + state.level + ' / ' + CRATE_LEVELS.length + '.'; }
     }
   }
@@ -293,10 +293,10 @@
     state.coyote = .1; state.jumpBuffer = 0; state.invulnerable = 1; state.message = 'Trở lại điểm an toàn. Còn ' + state.lives + ' lượt.';
   }
   function runnerPhysics(state, held, dt) {
-    const course = RUNNER_COURSES[state.level - 1], player = state.player;
+    const course = state.course || RUNNER_COURSES[state.level - 1], player = state.player;
     const speed = state.difficulty === 'easy' ? 180 : state.difficulty === 'hard' ? 210 : 200;
     const direction = (held.right ? 1 : 0) - (held.left ? 1 : 0);
-    const desired = direction * speed;
+    const desired = direction * speed + (!player.grounded ? Number(course.wind) || 0 : 0);
     player.vx += (desired - player.vx) * Math.min(1, dt * 15);
     if (!direction && Math.abs(player.vx) < .1) player.vx = 0;
     state.jumpBuffer = Math.max(0, state.jumpBuffer - dt); state.coyote = Math.max(0, state.coyote - dt); state.invulnerable = Math.max(0, state.invulnerable - dt);
@@ -322,9 +322,9 @@
       state.checkpoint = { x: course.checkpoint[0], y: course.checkpoint[1], activated: true }; state.message = 'Đã mở điểm an toàn giữa chặng.';
     }
     state.camera = clamp(player.x - 220, 0, course.width - 720);
-    if (intersects(player, { x: course.goal, y: 331, width: 38, height: 89 })) {
+    if (intersects(player, { x: course.goal, y: 331, width: 38, height: 89 }) && (!course.requiredCoins || state.collected.length >= course.requiredCoins)) {
       state.score += 150; state.completed++;
-      if (state.level === RUNNER_COURSES.length) { state.status = 'won'; state.message = 'Đã tới cổng đích của cả 3 chặng!'; }
+      if (state.singleCourse || state.level === RUNNER_COURSES.length) { state.status = 'won'; state.message = 'Đã tới cổng đích của cả 3 chặng!'; }
       else { state.level++; loadRunnerLevel(state); state.message = 'Qua cổng! Chặng ' + state.level + ': ' + RUNNER_COURSES[state.level - 1].name + '.'; }
     }
   }
@@ -350,7 +350,7 @@
     },
     draw(ctx, state, options) {
       const width = options && options.width || 720, height = options && options.height || 480;
-      const course = RUNNER_COURSES[state.level - 1], camera = state.camera;
+      const course = state.course || RUNNER_COURSES[state.level - 1], camera = state.camera;
       ctx.save(); ctx.scale(width / 720, height / 480); background(ctx, 720, 480, '#69d8f4', options, state);
       for (let i = 0; i < 8; i++) { const x = (i * 190 - camera * .18) % 900; ctx.fillStyle = ['#23435572', '#34466a72', '#245d5872'][state.level - 1]; ctx.beginPath(); ctx.moveTo(x - 170, 420); ctx.lineTo(x, 230 + i % 3 * 35); ctx.lineTo(x + 200, 420); ctx.fill(); }
       ctx.save(); ctx.translate(-camera, 0);
@@ -393,7 +393,7 @@
       text(ctx, 'CHẶNG ' + state.level + '/3 · ' + course.name, 30, 38, 17, '#c0f2ff'); text(ctx, state.lives + ' lượt  ·  ' + state.score + ' điểm', 690, 38, 17, '#ffe6a3', 'right');
       text(ctx, '← → Di chuyển · ↑ / Hành động: nhảy · Cờ là điểm hồi sinh', 360, 460, 15, '#c2d5e8', 'center'); ctx.restore();
     },
-    describe(state) { return { summary: 'Chặng ' + state.level + '/3: ' + RUNNER_COURSES[state.level - 1].name + '. Còn ' + state.lives + ' lượt, ' + state.totalCoins + ' tinh thể, ' + state.score + ' điểm. ' + state.message }; }
+    describe(state) { return { summary: 'Chặng ' + state.level + (state.singleCourse ? ': ' : '/3: ') + (state.course || RUNNER_COURSES[state.level - 1]).name + '. Còn ' + state.lives + ' lượt, ' + state.totalCoins + ' tinh thể, ' + state.score + ' điểm. ' + state.message }; }
   };
   return { games: { 'block-drop': blockDrop, 'crate-lab': crateLab, 'orbit-runner': orbitRunner }, internals: { blockCells, blockFits, CRATE_LEVELS, parseCrates, RUNNER_COURSES } };
 });

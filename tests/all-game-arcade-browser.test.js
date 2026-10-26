@@ -103,7 +103,17 @@ test('All Game arcade: actual browser controls, winning rounds and lifecycle', {
           assert.deepEqual(await state(), paused, game.id + ': pause blocks game input and ticking');
           assert.equal(await page.evaluate(() => arcadeAuditController.getFrameCount()), frames, game.id + ': no render loop while paused');
           await page.locator('[data-ag-start]').click();
-          await page.waitForFunction(previous => arcadeAuditController.getFrameCount() > previous, frames);
+          const idle = await page.evaluate(id => {
+            const engine = (window.HHAllGameArcade?.games[id] || window.HHAllGamePackArcade?.games[id]);
+            return engine.describe(arcadeAuditController.getState()).needsFrame === false;
+          }, game.id);
+          if (idle) {
+            const idleFrames = await page.evaluate(() => arcadeAuditController.getFrameCount());
+            await page.waitForTimeout(60);
+            assert.equal(await page.evaluate(() => arcadeAuditController.getFrameCount()), idleFrames, game.id + ': resumed aim waits without RAF');
+            await canvas.focus(); await page.keyboard.press('Space');
+            await page.waitForFunction(previous => arcadeAuditController.getFrameCount() > previous, idleFrames);
+          } else await page.waitForFunction(previous => arcadeAuditController.getFrameCount() > previous, frames);
           const oldFrames = await page.evaluate(() => { HHAllGame.unmount(); return arcadeAuditController.getFrameCount(); });
           await page.waitForTimeout(60);
           assert.equal(await page.evaluate(() => arcadeAuditController.getFrameCount()), oldFrames, game.id + ': renderer cleaned after unmount');

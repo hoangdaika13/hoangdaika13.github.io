@@ -1,0 +1,3137 @@
+{
+  "release": 1063,
+  "date": "2026-10-26",
+  "total": 209,
+  "newIDs": 0,
+  "mandatoryMissions": 4636,
+  "unitTests": {
+    "allGame": 990,
+    "allTools": 241,
+    "skipped": 0,
+    "optionalBrowserSuitesEnabled": true
+  },
+  "missionProofs": {
+    "legacy": 1364,
+    "studioPlay": 1732,
+    "expansion": 1540,
+    "method": "Fresh engine.create, normal difficulty, legal commands, replay and native outcomes. No injected winning states.",
+    "competitiveSeasonOutcomes": "Wins/draws/losses are preserved; completing a season match does not imply winning."
+  },
+  "browser": {
+    "fullShell": {
+      "at": "2026-10-26T01:38:26.649Z",
+      "results": [
+        "Guest→Platform→All Game:209 real destinations in registry/sidebar, outer shell retained and no engine bundle loaded for catalog",
+        "Search/empty/favorite persistence, 1440/768/375 library and CSSzoom200 have no page overflow",
+        "All209 real games load/start/pause/resume/input at375px; leaving and browser Back/Forward keep shell and return paused",
+        "Real accessible Mines keyboard reveal/flags and Memory matching; same-account paused session restored and another account sees no record",
+        "Reload restores the paused checkpoint and real score; failed lazy bundle shows error/retry, then Lights Out completes through actual DOM clicks",
+        "D-pad keyboard launch works; unmount/controlled hidden-tab stop loop and do not auto-resume; forced-color keyboard focus visible",
+        "Storage failure is visible; no uncaught JavaScript/CSP errors; no gameplay APIs or paid services"
+      ],
+      "errors": [],
+      "blocked": [
+        "/api/auth/providers",
+        "/api/auth/me",
+        "/api/votes",
+        "/socket.io/socket.io.js",
+        "/api/privacy/consent",
+        "/api/auth/providers",
+        "/socket.io/socket.io.js",
+        "/api/votes",
+        "/api/votes",
+        "/api/votes",
+        "/api/votes",
+        "/api/votes",
+        "/api/votes",
+        "/api/votes",
+        "/api/votes",
+        "/api/votes",
+        "/api/votes"
+      ]
+    },
+    "campaign": {
+      "at": "2026-10-26T01:46:23.108Z",
+      "results": [
+        {
+          "id": "snake",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "breakout",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "star-guard",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "merge",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "mines",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "memory",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "block-drop",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "crate-lab",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "orbit-runner",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "lights-out",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "slide-tiles",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "peg-solitaire",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "n-queens",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "nonogram",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "towers-hanoi",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "maze-path",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "connect-four",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "tic-tac-toe",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "reversi-mini",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "word-search",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "number-order",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "sudoku-mini",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "color-flood",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "pipe-link",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "code-breaker",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "knights-tour",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "paddle-duel",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "sky-glider",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "meteor-dodge",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "coin-catcher",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "road-rush",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "river-cross",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "asteroid-drift",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "gravity-flip",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "ball-balance",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "jump-tower",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "laser-dash",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "orbit-collect",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "shield-defense",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "target-range",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "penalty-kick",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "mini-golf",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "basket-shot",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "simon-sequence",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "reaction-stop",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "rhythm-tap",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "whack-orb",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "aim-trainer",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "math-sprint",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "color-word",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "odd-one-out",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "pattern-recall",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "treasure-grid",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "lock-timing",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "stack-tower",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "constellation-trace",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "pixel-painter",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "garden-care",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "cafe-orders",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "fortress-weave",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "frontier-command",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "hex-vanguard",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "island-dominion",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "hidden-fleet",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "crater-command",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "nexus-conquest",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "squad-draft",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "runedeck-quest",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "royal-chess",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "crown-draughts",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "lotus-go",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "seed-duel",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "bridge-hex",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "hidden-ranks",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "wall-race",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "auction-guild",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "dice-expedition",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "gem-tactics",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "dungeon-chronicle",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "blast-grid",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "street-vanguard",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "blade-duel",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "silent-infiltrator",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "grapple-sky",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "returning-blade",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "frontier-trail",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "crystal-excavator",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "kinetic-arena",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "portal-courier",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "ring-sumo",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "titan-ascent",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "sky-hoist",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "trial-rider",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "apex-drift",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "prism-pinball",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "bubble-reactor",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "abyss-rescue",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "sky-interceptor",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "polarity-workshop",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "forge-expedition",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "factory-flow",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "rail-dispatch",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "tide-merchants",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "frontier-colony",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "wildfire-command",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "bridgeworks",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "drone-programmer",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "living-world",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "castle-mosaic",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "futsal-match",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "street-hoops",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "court-tennis",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "beach-volley",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "diamond-baseball",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "tenpin-bowling",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "eight-ball",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "curling-end",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "swim-meet",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "skate-line",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "sail-regatta",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "trailer-docking",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "lunar-lander",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "air-traffic-control",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "pit-strategy",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "klondike-table",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "rummy-meld",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "hearts-table",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "spades-partners",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "chromatic-shedding",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "domino-chain",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "backgammon-race",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "carrom-pocket",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "xiangqi-river",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "shogi-drops",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "attribute-triads",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "sliding-block-escape",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "marble-chain",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "twist-cube",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "blackbox-rays",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "liars-dice",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "trust-lab",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "gesture-tactics",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "festival-draft",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "confidence-estimator",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "dj-transition",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "loop-band",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "pitch-glider",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "harmony-workshop",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "orchestra-cues",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "slither-loop",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "hashi-islands",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "nurikabe-coast",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "kakuro-sums",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "logic-grid",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "rope-cut-puzzle",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "fluid-gates",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "gearworks",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "counterweight-rig",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "domino-machine",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "vertical-mall",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "pet-care-clinic",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "hotel-manager",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "airport-terminal",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "coaster-designer",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "bakery-shift",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "seasonal-farm",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "woodcut-planner",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "power-grid",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "water-utility",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "logic-circuit",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "packet-router",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "orbital-transfer",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "lens-bench",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "radar-triangulation",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "reaction-lab",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "genetics-garden",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "geology-strata",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "thermal-transit",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "crystal-symmetry",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "station-detective",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "relic-room",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "clockloop-story",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "treaty-dialogue",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "cartographer-expedition",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "party-jrpg",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "ability-gated-quest",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "survivor-camp",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "creature-tamer",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "wildlife-tracker",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "rewind-warden",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "time-slice-arena",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "rune-gesture",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "swarm-conductor",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "paint-skirmish",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "twin-keepers",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "manual-defuse",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "crew-coop",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "cargo-duo",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "kitchen-coop",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "vietnamese-crossword",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "word-tiles",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "sentence-weaver",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "cipher-workbench",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "typing-constellation",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "pottery-wheel",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "stained-glass",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "bonsai-topiary",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "perspective-camera",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "print-register",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "lateFixes": {
+      "at": "2026-10-26T01:56:46.337Z",
+      "results": [
+        {
+          "id": "breakout",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "paddle-duel",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "mini-golf",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "basket-shot",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "runedeck-quest",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "station-detective",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "pottery-wheel",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "latestContentFixes": {
+      "at": "2026-10-26T02:00:45.157Z",
+      "results": [
+        {
+          "id": "logic-grid",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "stained-glass",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "rail-dispatch",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        },
+        {
+          "id": "eight-ball",
+          "passed": true,
+          "checks": [
+            "mission map",
+            "real controls",
+            "pause",
+            "IndexedDB reload",
+            "restart",
+            "3viewports",
+            "classic isolation"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "storage": {
+      "results": [
+        {
+          "passed": true,
+          "games": 209,
+          "totalProgressChars": 1039424,
+          "maxProgressChars": 6161,
+          "checkpoints": 32,
+          "maxSnapshotChars": 144568,
+          "quotaReported": "QA quota exhausted",
+          "futureSchemaPreserved": true,
+          "futureCheckpointAtomicGuard": true,
+          "pendingReadDoubleClick": true,
+          "ownerIsolation": true
+        }
+      ],
+      "errors": []
+    },
+    "gallery": {
+      "results": [
+        {
+          "id": "pottery-wheel",
+          "passed": true,
+          "inputs": 41,
+          "checks": [
+            "DOMlegalcompletion",
+            "artworksnapshot",
+            "reloadgallery",
+            "nextmissionunlocked"
+          ]
+        },
+        {
+          "id": "stained-glass",
+          "passed": true,
+          "inputs": 56,
+          "checks": [
+            "DOMlegalcompletion",
+            "artworksnapshot",
+            "reloadgallery",
+            "nextmissionunlocked"
+          ]
+        },
+        {
+          "id": "bonsai-topiary",
+          "passed": true,
+          "inputs": 7,
+          "checks": [
+            "DOMlegalcompletion",
+            "artworksnapshot",
+            "reloadgallery",
+            "nextmissionunlocked"
+          ]
+        },
+        {
+          "id": "perspective-camera",
+          "passed": true,
+          "inputs": 15,
+          "checks": [
+            "DOMlegalcompletion",
+            "artworksnapshot",
+            "reloadgallery",
+            "nextmissionunlocked"
+          ]
+        },
+        {
+          "id": "print-register",
+          "passed": true,
+          "inputs": 69,
+          "checks": [
+            "DOMlegalcompletion",
+            "artworksnapshot",
+            "reloadgallery",
+            "nextmissionunlocked"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "webgl": {
+      "at": "2026-10-26T01:53:58.559Z",
+      "results": [
+        {
+          "id": "tenpin-bowling",
+          "passed": true,
+          "checks": [
+            "native Three184 WebGL2",
+            "statepreservation",
+            "camerachange",
+            "desktop/mobile",
+            "controls",
+            "contextloss/restoration",
+            "2Dfallback",
+            "cleanup"
+          ]
+        },
+        {
+          "id": "eight-ball",
+          "passed": true,
+          "checks": [
+            "native Three184 WebGL2",
+            "statepreservation",
+            "camerachange",
+            "desktop/mobile",
+            "controls",
+            "contextloss/restoration",
+            "2Dfallback",
+            "cleanup"
+          ]
+        },
+        {
+          "id": "pottery-wheel",
+          "passed": true,
+          "checks": [
+            "native Three184 WebGL2",
+            "statepreservation",
+            "camerachange",
+            "desktop/mobile",
+            "controls",
+            "contextloss/restoration",
+            "2Dfallback",
+            "cleanup"
+          ]
+        },
+        {
+          "passed": true,
+          "noWebGLFallback": true
+        },
+        {
+          "passed": true,
+          "rendererSwitches": 20,
+          "resourcesBounded": true
+        }
+      ],
+      "errors": []
+    },
+    "readabilityReport": "ALL_GAME_READABILITY_1063.json",
+    "readabilityChecks": 71060,
+    "environment": "Installed headless Chromium; desktop/tablet/mobile emulation, real native Canvas, IndexedDB and WebGL2 via software graphics. Backend readiness explicitly doubled."
+  },
+  "graphics": {
+    "twoDimensional": "Default for readable board/action controls",
+    "projected": "Fortress Weave multi-face tower volume",
+    "optionalThree": [
+      "tenpin-bowling",
+      "eight-ball",
+      "pottery-wheel"
+    ],
+    "physics": "Original native2D simulation; 3D is an actual mesh renderer, not new physics"
+  },
+  "artwork": {
+    "creativeCommissionsSaved": 100,
+    "domCompletionReloadProofs": 5
+  },
+  "storageBudgets": {
+    "progressPerGameChars": 24000,
+    "snapshotPerGameChars": 160000,
+    "compatibleCheckpointsPerAccount": 32,
+    "all209ProgressChars": 1039424,
+    "adversarialCreativeCheckpoint": {
+      "method": "Legal replay of all20missions of all5creative campaigns with carried artworkflags. Stained-glass pointer coordinates add0.1234567890123x/0.2345678901234y; everyintermediate playingstate checkedagainstvalidJSON and160000characters; everyundo checkedagainstpriorstatewithsameflags.",
+      "maxEntries": 32,
+      "maxUndoUtf8Bytes": 100000,
+      "stainedGlass": {
+        "worst": {
+          "mission": "stained-glass-mission-20",
+          "characters": 106074,
+          "priorArtworks": 19
+        },
+        "undoBytes": 99971,
+        "artworks": 20,
+        "progressCharacters": 7021
+      }
+    }
+  },
+  "visualReview": {
+    "all209RuntimeContactSheets": [
+      "media/all-game-journeys-legacy-1063.webp",
+      "media/all-game-journeys-studio-1063.webp",
+      "media/all-game-journeys-expansion-1063.webp"
+    ],
+    "sportsLibrary": "media/all-game-library-1063.webp",
+    "openedAndInspected": true,
+    "adjustments": [
+      "dark title color scoped to lightcards",
+      "dark focus ring on lightcards",
+      "mobile filter tabs/advanced collapse",
+      "compact metadata paragraph",
+      "3D resized with canvas",
+      "pottery2column controls/targetghost"
+    ]
+  },
+  "baselineSecurity": {
+    "run": "https://github.com/hoangdaika13/hoangdaika13.github.io/actions/runs/40053600894",
+    "sha": "e1c6a57ff6bde3f95b3e6dc16bee0ff3af5a7f9c",
+    "status": "failed before this release",
+    "failure": "Audit production dependency graph",
+    "dependencyFilesChanged": false
+  },
+  "limits": [
+    "Human duration/fun/pacing unmeasured; solver timings do not represent human playtime.",
+    "No physical iOS/Android or independent hardware GPU QA.",
+    "Local device/account saves, no cross-device cloud synchronization.",
+    "Mini-games and local bots, no new network multiplayer.",
+    "Browser :visited computed colors are privacy-masked; actual navigation/capture used.",
+    "Headless 200% equivalence/CSSzoom tested, not OS zoom UI."
+  ]
+}

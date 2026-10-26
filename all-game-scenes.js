@@ -27,8 +27,8 @@
   const profiles=Object.freeze(Object.fromEntries(Object.entries(families).flatMap(([theme,ids])=>ids.map((id,index)=>[id,Object.freeze({id,theme,variant:index,palette:Object.freeze([...themes[theme]])})]))));
   const cache=new Map();
   function hash(text){let n=2166136261;for(const c of text)n=Math.imul(n^c.charCodeAt(0),16777619);return n>>>0;}
-  function scene(id){
-    if(cache.has(id))return cache.get(id);const profile=profiles[id]||profiles['star-guard'],[dark,mid,light,warm]=profile.palette;
+  function scene(id,alternateTheme){
+    const key=id+':'+(themes[alternateTheme]?alternateTheme:'original');if(cache.has(key))return cache.get(key);const original=profiles[id]||profiles['star-guard'],profile=themes[alternateTheme]?Object.assign({},original,{theme:alternateTheme,palette:themes[alternateTheme]}):original,[dark,mid,light,warm]=profile.palette;
     let seed=hash(id);const random=()=>((seed=Math.imul(seed,1664525)+1013904223>>>0)/4294967296),shapes=[];
     const add=(type,values,fill,stroke,width=1)=>shapes.push({type,values,fill,stroke,width});
     const rect=(x,y,w,h,fill,stroke,width)=>add('rect',[x,y,w,h],fill,stroke,width),circle=(x,y,r,fill,stroke,width)=>add('circle',[x,y,r],fill,stroke,width),ellipse=(x,y,rx,ry,fill,stroke,width)=>add('ellipse',[x,y,rx,ry],fill,stroke,width),poly=(points,fill,stroke,width)=>add('polygon',points,fill,stroke,width),line=(x,y,x2,y2,stroke,width=1)=>add('line',[x,y,x2,y2],null,stroke,width);
@@ -81,10 +81,10 @@
     else if(id==='coin-catcher'){for(let i=0;i<5;i++){circle(175+i*85,115+i%3*35,12,warm,light,2);line(175+i*85,107+i%3*35,175+i*85,123+i%3*35,dark,2);}}
     else if(!['space','cafe'].includes(theme)){ellipse(px,392,27,7,dark+'85');circle(px,365,18,light+'55',light+'90',2);line(px-10,365,px+10,365,warm,2);line(px,355,px,375,warm,2);}
     const gradients={sky:[dark,mid,dark],ground:[mid,dark,dark],water:[mid,dark,light],planet:[warm,mid,dark]};
-    const result={profile,shapes,gradients,backgroundCount};cache.set(id,result);return result;
+    const result={profile,shapes,gradients,backgroundCount};cache.set(key,result);return result;
   }
-  function paint(ctx,id){
-    const data=scene(id);ctx.save();for(const shape of data.shapes.slice(0,data.backgroundCount)){
+  function paint(ctx,id,options={}){
+    const data=scene(id,options.theme);ctx.save();for(const shape of data.shapes.slice(0,data.backgroundCount)){
       const {type,values:v,fill,stroke,width}=shape;let color=fill;
       if(data.gradients[fill]){const gradient=fill==='planet'?ctx.createRadialGradient(v[0]-v[2]*.3,v[1]-v[2]*.3,v[2]*.05,v[0],v[1],v[2]):ctx.createLinearGradient(0,type==='rect'?v[1]:0,720,480);data.gradients[fill].forEach((c,i)=>gradient.addColorStop(i/2,c));color=gradient;}
       ctx.beginPath();if(type==='rect')ctx.rect(...v);else if(type==='circle')ctx.arc(...v,0,Math.PI*2);else if(type==='ellipse')ctx.ellipse(...v,0,0,Math.PI*2);else{ctx.moveTo(v[0],v[1]);for(let i=2;i<v.length;i+=2)ctx.lineTo(v[i],v[i+1]);if(type==='polygon')ctx.closePath();}

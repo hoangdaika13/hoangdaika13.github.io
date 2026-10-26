@@ -1,0 +1,1477 @@
+{
+  "release": 1063,
+  "gameCount": 59,
+  "mandatoryMissions": 1364,
+  "verification": "69 focused campaign tests plus native six-bundle regressions: 265 passing tests. Every mandatory mission starts fresh and uses legal engine commands; no checkpoint or completed state is injected. Idle serve/aim states, real launch, cooldown settling and required passive frames are also checked.",
+  "games": [
+    {
+      "id": "snake",
+      "bundle": "arcade",
+      "model": "action",
+      "missions": 20,
+      "chapters": 4,
+      "mechanics": [
+        "Tìm lộ trình giữa các vườn",
+        "Qua các cổng hở của vách dọc",
+        "Đọc hai vách và chọn lối vòng",
+        "Cổng đôi nối hai góc nhưng thân rắn vẫn chiếm ô thật"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 20,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "breakout",
+      "bundle": "arcade",
+      "model": "action",
+      "missions": 20,
+      "chapters": 4,
+      "mechanics": [
+        "Những khoảng trống thay đổi góc nảy",
+        "Phá vòm, khai thác đường vào phía sau",
+        "Giáp được báo bằng hai đinh; kiểm soát điểm chạm thanh",
+        "Mạng thành lũy có lối xuyên giữa các cụm"
+      ],
+      "renderer": "2.5D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 20,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "star-guard",
+      "bundle": "arcade",
+      "model": "action",
+      "missions": 20,
+      "chapters": 4,
+      "mechanics": [
+        "Đọc khoảng trống của đội hình",
+        "Tàu lao xuống: đổi vị trí trước khi bắn",
+        "Đọc vòng khiên 1,1 giây trong chu kỳ 3 giây",
+        "Tàu chỉ huy và quạt đạn: tách mục tiêu, giữ đường né"
+      ],
+      "renderer": "2.5D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 20,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "merge",
+      "bundle": "puzzles",
+      "model": "puzzle",
+      "missions": 28,
+      "chapters": 4,
+      "mechanics": [
+        "Ghép từng cặp và giữ hành lang trống",
+        "Chỉ dùng trái, phải và xuống",
+        "Chỉ dùng phải, lên và xuống",
+        "Đưa ô mục tiêu tới hàng cuối"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 28,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "mines",
+      "bundle": "puzzles",
+      "model": "puzzle",
+      "missions": 28,
+      "chapters": 4,
+      "mechanics": [
+        "Mở ô an toàn bằng số kề",
+        "Cắm đủ cờ rồi mở chùm trên số",
+        "Đánh dấu hết mìn trước khi hoàn tất",
+        "Phối hợp số, cờ và giới hạn thao tác"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 28,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "memory",
+      "bundle": "puzzles",
+      "model": "puzzle",
+      "missions": 28,
+      "chapters": 4,
+      "mechanics": [
+        "Quan sát cả bàn rồi tìm cặp",
+        "Ghép các biểu tượng theo thứ tự giảm dần",
+        "Sau mỗi cặp, thẻ còn lại dịch một vị trí",
+        "Ghép chẵn trước lẻ, theo dõi thẻ dịch chuyển"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 28,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "crate-lab",
+      "bundle": "adventure",
+      "model": "puzzle",
+      "missions": 28,
+      "chapters": 4,
+      "mechanics": [
+        "Đẩy qua phòng mở, giữ đường đi sau thùng",
+        "Chuyển hàng qua vách ngăn",
+        "Dọn lối trước khi đưa thùng vào ổ",
+        "Ba kiện hàng: quyết định thứ tự và vị trí đứng"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 28,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "block-drop",
+      "bundle": "adventure",
+      "model": "puzzle",
+      "missions": 28,
+      "chapters": 4,
+      "mechanics": [
+        "Đọc khối và khoảng trống trong lớp đá",
+        "Xoay để lấp hốc lệch, giữ đường rơi",
+        "Kết hợp nhiều khối để dọn hàng",
+        "Xóa hai hàng trước khi dùng hết bốn khối"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 28,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "orbit-runner",
+      "bundle": "adventure",
+      "model": "action",
+      "missions": 20,
+      "chapters": 4,
+      "mechanics": [
+        "Nhảy qua khe và chọn điểm cất chân",
+        "Bậc thềm làm thay đổi nơi đáp",
+        "Gió chỉ tác động khi ở trên không",
+        "Thu đủ hai tinh thể trước khi mở cổng"
+      ],
+      "renderer": "2.5D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 20,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "lights-out",
+      "bundle": "pack-puzzles",
+      "model": "puzzle",
+      "missions": 28,
+      "chapters": 4,
+      "mechanics": [
+        "Đọc giao điểm chữ thập",
+        "Các công tắc niêm phong không bấm được",
+        "Dùng ảnh hưởng từ cạnh vào tâm",
+        "Phối hợp nhóm công tắc, giữ ngân sách"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 28,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "slide-tiles",
+      "bundle": "pack-puzzles",
+      "model": "puzzle",
+      "missions": 28,
+      "chapters": 4,
+      "mechanics": [
+        "Đưa góc về đúng vị trí",
+        "Giữ hàng đầu, giải chu kỳ ô trống",
+        "Dàn lại cột mà không phá góc",
+        "Phối hợp chu kỳ hàng và cột"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 28,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "peg-solitaire",
+      "bundle": "pack-puzzles",
+      "model": "puzzle",
+      "missions": 28,
+      "chapters": 4,
+      "mechanics": [
+        "Gỡ cụm quân riêng lẻ",
+        "Dọn hành lang trước khi gom",
+        "Đưa quân qua cầu trung tâm",
+        "Kết thúc đúng ổ đích đã đánh dấu"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 28,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "n-queens",
+      "bundle": "pack-puzzles",
+      "model": "puzzle",
+      "missions": 28,
+      "chapters": 4,
+      "mechanics": [
+        "Hàng, cột và hai đường chéo",
+        "Giữ các hậu đã cho, tránh ô niêm phong",
+        "Phối hợp ràng buộc trên bàn 8×8",
+        "Lập kế hoạch từ hàng ít ô trống"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 28,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "nonogram",
+      "bundle": "pack-puzzles",
+      "model": "puzzle",
+      "missions": 28,
+      "chapters": 4,
+      "mechanics": [
+        "Đoạn chạm mép và giao điểm",
+        "Tách đoạn bằng ô trống",
+        "Đối chiếu hai trục gợi ý",
+        "Hoàn thành biểu tượng có khoảng âm"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 28,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "towers-hanoi",
+      "bundle": "pack-puzzles",
+      "model": "puzzle",
+      "missions": 28,
+      "chapters": 4,
+      "mechanics": [
+        "Tiếp tục từ cấu hình đang dở",
+        "Dỡ đĩa nhỏ để giải phóng đĩa lớn",
+        "Chỉ chuyển qua trụ liền kề A–B–C",
+        "Đích đến thay đổi: đọc tên trụ trước khi đi"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 28,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "maze-path",
+      "bundle": "pack-puzzles",
+      "model": "puzzle",
+      "missions": 28,
+      "chapters": 4,
+      "mechanics": [
+        "Đọc ngã rẽ và đường cụt",
+        "Nhặt chìa trước cửa khóa",
+        "Thứ tự hai chìa và hai cửa",
+        "Giữ lộ trình ngắn qua chuỗi cửa"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 28,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "word-search",
+      "bundle": "pack-puzzles",
+      "model": "learning",
+      "missions": 28,
+      "chapters": 4,
+      "mechanics": [
+        "Tìm theo hàng ngang",
+        "Theo cột từ trên xuống",
+        "Đọc các đường chéo có giao nhau",
+        "Kết hợp hàng, cột và chéo"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 28,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "number-order",
+      "bundle": "pack-puzzles",
+      "model": "puzzle",
+      "missions": 28,
+      "chapters": 4,
+      "mechanics": [
+        "Đếm tăng liên tục",
+        "Đếm lùi từ 16 về 1",
+        "Lẻ trước, chẵn sau",
+        "Hai đầu: 1,16,2,15 rồi tiến vào giữa"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 28,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "sudoku-mini",
+      "bundle": "pack-puzzles",
+      "model": "puzzle",
+      "missions": 28,
+      "chapters": 4,
+      "mechanics": [
+        "Tìm số còn thiếu trong hàng",
+        "Giao điểm hàng và khối",
+        "Loại ứng viên theo cột và khối",
+        "Chọn ô ít ứng viên trước"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 28,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "color-flood",
+      "bundle": "pack-puzzles",
+      "model": "puzzle",
+      "missions": 28,
+      "chapters": 4,
+      "mechanics": [
+        "Gom các dải liên thông",
+        "Chọn giao điểm để nuốt nhiều nhánh",
+        "Đừng bỏ sót đảo màu",
+        "Kế hoạch toàn bàn trong ngân sách"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 28,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "pipe-link",
+      "bundle": "pack-puzzles",
+      "model": "puzzle",
+      "missions": 28,
+      "chapters": 4,
+      "mechanics": [
+        "Nối góc và đoạn thẳng",
+        "Trạm khóa giữ hướng cố định",
+        "Mạng có nút T và vòng phụ",
+        "Kiểm tra toàn mạng, không chỉ lối tới đích"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 28,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "code-breaker",
+      "bundle": "pack-puzzles",
+      "model": "puzzle",
+      "missions": 28,
+      "chapters": 4,
+      "mechanics": [
+        "Đọc số đúng và đúng màu sai chỗ",
+        "Đếm màu lặp đúng số lần",
+        "Loại mã bằng giao của hai manh mối",
+        "Tối ưu lần đoán còn lại"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 28,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "knights-tour",
+      "bundle": "pack-puzzles",
+      "model": "puzzle",
+      "missions": 28,
+      "chapters": 4,
+      "mechanics": [
+        "Theo chữ L qua mọi ô",
+        "Ghé hai trạm ở lượt chỉ định",
+        "Ba điểm hẹn: lập tuyến trước",
+        "Kết hợp bốn điểm hẹn và tránh cụt đường"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 28,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "connect-four",
+      "bundle": "pack-puzzles",
+      "model": "board",
+      "missions": 28,
+      "chapters": 4,
+      "mechanics": [
+        "Tìm nước nối bốn ngay trong thế hợp lệ; đối thủ vẫn tuân luật."
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 28,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "tic-tac-toe",
+      "bundle": "pack-puzzles",
+      "model": "board",
+      "missions": 28,
+      "chapters": 4,
+      "mechanics": [
+        "Nhận diện hàng, cột hoặc chéo sắp hoàn tất; tìm nước thắng hợp lệ."
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 28,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "reversi-mini",
+      "bundle": "pack-puzzles",
+      "model": "board",
+      "missions": 28,
+      "chapters": 4,
+      "mechanics": [
+        "Tìm nước hợp lệ lật ít nhất 4 quân cùng lượt; xem các tia kẹp.",
+        "Tìm nước hợp lệ lật ít nhất 2 quân cùng lượt; xem các tia kẹp.",
+        "Tìm nước hợp lệ lật ít nhất 3 quân cùng lượt; xem các tia kẹp.",
+        "Tìm nước hợp lệ lật ít nhất 5 quân cùng lượt; xem các tia kẹp."
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 28,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "paddle-duel",
+      "bundle": "pack-arcade",
+      "model": "season",
+      "missions": 16,
+      "chapters": 4,
+      "mechanics": [
+        "Đối thủ giữ tâm: đánh góc bằng mép thanh",
+        "Cột giữa chia các đường chuyền bóng",
+        "Hai vật cản tạo góc bật chéo",
+        "Chọn cao độ đường bóng giữa hai vùng chặn"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 16,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "sky-glider",
+      "bundle": "pack-arcade",
+      "model": "action",
+      "missions": 20,
+      "chapters": 4,
+      "mechanics": [
+        "Giữ cao độ giữa các cổng rộng",
+        "Cổng cao–thấp đòi hỏi chuẩn bị sớm",
+        "Dòng khí tác động lên gia tốc dọc",
+        "Lộ trình kết hợp dòng khí và cổng lệch"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 20,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "meteor-dodge",
+      "bundle": "pack-arcade",
+      "model": "action",
+      "missions": 20,
+      "chapters": 4,
+      "mechanics": [
+        "Ghé ba trạm trong khi né mưa đá",
+        "Dòng đá chéo: quan sát quỹ đạo trước khi đi",
+        "Giao nhau của hai dòng: chọn thời điểm qua",
+        "Thu tín hiệu theo thứ tự 1–2–3 giữa hai dòng đá chéo"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 20,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "coin-catcher",
+      "bundle": "pack-arcade",
+      "model": "action",
+      "missions": 20,
+      "chapters": 4,
+      "mechanics": [
+        "Đọc thứ tự xu trước khi dịch giỏ",
+        "Đá xen giữa hai xu: nhường đường rơi",
+        "Gió ngang làm đổi điểm hứng thực",
+        "Chuỗi xa–gần kết hợp xu và đá"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 20,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "road-rush",
+      "bundle": "pack-arcade",
+      "model": "season",
+      "missions": 16,
+      "chapters": 4,
+      "mechanics": [
+        "Qua ba trạm kiểm tra đúng làn",
+        "Đọc chuỗi xe và đổi làn từ sớm",
+        "Phanh giữ khoảng trống trước trạm",
+        "Kết hợp làn giao hàng với dòng xe"
+      ],
+      "renderer": "2.5D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 16,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "river-cross",
+      "bundle": "pack-arcade",
+      "model": "action",
+      "missions": 20,
+      "chapters": 4,
+      "mechanics": [
+        "Đọc khe xe, đợi gỗ tới đúng vị trí",
+        "Hai dòng gỗ ngược chiều làm đổi chỗ đứng",
+        "Gỗ ngắn và xe rộng đòi hỏi canh hai hàng",
+        "Qua lại hai chuyến, không dựa vào lá chắn"
+      ],
+      "renderer": "2.5D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 20,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "asteroid-drift",
+      "bundle": "pack-arcade",
+      "model": "action",
+      "missions": 20,
+      "chapters": 4,
+      "mechanics": [
+        "Ngắm và theo dõi mảnh sau khi vỡ",
+        "Đá trôi tiếp tuyến: bắn đón",
+        "Dòng đá hội tụ: đổi vị trí để mở lối",
+        "Mảnh chuyển động đan nhau, giữ quán tính trong kiểm soát"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 20,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "gravity-flip",
+      "bundle": "pack-arcade",
+      "model": "action",
+      "missions": 20,
+      "chapters": 4,
+      "mechanics": [
+        "Đảo trọng lực trước vách, không đợi va chạm",
+        "Các cặp cùng phía phá nhịp đảo đều",
+        "Chiều cao vách khác nhau làm đổi thời điểm",
+        "Có vật cản giữa: sàn và trần là hai tuyến an toàn"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 20,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "ball-balance",
+      "bundle": "pack-arcade",
+      "model": "action",
+      "missions": 20,
+      "chapters": 4,
+      "mechanics": [
+        "Nghiêng và hãm trước vòng đích",
+        "Đi vòng qua các lỗ có khoảng đệm",
+        "Mặt băng giảm ma sát, dùng hãm chủ động",
+        "Vùng nhám đổi khoảng trượt và đường đi"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 20,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "jump-tower",
+      "bundle": "pack-arcade",
+      "model": "action",
+      "missions": 20,
+      "chapters": 4,
+      "mechanics": [
+        "Đọc vị trí đáp trước khi nhảy",
+        "Bệ hẹp cần hãm ngang khi đáp",
+        "Bệ trượt ngang cần bù chuyển động",
+        "Chuỗi bệ trượt và độ cao thay đổi"
+      ],
+      "renderer": "2.5D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 20,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "laser-dash",
+      "bundle": "pack-arcade",
+      "model": "action",
+      "missions": 20,
+      "chapters": 4,
+      "mechanics": [
+        "Đợi nhịp tắt hoặc lướt qua rào",
+        "Hai rào gần nhau có thể qua trong một lần lướt",
+        "Mỗi rào có nhịp riêng, quan sát cue",
+        "Chia chuỗi rào thành nhóm theo hồi chiêu"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 20,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "orbit-collect",
+      "bundle": "pack-arcade",
+      "model": "action",
+      "missions": 20,
+      "chapters": 4,
+      "mechanics": [
+        "Đổi bán kính để chạm tinh thể",
+        "Các quỹ đạo trong và ngoài cần đổi bán kính sớm",
+        "Tinh thể có số phải thu đúng thứ tự",
+        "Kết hợp thứ tự với các quỹ đạo trung gian"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 20,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "shield-defense",
+      "bundle": "pack-arcade",
+      "model": "action",
+      "missions": 20,
+      "chapters": 4,
+      "mechanics": [
+        "Theo cụm thiên thạch gần nhau",
+        "Bốn hướng làm đổi vị trí khiên",
+        "Hai cung xa nhau: đọc thứ tự tới",
+        "Kết hợp xoay khiên và vùng mở rộng"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 20,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "target-range",
+      "bundle": "pack-arcade",
+      "model": "action",
+      "missions": 20,
+      "chapters": 4,
+      "mechanics": [
+        "Đổi khoảng cách ngắm và tâm bia",
+        "Bia đi ngang: bắn ở vị trí thực",
+        "Bia đổi cả hai trục, không dùng vị trí cũ",
+        "Chỉ bắn bia tròn; hình thoi là mồi nhử"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 20,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "penalty-kick",
+      "bundle": "pack-arcade",
+      "model": "season",
+      "missions": 16,
+      "chapters": 4,
+      "mechanics": [
+        "Ghi bàn vào ba vùng mục tiêu được đánh dấu",
+        "Thủ môn tuần tra lệch pha, chọn thời điểm sút",
+        "Gió làm lệch điểm tới; bù khi ngắm",
+        "Đổi góc theo từng lượt và đọc thủ môn trước khi sút"
+      ],
+      "renderer": "2.5D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 16,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "mini-golf",
+      "bundle": "pack-arcade",
+      "model": "season",
+      "missions": 16,
+      "chapters": 4,
+      "mechanics": [
+        "Vòng qua đầu tường và kiểm soát lực",
+        "Hai vách lệch tạo đường đi chữ S",
+        "Vùng nhám làm ngắn quãng lăn thực",
+        "Lập đường tới cờ bằng góc và lực, tối đa tám gậy"
+      ],
+      "renderer": "2.5D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 16,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "basket-shot",
+      "bundle": "pack-arcade",
+      "model": "season",
+      "missions": 16,
+      "chapters": 4,
+      "mechanics": [
+        "Ba khoảng cách rổ trong một trận",
+        "Điểm ném thay đổi góc và lực cần thiết",
+        "Rổ cao–thấp: đọc cung rơi, không chỉ hướng",
+        "Kết hợp vị trí ném và ba cao độ rổ"
+      ],
+      "renderer": "2.5D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 16,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "simon-sequence",
+      "bundle": "pack-casual",
+      "model": "puzzle",
+      "missions": 24,
+      "chapters": 4,
+      "mechanics": [
+        "Nhập đúng thứ tự",
+        "Nhập ngược thứ tự",
+        "Mỗi tín hiệu đổi sang ô kế tiếp (4 về 1)",
+        "Nhập vị trí lẻ trước, vị trí chẵn sau"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 24,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "reaction-stop",
+      "bundle": "pack-casual",
+      "model": "action",
+      "missions": 20,
+      "chapters": 4,
+      "mechanics": [
+        "Chỉ chạm tín hiệu xanh",
+        "Chạm xanh, bỏ qua tín hiệu đỏ",
+        "Chọn nút bên có mũi tên",
+        "Chọn phía đối diện mũi tên, bỏ qua đỏ"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 20,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "rhythm-tap",
+      "bundle": "pack-casual",
+      "model": "music",
+      "missions": 20,
+      "chapters": 4,
+      "mechanics": [
+        "Bản gốc Bước chân: nhịp ngắn, dài và khoảng nghỉ có cue rõ.",
+        "Bản gốc Mưa trên mái: nhịp ngắn, dài và khoảng nghỉ có cue rõ.",
+        "Bản gốc Đèn lồng: nhịp ngắn, dài và khoảng nghỉ có cue rõ.",
+        "Bản gốc Ngày hội: nhịp ngắn, dài và khoảng nghỉ có cue rõ."
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 20,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "whack-orb",
+      "bundle": "pack-casual",
+      "model": "action",
+      "missions": 20,
+      "chapters": 4,
+      "mechanics": [
+        "Bắt theo đường viền",
+        "Bỏ qua mồi nhử, bắt tâm có số",
+        "Theo cặp xa–gần",
+        "Bắt theo thứ tự ký hiệu"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 20,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "aim-trainer",
+      "bundle": "pack-casual",
+      "model": "action",
+      "missions": 20,
+      "chapters": 4,
+      "mechanics": [
+        "Bắt theo đường viền",
+        "Bỏ qua mồi nhử, bắt tâm có số",
+        "Theo cặp xa–gần",
+        "Bắt theo thứ tự ký hiệu"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 20,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "math-sprint",
+      "bundle": "pack-casual",
+      "model": "learning",
+      "missions": 24,
+      "chapters": 4,
+      "mechanics": [
+        "Đếm nhóm và cộng phần dư",
+        "Phân chia tài nguyên",
+        "Chia đều và kiểm tra đơn vị",
+        "Lập quãng đường có hướng"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 24,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "color-word",
+      "bundle": "pack-casual",
+      "model": "learning",
+      "missions": 24,
+      "chapters": 4,
+      "mechanics": [
+        "Chọn màu mực",
+        "Chọn nghĩa của từ",
+        "Chọn màu kế tiếp trong chu kỳ ngọc→tím→hồng→vàng",
+        "Chọn mực ở câu lẻ, nghĩa ở câu chẵn"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 24,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "odd-one-out",
+      "bundle": "pack-casual",
+      "model": "puzzle",
+      "missions": 24,
+      "chapters": 4,
+      "mechanics": [
+        "Tìm khác biệt hình học",
+        "Tìm khác biệt về số nét",
+        "Tìm hướng biểu tượng",
+        "Phân loại cặp hỗn hợp"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 24,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "pattern-recall",
+      "bundle": "pack-casual",
+      "model": "puzzle",
+      "missions": 24,
+      "chapters": 4,
+      "mechanics": [
+        "Nhớ cụm liền nhau",
+        "Nhớ đường chéo và khoảng trống",
+        "Phản chiếu qua trục dọc khi nhập",
+        "Nhớ hình, bổ sung ô giữa còn thiếu"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 24,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "treasure-grid",
+      "bundle": "pack-casual",
+      "model": "puzzle",
+      "missions": 24,
+      "chapters": 4,
+      "mechanics": [
+        "Đọc tín hiệu ô kề",
+        "Đi vòng vách đá",
+        "Tìm đường theo ba kho",
+        "Lộ trình ngắn, một lá chắn"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 24,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "lock-timing",
+      "bundle": "pack-casual",
+      "model": "action",
+      "missions": 20,
+      "chapters": 4,
+      "mechanics": [
+        "Chạm trong cung",
+        "Đổi chiều sau mỗi cổng",
+        "Hai cung hợp lệ, tránh vùng đỏ",
+        "Cung xanh di chuyển có dự báo"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 20,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "stack-tower",
+      "bundle": "pack-casual",
+      "model": "action",
+      "missions": 20,
+      "chapters": 4,
+      "mechanics": [
+        "Giữ mặt đỡ rộng",
+        "Tầng hẹp xen kẽ",
+        "Móng lệch: căn tâm từng tầng",
+        "Nhịp giao ca: đổi chiều từng tầng"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 20,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "constellation-trace",
+      "bundle": "pack-casual",
+      "model": "puzzle",
+      "missions": 24,
+      "chapters": 4,
+      "mechanics": [
+        "Nối đường bao",
+        "Nối hình có giao tuyến",
+        "Nối cầu qua các cụm",
+        "Hoàn thành bản đồ quan sát"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 24,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "pixel-painter",
+      "bundle": "pack-casual",
+      "model": "creative",
+      "missions": 20,
+      "chapters": 4,
+      "mechanics": [
+        "Poster hai sắc, bố cục mở",
+        "Huy hiệu đối xứng trái–phải",
+        "Vườn ba sắc có điểm sáng",
+        "Tác phẩm tặng ngày hội: tự do phối màu"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 20,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "garden-care",
+      "bundle": "pack-casual",
+      "model": "creative",
+      "missions": 20,
+      "chapters": 4,
+      "mechanics": [
+        "Cân bằng nước cho ba loài",
+        "Phục hồi cây bị úng",
+        "Chăm cây khô và chia bình",
+        "Ba vi khí hậu: đọc từng khoảng nước"
+      ],
+      "renderer": "2.5D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 20,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    },
+    {
+      "id": "cafe-orders",
+      "bundle": "pack-casual",
+      "model": "creative",
+      "missions": 20,
+      "chapters": 4,
+      "mechanics": [
+        "Phục vụ công thức rõ",
+        "Menu đồ mát: quản lý đá",
+        "Pha chế theo thứ tự mới",
+        "Quà ngày hội: menu kết hợp"
+      ],
+      "renderer": "2D",
+      "proof": {
+        "file": "tests/all-game-campaign-legacy.test.js",
+        "freshLegalWalkthroughs": 20,
+        "status": "passed",
+        "difficulty": "normal"
+      },
+      "quickPlay": "Original engine and stable ID preserved",
+      "duration": {
+        "measured": false,
+        "note": "Automated solver duration is not human playtime."
+      }
+    }
+  ]
+}

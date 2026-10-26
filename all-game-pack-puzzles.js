@@ -179,13 +179,13 @@
     if (s.board.filter(function (v) { return v === 1; }).length === 1) finish(s, s.score + 500); else if (!pegJumps(s, false).length) s.status = 'lost';
   }, function (s) { return desc(s, 'Nhảy qua một quân để bỏ quân đó. Mục tiêu chỉ còn một quân ở bất kỳ ô hợp lệ. Có thể hoàn tác.', 7, s.board.map(function (v, i) { return cell(i, v < 0 ? '' : v ? '●' : '○', 'Ô ' + (i + 1) + ': ' + (v < 0 ? 'ngoài bàn' : v ? 'có quân' : 'trống'), v < 0 || s.status !== 'playing', s.anchor === i); })); });
 
-  function queenConflicts(board, i) { return board.some(function (v, j) { return v && j !== i && (j % 6 === i % 6 || Math.floor(j / 6) === Math.floor(i / 6) || Math.abs(j % 6 - i % 6) === Math.abs(Math.floor(j / 6) - Math.floor(i / 6))); }); }
+  function queenConflicts(board, i) { var n = Math.round(Math.sqrt(board.length)); return board.some(function (v, j) { return v && j !== i && (j % n === i % n || Math.floor(j / n) === Math.floor(i / n) || Math.abs(j % n - i % n) === Math.abs(Math.floor(j / n) - Math.floor(i / n))); }); }
   attach('n-queens', function (s) { s.columns = 6; s.board = Array(36).fill(0); }, function (s, a, before) {
-    if (a.type !== 'cell' || !indexOK(a.index, 36)) return; remember(s, before); s.selected = a.index;
-    var on = s.board[a.index]; for (var i = Math.floor(a.index / 6) * 6; i < Math.floor(a.index / 6) * 6 + 6; i++) s.board[i] = 0;
+    if (a.type !== 'cell' || !indexOK(a.index, s.columns * s.columns)) return; remember(s, before); s.selected = a.index;
+    var on = s.board[a.index]; for (var i = Math.floor(a.index / s.columns) * s.columns; i < Math.floor(a.index / s.columns) * s.columns + s.columns; i++) s.board[i] = 0;
     s.board[a.index] = on ? 0 : 1; s.moves++; var queens = s.board.filter(Boolean).length, conflicts = s.board.filter(function (v, i) { return v && queenConflicts(s.board, i); }).length; s.score = Math.max(0, queens - conflicts) * 100;
-    if (queens === 6 && !conflicts) finish(s, 1200);
-  }, function (s) { return desc(s, 'Đặt 6 hậu: không chung hàng, cột hoặc đường chéo. Bấm lại để bỏ; mỗi hàng chỉ có một hậu.', 6, s.board.map(function (v, i) { return cell(i, v ? queenConflicts(s.board, i) ? '♛!' : '♛' : '·', 'Hàng ' + (Math.floor(i / 6) + 1) + ', cột ' + (i % 6 + 1) + (v ? queenConflicts(s.board, i) ? ': hậu đang xung đột' : ': hậu an toàn' : ': trống'), s.status !== 'playing', v); })); });
+    if (queens === s.columns && !conflicts) finish(s, 1200);
+  }, function (s) { return desc(s, 'Đặt ' + s.columns + ' hậu: không chung hàng, cột hoặc đường chéo. Bấm lại để bỏ; mỗi hàng chỉ có một hậu.', s.columns, s.board.map(function (v, i) { return cell(i, v ? queenConflicts(s.board, i) ? '♛!' : '♛' : '·', 'Hàng ' + (Math.floor(i / s.columns) + 1) + ', cột ' + (i % s.columns + 1) + (v ? queenConflicts(s.board, i) ? ': hậu đang xung đột' : ': hậu an toàn' : ': trống'), s.status !== 'playing', v); })); });
 
   function runs(values) { var result = [], count = 0; values.concat(0).forEach(function (v) { if (v === 1) count++; else if (count) { result.push(count); count = 0; } }); return result.length ? result : [0]; }
   function nonogramClues(board) { return { rows: Array.from({ length: 5 }, function (_, y) { return runs(board.slice(y * 5, y * 5 + 5)); }), columns: Array.from({ length: 5 }, function (_, x) { return runs(Array.from({ length: 5 }, function (_, y) { return board[y * 5 + x]; })); }) }; }
@@ -200,7 +200,7 @@
     if (s.anchor === a.index) { s.anchor = -1; return; }
     var from = s.towers[s.anchor], to = s.towers[a.index], disk = from[from.length - 1];
     if (to.length && to[to.length - 1] < disk) { s.message = 'Không đặt đĩa lớn lên đĩa nhỏ.'; return; }
-    remember(s, before); to.push(from.pop()); s.anchor = -1; s.moves++; s.message = ''; if (s.towers[2].length === s.count) finish(s, Math.max(100, 2000 - (s.moves - (Math.pow(2, s.count) - 1)) * 20));
+    remember(s, before); to.push(from.pop()); s.anchor = -1; s.moves++; s.message = ''; if (s.towers[s.goalTower === undefined ? 2 : s.goalTower].length === s.count) finish(s, Math.max(100, 2000 - (s.moves - (Math.pow(2, s.count) - 1)) * 20));
   }, function (s) { return desc(s, 'Chuyển toàn bộ ' + s.count + ' đĩa từ trụ A sang C. Chọn trụ lấy rồi trụ đặt; số nhỏ là đĩa nhỏ. ' + s.moves + ' bước; tối ưu ' + (Math.pow(2, s.count) - 1) + '.', 3, s.towers.map(function (tower, i) { return cell(i, String.fromCharCode(65 + i) + ': ' + (tower.slice().reverse().join(' ') || '·'), 'Trụ ' + String.fromCharCode(65 + i) + ', từ trên xuống: ' + (tower.slice().reverse().join(', ') || 'trống'), s.status !== 'playing', s.anchor === i); })); });
 
   attach('maze-path', function (s) {
@@ -261,9 +261,10 @@
   }, function (s) { var foundCells = Object.values(s.foundPaths).flat(); return desc(s, 'Tìm từ không dấu; bấm chữ đầu và chữ cuối, có thể chọn ngược. Cần tìm: ' + s.words.map(function (w) { return (s.found.includes(w.word) ? '✓' : '') + w.word; }).join(', ') + '.', 8, s.board.map(function (v, i) { return cell(i, v, 'Hàng ' + (Math.floor(i / 8) + 1) + ', cột ' + (i % 8 + 1) + ': chữ ' + v + (foundCells.includes(i) ? ', thuộc từ đã tìm' : ''), s.status !== 'playing', s.anchor === i || foundCells.includes(i)); })); });
 
   attach('number-order', function (s) { s.columns = 4; s.board = shuffle(Array.from({ length: 16 }, function (_, i) { return i + 1; }), s); s.next = 1; s.lives = 3; }, function (s, a, before) {
-    if (a.type !== 'cell' || !indexOK(a.index, 16) || s.board[a.index] < s.next) return; remember(s, before); s.selected = a.index; s.moves++;
+    if (a.type !== 'cell' || !indexOK(a.index, 16) || (s.numberOrder ? s.completedNumbers.includes(s.board[a.index]) : s.board[a.index] < s.next)) return; remember(s, before); s.selected = a.index; s.moves++;
+    if (s.numberOrder) { if (s.board[a.index] === s.numberOrder[s.cursor]) { s.completedNumbers.push(s.board[a.index]); s.cursor++; s.next = s.numberOrder[s.cursor]; s.score += 50; if (s.cursor === 16) finish(s, s.score + s.lives * 100); } else { s.lives--; s.message = 'Số tiếp theo là ' + s.numberOrder[s.cursor] + '.'; if (!s.lives) s.status = 'lost'; } return; }
     if (s.board[a.index] === s.next) { s.next++; s.score += 50; if (s.next === 17) finish(s, s.score + s.lives * 100); } else { s.lives--; s.message = 'Hãy tìm số ' + s.next + ', không bỏ số.'; if (!s.lives) s.status = 'lost'; }
-  }, function (s) { return desc(s, 'Bấm lần lượt 1 → 16. Cần tìm ' + Math.min(s.next, 16) + '; còn ' + s.lives + ' lượt sai. Không giới hạn thời gian.', 4, s.board.map(function (v, i) { return cell(i, v, 'Số ' + v + (v < s.next ? ', đã chọn đúng' : ''), s.status !== 'playing' || v < s.next, v < s.next); })); });
+  }, function (s) { return desc(s, 'Bấm lần lượt 1 → 16. Cần tìm ' + Math.min(s.next, 16) + '; còn ' + s.lives + ' lượt sai. Không giới hạn thời gian.', 4, s.board.map(function (v, i) { return cell(i, v, 'Số ' + v + (v < s.next ? ', đã chọn đúng' : ''), s.status !== 'playing' || (s.numberOrder ? s.completedNumbers.includes(v) : v < s.next), s.numberOrder ? s.completedNumbers.includes(v) : v < s.next); })); });
 
   function sudokuAllowed(board, at, value) { var row = Math.floor(at / 4), col = at % 4; return !board.some(function (n, i) { return i !== at && n === value && (Math.floor(i / 4) === row || i % 4 === col || Math.floor(Math.floor(i / 4) / 2) === Math.floor(row / 2) && Math.floor(i % 4 / 2) === Math.floor(col / 2)); }); }
   function sudokuCount(board, limit) { var at = board.indexOf(0); if (at < 0) return 1; var count = 0; for (var n = 1; n <= 4; n++) if (sudokuAllowed(board, at, n)) { board[at] = n; count += sudokuCount(board, limit - count); board[at] = 0; if (count >= limit) return count; } return count; }
@@ -289,7 +290,7 @@
 
   function rotate(mask) { return (mask << 1 & 15) | (mask >> 3 & 1); }
   function connectedPipes(board) { var found = new Set([0]), queue = [0]; while (queue.length) { var i = queue.pop(); for (var d = 0; d < 4; d++) if (board[i] & 1 << d) { var n = neighbor(i, d, 5, 5); if (n >= 0 && board[n] & 1 << (d + 2) % 4 && !found.has(n)) { found.add(n); queue.push(n); } } } return Array.from(found); }
-  var PIPE_GLYPHS = { 1: '╵', 2: '╶', 4: '╷', 8: '╴', 5: '│', 10: '─', 3: '└', 6: '┌', 12: '┐', 9: '┘' };
+  var PIPE_GLYPHS = { 1: '╵', 2: '╶', 4: '╷', 8: '╴', 5: '│', 10: '─', 3: '└', 6: '┌', 12: '┐', 9: '┘', 7: '├', 11: '┴', 13: '┤', 14: '┬', 15: '┼' };
   attach('pipe-link', function (s) {
     s.columns = 5; s.solution = Array(25).fill(0); var path = [];
     for (var y = 0; y < 5; y++) for (var x = 0; x < 5; x++) path.push(y * 5 + (y % 2 ? 4 - x : x));

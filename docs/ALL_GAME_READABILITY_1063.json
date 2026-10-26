@@ -1,0 +1,317 @@
+{
+  "release": 1063,
+  "date": "2026-10-26",
+  "scope": "Real Chromium, full website shell,209realgamecards",
+  "themes": [
+    "cosmic",
+    "midnight",
+    "basic-light",
+    "basic-dark",
+    "slate",
+    "warm",
+    "dark",
+    "light",
+    "cyberpunk",
+    "ocean",
+    "aurora",
+    "emerald",
+    "purple",
+    "sunset",
+    "neon",
+    "glass"
+  ],
+  "primaryInteractiveThemes": [
+    "cosmic",
+    "midnight",
+    "aurora",
+    "light"
+  ],
+  "states": [
+    {
+      "theme": "cosmic",
+      "state": "normal",
+      "cards": 209
+    },
+    {
+      "theme": "cosmic",
+      "state": "hover",
+      "cards": 209
+    },
+    {
+      "theme": "cosmic",
+      "state": "focus",
+      "cards": 209
+    },
+    {
+      "theme": "cosmic",
+      "state": "favorite-selected",
+      "cards": 209
+    },
+    {
+      "theme": "midnight",
+      "state": "normal",
+      "cards": 209
+    },
+    {
+      "theme": "midnight",
+      "state": "hover",
+      "cards": 209
+    },
+    {
+      "theme": "midnight",
+      "state": "focus",
+      "cards": 209
+    },
+    {
+      "theme": "midnight",
+      "state": "favorite-selected",
+      "cards": 209
+    },
+    {
+      "theme": "basic-light",
+      "state": "normal",
+      "cards": 209
+    },
+    {
+      "theme": "basic-dark",
+      "state": "normal",
+      "cards": 209
+    },
+    {
+      "theme": "slate",
+      "state": "normal",
+      "cards": 209
+    },
+    {
+      "theme": "warm",
+      "state": "normal",
+      "cards": 209
+    },
+    {
+      "theme": "dark",
+      "state": "normal",
+      "cards": 209
+    },
+    {
+      "theme": "light",
+      "state": "normal",
+      "cards": 209
+    },
+    {
+      "theme": "light",
+      "state": "hover",
+      "cards": 209
+    },
+    {
+      "theme": "light",
+      "state": "focus",
+      "cards": 209
+    },
+    {
+      "theme": "light",
+      "state": "favorite-selected",
+      "cards": 209
+    },
+    {
+      "theme": "cyberpunk",
+      "state": "normal",
+      "cards": 209
+    },
+    {
+      "theme": "ocean",
+      "state": "normal",
+      "cards": 209
+    },
+    {
+      "theme": "aurora",
+      "state": "normal",
+      "cards": 209
+    },
+    {
+      "theme": "aurora",
+      "state": "hover",
+      "cards": 209
+    },
+    {
+      "theme": "aurora",
+      "state": "focus",
+      "cards": 209
+    },
+    {
+      "theme": "aurora",
+      "state": "favorite-selected",
+      "cards": 209
+    },
+    {
+      "theme": "emerald",
+      "state": "normal",
+      "cards": 209
+    },
+    {
+      "theme": "purple",
+      "state": "normal",
+      "cards": 209
+    },
+    {
+      "theme": "sunset",
+      "state": "normal",
+      "cards": 209
+    },
+    {
+      "theme": "neon",
+      "state": "normal",
+      "cards": 209
+    },
+    {
+      "theme": "glass",
+      "state": "normal",
+      "cards": 209
+    },
+    {
+      "theme": "aurora",
+      "state": "visited-route-observed",
+      "cards": 209
+    },
+    {
+      "theme": "aurora",
+      "state": "forced-colors-keyboard",
+      "cards": 209
+    }
+  ],
+  "contrastChecks": 71060,
+  "minima": {
+    "title": 13.0427,
+    "link": 13.0427,
+    "description": 6.8882,
+    "metadata": 5.9722,
+    "journey": 9.2904,
+    "estimate": 6.8882,
+    "cta": 4.9839,
+    "favorite": 5.387
+  },
+  "textFailures": 0,
+  "focusFailures": 0,
+  "browserErrors": [],
+  "layouts": [
+    {
+      "label": "layout-1440",
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440
+      },
+      "discovery": {
+        "advancedOpen": true,
+        "firstCardY": 1135.40625,
+        "viewportHeight": 900,
+        "searchHeight": 48,
+        "browse": {
+          "firstCardY": 59.40625,
+          "focusedPlay": true,
+          "titleVisible": true
+        }
+      },
+      "keyboardFocus": {
+        "tag": "BUTTON",
+        "text": "",
+        "visible": true,
+        "outline": "solid",
+        "width": "3px",
+        "color": "rgb(35, 76, 154)",
+        "contrast": 7.422380745672476
+      }
+    },
+    {
+      "label": "layout-768",
+      "viewport": {
+        "width": 768,
+        "height": 1024,
+        "scrollWidth": 768
+      },
+      "discovery": {
+        "advancedOpen": false,
+        "firstCardY": 1385.890625,
+        "viewportHeight": 1024,
+        "searchHeight": 48,
+        "browse": {
+          "firstCardY": 58.890625,
+          "focusedPlay": true,
+          "titleVisible": true
+        }
+      },
+      "keyboardFocus": {
+        "tag": "BUTTON",
+        "text": "",
+        "visible": true,
+        "outline": "solid",
+        "width": "3px",
+        "color": "rgb(35, 76, 154)",
+        "contrast": 7.422380745672476
+      }
+    },
+    {
+      "label": "layout-375",
+      "viewport": {
+        "width": 375,
+        "height": 812,
+        "scrollWidth": 375
+      },
+      "discovery": {
+        "advancedOpen": false,
+        "firstCardY": 807.171875,
+        "viewportHeight": 812,
+        "searchHeight": 48,
+        "browse": {
+          "firstCardY": -4.828125,
+          "focusedPlay": true,
+          "titleVisible": true
+        }
+      },
+      "keyboardFocus": {
+        "tag": "BUTTON",
+        "text": "",
+        "visible": true,
+        "outline": "solid",
+        "width": "3px",
+        "color": "rgb(35, 76, 154)",
+        "contrast": 7.422380745672476
+      }
+    },
+    {
+      "label": "200%-equivalent-720CSS-1440physical",
+      "viewport": {
+        "width": 720,
+        "height": 450,
+        "scrollWidth": 720
+      },
+      "keyboardFocus": {
+        "tag": "BUTTON",
+        "text": "",
+        "visible": true,
+        "outline": "solid",
+        "width": "3px",
+        "color": "rgb(35, 76, 154)",
+        "contrast": 7.422380745672476
+      }
+    }
+  ],
+  "sports": [
+    "futsal-match",
+    "street-hoops",
+    "court-tennis",
+    "beach-volley",
+    "diamond-baseball",
+    "tenpin-bowling"
+  ],
+  "screenshot": "docs/media/all-game-library-1063.webp",
+  "method": "Computed gradient endpoint combinations with background-color and ancestor alpha compositing. No hard-coded card colors. Group opacity/unknown image surfaces are reported as issues.",
+  "visited": {
+    "id": "futsal-match",
+    "note": "A real route was opened and returned to the library. Chromium intentionally masks :visited colors in computed styles; the report does not claim access to private visited-color state."
+  },
+  "zoom": {
+    "method": "720 CSS px at DPR2, equivalent 200% reflow within 1440 physical px; not OS browser zoom UI",
+    "limitations": "Actual OS zoom-control interaction is not exposed in headless Chromium."
+  },
+  "backend": "External APIs explicitly return503; UI and all local assets are real."
+}

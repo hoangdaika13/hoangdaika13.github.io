@@ -1,0 +1,3416 @@
+{
+  "dj-transition": [
+    {
+      "title": "Cầu nối 1",
+      "objective": "Khớp tempo và pha, cắt bass khi chồng deck, giữ chuyển đoạn ổn định hai giây.",
+      "singleStage": true,
+      "state": {
+        "tempoA": 96,
+        "tempoB": 99,
+        "phaseB": 0.125,
+        "deadline": 38,
+        "overload": 0
+      },
+      "content": {
+        "deckA": [
+          48,
+          55,
+          60,
+          55,
+          50,
+          57,
+          null,
+          55
+        ],
+        "deckB": [
+          60,
+          64,
+          67,
+          null,
+          62,
+          65,
+          69,
+          67
+        ]
+      },
+      "resources": {
+        "decks": 2,
+        "equalizer": true
+      },
+      "hazards": [
+        "Bass chồng quá ba giây gây quá tải."
+      ],
+      "hints": [
+        "Đặt BPM B bằng A trước khi mở fader.",
+        "Jog từng ⅛ nhịp để pha về0.",
+        "Cắt bassB, chuyển fader hoàn toàn sangB rồi phát."
+      ]
+    },
+    {
+      "title": "Cầu nối 2",
+      "objective": "Khớp tempo và pha, cắt bass khi chồng deck, giữ chuyển đoạn ổn định hai giây.",
+      "singleStage": true,
+      "state": {
+        "tempoA": 108,
+        "tempoB": 111,
+        "phaseB": 0.25,
+        "deadline": 38,
+        "overload": 0
+      },
+      "content": {
+        "deckA": [
+          48,
+          55,
+          60,
+          55,
+          51,
+          57,
+          null,
+          55
+        ],
+        "deckB": [
+          60,
+          64,
+          67,
+          null,
+          63,
+          65,
+          69,
+          67
+        ]
+      },
+      "resources": {
+        "decks": 2,
+        "equalizer": true
+      },
+      "hazards": [
+        "Bass chồng quá ba giây gây quá tải."
+      ],
+      "hints": [
+        "Đặt BPM B bằng A trước khi mở fader.",
+        "Jog từng ⅛ nhịp để pha về0.",
+        "Cắt bassB, chuyển fader hoàn toàn sangB rồi phát."
+      ]
+    },
+    {
+      "title": "Cầu nối 3",
+      "objective": "Khớp tempo và pha, cắt bass khi chồng deck, giữ chuyển đoạn ổn định hai giây.",
+      "singleStage": true,
+      "state": {
+        "tempoA": 120,
+        "tempoB": 123,
+        "phaseB": 0.375,
+        "deadline": 38,
+        "overload": 0
+      },
+      "content": {
+        "deckA": [
+          48,
+          55,
+          60,
+          55,
+          52,
+          57,
+          null,
+          55
+        ],
+        "deckB": [
+          60,
+          64,
+          67,
+          null,
+          64,
+          65,
+          69,
+          67
+        ]
+      },
+      "resources": {
+        "decks": 2,
+        "equalizer": true
+      },
+      "hazards": [
+        "Bass chồng quá ba giây gây quá tải."
+      ],
+      "hints": [
+        "Đặt BPM B bằng A trước khi mở fader.",
+        "Jog từng ⅛ nhịp để pha về0.",
+        "Cắt bassB, chuyển fader hoàn toàn sangB rồi phát."
+      ]
+    },
+    {
+      "title": "Cầu nối 4",
+      "objective": "Khớp tempo và pha, cắt bass khi chồng deck, giữ chuyển đoạn ổn định hai giây.",
+      "singleStage": true,
+      "state": {
+        "tempoA": 132,
+        "tempoB": 135,
+        "phaseB": 0.5,
+        "deadline": 38,
+        "overload": 0
+      },
+      "content": {
+        "deckA": [
+          48,
+          55,
+          60,
+          55,
+          50,
+          57,
+          null,
+          55
+        ],
+        "deckB": [
+          60,
+          64,
+          67,
+          null,
+          65,
+          65,
+          69,
+          67
+        ]
+      },
+      "resources": {
+        "decks": 2,
+        "equalizer": true
+      },
+      "hazards": [
+        "Bass chồng quá ba giây gây quá tải."
+      ],
+      "hints": [
+        "Đặt BPM B bằng A trước khi mở fader.",
+        "Jog từng ⅛ nhịp để pha về0.",
+        "Cắt bassB, chuyển fader hoàn toàn sangB rồi phát."
+      ]
+    },
+    {
+      "title": "Cầu nối 5",
+      "objective": "Khớp tempo và pha, cắt bass khi chồng deck, giữ chuyển đoạn ổn định hai giây.",
+      "singleStage": true,
+      "state": {
+        "tempoA": 96,
+        "tempoB": 92,
+        "phaseB": 0.125,
+        "deadline": 38,
+        "overload": 0
+      },
+      "content": {
+        "deckA": [
+          48,
+          55,
+          60,
+          55,
+          51,
+          57,
+          null,
+          55
+        ],
+        "deckB": [
+          60,
+          64,
+          67,
+          null,
+          62,
+          65,
+          69,
+          67
+        ]
+      },
+      "resources": {
+        "decks": 2,
+        "equalizer": true
+      },
+      "hazards": [
+        "Bass chồng quá ba giây gây quá tải."
+      ],
+      "hints": [
+        "Đặt BPM B bằng A trước khi mở fader.",
+        "Jog từng ⅛ nhịp để pha về0.",
+        "Cắt bassB, chuyển fader hoàn toàn sangB rồi phát."
+      ]
+    },
+    {
+      "title": "Cầu nối 6",
+      "objective": "Khớp tempo và pha, cắt bass khi chồng deck, giữ chuyển đoạn ổn định hai giây.",
+      "singleStage": true,
+      "state": {
+        "tempoA": 108,
+        "tempoB": 104,
+        "phaseB": 0.25,
+        "deadline": 38,
+        "overload": 0
+      },
+      "content": {
+        "deckA": [
+          48,
+          55,
+          60,
+          55,
+          52,
+          57,
+          null,
+          55
+        ],
+        "deckB": [
+          60,
+          64,
+          67,
+          null,
+          63,
+          65,
+          69,
+          67
+        ]
+      },
+      "resources": {
+        "decks": 2,
+        "equalizer": true
+      },
+      "hazards": [
+        "Bass chồng quá ba giây gây quá tải."
+      ],
+      "hints": [
+        "Đặt BPM B bằng A trước khi mở fader.",
+        "Jog từng ⅛ nhịp để pha về0.",
+        "Cắt bassB, chuyển fader hoàn toàn sangB rồi phát."
+      ]
+    },
+    {
+      "title": "Cầu nối 7",
+      "objective": "Khớp tempo và pha, cắt bass khi chồng deck, giữ chuyển đoạn ổn định hai giây.",
+      "singleStage": true,
+      "state": {
+        "tempoA": 120,
+        "tempoB": 116,
+        "phaseB": 0.375,
+        "deadline": 38,
+        "overload": 0
+      },
+      "content": {
+        "deckA": [
+          48,
+          55,
+          60,
+          55,
+          50,
+          57,
+          null,
+          55
+        ],
+        "deckB": [
+          60,
+          64,
+          67,
+          null,
+          64,
+          65,
+          69,
+          67
+        ]
+      },
+      "resources": {
+        "decks": 2,
+        "equalizer": true
+      },
+      "hazards": [
+        "Bass chồng quá ba giây gây quá tải."
+      ],
+      "hints": [
+        "Đặt BPM B bằng A trước khi mở fader.",
+        "Jog từng ⅛ nhịp để pha về0.",
+        "Cắt bassB, chuyển fader hoàn toàn sangB rồi phát."
+      ]
+    },
+    {
+      "title": "Cầu nối 8",
+      "objective": "Khớp tempo và pha, cắt bass khi chồng deck, giữ chuyển đoạn ổn định hai giây.",
+      "singleStage": true,
+      "state": {
+        "tempoA": 132,
+        "tempoB": 128,
+        "phaseB": 0.5,
+        "deadline": 38,
+        "overload": 0
+      },
+      "content": {
+        "deckA": [
+          48,
+          55,
+          60,
+          55,
+          51,
+          57,
+          null,
+          55
+        ],
+        "deckB": [
+          60,
+          64,
+          67,
+          null,
+          65,
+          65,
+          69,
+          67
+        ]
+      },
+      "resources": {
+        "decks": 2,
+        "equalizer": true
+      },
+      "hazards": [
+        "Bass chồng quá ba giây gây quá tải."
+      ],
+      "hints": [
+        "Đặt BPM B bằng A trước khi mở fader.",
+        "Jog từng ⅛ nhịp để pha về0.",
+        "Cắt bassB, chuyển fader hoàn toàn sangB rồi phát."
+      ]
+    },
+    {
+      "title": "Cầu nối 9",
+      "objective": "Khớp tempo và pha, cắt bass khi chồng deck, giữ chuyển đoạn ổn định hai giây.",
+      "singleStage": true,
+      "state": {
+        "tempoA": 96,
+        "tempoB": 101,
+        "phaseB": 0.125,
+        "deadline": 38,
+        "overload": 0
+      },
+      "content": {
+        "deckA": [
+          48,
+          55,
+          60,
+          55,
+          52,
+          57,
+          null,
+          55
+        ],
+        "deckB": [
+          60,
+          64,
+          67,
+          null,
+          62,
+          65,
+          69,
+          67
+        ]
+      },
+      "resources": {
+        "decks": 2,
+        "equalizer": true
+      },
+      "hazards": [
+        "Bass chồng quá ba giây gây quá tải."
+      ],
+      "hints": [
+        "Đặt BPM B bằng A trước khi mở fader.",
+        "Jog từng ⅛ nhịp để pha về0.",
+        "Cắt bassB, chuyển fader hoàn toàn sangB rồi phát."
+      ]
+    },
+    {
+      "title": "Cầu nối 10",
+      "objective": "Khớp tempo và pha, cắt bass khi chồng deck, giữ chuyển đoạn ổn định hai giây.",
+      "singleStage": true,
+      "state": {
+        "tempoA": 108,
+        "tempoB": 113,
+        "phaseB": 0.25,
+        "deadline": 38,
+        "overload": 0
+      },
+      "content": {
+        "deckA": [
+          48,
+          55,
+          60,
+          55,
+          50,
+          57,
+          null,
+          55
+        ],
+        "deckB": [
+          60,
+          64,
+          67,
+          null,
+          63,
+          65,
+          69,
+          67
+        ]
+      },
+      "resources": {
+        "decks": 2,
+        "equalizer": true
+      },
+      "hazards": [
+        "Bass chồng quá ba giây gây quá tải."
+      ],
+      "hints": [
+        "Đặt BPM B bằng A trước khi mở fader.",
+        "Jog từng ⅛ nhịp để pha về0.",
+        "Cắt bassB, chuyển fader hoàn toàn sangB rồi phát."
+      ]
+    },
+    {
+      "title": "Cầu nối 11",
+      "objective": "Khớp tempo và pha, cắt bass khi chồng deck, giữ chuyển đoạn ổn định hai giây.",
+      "singleStage": true,
+      "state": {
+        "tempoA": 120,
+        "tempoB": 125,
+        "phaseB": 0.375,
+        "deadline": 38,
+        "overload": 0
+      },
+      "content": {
+        "deckA": [
+          48,
+          55,
+          60,
+          55,
+          51,
+          57,
+          null,
+          55
+        ],
+        "deckB": [
+          60,
+          64,
+          67,
+          null,
+          64,
+          65,
+          69,
+          67
+        ]
+      },
+      "resources": {
+        "decks": 2,
+        "equalizer": true
+      },
+      "hazards": [
+        "Bass chồng quá ba giây gây quá tải."
+      ],
+      "hints": [
+        "Đặt BPM B bằng A trước khi mở fader.",
+        "Jog từng ⅛ nhịp để pha về0.",
+        "Cắt bassB, chuyển fader hoàn toàn sangB rồi phát."
+      ]
+    },
+    {
+      "title": "Cầu nối 12",
+      "objective": "Khớp tempo và pha, cắt bass khi chồng deck, giữ chuyển đoạn ổn định hai giây.",
+      "singleStage": true,
+      "state": {
+        "tempoA": 132,
+        "tempoB": 137,
+        "phaseB": 0.5,
+        "deadline": 38,
+        "overload": 0
+      },
+      "content": {
+        "deckA": [
+          48,
+          55,
+          60,
+          55,
+          52,
+          57,
+          null,
+          55
+        ],
+        "deckB": [
+          60,
+          64,
+          67,
+          null,
+          65,
+          65,
+          69,
+          67
+        ]
+      },
+      "resources": {
+        "decks": 2,
+        "equalizer": true
+      },
+      "hazards": [
+        "Bass chồng quá ba giây gây quá tải."
+      ],
+      "hints": [
+        "Đặt BPM B bằng A trước khi mở fader.",
+        "Jog từng ⅛ nhịp để pha về0.",
+        "Cắt bassB, chuyển fader hoàn toàn sangB rồi phát."
+      ]
+    },
+    {
+      "title": "Cầu nối 13",
+      "objective": "Khớp tempo và pha, cắt bass khi chồng deck, giữ chuyển đoạn ổn định hai giây.",
+      "singleStage": true,
+      "state": {
+        "tempoA": 96,
+        "tempoB": 94,
+        "phaseB": 0.125,
+        "deadline": 38,
+        "overload": 0
+      },
+      "content": {
+        "deckA": [
+          48,
+          55,
+          60,
+          55,
+          50,
+          57,
+          null,
+          55
+        ],
+        "deckB": [
+          60,
+          64,
+          67,
+          null,
+          62,
+          65,
+          69,
+          67
+        ]
+      },
+      "resources": {
+        "decks": 2,
+        "equalizer": true
+      },
+      "hazards": [
+        "Bass chồng quá ba giây gây quá tải."
+      ],
+      "hints": [
+        "Đặt BPM B bằng A trước khi mở fader.",
+        "Jog từng ⅛ nhịp để pha về0.",
+        "Cắt bassB, chuyển fader hoàn toàn sangB rồi phát."
+      ]
+    },
+    {
+      "title": "Cầu nối 14",
+      "objective": "Khớp tempo và pha, cắt bass khi chồng deck, giữ chuyển đoạn ổn định hai giây.",
+      "singleStage": true,
+      "state": {
+        "tempoA": 108,
+        "tempoB": 106,
+        "phaseB": 0.25,
+        "deadline": 38,
+        "overload": 0
+      },
+      "content": {
+        "deckA": [
+          48,
+          55,
+          60,
+          55,
+          51,
+          57,
+          null,
+          55
+        ],
+        "deckB": [
+          60,
+          64,
+          67,
+          null,
+          63,
+          65,
+          69,
+          67
+        ]
+      },
+      "resources": {
+        "decks": 2,
+        "equalizer": true
+      },
+      "hazards": [
+        "Bass chồng quá ba giây gây quá tải."
+      ],
+      "hints": [
+        "Đặt BPM B bằng A trước khi mở fader.",
+        "Jog từng ⅛ nhịp để pha về0.",
+        "Cắt bassB, chuyển fader hoàn toàn sangB rồi phát."
+      ]
+    },
+    {
+      "title": "Cầu nối 15",
+      "objective": "Khớp tempo và pha, cắt bass khi chồng deck, giữ chuyển đoạn ổn định hai giây.",
+      "singleStage": true,
+      "state": {
+        "tempoA": 120,
+        "tempoB": 118,
+        "phaseB": 0.375,
+        "deadline": 38,
+        "overload": 0
+      },
+      "content": {
+        "deckA": [
+          48,
+          55,
+          60,
+          55,
+          52,
+          57,
+          null,
+          55
+        ],
+        "deckB": [
+          60,
+          64,
+          67,
+          null,
+          64,
+          65,
+          69,
+          67
+        ]
+      },
+      "resources": {
+        "decks": 2,
+        "equalizer": true
+      },
+      "hazards": [
+        "Bass chồng quá ba giây gây quá tải."
+      ],
+      "hints": [
+        "Đặt BPM B bằng A trước khi mở fader.",
+        "Jog từng ⅛ nhịp để pha về0.",
+        "Cắt bassB, chuyển fader hoàn toàn sangB rồi phát."
+      ]
+    },
+    {
+      "title": "Cầu nối 16",
+      "objective": "Khớp tempo và pha, cắt bass khi chồng deck, giữ chuyển đoạn ổn định hai giây.",
+      "singleStage": true,
+      "state": {
+        "tempoA": 132,
+        "tempoB": 130,
+        "phaseB": 0.5,
+        "deadline": 38,
+        "overload": 0
+      },
+      "content": {
+        "deckA": [
+          48,
+          55,
+          60,
+          55,
+          50,
+          57,
+          null,
+          55
+        ],
+        "deckB": [
+          60,
+          64,
+          67,
+          null,
+          65,
+          65,
+          69,
+          67
+        ]
+      },
+      "resources": {
+        "decks": 2,
+        "equalizer": true
+      },
+      "hazards": [
+        "Bass chồng quá ba giây gây quá tải."
+      ],
+      "hints": [
+        "Đặt BPM B bằng A trước khi mở fader.",
+        "Jog từng ⅛ nhịp để pha về0.",
+        "Cắt bassB, chuyển fader hoàn toàn sangB rồi phát."
+      ]
+    }
+  ],
+  "loop-band": [
+    {
+      "objective": "Lập trình đúng ba lớp trống/bass/melody của bản 1 và nghe ít nhất hai giây.",
+      "singleStage": true,
+      "content": {
+        "pattern": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      },
+      "resources": {
+        "parts": [
+          "Trống",
+          "Bass",
+          "Giai điệu"
+        ],
+        "rhythmicRoles": [
+          [
+            0,
+            4
+          ],
+          [
+            0,
+            4
+          ],
+          [
+            0,
+            2,
+            5
+          ]
+        ]
+      },
+      "hints": [
+        "Đọc ba hàng mẫu trong HUD.",
+        "Ô vàng là điểm cần phát; chọn từng ô trong ba lớp.",
+        "Bắt đầu nghe, giữ hai giây rồi nộp bản phối."
+      ]
+    },
+    {
+      "objective": "Lập trình đúng ba lớp trống/bass/melody của bản 2 và nghe ít nhất hai giây.",
+      "singleStage": true,
+      "content": {
+        "pattern": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0
+        ]
+      },
+      "resources": {
+        "parts": [
+          "Trống",
+          "Bass",
+          "Giai điệu"
+        ],
+        "rhythmicRoles": [
+          [
+            0,
+            3,
+            4,
+            6
+          ],
+          [
+            0,
+            4
+          ],
+          [
+            0,
+            3,
+            6
+          ]
+        ]
+      },
+      "hints": [
+        "Đọc ba hàng mẫu trong HUD.",
+        "Ô vàng là điểm cần phát; chọn từng ô trong ba lớp.",
+        "Bắt đầu nghe, giữ hai giây rồi nộp bản phối."
+      ]
+    },
+    {
+      "objective": "Lập trình đúng ba lớp trống/bass/melody của bản 3 và nghe ít nhất hai giây.",
+      "singleStage": true,
+      "content": {
+        "pattern": [
+          1,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0,
+          1,
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          1,
+          0
+        ]
+      },
+      "resources": {
+        "parts": [
+          "Trống",
+          "Bass",
+          "Giai điệu"
+        ],
+        "rhythmicRoles": [
+          [
+            0,
+            2,
+            4,
+            7
+          ],
+          [
+            0,
+            4
+          ],
+          [
+            1,
+            4,
+            6
+          ]
+        ]
+      },
+      "hints": [
+        "Đọc ba hàng mẫu trong HUD.",
+        "Ô vàng là điểm cần phát; chọn từng ô trong ba lớp.",
+        "Bắt đầu nghe, giữ hai giây rồi nộp bản phối."
+      ]
+    },
+    {
+      "objective": "Lập trình đúng ba lớp trống/bass/melody của bản 4 và nghe ít nhất hai giây.",
+      "singleStage": true,
+      "content": {
+        "pattern": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          1,
+          0,
+          1,
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0,
+          1
+        ]
+      },
+      "resources": {
+        "parts": [
+          "Trống",
+          "Bass",
+          "Giai điệu"
+        ],
+        "rhythmicRoles": [
+          [
+            0,
+            4,
+            5,
+            7
+          ],
+          [
+            0,
+            4
+          ],
+          [
+            0,
+            2,
+            4,
+            7
+          ]
+        ]
+      },
+      "hints": [
+        "Đọc ba hàng mẫu trong HUD.",
+        "Ô vàng là điểm cần phát; chọn từng ô trong ba lớp.",
+        "Bắt đầu nghe, giữ hai giây rồi nộp bản phối."
+      ]
+    },
+    {
+      "objective": "Lập trình đúng ba lớp trống/bass/melody của bản 5 và nghe ít nhất hai giây.",
+      "singleStage": true,
+      "content": {
+        "pattern": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0
+        ]
+      },
+      "resources": {
+        "parts": [
+          "Trống",
+          "Bass",
+          "Giai điệu"
+        ],
+        "rhythmicRoles": [
+          [
+            0,
+            4
+          ],
+          [
+            0,
+            3,
+            6
+          ],
+          [
+            0,
+            3,
+            6
+          ]
+        ]
+      },
+      "hints": [
+        "Đọc ba hàng mẫu trong HUD.",
+        "Ô vàng là điểm cần phát; chọn từng ô trong ba lớp.",
+        "Bắt đầu nghe, giữ hai giây rồi nộp bản phối."
+      ]
+    },
+    {
+      "objective": "Lập trình đúng ba lớp trống/bass/melody của bản 6 và nghe ít nhất hai giây.",
+      "singleStage": true,
+      "content": {
+        "pattern": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          1,
+          0
+        ]
+      },
+      "resources": {
+        "parts": [
+          "Trống",
+          "Bass",
+          "Giai điệu"
+        ],
+        "rhythmicRoles": [
+          [
+            0,
+            3,
+            4,
+            6
+          ],
+          [
+            0,
+            3,
+            6
+          ],
+          [
+            1,
+            4,
+            6
+          ]
+        ]
+      },
+      "hints": [
+        "Đọc ba hàng mẫu trong HUD.",
+        "Ô vàng là điểm cần phát; chọn từng ô trong ba lớp.",
+        "Bắt đầu nghe, giữ hai giây rồi nộp bản phối."
+      ]
+    },
+    {
+      "objective": "Lập trình đúng ba lớp trống/bass/melody của bản 7 và nghe ít nhất hai giây.",
+      "singleStage": true,
+      "content": {
+        "pattern": [
+          1,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0,
+          1,
+          1,
+          0,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          1,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0,
+          1
+        ]
+      },
+      "resources": {
+        "parts": [
+          "Trống",
+          "Bass",
+          "Giai điệu"
+        ],
+        "rhythmicRoles": [
+          [
+            0,
+            2,
+            4,
+            7
+          ],
+          [
+            0,
+            3,
+            6
+          ],
+          [
+            0,
+            2,
+            4,
+            7
+          ]
+        ]
+      },
+      "hints": [
+        "Đọc ba hàng mẫu trong HUD.",
+        "Ô vàng là điểm cần phát; chọn từng ô trong ba lớp.",
+        "Bắt đầu nghe, giữ hai giây rồi nộp bản phối."
+      ]
+    },
+    {
+      "objective": "Lập trình đúng ba lớp trống/bass/melody của bản 8 và nghe ít nhất hai giây.",
+      "singleStage": true,
+      "content": {
+        "pattern": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          1,
+          0,
+          1,
+          1,
+          0,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      },
+      "resources": {
+        "parts": [
+          "Trống",
+          "Bass",
+          "Giai điệu"
+        ],
+        "rhythmicRoles": [
+          [
+            0,
+            4,
+            5,
+            7
+          ],
+          [
+            0,
+            3,
+            6
+          ],
+          [
+            0,
+            2,
+            5
+          ]
+        ]
+      },
+      "hints": [
+        "Đọc ba hàng mẫu trong HUD.",
+        "Ô vàng là điểm cần phát; chọn từng ô trong ba lớp.",
+        "Bắt đầu nghe, giữ hai giây rồi nộp bản phối."
+      ]
+    },
+    {
+      "objective": "Lập trình đúng ba lớp trống/bass/melody của bản 9 và nghe ít nhất hai giây.",
+      "singleStage": true,
+      "content": {
+        "pattern": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          1,
+          0
+        ]
+      },
+      "resources": {
+        "parts": [
+          "Trống",
+          "Bass",
+          "Giai điệu"
+        ],
+        "rhythmicRoles": [
+          [
+            0,
+            4
+          ],
+          [
+            1,
+            4,
+            7
+          ],
+          [
+            1,
+            4,
+            6
+          ]
+        ]
+      },
+      "hints": [
+        "Đọc ba hàng mẫu trong HUD.",
+        "Ô vàng là điểm cần phát; chọn từng ô trong ba lớp.",
+        "Bắt đầu nghe, giữ hai giây rồi nộp bản phối."
+      ]
+    },
+    {
+      "objective": "Lập trình đúng ba lớp trống/bass/melody của bản 10 và nghe ít nhất hai giây.",
+      "singleStage": true,
+      "content": {
+        "pattern": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          0,
+          1,
+          1,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0,
+          1
+        ]
+      },
+      "resources": {
+        "parts": [
+          "Trống",
+          "Bass",
+          "Giai điệu"
+        ],
+        "rhythmicRoles": [
+          [
+            0,
+            3,
+            4,
+            6
+          ],
+          [
+            1,
+            4,
+            7
+          ],
+          [
+            0,
+            2,
+            4,
+            7
+          ]
+        ]
+      },
+      "hints": [
+        "Đọc ba hàng mẫu trong HUD.",
+        "Ô vàng là điểm cần phát; chọn từng ô trong ba lớp.",
+        "Bắt đầu nghe, giữ hai giây rồi nộp bản phối."
+      ]
+    },
+    {
+      "objective": "Lập trình đúng ba lớp trống/bass/melody của bản 11 và nghe ít nhất hai giây.",
+      "singleStage": true,
+      "content": {
+        "pattern": [
+          1,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          0,
+          1,
+          1,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      },
+      "resources": {
+        "parts": [
+          "Trống",
+          "Bass",
+          "Giai điệu"
+        ],
+        "rhythmicRoles": [
+          [
+            0,
+            2,
+            4,
+            7
+          ],
+          [
+            1,
+            4,
+            7
+          ],
+          [
+            0,
+            2,
+            5
+          ]
+        ]
+      },
+      "hints": [
+        "Đọc ba hàng mẫu trong HUD.",
+        "Ô vàng là điểm cần phát; chọn từng ô trong ba lớp.",
+        "Bắt đầu nghe, giữ hai giây rồi nộp bản phối."
+      ]
+    },
+    {
+      "objective": "Lập trình đúng ba lớp trống/bass/melody của bản 12 và nghe ít nhất hai giây.",
+      "singleStage": true,
+      "content": {
+        "pattern": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          1,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          0,
+          1,
+          1,
+          0,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0
+        ]
+      },
+      "resources": {
+        "parts": [
+          "Trống",
+          "Bass",
+          "Giai điệu"
+        ],
+        "rhythmicRoles": [
+          [
+            0,
+            4,
+            5,
+            7
+          ],
+          [
+            1,
+            4,
+            7
+          ],
+          [
+            0,
+            3,
+            6
+          ]
+        ]
+      },
+      "hints": [
+        "Đọc ba hàng mẫu trong HUD.",
+        "Ô vàng là điểm cần phát; chọn từng ô trong ba lớp.",
+        "Bắt đầu nghe, giữ hai giây rồi nộp bản phối."
+      ]
+    },
+    {
+      "objective": "Lập trình đúng ba lớp trống/bass/melody của bản 13 và nghe ít nhất hai giây.",
+      "singleStage": true,
+      "content": {
+        "pattern": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          1,
+          1,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0,
+          1
+        ]
+      },
+      "resources": {
+        "parts": [
+          "Trống",
+          "Bass",
+          "Giai điệu"
+        ],
+        "rhythmicRoles": [
+          [
+            0,
+            4
+          ],
+          [
+            0,
+            2,
+            5,
+            7
+          ],
+          [
+            0,
+            2,
+            4,
+            7
+          ]
+        ]
+      },
+      "hints": [
+        "Đọc ba hàng mẫu trong HUD.",
+        "Ô vàng là điểm cần phát; chọn từng ô trong ba lớp.",
+        "Bắt đầu nghe, giữ hai giây rồi nộp bản phối."
+      ]
+    },
+    {
+      "objective": "Lập trình đúng ba lớp trống/bass/melody của bản 14 và nghe ít nhất hai giây.",
+      "singleStage": true,
+      "content": {
+        "pattern": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          0,
+          1,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          1,
+          1,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      },
+      "resources": {
+        "parts": [
+          "Trống",
+          "Bass",
+          "Giai điệu"
+        ],
+        "rhythmicRoles": [
+          [
+            0,
+            3,
+            4,
+            6
+          ],
+          [
+            0,
+            2,
+            5,
+            7
+          ],
+          [
+            0,
+            2,
+            5
+          ]
+        ]
+      },
+      "hints": [
+        "Đọc ba hàng mẫu trong HUD.",
+        "Ô vàng là điểm cần phát; chọn từng ô trong ba lớp.",
+        "Bắt đầu nghe, giữ hai giây rồi nộp bản phối."
+      ]
+    },
+    {
+      "objective": "Lập trình đúng ba lớp trống/bass/melody của bản 15 và nghe ít nhất hai giây.",
+      "singleStage": true,
+      "content": {
+        "pattern": [
+          1,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0,
+          1,
+          1,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          1,
+          1,
+          0,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0
+        ]
+      },
+      "resources": {
+        "parts": [
+          "Trống",
+          "Bass",
+          "Giai điệu"
+        ],
+        "rhythmicRoles": [
+          [
+            0,
+            2,
+            4,
+            7
+          ],
+          [
+            0,
+            2,
+            5,
+            7
+          ],
+          [
+            0,
+            3,
+            6
+          ]
+        ]
+      },
+      "hints": [
+        "Đọc ba hàng mẫu trong HUD.",
+        "Ô vàng là điểm cần phát; chọn từng ô trong ba lớp.",
+        "Bắt đầu nghe, giữ hai giây rồi nộp bản phối."
+      ]
+    },
+    {
+      "objective": "Lập trình đúng ba lớp trống/bass/melody của bản 16 và nghe ít nhất hai giây.",
+      "singleStage": true,
+      "content": {
+        "pattern": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          1,
+          0,
+          1,
+          1,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          1,
+          0
+        ]
+      },
+      "resources": {
+        "parts": [
+          "Trống",
+          "Bass",
+          "Giai điệu"
+        ],
+        "rhythmicRoles": [
+          [
+            0,
+            4,
+            5,
+            7
+          ],
+          [
+            0,
+            2,
+            5,
+            7
+          ],
+          [
+            1,
+            4,
+            6
+          ]
+        ]
+      },
+      "hints": [
+        "Đọc ba hàng mẫu trong HUD.",
+        "Ô vàng là điểm cần phát; chọn từng ô trong ba lớp.",
+        "Bắt đầu nghe, giữ hai giây rồi nộp bản phối."
+      ]
+    }
+  ],
+  "pitch-glider": [
+    {
+      "objective": "Hát bằng con trượt theo hai câu đối đáp, nghỉ lấy hơi và giữ sai số trung bình dưới0,85nửa cung.",
+      "singleStage": true,
+      "content": {
+        "melody": [
+          60,
+          62,
+          64,
+          null,
+          60,
+          62,
+          64,
+          null
+        ]
+      },
+      "state": {
+        "duration": 16,
+        "pitch": 60
+      },
+      "resources": {
+        "breath": 5
+      },
+      "hints": [
+        "Điểm sáng trên đường nhạc là cao độ đích hiện tại.",
+        "Theo từng nốt hai giây; đoạn nghỉ tự phục hồi hơi.",
+        "Tắt chế độ lấy hơi trong các nốt; im lặng kéo dài bị tính sai."
+      ]
+    },
+    {
+      "objective": "Hát bằng con trượt theo hai câu đối đáp, nghỉ lấy hơi và giữ sai số trung bình dưới0,85nửa cung.",
+      "singleStage": true,
+      "content": {
+        "melody": [
+          62,
+          65,
+          64,
+          null,
+          60,
+          62,
+          64,
+          null
+        ]
+      },
+      "state": {
+        "duration": 16,
+        "pitch": 62
+      },
+      "resources": {
+        "breath": 5
+      },
+      "hints": [
+        "Điểm sáng trên đường nhạc là cao độ đích hiện tại.",
+        "Theo từng nốt hai giây; đoạn nghỉ tự phục hồi hơi.",
+        "Tắt chế độ lấy hơi trong các nốt; im lặng kéo dài bị tính sai."
+      ]
+    },
+    {
+      "objective": "Hát bằng con trượt theo hai câu đối đáp, nghỉ lấy hơi và giữ sai số trung bình dưới0,85nửa cung.",
+      "singleStage": true,
+      "content": {
+        "melody": [
+          64,
+          62,
+          60,
+          null,
+          60,
+          62,
+          64,
+          null
+        ]
+      },
+      "state": {
+        "duration": 16,
+        "pitch": 64
+      },
+      "resources": {
+        "breath": 5
+      },
+      "hints": [
+        "Điểm sáng trên đường nhạc là cao độ đích hiện tại.",
+        "Theo từng nốt hai giây; đoạn nghỉ tự phục hồi hơi.",
+        "Tắt chế độ lấy hơi trong các nốt; im lặng kéo dài bị tính sai."
+      ]
+    },
+    {
+      "objective": "Hát bằng con trượt theo hai câu đối đáp, nghỉ lấy hơi và giữ sai số trung bình dưới0,85nửa cung.",
+      "singleStage": true,
+      "content": {
+        "melody": [
+          65,
+          67,
+          64,
+          null,
+          60,
+          62,
+          64,
+          null
+        ]
+      },
+      "state": {
+        "duration": 16,
+        "pitch": 65
+      },
+      "resources": {
+        "breath": 5
+      },
+      "hints": [
+        "Điểm sáng trên đường nhạc là cao độ đích hiện tại.",
+        "Theo từng nốt hai giây; đoạn nghỉ tự phục hồi hơi.",
+        "Tắt chế độ lấy hơi trong các nốt; im lặng kéo dài bị tính sai."
+      ]
+    },
+    {
+      "objective": "Hát bằng con trượt theo hai câu đối đáp, nghỉ lấy hơi và giữ sai số trung bình dưới0,85nửa cung.",
+      "singleStage": true,
+      "content": {
+        "melody": [
+          60,
+          62,
+          64,
+          null,
+          62,
+          65,
+          64,
+          null
+        ]
+      },
+      "state": {
+        "duration": 16,
+        "pitch": 60
+      },
+      "resources": {
+        "breath": 5
+      },
+      "hints": [
+        "Điểm sáng trên đường nhạc là cao độ đích hiện tại.",
+        "Theo từng nốt hai giây; đoạn nghỉ tự phục hồi hơi.",
+        "Tắt chế độ lấy hơi trong các nốt; im lặng kéo dài bị tính sai."
+      ]
+    },
+    {
+      "objective": "Hát bằng con trượt theo hai câu đối đáp, nghỉ lấy hơi và giữ sai số trung bình dưới0,85nửa cung.",
+      "singleStage": true,
+      "content": {
+        "melody": [
+          62,
+          65,
+          64,
+          null,
+          62,
+          65,
+          64,
+          null
+        ]
+      },
+      "state": {
+        "duration": 16,
+        "pitch": 62
+      },
+      "resources": {
+        "breath": 5
+      },
+      "hints": [
+        "Điểm sáng trên đường nhạc là cao độ đích hiện tại.",
+        "Theo từng nốt hai giây; đoạn nghỉ tự phục hồi hơi.",
+        "Tắt chế độ lấy hơi trong các nốt; im lặng kéo dài bị tính sai."
+      ]
+    },
+    {
+      "objective": "Hát bằng con trượt theo hai câu đối đáp, nghỉ lấy hơi và giữ sai số trung bình dưới0,85nửa cung.",
+      "singleStage": true,
+      "content": {
+        "melody": [
+          64,
+          62,
+          60,
+          null,
+          62,
+          65,
+          64,
+          null
+        ]
+      },
+      "state": {
+        "duration": 16,
+        "pitch": 64
+      },
+      "resources": {
+        "breath": 5
+      },
+      "hints": [
+        "Điểm sáng trên đường nhạc là cao độ đích hiện tại.",
+        "Theo từng nốt hai giây; đoạn nghỉ tự phục hồi hơi.",
+        "Tắt chế độ lấy hơi trong các nốt; im lặng kéo dài bị tính sai."
+      ]
+    },
+    {
+      "objective": "Hát bằng con trượt theo hai câu đối đáp, nghỉ lấy hơi và giữ sai số trung bình dưới0,85nửa cung.",
+      "singleStage": true,
+      "content": {
+        "melody": [
+          65,
+          67,
+          64,
+          null,
+          62,
+          65,
+          64,
+          null
+        ]
+      },
+      "state": {
+        "duration": 16,
+        "pitch": 65
+      },
+      "resources": {
+        "breath": 5
+      },
+      "hints": [
+        "Điểm sáng trên đường nhạc là cao độ đích hiện tại.",
+        "Theo từng nốt hai giây; đoạn nghỉ tự phục hồi hơi.",
+        "Tắt chế độ lấy hơi trong các nốt; im lặng kéo dài bị tính sai."
+      ]
+    },
+    {
+      "objective": "Hát bằng con trượt theo hai câu đối đáp, nghỉ lấy hơi và giữ sai số trung bình dưới0,85nửa cung.",
+      "singleStage": true,
+      "content": {
+        "melody": [
+          60,
+          62,
+          64,
+          null,
+          64,
+          62,
+          60,
+          null
+        ]
+      },
+      "state": {
+        "duration": 16,
+        "pitch": 60
+      },
+      "resources": {
+        "breath": 5
+      },
+      "hints": [
+        "Điểm sáng trên đường nhạc là cao độ đích hiện tại.",
+        "Theo từng nốt hai giây; đoạn nghỉ tự phục hồi hơi.",
+        "Tắt chế độ lấy hơi trong các nốt; im lặng kéo dài bị tính sai."
+      ]
+    },
+    {
+      "objective": "Hát bằng con trượt theo hai câu đối đáp, nghỉ lấy hơi và giữ sai số trung bình dưới0,85nửa cung.",
+      "singleStage": true,
+      "content": {
+        "melody": [
+          62,
+          65,
+          64,
+          null,
+          64,
+          62,
+          60,
+          null
+        ]
+      },
+      "state": {
+        "duration": 16,
+        "pitch": 62
+      },
+      "resources": {
+        "breath": 5
+      },
+      "hints": [
+        "Điểm sáng trên đường nhạc là cao độ đích hiện tại.",
+        "Theo từng nốt hai giây; đoạn nghỉ tự phục hồi hơi.",
+        "Tắt chế độ lấy hơi trong các nốt; im lặng kéo dài bị tính sai."
+      ]
+    },
+    {
+      "objective": "Hát bằng con trượt theo hai câu đối đáp, nghỉ lấy hơi và giữ sai số trung bình dưới0,85nửa cung.",
+      "singleStage": true,
+      "content": {
+        "melody": [
+          64,
+          62,
+          60,
+          null,
+          64,
+          62,
+          60,
+          null
+        ]
+      },
+      "state": {
+        "duration": 16,
+        "pitch": 64
+      },
+      "resources": {
+        "breath": 5
+      },
+      "hints": [
+        "Điểm sáng trên đường nhạc là cao độ đích hiện tại.",
+        "Theo từng nốt hai giây; đoạn nghỉ tự phục hồi hơi.",
+        "Tắt chế độ lấy hơi trong các nốt; im lặng kéo dài bị tính sai."
+      ]
+    },
+    {
+      "objective": "Hát bằng con trượt theo hai câu đối đáp, nghỉ lấy hơi và giữ sai số trung bình dưới0,85nửa cung.",
+      "singleStage": true,
+      "content": {
+        "melody": [
+          65,
+          67,
+          64,
+          null,
+          64,
+          62,
+          60,
+          null
+        ]
+      },
+      "state": {
+        "duration": 16,
+        "pitch": 65
+      },
+      "resources": {
+        "breath": 5
+      },
+      "hints": [
+        "Điểm sáng trên đường nhạc là cao độ đích hiện tại.",
+        "Theo từng nốt hai giây; đoạn nghỉ tự phục hồi hơi.",
+        "Tắt chế độ lấy hơi trong các nốt; im lặng kéo dài bị tính sai."
+      ]
+    },
+    {
+      "objective": "Hát bằng con trượt theo hai câu đối đáp, nghỉ lấy hơi và giữ sai số trung bình dưới0,85nửa cung.",
+      "singleStage": true,
+      "content": {
+        "melody": [
+          60,
+          62,
+          64,
+          null,
+          65,
+          67,
+          64,
+          null
+        ]
+      },
+      "state": {
+        "duration": 16,
+        "pitch": 60
+      },
+      "resources": {
+        "breath": 5
+      },
+      "hints": [
+        "Điểm sáng trên đường nhạc là cao độ đích hiện tại.",
+        "Theo từng nốt hai giây; đoạn nghỉ tự phục hồi hơi.",
+        "Tắt chế độ lấy hơi trong các nốt; im lặng kéo dài bị tính sai."
+      ]
+    },
+    {
+      "objective": "Hát bằng con trượt theo hai câu đối đáp, nghỉ lấy hơi và giữ sai số trung bình dưới0,85nửa cung.",
+      "singleStage": true,
+      "content": {
+        "melody": [
+          62,
+          65,
+          64,
+          null,
+          65,
+          67,
+          64,
+          null
+        ]
+      },
+      "state": {
+        "duration": 16,
+        "pitch": 62
+      },
+      "resources": {
+        "breath": 5
+      },
+      "hints": [
+        "Điểm sáng trên đường nhạc là cao độ đích hiện tại.",
+        "Theo từng nốt hai giây; đoạn nghỉ tự phục hồi hơi.",
+        "Tắt chế độ lấy hơi trong các nốt; im lặng kéo dài bị tính sai."
+      ]
+    },
+    {
+      "objective": "Hát bằng con trượt theo hai câu đối đáp, nghỉ lấy hơi và giữ sai số trung bình dưới0,85nửa cung.",
+      "singleStage": true,
+      "content": {
+        "melody": [
+          64,
+          62,
+          60,
+          null,
+          65,
+          67,
+          64,
+          null
+        ]
+      },
+      "state": {
+        "duration": 16,
+        "pitch": 64
+      },
+      "resources": {
+        "breath": 5
+      },
+      "hints": [
+        "Điểm sáng trên đường nhạc là cao độ đích hiện tại.",
+        "Theo từng nốt hai giây; đoạn nghỉ tự phục hồi hơi.",
+        "Tắt chế độ lấy hơi trong các nốt; im lặng kéo dài bị tính sai."
+      ]
+    },
+    {
+      "objective": "Hát bằng con trượt theo hai câu đối đáp, nghỉ lấy hơi và giữ sai số trung bình dưới0,85nửa cung.",
+      "singleStage": true,
+      "content": {
+        "melody": [
+          65,
+          67,
+          64,
+          null,
+          65,
+          67,
+          64,
+          null
+        ]
+      },
+      "state": {
+        "duration": 16,
+        "pitch": 65
+      },
+      "resources": {
+        "breath": 5
+      },
+      "hints": [
+        "Điểm sáng trên đường nhạc là cao độ đích hiện tại.",
+        "Theo từng nốt hai giây; đoạn nghỉ tự phục hồi hơi.",
+        "Tắt chế độ lấy hơi trong các nốt; im lặng kéo dài bị tính sai."
+      ]
+    }
+  ],
+  "harmony-workshop": [
+    {
+      "objective": "Hòa âm bốn ô cho melody 0–4–2–0; dùng cadence và ít nhất một đảo có bước bass≤12.",
+      "singleStage": true,
+      "content": {
+        "melodyChords": [
+          0,
+          4,
+          2,
+          0
+        ],
+        "cadence": [
+          3,
+          0
+        ]
+      },
+      "proof": [
+        0,
+        0,
+        3,
+        0
+      ],
+      "resources": {
+        "voices": 3,
+        "chords": 4
+      },
+      "hints": [
+        "Mỗi nốt melody phải nằm trong hợp âm chọn.",
+        "Hai ô cuối theo cadence G→C.",
+        "Đảo một hợp âm để kiểm soát chuyển động bass; có nhiều bản phối hợp lệ."
+      ]
+    },
+    {
+      "objective": "Hòa âm bốn ô cho melody 0–7–9–9; dùng cadence và ít nhất một đảo có bước bass≤12.",
+      "singleStage": true,
+      "content": {
+        "melodyChords": [
+          0,
+          7,
+          9,
+          9
+        ],
+        "cadence": [
+          1,
+          2
+        ]
+      },
+      "proof": [
+        1,
+        0,
+        1,
+        2
+      ],
+      "resources": {
+        "voices": 3,
+        "chords": 4
+      },
+      "hints": [
+        "Mỗi nốt melody phải nằm trong hợp âm chọn.",
+        "Hai ô cuối theo cadence Am→F.",
+        "Đảo một hợp âm để kiểm soát chuyển động bass; có nhiều bản phối hợp lệ."
+      ]
+    },
+    {
+      "objective": "Hòa âm bốn ô cho melody 0–0–11–7; dùng cadence và ít nhất một đảo có bước bass≤12.",
+      "singleStage": true,
+      "content": {
+        "melodyChords": [
+          0,
+          0,
+          11,
+          7
+        ],
+        "cadence": [
+          3,
+          0
+        ]
+      },
+      "proof": [
+        2,
+        0,
+        3,
+        0
+      ],
+      "resources": {
+        "voices": 3,
+        "chords": 4
+      },
+      "hints": [
+        "Mỗi nốt melody phải nằm trong hợp âm chọn.",
+        "Hai ô cuối theo cadence G→C.",
+        "Đảo một hợp âm để kiểm soát chuyển động bass; có nhiều bản phối hợp lệ."
+      ]
+    },
+    {
+      "objective": "Hòa âm bốn ô cho melody 7–4–4–5; dùng cadence và ít nhất một đảo có bước bass≤12.",
+      "singleStage": true,
+      "content": {
+        "melodyChords": [
+          7,
+          4,
+          4,
+          5
+        ],
+        "cadence": [
+          1,
+          2
+        ]
+      },
+      "proof": [
+        3,
+        0,
+        1,
+        2
+      ],
+      "resources": {
+        "voices": 3,
+        "chords": 4
+      },
+      "hints": [
+        "Mỗi nốt melody phải nằm trong hợp âm chọn.",
+        "Hai ô cuối theo cadence Am→F.",
+        "Đảo một hợp âm để kiểm soát chuyển động bass; có nhiều bản phối hợp lệ."
+      ]
+    },
+    {
+      "objective": "Hòa âm bốn ô cho melody 4–4–7–4; dùng cadence và ít nhất một đảo có bước bass≤12.",
+      "singleStage": true,
+      "content": {
+        "melodyChords": [
+          4,
+          4,
+          7,
+          4
+        ],
+        "cadence": [
+          3,
+          0
+        ]
+      },
+      "proof": [
+        0,
+        1,
+        3,
+        0
+      ],
+      "resources": {
+        "voices": 3,
+        "chords": 4
+      },
+      "hints": [
+        "Mỗi nốt melody phải nằm trong hợp âm chọn.",
+        "Hai ô cuối theo cadence G→C.",
+        "Đảo một hợp âm để kiểm soát chuyển động bass; có nhiều bản phối hợp lệ."
+      ]
+    },
+    {
+      "objective": "Hòa âm bốn ô cho melody 4–9–0–0; dùng cadence và ít nhất một đảo có bước bass≤12.",
+      "singleStage": true,
+      "content": {
+        "melodyChords": [
+          4,
+          9,
+          0,
+          0
+        ],
+        "cadence": [
+          1,
+          2
+        ]
+      },
+      "proof": [
+        1,
+        1,
+        1,
+        2
+      ],
+      "resources": {
+        "voices": 3,
+        "chords": 4
+      },
+      "hints": [
+        "Mỗi nốt melody phải nằm trong hợp âm chọn.",
+        "Hai ô cuối theo cadence Am→F.",
+        "Đảo một hợp âm để kiểm soát chuyển động bass; có nhiều bản phối hợp lệ."
+      ]
+    },
+    {
+      "objective": "Hòa âm bốn ô cho melody 5–0–2–0; dùng cadence và ít nhất một đảo có bước bass≤12.",
+      "singleStage": true,
+      "content": {
+        "melodyChords": [
+          5,
+          0,
+          2,
+          0
+        ],
+        "cadence": [
+          3,
+          0
+        ]
+      },
+      "proof": [
+        2,
+        1,
+        3,
+        0
+      ],
+      "resources": {
+        "voices": 3,
+        "chords": 4
+      },
+      "hints": [
+        "Mỗi nốt melody phải nằm trong hợp âm chọn.",
+        "Hai ô cuối theo cadence G→C.",
+        "Đảo một hợp âm để kiểm soát chuyển động bass; có nhiều bản phối hợp lệ."
+      ]
+    },
+    {
+      "objective": "Hòa âm bốn ô cho melody 11–4–9–9; dùng cadence và ít nhất một đảo có bước bass≤12.",
+      "singleStage": true,
+      "content": {
+        "melodyChords": [
+          11,
+          4,
+          9,
+          9
+        ],
+        "cadence": [
+          1,
+          2
+        ]
+      },
+      "proof": [
+        3,
+        1,
+        1,
+        2
+      ],
+      "resources": {
+        "voices": 3,
+        "chords": 4
+      },
+      "hints": [
+        "Mỗi nốt melody phải nằm trong hợp âm chọn.",
+        "Hai ô cuối theo cadence Am→F.",
+        "Đảo một hợp âm để kiểm soát chuyển động bass; có nhiều bản phối hợp lệ."
+      ]
+    },
+    {
+      "objective": "Hòa âm bốn ô cho melody 7–5–11–7; dùng cadence và ít nhất một đảo có bước bass≤12.",
+      "singleStage": true,
+      "content": {
+        "melodyChords": [
+          7,
+          5,
+          11,
+          7
+        ],
+        "cadence": [
+          3,
+          0
+        ]
+      },
+      "proof": [
+        0,
+        2,
+        3,
+        0
+      ],
+      "resources": {
+        "voices": 3,
+        "chords": 4
+      },
+      "hints": [
+        "Mỗi nốt melody phải nằm trong hợp âm chọn.",
+        "Hai ô cuối theo cadence G→C.",
+        "Đảo một hợp âm để kiểm soát chuyển động bass; có nhiều bản phối hợp lệ."
+      ]
+    },
+    {
+      "objective": "Hòa âm bốn ô cho melody 9–9–4–5; dùng cadence và ít nhất một đảo có bước bass≤12.",
+      "singleStage": true,
+      "content": {
+        "melodyChords": [
+          9,
+          9,
+          4,
+          5
+        ],
+        "cadence": [
+          1,
+          2
+        ]
+      },
+      "proof": [
+        1,
+        2,
+        1,
+        2
+      ],
+      "resources": {
+        "voices": 3,
+        "chords": 4
+      },
+      "hints": [
+        "Mỗi nốt melody phải nằm trong hợp âm chọn.",
+        "Hai ô cuối theo cadence Am→F.",
+        "Đảo một hợp âm để kiểm soát chuyển động bass; có nhiều bản phối hợp lệ."
+      ]
+    },
+    {
+      "objective": "Hòa âm bốn ô cho melody 9–0–7–4; dùng cadence và ít nhất một đảo có bước bass≤12.",
+      "singleStage": true,
+      "content": {
+        "melodyChords": [
+          9,
+          0,
+          7,
+          4
+        ],
+        "cadence": [
+          3,
+          0
+        ]
+      },
+      "proof": [
+        2,
+        2,
+        3,
+        0
+      ],
+      "resources": {
+        "voices": 3,
+        "chords": 4
+      },
+      "hints": [
+        "Mỗi nốt melody phải nằm trong hợp âm chọn.",
+        "Hai ô cuối theo cadence G→C.",
+        "Đảo một hợp âm để kiểm soát chuyển động bass; có nhiều bản phối hợp lệ."
+      ]
+    },
+    {
+      "objective": "Hòa âm bốn ô cho melody 2–5–0–0; dùng cadence và ít nhất một đảo có bước bass≤12.",
+      "singleStage": true,
+      "content": {
+        "melodyChords": [
+          2,
+          5,
+          0,
+          0
+        ],
+        "cadence": [
+          1,
+          2
+        ]
+      },
+      "proof": [
+        3,
+        2,
+        1,
+        2
+      ],
+      "resources": {
+        "voices": 3,
+        "chords": 4
+      },
+      "hints": [
+        "Mỗi nốt melody phải nằm trong hợp âm chọn.",
+        "Hai ô cuối theo cadence Am→F.",
+        "Đảo một hợp âm để kiểm soát chuyển động bass; có nhiều bản phối hợp lệ."
+      ]
+    },
+    {
+      "objective": "Hòa âm bốn ô cho melody 0–11–2–0; dùng cadence và ít nhất một đảo có bước bass≤12.",
+      "singleStage": true,
+      "content": {
+        "melodyChords": [
+          0,
+          11,
+          2,
+          0
+        ],
+        "cadence": [
+          3,
+          0
+        ]
+      },
+      "proof": [
+        0,
+        3,
+        3,
+        0
+      ],
+      "resources": {
+        "voices": 3,
+        "chords": 4
+      },
+      "hints": [
+        "Mỗi nốt melody phải nằm trong hợp âm chọn.",
+        "Hai ô cuối theo cadence G→C.",
+        "Đảo một hợp âm để kiểm soát chuyển động bass; có nhiều bản phối hợp lệ."
+      ]
+    },
+    {
+      "objective": "Hòa âm bốn ô cho melody 0–2–9–9; dùng cadence và ít nhất một đảo có bước bass≤12.",
+      "singleStage": true,
+      "content": {
+        "melodyChords": [
+          0,
+          2,
+          9,
+          9
+        ],
+        "cadence": [
+          1,
+          2
+        ]
+      },
+      "proof": [
+        1,
+        3,
+        1,
+        2
+      ],
+      "resources": {
+        "voices": 3,
+        "chords": 4
+      },
+      "hints": [
+        "Mỗi nốt melody phải nằm trong hợp âm chọn.",
+        "Hai ô cuối theo cadence Am→F.",
+        "Đảo một hợp âm để kiểm soát chuyển động bass; có nhiều bản phối hợp lệ."
+      ]
+    },
+    {
+      "objective": "Hòa âm bốn ô cho melody 0–7–11–7; dùng cadence và ít nhất một đảo có bước bass≤12.",
+      "singleStage": true,
+      "content": {
+        "melodyChords": [
+          0,
+          7,
+          11,
+          7
+        ],
+        "cadence": [
+          3,
+          0
+        ]
+      },
+      "proof": [
+        2,
+        3,
+        3,
+        0
+      ],
+      "resources": {
+        "voices": 3,
+        "chords": 4
+      },
+      "hints": [
+        "Mỗi nốt melody phải nằm trong hợp âm chọn.",
+        "Hai ô cuối theo cadence G→C.",
+        "Đảo một hợp âm để kiểm soát chuyển động bass; có nhiều bản phối hợp lệ."
+      ]
+    },
+    {
+      "objective": "Hòa âm bốn ô cho melody 7–11–4–5; dùng cadence và ít nhất một đảo có bước bass≤12.",
+      "singleStage": true,
+      "content": {
+        "melodyChords": [
+          7,
+          11,
+          4,
+          5
+        ],
+        "cadence": [
+          1,
+          2
+        ]
+      },
+      "proof": [
+        3,
+        3,
+        1,
+        2
+      ],
+      "resources": {
+        "voices": 3,
+        "chords": 4
+      },
+      "hints": [
+        "Mỗi nốt melody phải nằm trong hợp âm chọn.",
+        "Hai ô cuối theo cadence Am→F.",
+        "Đảo một hợp âm để kiểm soát chuyển động bass; có nhiều bản phối hợp lệ."
+      ]
+    }
+  ],
+  "orchestra-cues": [
+    {
+      "objective": "Dẫn đủ sáu cue vào/ngắt bè của score 1 đúng cửa sổ0,4s và cường độ đã ghi.",
+      "singleStage": true,
+      "content": {
+        "score": [
+          {
+            "at": 0,
+            "on": 0
+          },
+          {
+            "at": 1.5,
+            "on": 1
+          },
+          {
+            "at": 3,
+            "on": 2
+          },
+          {
+            "at": 4.5,
+            "off": 0
+          },
+          {
+            "at": 6,
+            "off": 1
+          },
+          {
+            "at": 7.5,
+            "off": 2
+          }
+        ],
+        "dynamic": 1
+      },
+      "state": {
+        "duration": 9,
+        "message": "Score: 0s vào bè 1 · 1.5s vào bè 2 · 3s vào bè 3 · 4.5s ngắt bè 1 · 6s ngắt bè 2 · 7.5s ngắt bè 3"
+      },
+      "resources": {
+        "sections": 3,
+        "cues": 6
+      },
+      "hints": [
+        "Score hiển thị lần lượt sáu cue, thời điểm tính bằng giây âm nhạc.",
+        "Đặt cường độ 100% và tempo120.",
+        "Phát rồi bật/tắt đúng từng bè ở thời điểm chỉ định."
+      ]
+    },
+    {
+      "objective": "Dẫn đủ sáu cue vào/ngắt bè của score 2 đúng cửa sổ0,4s và cường độ đã ghi.",
+      "singleStage": true,
+      "content": {
+        "score": [
+          {
+            "at": 0,
+            "on": 0
+          },
+          {
+            "at": 1.5,
+            "on": 2
+          },
+          {
+            "at": 3,
+            "on": 1
+          },
+          {
+            "at": 4.5,
+            "off": 0
+          },
+          {
+            "at": 6,
+            "off": 1
+          },
+          {
+            "at": 7.5,
+            "off": 2
+          }
+        ],
+        "dynamic": 1
+      },
+      "state": {
+        "duration": 9,
+        "message": "Score: 0s vào bè 1 · 1.5s vào bè 3 · 3s vào bè 2 · 4.5s ngắt bè 1 · 6s ngắt bè 2 · 7.5s ngắt bè 3"
+      },
+      "resources": {
+        "sections": 3,
+        "cues": 6
+      },
+      "hints": [
+        "Score hiển thị lần lượt sáu cue, thời điểm tính bằng giây âm nhạc.",
+        "Đặt cường độ 100% và tempo120.",
+        "Phát rồi bật/tắt đúng từng bè ở thời điểm chỉ định."
+      ]
+    },
+    {
+      "objective": "Dẫn đủ sáu cue vào/ngắt bè của score 3 đúng cửa sổ0,4s và cường độ đã ghi.",
+      "singleStage": true,
+      "content": {
+        "score": [
+          {
+            "at": 0,
+            "on": 1
+          },
+          {
+            "at": 1.5,
+            "on": 0
+          },
+          {
+            "at": 3,
+            "on": 2
+          },
+          {
+            "at": 4.5,
+            "off": 0
+          },
+          {
+            "at": 6,
+            "off": 1
+          },
+          {
+            "at": 7.5,
+            "off": 2
+          }
+        ],
+        "dynamic": 1
+      },
+      "state": {
+        "duration": 9,
+        "message": "Score: 0s vào bè 2 · 1.5s vào bè 1 · 3s vào bè 3 · 4.5s ngắt bè 1 · 6s ngắt bè 2 · 7.5s ngắt bè 3"
+      },
+      "resources": {
+        "sections": 3,
+        "cues": 6
+      },
+      "hints": [
+        "Score hiển thị lần lượt sáu cue, thời điểm tính bằng giây âm nhạc.",
+        "Đặt cường độ 100% và tempo120.",
+        "Phát rồi bật/tắt đúng từng bè ở thời điểm chỉ định."
+      ]
+    },
+    {
+      "objective": "Dẫn đủ sáu cue vào/ngắt bè của score 4 đúng cửa sổ0,4s và cường độ đã ghi.",
+      "singleStage": true,
+      "content": {
+        "score": [
+          {
+            "at": 0,
+            "on": 1
+          },
+          {
+            "at": 1.5,
+            "on": 2
+          },
+          {
+            "at": 3,
+            "on": 0
+          },
+          {
+            "at": 4.5,
+            "off": 0
+          },
+          {
+            "at": 6,
+            "off": 1
+          },
+          {
+            "at": 7.5,
+            "off": 2
+          }
+        ],
+        "dynamic": 1
+      },
+      "state": {
+        "duration": 9,
+        "message": "Score: 0s vào bè 2 · 1.5s vào bè 3 · 3s vào bè 1 · 4.5s ngắt bè 1 · 6s ngắt bè 2 · 7.5s ngắt bè 3"
+      },
+      "resources": {
+        "sections": 3,
+        "cues": 6
+      },
+      "hints": [
+        "Score hiển thị lần lượt sáu cue, thời điểm tính bằng giây âm nhạc.",
+        "Đặt cường độ 100% và tempo120.",
+        "Phát rồi bật/tắt đúng từng bè ở thời điểm chỉ định."
+      ]
+    },
+    {
+      "objective": "Dẫn đủ sáu cue vào/ngắt bè của score 5 đúng cửa sổ0,4s và cường độ đã ghi.",
+      "singleStage": true,
+      "content": {
+        "score": [
+          {
+            "at": 0,
+            "on": 2
+          },
+          {
+            "at": 1.5,
+            "on": 0
+          },
+          {
+            "at": 3,
+            "on": 1
+          },
+          {
+            "at": 4.5,
+            "off": 0
+          },
+          {
+            "at": 6,
+            "off": 1
+          },
+          {
+            "at": 7.5,
+            "off": 2
+          }
+        ],
+        "dynamic": 1
+      },
+      "state": {
+        "duration": 9,
+        "message": "Score: 0s vào bè 3 · 1.5s vào bè 1 · 3s vào bè 2 · 4.5s ngắt bè 1 · 6s ngắt bè 2 · 7.5s ngắt bè 3"
+      },
+      "resources": {
+        "sections": 3,
+        "cues": 6
+      },
+      "hints": [
+        "Score hiển thị lần lượt sáu cue, thời điểm tính bằng giây âm nhạc.",
+        "Đặt cường độ 100% và tempo120.",
+        "Phát rồi bật/tắt đúng từng bè ở thời điểm chỉ định."
+      ]
+    },
+    {
+      "objective": "Dẫn đủ sáu cue vào/ngắt bè của score 6 đúng cửa sổ0,4s và cường độ đã ghi.",
+      "singleStage": true,
+      "content": {
+        "score": [
+          {
+            "at": 0,
+            "on": 2
+          },
+          {
+            "at": 1.5,
+            "on": 1
+          },
+          {
+            "at": 3,
+            "on": 0
+          },
+          {
+            "at": 4.5,
+            "off": 0
+          },
+          {
+            "at": 6,
+            "off": 1
+          },
+          {
+            "at": 7.5,
+            "off": 2
+          }
+        ],
+        "dynamic": 1
+      },
+      "state": {
+        "duration": 9,
+        "message": "Score: 0s vào bè 3 · 1.5s vào bè 2 · 3s vào bè 1 · 4.5s ngắt bè 1 · 6s ngắt bè 2 · 7.5s ngắt bè 3"
+      },
+      "resources": {
+        "sections": 3,
+        "cues": 6
+      },
+      "hints": [
+        "Score hiển thị lần lượt sáu cue, thời điểm tính bằng giây âm nhạc.",
+        "Đặt cường độ 100% và tempo120.",
+        "Phát rồi bật/tắt đúng từng bè ở thời điểm chỉ định."
+      ]
+    },
+    {
+      "objective": "Dẫn đủ sáu cue vào/ngắt bè của score 7 đúng cửa sổ0,4s và cường độ đã ghi.",
+      "singleStage": true,
+      "content": {
+        "score": [
+          {
+            "at": 0,
+            "on": 0
+          },
+          {
+            "at": 1.5,
+            "on": 1
+          },
+          {
+            "at": 3,
+            "on": 2
+          },
+          {
+            "at": 4.5,
+            "off": 0
+          },
+          {
+            "at": 6,
+            "off": 2
+          },
+          {
+            "at": 7.5,
+            "off": 1
+          }
+        ],
+        "dynamic": 1
+      },
+      "state": {
+        "duration": 9,
+        "message": "Score: 0s vào bè 1 · 1.5s vào bè 2 · 3s vào bè 3 · 4.5s ngắt bè 1 · 6s ngắt bè 3 · 7.5s ngắt bè 2"
+      },
+      "resources": {
+        "sections": 3,
+        "cues": 6
+      },
+      "hints": [
+        "Score hiển thị lần lượt sáu cue, thời điểm tính bằng giây âm nhạc.",
+        "Đặt cường độ 100% và tempo120.",
+        "Phát rồi bật/tắt đúng từng bè ở thời điểm chỉ định."
+      ]
+    },
+    {
+      "objective": "Dẫn đủ sáu cue vào/ngắt bè của score 8 đúng cửa sổ0,4s và cường độ đã ghi.",
+      "singleStage": true,
+      "content": {
+        "score": [
+          {
+            "at": 0,
+            "on": 0
+          },
+          {
+            "at": 1.5,
+            "on": 2
+          },
+          {
+            "at": 3,
+            "on": 1
+          },
+          {
+            "at": 4.5,
+            "off": 0
+          },
+          {
+            "at": 6,
+            "off": 2
+          },
+          {
+            "at": 7.5,
+            "off": 1
+          }
+        ],
+        "dynamic": 1
+      },
+      "state": {
+        "duration": 9,
+        "message": "Score: 0s vào bè 1 · 1.5s vào bè 3 · 3s vào bè 2 · 4.5s ngắt bè 1 · 6s ngắt bè 3 · 7.5s ngắt bè 2"
+      },
+      "resources": {
+        "sections": 3,
+        "cues": 6
+      },
+      "hints": [
+        "Score hiển thị lần lượt sáu cue, thời điểm tính bằng giây âm nhạc.",
+        "Đặt cường độ 100% và tempo120.",
+        "Phát rồi bật/tắt đúng từng bè ở thời điểm chỉ định."
+      ]
+    },
+    {
+      "objective": "Dẫn đủ sáu cue vào/ngắt bè của score 9 đúng cửa sổ0,4s và cường độ đã ghi.",
+      "singleStage": true,
+      "content": {
+        "score": [
+          {
+            "at": 0,
+            "on": 1
+          },
+          {
+            "at": 1.5,
+            "on": 0
+          },
+          {
+            "at": 3,
+            "on": 2
+          },
+          {
+            "at": 4.5,
+            "off": 0
+          },
+          {
+            "at": 6,
+            "off": 2
+          },
+          {
+            "at": 7.5,
+            "off": 1
+          }
+        ],
+        "dynamic": 0.5
+      },
+      "state": {
+        "duration": 9,
+        "message": "Score: 0s vào bè 2 · 1.5s vào bè 1 · 3s vào bè 3 · 4.5s ngắt bè 1 · 6s ngắt bè 3 · 7.5s ngắt bè 2"
+      },
+      "resources": {
+        "sections": 3,
+        "cues": 6
+      },
+      "hints": [
+        "Score hiển thị lần lượt sáu cue, thời điểm tính bằng giây âm nhạc.",
+        "Đặt cường độ 50% và tempo120.",
+        "Phát rồi bật/tắt đúng từng bè ở thời điểm chỉ định."
+      ]
+    },
+    {
+      "objective": "Dẫn đủ sáu cue vào/ngắt bè của score 10 đúng cửa sổ0,4s và cường độ đã ghi.",
+      "singleStage": true,
+      "content": {
+        "score": [
+          {
+            "at": 0,
+            "on": 1
+          },
+          {
+            "at": 1.5,
+            "on": 2
+          },
+          {
+            "at": 3,
+            "on": 0
+          },
+          {
+            "at": 4.5,
+            "off": 0
+          },
+          {
+            "at": 6,
+            "off": 2
+          },
+          {
+            "at": 7.5,
+            "off": 1
+          }
+        ],
+        "dynamic": 0.5
+      },
+      "state": {
+        "duration": 9,
+        "message": "Score: 0s vào bè 2 · 1.5s vào bè 3 · 3s vào bè 1 · 4.5s ngắt bè 1 · 6s ngắt bè 3 · 7.5s ngắt bè 2"
+      },
+      "resources": {
+        "sections": 3,
+        "cues": 6
+      },
+      "hints": [
+        "Score hiển thị lần lượt sáu cue, thời điểm tính bằng giây âm nhạc.",
+        "Đặt cường độ 50% và tempo120.",
+        "Phát rồi bật/tắt đúng từng bè ở thời điểm chỉ định."
+      ]
+    },
+    {
+      "objective": "Dẫn đủ sáu cue vào/ngắt bè của score 11 đúng cửa sổ0,4s và cường độ đã ghi.",
+      "singleStage": true,
+      "content": {
+        "score": [
+          {
+            "at": 0,
+            "on": 2
+          },
+          {
+            "at": 1.5,
+            "on": 0
+          },
+          {
+            "at": 3,
+            "on": 1
+          },
+          {
+            "at": 4.5,
+            "off": 0
+          },
+          {
+            "at": 6,
+            "off": 2
+          },
+          {
+            "at": 7.5,
+            "off": 1
+          }
+        ],
+        "dynamic": 0.5
+      },
+      "state": {
+        "duration": 9,
+        "message": "Score: 0s vào bè 3 · 1.5s vào bè 1 · 3s vào bè 2 · 4.5s ngắt bè 1 · 6s ngắt bè 3 · 7.5s ngắt bè 2"
+      },
+      "resources": {
+        "sections": 3,
+        "cues": 6
+      },
+      "hints": [
+        "Score hiển thị lần lượt sáu cue, thời điểm tính bằng giây âm nhạc.",
+        "Đặt cường độ 50% và tempo120.",
+        "Phát rồi bật/tắt đúng từng bè ở thời điểm chỉ định."
+      ]
+    },
+    {
+      "objective": "Dẫn đủ sáu cue vào/ngắt bè của score 12 đúng cửa sổ0,4s và cường độ đã ghi.",
+      "singleStage": true,
+      "content": {
+        "score": [
+          {
+            "at": 0,
+            "on": 2
+          },
+          {
+            "at": 1.5,
+            "on": 1
+          },
+          {
+            "at": 3,
+            "on": 0
+          },
+          {
+            "at": 4.5,
+            "off": 0
+          },
+          {
+            "at": 6,
+            "off": 2
+          },
+          {
+            "at": 7.5,
+            "off": 1
+          }
+        ],
+        "dynamic": 0.5
+      },
+      "state": {
+        "duration": 9,
+        "message": "Score: 0s vào bè 3 · 1.5s vào bè 2 · 3s vào bè 1 · 4.5s ngắt bè 1 · 6s ngắt bè 3 · 7.5s ngắt bè 2"
+      },
+      "resources": {
+        "sections": 3,
+        "cues": 6
+      },
+      "hints": [
+        "Score hiển thị lần lượt sáu cue, thời điểm tính bằng giây âm nhạc.",
+        "Đặt cường độ 50% và tempo120.",
+        "Phát rồi bật/tắt đúng từng bè ở thời điểm chỉ định."
+      ]
+    },
+    {
+      "objective": "Dẫn đủ sáu cue vào/ngắt bè của score 13 đúng cửa sổ0,4s và cường độ đã ghi.",
+      "singleStage": true,
+      "content": {
+        "score": [
+          {
+            "at": 0,
+            "on": 0
+          },
+          {
+            "at": 1.5,
+            "on": 1
+          },
+          {
+            "at": 3,
+            "on": 2
+          },
+          {
+            "at": 4.5,
+            "off": 1
+          },
+          {
+            "at": 6,
+            "off": 0
+          },
+          {
+            "at": 7.5,
+            "off": 2
+          }
+        ],
+        "dynamic": 0.5
+      },
+      "state": {
+        "duration": 9,
+        "message": "Score: 0s vào bè 1 · 1.5s vào bè 2 · 3s vào bè 3 · 4.5s ngắt bè 2 · 6s ngắt bè 1 · 7.5s ngắt bè 3"
+      },
+      "resources": {
+        "sections": 3,
+        "cues": 6
+      },
+      "hints": [
+        "Score hiển thị lần lượt sáu cue, thời điểm tính bằng giây âm nhạc.",
+        "Đặt cường độ 50% và tempo120.",
+        "Phát rồi bật/tắt đúng từng bè ở thời điểm chỉ định."
+      ]
+    },
+    {
+      "objective": "Dẫn đủ sáu cue vào/ngắt bè của score 14 đúng cửa sổ0,4s và cường độ đã ghi.",
+      "singleStage": true,
+      "content": {
+        "score": [
+          {
+            "at": 0,
+            "on": 0
+          },
+          {
+            "at": 1.5,
+            "on": 2
+          },
+          {
+            "at": 3,
+            "on": 1
+          },
+          {
+            "at": 4.5,
+            "off": 1
+          },
+          {
+            "at": 6,
+            "off": 0
+          },
+          {
+            "at": 7.5,
+            "off": 2
+          }
+        ],
+        "dynamic": 0.5
+      },
+      "state": {
+        "duration": 9,
+        "message": "Score: 0s vào bè 1 · 1.5s vào bè 3 · 3s vào bè 2 · 4.5s ngắt bè 2 · 6s ngắt bè 1 · 7.5s ngắt bè 3"
+      },
+      "resources": {
+        "sections": 3,
+        "cues": 6
+      },
+      "hints": [
+        "Score hiển thị lần lượt sáu cue, thời điểm tính bằng giây âm nhạc.",
+        "Đặt cường độ 50% và tempo120.",
+        "Phát rồi bật/tắt đúng từng bè ở thời điểm chỉ định."
+      ]
+    },
+    {
+      "objective": "Dẫn đủ sáu cue vào/ngắt bè của score 15 đúng cửa sổ0,4s và cường độ đã ghi.",
+      "singleStage": true,
+      "content": {
+        "score": [
+          {
+            "at": 0,
+            "on": 1
+          },
+          {
+            "at": 1.5,
+            "on": 0
+          },
+          {
+            "at": 3,
+            "on": 2
+          },
+          {
+            "at": 4.5,
+            "off": 1
+          },
+          {
+            "at": 6,
+            "off": 0
+          },
+          {
+            "at": 7.5,
+            "off": 2
+          }
+        ],
+        "dynamic": 0.5
+      },
+      "state": {
+        "duration": 9,
+        "message": "Score: 0s vào bè 2 · 1.5s vào bè 1 · 3s vào bè 3 · 4.5s ngắt bè 2 · 6s ngắt bè 1 · 7.5s ngắt bè 3"
+      },
+      "resources": {
+        "sections": 3,
+        "cues": 6
+      },
+      "hints": [
+        "Score hiển thị lần lượt sáu cue, thời điểm tính bằng giây âm nhạc.",
+        "Đặt cường độ 50% và tempo120.",
+        "Phát rồi bật/tắt đúng từng bè ở thời điểm chỉ định."
+      ]
+    },
+    {
+      "objective": "Dẫn đủ sáu cue vào/ngắt bè của score 16 đúng cửa sổ0,4s và cường độ đã ghi.",
+      "singleStage": true,
+      "content": {
+        "score": [
+          {
+            "at": 0,
+            "on": 1
+          },
+          {
+            "at": 1.5,
+            "on": 2
+          },
+          {
+            "at": 3,
+            "on": 0
+          },
+          {
+            "at": 4.5,
+            "off": 1
+          },
+          {
+            "at": 6,
+            "off": 0
+          },
+          {
+            "at": 7.5,
+            "off": 2
+          }
+        ],
+        "dynamic": 0.5
+      },
+      "state": {
+        "duration": 9,
+        "message": "Score: 0s vào bè 2 · 1.5s vào bè 3 · 3s vào bè 1 · 4.5s ngắt bè 2 · 6s ngắt bè 1 · 7.5s ngắt bè 3"
+      },
+      "resources": {
+        "sections": 3,
+        "cues": 6
+      },
+      "hints": [
+        "Score hiển thị lần lượt sáu cue, thời điểm tính bằng giây âm nhạc.",
+        "Đặt cường độ 50% và tempo120.",
+        "Phát rồi bật/tắt đúng từng bè ở thời điểm chỉ định."
+      ]
+    }
+  ]
+}
