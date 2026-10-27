@@ -1,0 +1,162 @@
+{
+  "release": 1065,
+  "verifiedAt": "2026-10-27T08:48:21.462Z",
+  "contentVersion": "2026.10.27-authored-drafts-v1",
+  "coverage": {
+    "grades": 12,
+    "catalogueSlots": 168,
+    "subjectsWithDrafts": 146,
+    "draftLessons": 219,
+    "publishedLessons": 0,
+    "officialOutcomeCount": null,
+    "complete": false
+  },
+  "suites": [
+    {
+      "name": "learning",
+      "command": "npm run test:learning",
+      "tests": 101,
+      "passed": 101,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "all-tools",
+      "command": "npm run test:all-tools",
+      "tests": 241,
+      "passed": 241,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "security-full",
+      "command": "npm run test:security:full",
+      "tests": 107,
+      "passed": 107,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "browsers": [
+    {
+      "name": "workspace",
+      "passed": true,
+      "resultFile": "workspace.json",
+      "at": "2026-10-27T08:43:44.668Z"
+    },
+    {
+      "name": "shell",
+      "passed": true,
+      "resultFile": "shell.json",
+      "at": "2026-10-27T08:45:56.485Z"
+    },
+    {
+      "name": "recovery",
+      "passed": true,
+      "resultFile": "recovery.json",
+      "at": "2026-10-27T08:43:35.072Z"
+    },
+    {
+      "name": "classroom",
+      "passed": true,
+      "resultFile": "classroom.json",
+      "at": "2026-10-27T08:44:01.080Z"
+    },
+    {
+      "name": "editorial",
+      "passed": true,
+      "resultFile": "editorial.json",
+      "at": "2026-10-27T08:43:59.069Z"
+    },
+    {
+      "name": "offline",
+      "passed": true,
+      "resultFile": "offline.json",
+      "at": "2026-10-27T08:41:58.997Z"
+    }
+  ],
+  "images": [
+    {
+      "file": "lesson-primary.png",
+      "bytes": 486585,
+      "sha256": "25cb87321789da9dc99dd5576b1ba0ae6b62453789ec2cb32d6922ca8b0f12f8"
+    },
+    {
+      "file": "lesson-secondary.png",
+      "bytes": 485554,
+      "sha256": "07481ba305dab6c7cefadb48d6c0a78cf606a09a991cbe246231e2f68901ce1f"
+    },
+    {
+      "file": "lesson-high-school.png",
+      "bytes": 489187,
+      "sha256": "4eb8e6396fe3ae932f6973460f5d66105d384284d3afe5f50108bddbfdff8db5"
+    },
+    {
+      "file": "vietnamese.png",
+      "bytes": 510921,
+      "sha256": "97ee0f1c4c80cc08e31c11d256c02898bb0c70d06f7a11a99777c84fd6596d59"
+    },
+    {
+      "file": "foreign-language.png",
+      "bytes": 501585,
+      "sha256": "0189dbebc96084a2c993dfa46d3186fb2fdfdd11720db66c1f8f39a4226463f0"
+    },
+    {
+      "file": "history-geography.png",
+      "bytes": 553475,
+      "sha256": "887b2017ca9614da891d64162d9a5dde7c46e0eada0f620c87225eb80bfaf175"
+    },
+    {
+      "file": "informatics.png",
+      "bytes": 489307,
+      "sha256": "9cb25d36e4b21a035b33c4f0c10be0f4e346c1d64143c46550471c5a479266b3"
+    },
+    {
+      "file": "science-lab.png",
+      "bytes": 451233,
+      "sha256": "08fc0d84c56f7edd0cfd9eb1e3802d7c02e46e603b6a7c321ef251d27cc33c2c"
+    },
+    {
+      "file": "mistake-flashcard.png",
+      "bytes": 195048,
+      "sha256": "ae77a925ca58d12bfc62da0393a6d534b56f1c2007484fd60baf0382f4fe6d92"
+    },
+    {
+      "file": "assessment-desktop.png",
+      "bytes": 410125,
+      "sha256": "91b988065baa9602c28ac1e0c0f2166a7358db0936db618bb88cf7abe2fdec98"
+    },
+    {
+      "file": "assessment-mobile.png",
+      "bytes": 217348,
+      "sha256": "6bab5a3079be2737bf95656ed5e90c5a8bbb16905b80557d02e207f244c81f04"
+    },
+    {
+      "file": "full-shell-mobile.png",
+      "bytes": 257120,
+      "sha256": "2e0a40a87075ee96318fdb83d02f01e3810ac5965c8383b66c9685ace628a1bf"
+    },
+    {
+      "file": "student-feedback-mobile.png",
+      "bytes": 750569,
+      "sha256": "d467887fbb7a83db7f063734e157fbe316dd569869205fbd1e35c4274a952a15"
+    },
+    {
+      "file": "editorial-drafts.png",
+      "bytes": 254113,
+      "sha256": "acd0ca529fd77dc8cbf9fd17f2a65db56f3d8c95caf8d154a2ab69eb079f0113"
+    }
+  ],
+  "contrast": {
+    "checks": 252,
+    "failures": 0
+  },
+  "academicComplete": false,
+  "publication": "All219 lessons remain drafts, zero approved; explicit preview required",
+  "limits": [
+    "Official outcome denominator unknown",
+    "Full textbook/advanced edition crosscheck and subject review incomplete",
+    "Cloud progress snapshot limit280KB; full multi-year history retained locally",
+    "QA backend identities and MongoDB transport are explicit doubles; no live teacher/admin mutation test"
+  ]
+}

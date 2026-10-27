@@ -16,7 +16,7 @@ const responseCapture = () => {
 
 test("server normalization always derives education role from the signed-in user", () => {
   const user = { _id: "student-1", educationRole: "student", roles: [] };
-  const state = education.sanitizeState({ role: "platform-admin", profile: { id: "learner-1", grade: 6 } }, user, "learner-1");
+  const state = education.sanitizeState({ ownerId: "student-1", learnerProfileId: "learner-1", schemaVersion: 3, role: "platform-admin", profile: { id: "learner-1", grade: 6 } }, user, "learner-1");
   assert.equal(state.role, "student");
   assert.equal(state.ownerId, "student-1");
 });

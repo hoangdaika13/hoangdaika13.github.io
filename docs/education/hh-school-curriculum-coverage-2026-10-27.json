@@ -1,0 +1,6412 @@
+{
+  "version": "2026.10.27-authored-drafts-v1",
+  "coverage": {
+    "grades": 12,
+    "catalogueSlots": 168,
+    "subjectsWithDrafts": 146,
+    "draftLessons": 219,
+    "publishedLessons": 0,
+    "officialOutcomeCount": null,
+    "complete": false
+  },
+  "officialOutcomeCount": null,
+  "sourceSectionLocators": 153,
+  "rows": [
+    {
+      "grade": 1,
+      "subjectId": "vietnamese",
+      "name": "Tiếng Việt",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-language-g1-p74",
+        "subjectFamily": "language",
+        "strand": null,
+        "pageStart": 74,
+        "pageEnd": 78,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-language-g1-p74",
+          "subjectFamily": "language",
+          "strand": null,
+          "pageStart": 74,
+          "pageEnd": 78,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 1,
+      "subjectId": "math",
+      "name": "Toán",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 3,
+      "questions": 12,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 1
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-math-g1-p187",
+        "subjectFamily": "math",
+        "strand": null,
+        "pageStart": 187,
+        "pageEnd": 190,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-math-g1-p187",
+          "subjectFamily": "math",
+          "strand": null,
+          "pageStart": 187,
+          "pageEnd": 190,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 1,
+      "subjectId": "ethics",
+      "name": "Đạo đức",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-civic-g1-p307",
+        "subjectFamily": "civic",
+        "strand": null,
+        "pageStart": 307,
+        "pageEnd": 309,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-civic-g1-p307",
+          "subjectFamily": "civic",
+          "strand": null,
+          "pageStart": 307,
+          "pageEnd": 309,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 1,
+      "subjectId": "nature-society",
+      "name": "Tự nhiên và Xã hội",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-nature-society-g1-p355",
+        "subjectFamily": "nature-society",
+        "strand": null,
+        "pageStart": 355,
+        "pageEnd": 360,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-nature-society-g1-p355",
+          "subjectFamily": "nature-society",
+          "strand": null,
+          "pageStart": 355,
+          "pageEnd": 360,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 1,
+      "subjectId": "physical-education",
+      "name": "Giáo dục thể chất",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-physical-education-g1-p1161",
+        "subjectFamily": "physical-education",
+        "strand": null,
+        "pageStart": 1161,
+        "pageEnd": 1162,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-physical-education-g1-p1161",
+          "subjectFamily": "physical-education",
+          "strand": null,
+          "pageStart": 1161,
+          "pageEnd": 1162,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 1,
+      "subjectId": "music",
+      "name": "Âm nhạc",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-music-g1-p1034",
+        "subjectFamily": "music",
+        "strand": null,
+        "pageStart": 1034,
+        "pageEnd": 1036,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-music-g1-p1034",
+          "subjectFamily": "music",
+          "strand": null,
+          "pageStart": 1034,
+          "pageEnd": 1036,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 1,
+      "subjectId": "art",
+      "name": "Mĩ thuật",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-art-g1-p1087",
+        "subjectFamily": "art",
+        "strand": null,
+        "pageStart": 1087,
+        "pageEnd": 1089,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-art-g1-p1087",
+          "subjectFamily": "art",
+          "strand": null,
+          "pageStart": 1087,
+          "pageEnd": 1089,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 1,
+      "subjectId": "experience",
+      "name": "Hoạt động trải nghiệm",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-experience-g1-p1197",
+        "subjectFamily": "experience",
+        "strand": null,
+        "pageStart": 1197,
+        "pageEnd": 1199,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-experience-g1-p1197",
+          "subjectFamily": "experience",
+          "strand": null,
+          "pageStart": 1197,
+          "pageEnd": 1199,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 1,
+      "subjectId": "local-education",
+      "name": "Nội dung giáo dục địa phương",
+      "required": true,
+      "status": "needs-local-source",
+      "draftLessons": 0,
+      "questions": 0,
+      "tracks": {
+        "foundation": 0,
+        "standard": 0,
+        "advanced": 0
+      },
+      "source": null,
+      "sources": [],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa có bài biên soạn cho môn–lớp này.",
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 1,
+      "subjectId": "foreign-1",
+      "name": "Ngoại ngữ 1",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 4,
+      "tracks": {
+        "foundation": 1,
+        "standard": 0,
+        "advanced": 0
+      },
+      "source": null,
+      "sources": [],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 1,
+      "subjectId": "ethnic-language",
+      "name": "Tiếng dân tộc thiểu số",
+      "required": false,
+      "status": "optional-language-unconfigured",
+      "draftLessons": 0,
+      "questions": 0,
+      "tracks": {
+        "foundation": 0,
+        "standard": 0,
+        "advanced": 0
+      },
+      "source": null,
+      "sources": [],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa có bài biên soạn cho môn–lớp này.",
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 2,
+      "subjectId": "vietnamese",
+      "name": "Tiếng Việt",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-language-g2-p78",
+        "subjectFamily": "language",
+        "strand": null,
+        "pageStart": 78,
+        "pageEnd": 82,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-language-g2-p78",
+          "subjectFamily": "language",
+          "strand": null,
+          "pageStart": 78,
+          "pageEnd": 82,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 2,
+      "subjectId": "math",
+      "name": "Toán",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 3,
+      "questions": 12,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 1
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-math-g2-p190",
+        "subjectFamily": "math",
+        "strand": null,
+        "pageStart": 190,
+        "pageEnd": 195,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-math-g2-p190",
+          "subjectFamily": "math",
+          "strand": null,
+          "pageStart": 190,
+          "pageEnd": 195,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 2,
+      "subjectId": "ethics",
+      "name": "Đạo đức",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-civic-g2-p309",
+        "subjectFamily": "civic",
+        "strand": null,
+        "pageStart": 309,
+        "pageEnd": 311,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-civic-g2-p309",
+          "subjectFamily": "civic",
+          "strand": null,
+          "pageStart": 309,
+          "pageEnd": 311,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 2,
+      "subjectId": "nature-society",
+      "name": "Tự nhiên và Xã hội",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-nature-society-g2-p360",
+        "subjectFamily": "nature-society",
+        "strand": null,
+        "pageStart": 360,
+        "pageEnd": 365,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-nature-society-g2-p360",
+          "subjectFamily": "nature-society",
+          "strand": null,
+          "pageStart": 360,
+          "pageEnd": 365,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 2,
+      "subjectId": "physical-education",
+      "name": "Giáo dục thể chất",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-physical-education-g2-p1162",
+        "subjectFamily": "physical-education",
+        "strand": null,
+        "pageStart": 1162,
+        "pageEnd": 1163,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-physical-education-g2-p1162",
+          "subjectFamily": "physical-education",
+          "strand": null,
+          "pageStart": 1162,
+          "pageEnd": 1163,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 2,
+      "subjectId": "music",
+      "name": "Âm nhạc",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-music-g2-p1036",
+        "subjectFamily": "music",
+        "strand": null,
+        "pageStart": 1036,
+        "pageEnd": 1037,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-music-g2-p1036",
+          "subjectFamily": "music",
+          "strand": null,
+          "pageStart": 1036,
+          "pageEnd": 1037,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 2,
+      "subjectId": "art",
+      "name": "Mĩ thuật",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-art-g2-p1089",
+        "subjectFamily": "art",
+        "strand": null,
+        "pageStart": 1089,
+        "pageEnd": 1092,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-art-g2-p1089",
+          "subjectFamily": "art",
+          "strand": null,
+          "pageStart": 1089,
+          "pageEnd": 1092,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 2,
+      "subjectId": "experience",
+      "name": "Hoạt động trải nghiệm",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-experience-g2-p1199",
+        "subjectFamily": "experience",
+        "strand": null,
+        "pageStart": 1199,
+        "pageEnd": 1201,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-experience-g2-p1199",
+          "subjectFamily": "experience",
+          "strand": null,
+          "pageStart": 1199,
+          "pageEnd": 1201,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 2,
+      "subjectId": "local-education",
+      "name": "Nội dung giáo dục địa phương",
+      "required": true,
+      "status": "needs-local-source",
+      "draftLessons": 0,
+      "questions": 0,
+      "tracks": {
+        "foundation": 0,
+        "standard": 0,
+        "advanced": 0
+      },
+      "source": null,
+      "sources": [],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa có bài biên soạn cho môn–lớp này.",
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 2,
+      "subjectId": "foreign-1",
+      "name": "Ngoại ngữ 1",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 4,
+      "tracks": {
+        "foundation": 1,
+        "standard": 0,
+        "advanced": 0
+      },
+      "source": null,
+      "sources": [],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 2,
+      "subjectId": "ethnic-language",
+      "name": "Tiếng dân tộc thiểu số",
+      "required": false,
+      "status": "optional-language-unconfigured",
+      "draftLessons": 0,
+      "questions": 0,
+      "tracks": {
+        "foundation": 0,
+        "standard": 0,
+        "advanced": 0
+      },
+      "source": null,
+      "sources": [],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa có bài biên soạn cho môn–lớp này.",
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 3,
+      "subjectId": "vietnamese",
+      "name": "Tiếng Việt",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-language-g3-p82",
+        "subjectFamily": "language",
+        "strand": null,
+        "pageStart": 82,
+        "pageEnd": 87,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-language-g3-p82",
+          "subjectFamily": "language",
+          "strand": null,
+          "pageStart": 82,
+          "pageEnd": 87,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 3,
+      "subjectId": "math",
+      "name": "Toán",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 3,
+      "questions": 12,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 1
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-math-g3-p195",
+        "subjectFamily": "math",
+        "strand": null,
+        "pageStart": 195,
+        "pageEnd": 200,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-math-g3-p195",
+          "subjectFamily": "math",
+          "strand": null,
+          "pageStart": 195,
+          "pageEnd": 200,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 3,
+      "subjectId": "foreign-1",
+      "name": "Ngoại ngữ 1",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 4,
+      "tracks": {
+        "foundation": 1,
+        "standard": 0,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-foreign-1-g3-p1275",
+        "subjectFamily": "foreign-1",
+        "strand": null,
+        "pageStart": 1275,
+        "pageEnd": 1277,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-foreign-1-g3-p1275",
+          "subjectFamily": "foreign-1",
+          "strand": null,
+          "pageStart": 1275,
+          "pageEnd": 1277,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 3,
+      "subjectId": "ethics",
+      "name": "Đạo đức",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-civic-g3-p311",
+        "subjectFamily": "civic",
+        "strand": null,
+        "pageStart": 311,
+        "pageEnd": 313,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-civic-g3-p311",
+          "subjectFamily": "civic",
+          "strand": null,
+          "pageStart": 311,
+          "pageEnd": 313,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 3,
+      "subjectId": "nature-society",
+      "name": "Tự nhiên và Xã hội",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-nature-society-g3-p365",
+        "subjectFamily": "nature-society",
+        "strand": null,
+        "pageStart": 365,
+        "pageEnd": 376,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-nature-society-g3-p365",
+          "subjectFamily": "nature-society",
+          "strand": null,
+          "pageStart": 365,
+          "pageEnd": 376,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 3,
+      "subjectId": "informatics-technology",
+      "name": "Tin học và Công nghệ",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 6,
+      "tracks": {
+        "foundation": 0,
+        "standard": 2,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-informatics-g3-p956",
+        "subjectFamily": "informatics",
+        "strand": null,
+        "pageStart": 956,
+        "pageEnd": 960,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-technology-g3-p891",
+          "subjectFamily": "technology",
+          "strand": null,
+          "pageStart": 891,
+          "pageEnd": 893,
+          "precision": "grade-section-only"
+        },
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-informatics-g3-p956",
+          "subjectFamily": "informatics",
+          "strand": null,
+          "pageStart": 956,
+          "pageEnd": 960,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+      ]
+    },
+    {
+      "grade": 3,
+      "subjectId": "physical-education",
+      "name": "Giáo dục thể chất",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-physical-education-g3-p1163",
+        "subjectFamily": "physical-education",
+        "strand": null,
+        "pageStart": 1163,
+        "pageEnd": 1164,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-physical-education-g3-p1163",
+          "subjectFamily": "physical-education",
+          "strand": null,
+          "pageStart": 1163,
+          "pageEnd": 1164,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 3,
+      "subjectId": "music",
+      "name": "Âm nhạc",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-music-g3-p1037",
+        "subjectFamily": "music",
+        "strand": null,
+        "pageStart": 1037,
+        "pageEnd": 1039,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-music-g3-p1037",
+          "subjectFamily": "music",
+          "strand": null,
+          "pageStart": 1037,
+          "pageEnd": 1039,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 3,
+      "subjectId": "art",
+      "name": "Mĩ thuật",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-art-g3-p1092",
+        "subjectFamily": "art",
+        "strand": null,
+        "pageStart": 1092,
+        "pageEnd": 1095,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-art-g3-p1092",
+          "subjectFamily": "art",
+          "strand": null,
+          "pageStart": 1092,
+          "pageEnd": 1095,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 3,
+      "subjectId": "experience",
+      "name": "Hoạt động trải nghiệm",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-experience-g3-p1201",
+        "subjectFamily": "experience",
+        "strand": null,
+        "pageStart": 1201,
+        "pageEnd": 1203,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-experience-g3-p1201",
+          "subjectFamily": "experience",
+          "strand": null,
+          "pageStart": 1201,
+          "pageEnd": 1203,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 3,
+      "subjectId": "local-education",
+      "name": "Nội dung giáo dục địa phương",
+      "required": true,
+      "status": "needs-local-source",
+      "draftLessons": 0,
+      "questions": 0,
+      "tracks": {
+        "foundation": 0,
+        "standard": 0,
+        "advanced": 0
+      },
+      "source": null,
+      "sources": [],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa có bài biên soạn cho môn–lớp này.",
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 4,
+      "subjectId": "vietnamese",
+      "name": "Tiếng Việt",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-language-g4-p87",
+        "subjectFamily": "language",
+        "strand": null,
+        "pageStart": 87,
+        "pageEnd": 91,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-language-g4-p87",
+          "subjectFamily": "language",
+          "strand": null,
+          "pageStart": 87,
+          "pageEnd": 91,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 4,
+      "subjectId": "math",
+      "name": "Toán",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 3,
+      "questions": 12,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 1
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-math-g4-p200",
+        "subjectFamily": "math",
+        "strand": null,
+        "pageStart": 200,
+        "pageEnd": 206,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-math-g4-p200",
+          "subjectFamily": "math",
+          "strand": null,
+          "pageStart": 200,
+          "pageEnd": 206,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 4,
+      "subjectId": "foreign-1",
+      "name": "Ngoại ngữ 1",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 4,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-foreign-1-g4-p1277",
+        "subjectFamily": "foreign-1",
+        "strand": null,
+        "pageStart": 1277,
+        "pageEnd": 1279,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-foreign-1-g4-p1277",
+          "subjectFamily": "foreign-1",
+          "strand": null,
+          "pageStart": 1277,
+          "pageEnd": 1279,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 4,
+      "subjectId": "ethics",
+      "name": "Đạo đức",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-civic-g4-p313",
+        "subjectFamily": "civic",
+        "strand": null,
+        "pageStart": 313,
+        "pageEnd": 315,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-civic-g4-p313",
+          "subjectFamily": "civic",
+          "strand": null,
+          "pageStart": 313,
+          "pageEnd": 315,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 4,
+      "subjectId": "science",
+      "name": "Khoa học",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-science-g4-p613",
+        "subjectFamily": "science",
+        "strand": null,
+        "pageStart": 613,
+        "pageEnd": 620,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-science-g4-p613",
+          "subjectFamily": "science",
+          "strand": null,
+          "pageStart": 613,
+          "pageEnd": 620,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 4,
+      "subjectId": "history-geography",
+      "name": "Lịch sử và Địa lí",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-primary-history-geography-g4-p385",
+        "subjectFamily": "primary-history-geography",
+        "strand": null,
+        "pageStart": 385,
+        "pageEnd": 393,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-primary-history-geography-g4-p385",
+          "subjectFamily": "primary-history-geography",
+          "strand": null,
+          "pageStart": 385,
+          "pageEnd": 393,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+      ]
+    },
+    {
+      "grade": 4,
+      "subjectId": "informatics-technology",
+      "name": "Tin học và Công nghệ",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 6,
+      "tracks": {
+        "foundation": 0,
+        "standard": 2,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-informatics-g4-p960",
+        "subjectFamily": "informatics",
+        "strand": null,
+        "pageStart": 960,
+        "pageEnd": 963,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-technology-g4-p893",
+          "subjectFamily": "technology",
+          "strand": null,
+          "pageStart": 893,
+          "pageEnd": 894,
+          "precision": "grade-section-only"
+        },
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-informatics-g4-p960",
+          "subjectFamily": "informatics",
+          "strand": null,
+          "pageStart": 960,
+          "pageEnd": 963,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+      ]
+    },
+    {
+      "grade": 4,
+      "subjectId": "physical-education",
+      "name": "Giáo dục thể chất",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-physical-education-g4-p1164",
+        "subjectFamily": "physical-education",
+        "strand": null,
+        "pageStart": 1164,
+        "pageEnd": 1165,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-physical-education-g4-p1164",
+          "subjectFamily": "physical-education",
+          "strand": null,
+          "pageStart": 1164,
+          "pageEnd": 1165,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 4,
+      "subjectId": "music",
+      "name": "Âm nhạc",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-music-g4-p1039",
+        "subjectFamily": "music",
+        "strand": null,
+        "pageStart": 1039,
+        "pageEnd": 1041,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-music-g4-p1039",
+          "subjectFamily": "music",
+          "strand": null,
+          "pageStart": 1039,
+          "pageEnd": 1041,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 4,
+      "subjectId": "art",
+      "name": "Mĩ thuật",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-art-g4-p1095",
+        "subjectFamily": "art",
+        "strand": null,
+        "pageStart": 1095,
+        "pageEnd": 1097,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-art-g4-p1095",
+          "subjectFamily": "art",
+          "strand": null,
+          "pageStart": 1095,
+          "pageEnd": 1097,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 4,
+      "subjectId": "experience",
+      "name": "Hoạt động trải nghiệm",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-experience-g4-p1203",
+        "subjectFamily": "experience",
+        "strand": null,
+        "pageStart": 1203,
+        "pageEnd": 1205,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-experience-g4-p1203",
+          "subjectFamily": "experience",
+          "strand": null,
+          "pageStart": 1203,
+          "pageEnd": 1205,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 4,
+      "subjectId": "local-education",
+      "name": "Nội dung giáo dục địa phương",
+      "required": true,
+      "status": "needs-local-source",
+      "draftLessons": 0,
+      "questions": 0,
+      "tracks": {
+        "foundation": 0,
+        "standard": 0,
+        "advanced": 0
+      },
+      "source": null,
+      "sources": [],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa có bài biên soạn cho môn–lớp này.",
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 5,
+      "subjectId": "vietnamese",
+      "name": "Tiếng Việt",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 0,
+        "standard": 2,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-language-g5-p91",
+        "subjectFamily": "language",
+        "strand": null,
+        "pageStart": 91,
+        "pageEnd": 96,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-language-g5-p91",
+          "subjectFamily": "language",
+          "strand": null,
+          "pageStart": 91,
+          "pageEnd": 96,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 5,
+      "subjectId": "math",
+      "name": "Toán",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 3,
+      "questions": 12,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 1
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-math-g5-p206",
+        "subjectFamily": "math",
+        "strand": null,
+        "pageStart": 206,
+        "pageEnd": 212,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-math-g5-p206",
+          "subjectFamily": "math",
+          "strand": null,
+          "pageStart": 206,
+          "pageEnd": 212,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 5,
+      "subjectId": "foreign-1",
+      "name": "Ngoại ngữ 1",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 4,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-foreign-1-g5-p1279",
+        "subjectFamily": "foreign-1",
+        "strand": null,
+        "pageStart": 1279,
+        "pageEnd": 1281,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-foreign-1-g5-p1279",
+          "subjectFamily": "foreign-1",
+          "strand": null,
+          "pageStart": 1279,
+          "pageEnd": 1281,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 5,
+      "subjectId": "ethics",
+      "name": "Đạo đức",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-civic-g5-p315",
+        "subjectFamily": "civic",
+        "strand": null,
+        "pageStart": 315,
+        "pageEnd": 317,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-civic-g5-p315",
+          "subjectFamily": "civic",
+          "strand": null,
+          "pageStart": 315,
+          "pageEnd": 317,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 5,
+      "subjectId": "science",
+      "name": "Khoa học",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-science-g5-p620",
+        "subjectFamily": "science",
+        "strand": null,
+        "pageStart": 620,
+        "pageEnd": 631,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-science-g5-p620",
+          "subjectFamily": "science",
+          "strand": null,
+          "pageStart": 620,
+          "pageEnd": 631,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 5,
+      "subjectId": "history-geography",
+      "name": "Lịch sử và Địa lí",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-primary-history-geography-g5-p393",
+        "subjectFamily": "primary-history-geography",
+        "strand": null,
+        "pageStart": 393,
+        "pageEnd": 408,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-primary-history-geography-g5-p393",
+          "subjectFamily": "primary-history-geography",
+          "strand": null,
+          "pageStart": 393,
+          "pageEnd": 408,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+      ]
+    },
+    {
+      "grade": 5,
+      "subjectId": "informatics-technology",
+      "name": "Tin học và Công nghệ",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 6,
+      "tracks": {
+        "foundation": 0,
+        "standard": 2,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-informatics-g5-p963",
+        "subjectFamily": "informatics",
+        "strand": null,
+        "pageStart": 963,
+        "pageEnd": 967,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-technology-g5-p894",
+          "subjectFamily": "technology",
+          "strand": null,
+          "pageStart": 894,
+          "pageEnd": 897,
+          "precision": "grade-section-only"
+        },
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-informatics-g5-p963",
+          "subjectFamily": "informatics",
+          "strand": null,
+          "pageStart": 963,
+          "pageEnd": 967,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+      ]
+    },
+    {
+      "grade": 5,
+      "subjectId": "physical-education",
+      "name": "Giáo dục thể chất",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-physical-education-g5-p1165",
+        "subjectFamily": "physical-education",
+        "strand": null,
+        "pageStart": 1165,
+        "pageEnd": 1166,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-physical-education-g5-p1165",
+          "subjectFamily": "physical-education",
+          "strand": null,
+          "pageStart": 1165,
+          "pageEnd": 1166,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 5,
+      "subjectId": "music",
+      "name": "Âm nhạc",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-music-g5-p1041",
+        "subjectFamily": "music",
+        "strand": null,
+        "pageStart": 1041,
+        "pageEnd": 1044,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-music-g5-p1041",
+          "subjectFamily": "music",
+          "strand": null,
+          "pageStart": 1041,
+          "pageEnd": 1044,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 5,
+      "subjectId": "art",
+      "name": "Mĩ thuật",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-art-g5-p1097",
+        "subjectFamily": "art",
+        "strand": null,
+        "pageStart": 1097,
+        "pageEnd": 1100,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-art-g5-p1097",
+          "subjectFamily": "art",
+          "strand": null,
+          "pageStart": 1097,
+          "pageEnd": 1100,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 5,
+      "subjectId": "experience",
+      "name": "Hoạt động trải nghiệm",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-experience-g5-p1205",
+        "subjectFamily": "experience",
+        "strand": null,
+        "pageStart": 1205,
+        "pageEnd": 1207,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-experience-g5-p1205",
+          "subjectFamily": "experience",
+          "strand": null,
+          "pageStart": 1205,
+          "pageEnd": 1207,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 5,
+      "subjectId": "local-education",
+      "name": "Nội dung giáo dục địa phương",
+      "required": true,
+      "status": "needs-local-source",
+      "draftLessons": 0,
+      "questions": 0,
+      "tracks": {
+        "foundation": 0,
+        "standard": 0,
+        "advanced": 0
+      },
+      "source": null,
+      "sources": [],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa có bài biên soạn cho môn–lớp này.",
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 6,
+      "subjectId": "literature",
+      "name": "Ngữ văn",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-language-g6-p96",
+        "subjectFamily": "language",
+        "strand": null,
+        "pageStart": 96,
+        "pageEnd": 101,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-language-g6-p96",
+          "subjectFamily": "language",
+          "strand": null,
+          "pageStart": 96,
+          "pageEnd": 101,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 6,
+      "subjectId": "math",
+      "name": "Toán",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 3,
+      "questions": 12,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 1
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-math-g6-p212",
+        "subjectFamily": "math",
+        "strand": null,
+        "pageStart": 212,
+        "pageEnd": 221,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-math-g6-p212",
+          "subjectFamily": "math",
+          "strand": null,
+          "pageStart": 212,
+          "pageEnd": 221,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 6,
+      "subjectId": "foreign-1",
+      "name": "Ngoại ngữ 1",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 4,
+      "tracks": {
+        "foundation": 1,
+        "standard": 0,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-foreign-1-g6-p1281",
+        "subjectFamily": "foreign-1",
+        "strand": null,
+        "pageStart": 1281,
+        "pageEnd": 1283,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-foreign-1-g6-p1281",
+          "subjectFamily": "foreign-1",
+          "strand": null,
+          "pageStart": 1281,
+          "pageEnd": 1283,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 6,
+      "subjectId": "civic",
+      "name": "Giáo dục công dân",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-civic-g6-p317",
+        "subjectFamily": "civic",
+        "strand": null,
+        "pageStart": 317,
+        "pageEnd": 320,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-civic-g6-p317",
+          "subjectFamily": "civic",
+          "strand": null,
+          "pageStart": 317,
+          "pageEnd": 320,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 6,
+      "subjectId": "history-geography",
+      "name": "Lịch sử và Địa lí",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-lower-history-geography-g6-p418",
+        "subjectFamily": "lower-history-geography",
+        "strand": null,
+        "pageStart": 418,
+        "pageEnd": 428,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-lower-history-geography-g6-p418",
+          "subjectFamily": "lower-history-geography",
+          "strand": null,
+          "pageStart": 418,
+          "pageEnd": 428,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+      ]
+    },
+    {
+      "grade": 6,
+      "subjectId": "natural-science",
+      "name": "Khoa học tự nhiên",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 3,
+      "questions": 12,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 1
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-natural-science-g6-p653",
+        "subjectFamily": "natural-science",
+        "strand": null,
+        "pageStart": 653,
+        "pageEnd": 664,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-natural-science-g6-p653",
+          "subjectFamily": "natural-science",
+          "strand": null,
+          "pageStart": 653,
+          "pageEnd": 664,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 6,
+      "subjectId": "technology",
+      "name": "Công nghệ",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-technology-g6-p897",
+        "subjectFamily": "technology",
+        "strand": null,
+        "pageStart": 897,
+        "pageEnd": 898,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-technology-g6-p897",
+          "subjectFamily": "technology",
+          "strand": null,
+          "pageStart": 897,
+          "pageEnd": 898,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+      ]
+    },
+    {
+      "grade": 6,
+      "subjectId": "informatics",
+      "name": "Tin học",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-informatics-g6-p967",
+        "subjectFamily": "informatics",
+        "strand": null,
+        "pageStart": 967,
+        "pageEnd": 970,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-informatics-g6-p967",
+          "subjectFamily": "informatics",
+          "strand": null,
+          "pageStart": 967,
+          "pageEnd": 970,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+      ]
+    },
+    {
+      "grade": 6,
+      "subjectId": "physical-education",
+      "name": "Giáo dục thể chất",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-physical-education-g6-p1166",
+        "subjectFamily": "physical-education",
+        "strand": null,
+        "pageStart": 1166,
+        "pageEnd": 1168,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-physical-education-g6-p1166",
+          "subjectFamily": "physical-education",
+          "strand": null,
+          "pageStart": 1166,
+          "pageEnd": 1168,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 6,
+      "subjectId": "music",
+      "name": "Âm nhạc",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-music-g6-p1044",
+        "subjectFamily": "music",
+        "strand": null,
+        "pageStart": 1044,
+        "pageEnd": 1047,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-music-g6-p1044",
+          "subjectFamily": "music",
+          "strand": null,
+          "pageStart": 1044,
+          "pageEnd": 1047,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 6,
+      "subjectId": "art",
+      "name": "Mĩ thuật",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-art-g6-p1100",
+        "subjectFamily": "art",
+        "strand": null,
+        "pageStart": 1100,
+        "pageEnd": 1103,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-art-g6-p1100",
+          "subjectFamily": "art",
+          "strand": null,
+          "pageStart": 1100,
+          "pageEnd": 1103,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 6,
+      "subjectId": "experience-career",
+      "name": "Hoạt động trải nghiệm, hướng nghiệp",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-experience-g6-p1207",
+        "subjectFamily": "experience",
+        "strand": null,
+        "pageStart": 1207,
+        "pageEnd": 1209,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-experience-g6-p1207",
+          "subjectFamily": "experience",
+          "strand": null,
+          "pageStart": 1207,
+          "pageEnd": 1209,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 6,
+      "subjectId": "local-education",
+      "name": "Nội dung giáo dục địa phương",
+      "required": true,
+      "status": "needs-local-source",
+      "draftLessons": 0,
+      "questions": 0,
+      "tracks": {
+        "foundation": 0,
+        "standard": 0,
+        "advanced": 0
+      },
+      "source": null,
+      "sources": [],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa có bài biên soạn cho môn–lớp này.",
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 6,
+      "subjectId": "foreign-2",
+      "name": "Ngoại ngữ 2",
+      "required": false,
+      "status": "optional-language-unconfigured",
+      "draftLessons": 0,
+      "questions": 0,
+      "tracks": {
+        "foundation": 0,
+        "standard": 0,
+        "advanced": 0
+      },
+      "source": null,
+      "sources": [],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa có bài biên soạn cho môn–lớp này.",
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 6,
+      "subjectId": "ethnic-language",
+      "name": "Tiếng dân tộc thiểu số",
+      "required": false,
+      "status": "optional-language-unconfigured",
+      "draftLessons": 0,
+      "questions": 0,
+      "tracks": {
+        "foundation": 0,
+        "standard": 0,
+        "advanced": 0
+      },
+      "source": null,
+      "sources": [],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa có bài biên soạn cho môn–lớp này.",
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 7,
+      "subjectId": "literature",
+      "name": "Ngữ văn",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-language-g7-p101",
+        "subjectFamily": "language",
+        "strand": null,
+        "pageStart": 101,
+        "pageEnd": 105,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-language-g7-p101",
+          "subjectFamily": "language",
+          "strand": null,
+          "pageStart": 101,
+          "pageEnd": 105,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 7,
+      "subjectId": "math",
+      "name": "Toán",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 3,
+      "questions": 12,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 1
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-math-g7-p221",
+        "subjectFamily": "math",
+        "strand": null,
+        "pageStart": 221,
+        "pageEnd": 229,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-math-g7-p221",
+          "subjectFamily": "math",
+          "strand": null,
+          "pageStart": 221,
+          "pageEnd": 229,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 7,
+      "subjectId": "foreign-1",
+      "name": "Ngoại ngữ 1",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 4,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-foreign-1-g7-p1283",
+        "subjectFamily": "foreign-1",
+        "strand": null,
+        "pageStart": 1283,
+        "pageEnd": 1285,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-foreign-1-g7-p1283",
+          "subjectFamily": "foreign-1",
+          "strand": null,
+          "pageStart": 1283,
+          "pageEnd": 1285,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 7,
+      "subjectId": "civic",
+      "name": "Giáo dục công dân",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-civic-g7-p320",
+        "subjectFamily": "civic",
+        "strand": null,
+        "pageStart": 320,
+        "pageEnd": 323,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-civic-g7-p320",
+          "subjectFamily": "civic",
+          "strand": null,
+          "pageStart": 320,
+          "pageEnd": 323,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 7,
+      "subjectId": "history-geography",
+      "name": "Lịch sử và Địa lí",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 0,
+        "standard": 2,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-lower-history-geography-g7-p428",
+        "subjectFamily": "lower-history-geography",
+        "strand": null,
+        "pageStart": 428,
+        "pageEnd": 438,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-lower-history-geography-g7-p428",
+          "subjectFamily": "lower-history-geography",
+          "strand": null,
+          "pageStart": 428,
+          "pageEnd": 438,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+      ]
+    },
+    {
+      "grade": 7,
+      "subjectId": "natural-science",
+      "name": "Khoa học tự nhiên",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 3,
+      "questions": 12,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 1
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-natural-science-g7-p664",
+        "subjectFamily": "natural-science",
+        "strand": null,
+        "pageStart": 664,
+        "pageEnd": 674,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-natural-science-g7-p664",
+          "subjectFamily": "natural-science",
+          "strand": null,
+          "pageStart": 664,
+          "pageEnd": 674,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 7,
+      "subjectId": "technology",
+      "name": "Công nghệ",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-technology-g7-p898",
+        "subjectFamily": "technology",
+        "strand": null,
+        "pageStart": 898,
+        "pageEnd": 900,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-technology-g7-p898",
+          "subjectFamily": "technology",
+          "strand": null,
+          "pageStart": 898,
+          "pageEnd": 900,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+      ]
+    },
+    {
+      "grade": 7,
+      "subjectId": "informatics",
+      "name": "Tin học",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-informatics-g7-p970",
+        "subjectFamily": "informatics",
+        "strand": null,
+        "pageStart": 970,
+        "pageEnd": 972,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-informatics-g7-p970",
+          "subjectFamily": "informatics",
+          "strand": null,
+          "pageStart": 970,
+          "pageEnd": 972,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+      ]
+    },
+    {
+      "grade": 7,
+      "subjectId": "physical-education",
+      "name": "Giáo dục thể chất",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-physical-education-g7-p1168",
+        "subjectFamily": "physical-education",
+        "strand": null,
+        "pageStart": 1168,
+        "pageEnd": 1169,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-physical-education-g7-p1168",
+          "subjectFamily": "physical-education",
+          "strand": null,
+          "pageStart": 1168,
+          "pageEnd": 1169,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 7,
+      "subjectId": "music",
+      "name": "Âm nhạc",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-music-g7-p1047",
+        "subjectFamily": "music",
+        "strand": null,
+        "pageStart": 1047,
+        "pageEnd": 1050,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-music-g7-p1047",
+          "subjectFamily": "music",
+          "strand": null,
+          "pageStart": 1047,
+          "pageEnd": 1050,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 7,
+      "subjectId": "art",
+      "name": "Mĩ thuật",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-art-g7-p1103",
+        "subjectFamily": "art",
+        "strand": null,
+        "pageStart": 1103,
+        "pageEnd": 1105,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-art-g7-p1103",
+          "subjectFamily": "art",
+          "strand": null,
+          "pageStart": 1103,
+          "pageEnd": 1105,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 7,
+      "subjectId": "experience-career",
+      "name": "Hoạt động trải nghiệm, hướng nghiệp",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-experience-g7-p1209",
+        "subjectFamily": "experience",
+        "strand": null,
+        "pageStart": 1209,
+        "pageEnd": 1212,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-experience-g7-p1209",
+          "subjectFamily": "experience",
+          "strand": null,
+          "pageStart": 1209,
+          "pageEnd": 1212,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 7,
+      "subjectId": "local-education",
+      "name": "Nội dung giáo dục địa phương",
+      "required": true,
+      "status": "needs-local-source",
+      "draftLessons": 0,
+      "questions": 0,
+      "tracks": {
+        "foundation": 0,
+        "standard": 0,
+        "advanced": 0
+      },
+      "source": null,
+      "sources": [],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa có bài biên soạn cho môn–lớp này.",
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 7,
+      "subjectId": "foreign-2",
+      "name": "Ngoại ngữ 2",
+      "required": false,
+      "status": "optional-language-unconfigured",
+      "draftLessons": 0,
+      "questions": 0,
+      "tracks": {
+        "foundation": 0,
+        "standard": 0,
+        "advanced": 0
+      },
+      "source": null,
+      "sources": [],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa có bài biên soạn cho môn–lớp này.",
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 7,
+      "subjectId": "ethnic-language",
+      "name": "Tiếng dân tộc thiểu số",
+      "required": false,
+      "status": "optional-language-unconfigured",
+      "draftLessons": 0,
+      "questions": 0,
+      "tracks": {
+        "foundation": 0,
+        "standard": 0,
+        "advanced": 0
+      },
+      "source": null,
+      "sources": [],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa có bài biên soạn cho môn–lớp này.",
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 8,
+      "subjectId": "literature",
+      "name": "Ngữ văn",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 0,
+        "standard": 2,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-language-g8-p105",
+        "subjectFamily": "language",
+        "strand": null,
+        "pageStart": 105,
+        "pageEnd": 110,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-language-g8-p105",
+          "subjectFamily": "language",
+          "strand": null,
+          "pageStart": 105,
+          "pageEnd": 110,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 8,
+      "subjectId": "math",
+      "name": "Toán",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 3,
+      "questions": 12,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 1
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-math-g8-p229",
+        "subjectFamily": "math",
+        "strand": null,
+        "pageStart": 229,
+        "pageEnd": 237,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-math-g8-p229",
+          "subjectFamily": "math",
+          "strand": null,
+          "pageStart": 229,
+          "pageEnd": 237,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 8,
+      "subjectId": "foreign-1",
+      "name": "Ngoại ngữ 1",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 4,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-foreign-1-g8-p1285",
+        "subjectFamily": "foreign-1",
+        "strand": null,
+        "pageStart": 1285,
+        "pageEnd": 1287,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-foreign-1-g8-p1285",
+          "subjectFamily": "foreign-1",
+          "strand": null,
+          "pageStart": 1285,
+          "pageEnd": 1287,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 8,
+      "subjectId": "civic",
+      "name": "Giáo dục công dân",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-civic-g8-p323",
+        "subjectFamily": "civic",
+        "strand": null,
+        "pageStart": 323,
+        "pageEnd": 326,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-civic-g8-p323",
+          "subjectFamily": "civic",
+          "strand": null,
+          "pageStart": 323,
+          "pageEnd": 326,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 8,
+      "subjectId": "history-geography",
+      "name": "Lịch sử và Địa lí",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 0,
+        "standard": 2,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-lower-history-geography-g8-p438",
+        "subjectFamily": "lower-history-geography",
+        "strand": null,
+        "pageStart": 438,
+        "pageEnd": 447,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-lower-history-geography-g8-p438",
+          "subjectFamily": "lower-history-geography",
+          "strand": null,
+          "pageStart": 438,
+          "pageEnd": 447,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+      ]
+    },
+    {
+      "grade": 8,
+      "subjectId": "natural-science",
+      "name": "Khoa học tự nhiên",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 3,
+      "questions": 12,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 1
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-natural-science-g8-p674",
+        "subjectFamily": "natural-science",
+        "strand": null,
+        "pageStart": 674,
+        "pageEnd": 690,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-natural-science-g8-p674",
+          "subjectFamily": "natural-science",
+          "strand": null,
+          "pageStart": 674,
+          "pageEnd": 690,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 8,
+      "subjectId": "technology",
+      "name": "Công nghệ",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-technology-g8-p900",
+        "subjectFamily": "technology",
+        "strand": null,
+        "pageStart": 900,
+        "pageEnd": 902,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-technology-g8-p900",
+          "subjectFamily": "technology",
+          "strand": null,
+          "pageStart": 900,
+          "pageEnd": 902,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+      ]
+    },
+    {
+      "grade": 8,
+      "subjectId": "informatics",
+      "name": "Tin học",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-informatics-g8-p972",
+        "subjectFamily": "informatics",
+        "strand": null,
+        "pageStart": 972,
+        "pageEnd": 975,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-informatics-g8-p972",
+          "subjectFamily": "informatics",
+          "strand": null,
+          "pageStart": 972,
+          "pageEnd": 975,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+      ]
+    },
+    {
+      "grade": 8,
+      "subjectId": "physical-education",
+      "name": "Giáo dục thể chất",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-physical-education-g8-p1169",
+        "subjectFamily": "physical-education",
+        "strand": null,
+        "pageStart": 1169,
+        "pageEnd": 1171,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-physical-education-g8-p1169",
+          "subjectFamily": "physical-education",
+          "strand": null,
+          "pageStart": 1169,
+          "pageEnd": 1171,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 8,
+      "subjectId": "music",
+      "name": "Âm nhạc",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-music-g8-p1050",
+        "subjectFamily": "music",
+        "strand": null,
+        "pageStart": 1050,
+        "pageEnd": 1052,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-music-g8-p1050",
+          "subjectFamily": "music",
+          "strand": null,
+          "pageStart": 1050,
+          "pageEnd": 1052,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 8,
+      "subjectId": "art",
+      "name": "Mĩ thuật",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-art-g8-p1105",
+        "subjectFamily": "art",
+        "strand": null,
+        "pageStart": 1105,
+        "pageEnd": 1109,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-art-g8-p1105",
+          "subjectFamily": "art",
+          "strand": null,
+          "pageStart": 1105,
+          "pageEnd": 1109,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 8,
+      "subjectId": "experience-career",
+      "name": "Hoạt động trải nghiệm, hướng nghiệp",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-experience-g8-p1212",
+        "subjectFamily": "experience",
+        "strand": null,
+        "pageStart": 1212,
+        "pageEnd": 1214,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-experience-g8-p1212",
+          "subjectFamily": "experience",
+          "strand": null,
+          "pageStart": 1212,
+          "pageEnd": 1214,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 8,
+      "subjectId": "local-education",
+      "name": "Nội dung giáo dục địa phương",
+      "required": true,
+      "status": "needs-local-source",
+      "draftLessons": 0,
+      "questions": 0,
+      "tracks": {
+        "foundation": 0,
+        "standard": 0,
+        "advanced": 0
+      },
+      "source": null,
+      "sources": [],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa có bài biên soạn cho môn–lớp này.",
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 8,
+      "subjectId": "foreign-2",
+      "name": "Ngoại ngữ 2",
+      "required": false,
+      "status": "optional-language-unconfigured",
+      "draftLessons": 0,
+      "questions": 0,
+      "tracks": {
+        "foundation": 0,
+        "standard": 0,
+        "advanced": 0
+      },
+      "source": null,
+      "sources": [],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa có bài biên soạn cho môn–lớp này.",
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 8,
+      "subjectId": "ethnic-language",
+      "name": "Tiếng dân tộc thiểu số",
+      "required": false,
+      "status": "optional-language-unconfigured",
+      "draftLessons": 0,
+      "questions": 0,
+      "tracks": {
+        "foundation": 0,
+        "standard": 0,
+        "advanced": 0
+      },
+      "source": null,
+      "sources": [],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa có bài biên soạn cho môn–lớp này.",
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 9,
+      "subjectId": "literature",
+      "name": "Ngữ văn",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 1
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-language-g9-p110",
+        "subjectFamily": "language",
+        "strand": null,
+        "pageStart": 110,
+        "pageEnd": 115,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-language-g9-p110",
+          "subjectFamily": "language",
+          "strand": null,
+          "pageStart": 110,
+          "pageEnd": 115,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 9,
+      "subjectId": "math",
+      "name": "Toán",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 3,
+      "questions": 12,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 1
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-math-g9-p237",
+        "subjectFamily": "math",
+        "strand": null,
+        "pageStart": 237,
+        "pageEnd": 245,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-math-g9-p237",
+          "subjectFamily": "math",
+          "strand": null,
+          "pageStart": 237,
+          "pageEnd": 245,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 9,
+      "subjectId": "foreign-1",
+      "name": "Ngoại ngữ 1",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 4,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-foreign-1-g9-p1287",
+        "subjectFamily": "foreign-1",
+        "strand": null,
+        "pageStart": 1287,
+        "pageEnd": 1290,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-foreign-1-g9-p1287",
+          "subjectFamily": "foreign-1",
+          "strand": null,
+          "pageStart": 1287,
+          "pageEnd": 1290,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 9,
+      "subjectId": "civic",
+      "name": "Giáo dục công dân",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-civic-g9-p326",
+        "subjectFamily": "civic",
+        "strand": null,
+        "pageStart": 326,
+        "pageEnd": 328,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-civic-g9-p326",
+          "subjectFamily": "civic",
+          "strand": null,
+          "pageStart": 326,
+          "pageEnd": 328,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 9,
+      "subjectId": "history-geography",
+      "name": "Lịch sử và Địa lí",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-lower-history-geography-g9-p447",
+        "subjectFamily": "lower-history-geography",
+        "strand": null,
+        "pageStart": 447,
+        "pageEnd": 475,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-lower-history-geography-g9-p447",
+          "subjectFamily": "lower-history-geography",
+          "strand": null,
+          "pageStart": 447,
+          "pageEnd": 475,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+      ]
+    },
+    {
+      "grade": 9,
+      "subjectId": "natural-science",
+      "name": "Khoa học tự nhiên",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 3,
+      "questions": 12,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 1
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-natural-science-g9-p690",
+        "subjectFamily": "natural-science",
+        "strand": null,
+        "pageStart": 690,
+        "pageEnd": 721,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-natural-science-g9-p690",
+          "subjectFamily": "natural-science",
+          "strand": null,
+          "pageStart": 690,
+          "pageEnd": 721,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 9,
+      "subjectId": "technology",
+      "name": "Công nghệ",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-technology-g9-p902",
+        "subjectFamily": "technology",
+        "strand": null,
+        "pageStart": 902,
+        "pageEnd": 910,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-technology-g9-p902",
+          "subjectFamily": "technology",
+          "strand": null,
+          "pageStart": 902,
+          "pageEnd": 910,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+      ]
+    },
+    {
+      "grade": 9,
+      "subjectId": "informatics",
+      "name": "Tin học",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-informatics-g9-p975",
+        "subjectFamily": "informatics",
+        "strand": null,
+        "pageStart": 975,
+        "pageEnd": 980,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-informatics-g9-p975",
+          "subjectFamily": "informatics",
+          "strand": null,
+          "pageStart": 975,
+          "pageEnd": 980,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+      ]
+    },
+    {
+      "grade": 9,
+      "subjectId": "physical-education",
+      "name": "Giáo dục thể chất",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-physical-education-g9-p1171",
+        "subjectFamily": "physical-education",
+        "strand": null,
+        "pageStart": 1171,
+        "pageEnd": 1172,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-physical-education-g9-p1171",
+          "subjectFamily": "physical-education",
+          "strand": null,
+          "pageStart": 1171,
+          "pageEnd": 1172,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 9,
+      "subjectId": "music",
+      "name": "Âm nhạc",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-music-g9-p1052",
+        "subjectFamily": "music",
+        "strand": null,
+        "pageStart": 1052,
+        "pageEnd": 1055,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-music-g9-p1052",
+          "subjectFamily": "music",
+          "strand": null,
+          "pageStart": 1052,
+          "pageEnd": 1055,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 9,
+      "subjectId": "art",
+      "name": "Mĩ thuật",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-art-g9-p1109",
+        "subjectFamily": "art",
+        "strand": null,
+        "pageStart": 1109,
+        "pageEnd": 1112,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-art-g9-p1109",
+          "subjectFamily": "art",
+          "strand": null,
+          "pageStart": 1109,
+          "pageEnd": 1112,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 9,
+      "subjectId": "experience-career",
+      "name": "Hoạt động trải nghiệm, hướng nghiệp",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-experience-g9-p1214",
+        "subjectFamily": "experience",
+        "strand": null,
+        "pageStart": 1214,
+        "pageEnd": 1217,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-experience-g9-p1214",
+          "subjectFamily": "experience",
+          "strand": null,
+          "pageStart": 1214,
+          "pageEnd": 1217,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 9,
+      "subjectId": "local-education",
+      "name": "Nội dung giáo dục địa phương",
+      "required": true,
+      "status": "needs-local-source",
+      "draftLessons": 0,
+      "questions": 0,
+      "tracks": {
+        "foundation": 0,
+        "standard": 0,
+        "advanced": 0
+      },
+      "source": null,
+      "sources": [],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa có bài biên soạn cho môn–lớp này.",
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 9,
+      "subjectId": "foreign-2",
+      "name": "Ngoại ngữ 2",
+      "required": false,
+      "status": "optional-language-unconfigured",
+      "draftLessons": 0,
+      "questions": 0,
+      "tracks": {
+        "foundation": 0,
+        "standard": 0,
+        "advanced": 0
+      },
+      "source": null,
+      "sources": [],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa có bài biên soạn cho môn–lớp này.",
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 9,
+      "subjectId": "ethnic-language",
+      "name": "Tiếng dân tộc thiểu số",
+      "required": false,
+      "status": "optional-language-unconfigured",
+      "draftLessons": 0,
+      "questions": 0,
+      "tracks": {
+        "foundation": 0,
+        "standard": 0,
+        "advanced": 0
+      },
+      "source": null,
+      "sources": [],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa có bài biên soạn cho môn–lớp này.",
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 10,
+      "subjectId": "literature",
+      "name": "Ngữ văn",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 1
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-language-g10-p115",
+        "subjectFamily": "language",
+        "strand": null,
+        "pageStart": 115,
+        "pageEnd": 121,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-language-g10-p115",
+          "subjectFamily": "language",
+          "strand": null,
+          "pageStart": 115,
+          "pageEnd": 121,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 10,
+      "subjectId": "math",
+      "name": "Toán",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 3,
+      "questions": 12,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 1
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-math-g10-p245",
+        "subjectFamily": "math",
+        "strand": null,
+        "pageStart": 245,
+        "pageEnd": 255,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-math-g10-p245",
+          "subjectFamily": "math",
+          "strand": null,
+          "pageStart": 245,
+          "pageEnd": 255,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 10,
+      "subjectId": "foreign-1",
+      "name": "Ngoại ngữ 1",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 4,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-foreign-1-g10-p1290",
+        "subjectFamily": "foreign-1",
+        "strand": null,
+        "pageStart": 1290,
+        "pageEnd": 1292,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-foreign-1-g10-p1290",
+          "subjectFamily": "foreign-1",
+          "strand": null,
+          "pageStart": 1290,
+          "pageEnd": 1292,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 10,
+      "subjectId": "history",
+      "name": "Lịch sử",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 0,
+        "standard": 2,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-history-g10-p486",
+        "subjectFamily": "history",
+        "strand": null,
+        "pageStart": 486,
+        "pageEnd": 507,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-history-g10-p486",
+          "subjectFamily": "history",
+          "strand": null,
+          "pageStart": 486,
+          "pageEnd": 507,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+      ]
+    },
+    {
+      "grade": 10,
+      "subjectId": "physical-education",
+      "name": "Giáo dục thể chất",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-physical-education-g10-p1172",
+        "subjectFamily": "physical-education",
+        "strand": null,
+        "pageStart": 1172,
+        "pageEnd": 1173,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-physical-education-g10-p1172",
+          "subjectFamily": "physical-education",
+          "strand": null,
+          "pageStart": 1172,
+          "pageEnd": 1173,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 10,
+      "subjectId": "defense-security",
+      "name": "Giáo dục quốc phòng và an ninh",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": null,
+      "sources": [],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 10,
+      "subjectId": "experience-career",
+      "name": "Hoạt động trải nghiệm, hướng nghiệp",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-experience-g10-p1217",
+        "subjectFamily": "experience",
+        "strand": null,
+        "pageStart": 1217,
+        "pageEnd": 1220,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-experience-g10-p1217",
+          "subjectFamily": "experience",
+          "strand": null,
+          "pageStart": 1217,
+          "pageEnd": 1220,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 10,
+      "subjectId": "local-education",
+      "name": "Nội dung giáo dục địa phương",
+      "required": true,
+      "status": "needs-local-source",
+      "draftLessons": 0,
+      "questions": 0,
+      "tracks": {
+        "foundation": 0,
+        "standard": 0,
+        "advanced": 0
+      },
+      "source": null,
+      "sources": [],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa có bài biên soạn cho môn–lớp này.",
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 10,
+      "subjectId": "geography",
+      "name": "Địa lí",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-geography-g10-p566",
+        "subjectFamily": "geography",
+        "strand": null,
+        "pageStart": 566,
+        "pageEnd": 576,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-geography-g10-p566",
+          "subjectFamily": "geography",
+          "strand": null,
+          "pageStart": 566,
+          "pageEnd": 576,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+      ]
+    },
+    {
+      "grade": 10,
+      "subjectId": "economics-law",
+      "name": "Giáo dục kinh tế và pháp luật",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-civic-g10-p328",
+        "subjectFamily": "civic",
+        "strand": null,
+        "pageStart": 328,
+        "pageEnd": 333,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-civic-g10-p328",
+          "subjectFamily": "civic",
+          "strand": null,
+          "pageStart": 328,
+          "pageEnd": 333,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+      ]
+    },
+    {
+      "grade": 10,
+      "subjectId": "physics",
+      "name": "Vật lí",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 1,
+        "standard": 0,
+        "advanced": 1
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-physics-g10-p730",
+        "subjectFamily": "physics",
+        "strand": null,
+        "pageStart": 730,
+        "pageEnd": 738,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-physics-g10-p730",
+          "subjectFamily": "physics",
+          "strand": null,
+          "pageStart": 730,
+          "pageEnd": 738,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 10,
+      "subjectId": "chemistry",
+      "name": "Hóa học",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-chemistry-g10-p770",
+        "subjectFamily": "chemistry",
+        "strand": null,
+        "pageStart": 770,
+        "pageEnd": 779,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-chemistry-g10-p770",
+          "subjectFamily": "chemistry",
+          "strand": null,
+          "pageStart": 770,
+          "pageEnd": 779,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 10,
+      "subjectId": "biology",
+      "name": "Sinh học",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-biology-g10-p828",
+        "subjectFamily": "biology",
+        "strand": null,
+        "pageStart": 828,
+        "pageEnd": 839,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-biology-g10-p828",
+          "subjectFamily": "biology",
+          "strand": null,
+          "pageStart": 828,
+          "pageEnd": 839,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 10,
+      "subjectId": "technology",
+      "name": "Công nghệ",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-technology-g10-p910",
+        "subjectFamily": "technology",
+        "strand": "industrial",
+        "pageStart": 910,
+        "pageEnd": 912,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-technology-g10-p910",
+          "subjectFamily": "technology",
+          "strand": "industrial",
+          "pageStart": 910,
+          "pageEnd": 912,
+          "precision": "grade-section-only"
+        },
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-technology-g10-p918",
+          "subjectFamily": "technology",
+          "strand": "agricultural",
+          "pageStart": 918,
+          "pageEnd": 921,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+      ]
+    },
+    {
+      "grade": 10,
+      "subjectId": "informatics",
+      "name": "Tin học",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-informatics-g10-p980",
+        "subjectFamily": "informatics",
+        "strand": "core",
+        "pageStart": 980,
+        "pageEnd": 984,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-informatics-g10-p980",
+          "subjectFamily": "informatics",
+          "strand": "core",
+          "pageStart": 980,
+          "pageEnd": 984,
+          "precision": "grade-section-only"
+        },
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-informatics-g10-p993",
+          "subjectFamily": "informatics",
+          "strand": "applied-specialist",
+          "pageStart": 993,
+          "pageEnd": 995,
+          "precision": "grade-section-only"
+        },
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-informatics-g10-p998",
+          "subjectFamily": "informatics",
+          "strand": "computer-science-specialist",
+          "pageStart": 998,
+          "pageEnd": 999,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+      ]
+    },
+    {
+      "grade": 10,
+      "subjectId": "music",
+      "name": "Âm nhạc",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-music-g10-p1055",
+        "subjectFamily": "music",
+        "strand": null,
+        "pageStart": 1055,
+        "pageEnd": 1059,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-music-g10-p1055",
+          "subjectFamily": "music",
+          "strand": null,
+          "pageStart": 1055,
+          "pageEnd": 1059,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 10,
+      "subjectId": "art",
+      "name": "Mĩ thuật",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-art-g10-p1112",
+        "subjectFamily": "art",
+        "strand": null,
+        "pageStart": 1112,
+        "pageEnd": 1121,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-art-g10-p1112",
+          "subjectFamily": "art",
+          "strand": null,
+          "pageStart": 1112,
+          "pageEnd": 1121,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 11,
+      "subjectId": "literature",
+      "name": "Ngữ văn",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 1
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-language-g11-p121",
+        "subjectFamily": "language",
+        "strand": null,
+        "pageStart": 121,
+        "pageEnd": 128,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-language-g11-p121",
+          "subjectFamily": "language",
+          "strand": null,
+          "pageStart": 121,
+          "pageEnd": 128,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 11,
+      "subjectId": "math",
+      "name": "Toán",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 3,
+      "questions": 12,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 1
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-math-g11-p255",
+        "subjectFamily": "math",
+        "strand": null,
+        "pageStart": 255,
+        "pageEnd": 271,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-math-g11-p255",
+          "subjectFamily": "math",
+          "strand": null,
+          "pageStart": 255,
+          "pageEnd": 271,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 11,
+      "subjectId": "foreign-1",
+      "name": "Ngoại ngữ 1",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 4,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-foreign-1-g11-p1292",
+        "subjectFamily": "foreign-1",
+        "strand": null,
+        "pageStart": 1292,
+        "pageEnd": 1294,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-foreign-1-g11-p1292",
+          "subjectFamily": "foreign-1",
+          "strand": null,
+          "pageStart": 1292,
+          "pageEnd": 1294,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 11,
+      "subjectId": "history",
+      "name": "Lịch sử",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 0,
+        "standard": 2,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-history-g11-p507",
+        "subjectFamily": "history",
+        "strand": null,
+        "pageStart": 507,
+        "pageEnd": 525,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-history-g11-p507",
+          "subjectFamily": "history",
+          "strand": null,
+          "pageStart": 507,
+          "pageEnd": 525,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+      ]
+    },
+    {
+      "grade": 11,
+      "subjectId": "physical-education",
+      "name": "Giáo dục thể chất",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-physical-education-g11-p1173",
+        "subjectFamily": "physical-education",
+        "strand": null,
+        "pageStart": 1173,
+        "pageEnd": 1175,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-physical-education-g11-p1173",
+          "subjectFamily": "physical-education",
+          "strand": null,
+          "pageStart": 1173,
+          "pageEnd": 1175,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 11,
+      "subjectId": "defense-security",
+      "name": "Giáo dục quốc phòng và an ninh",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": null,
+      "sources": [],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 11,
+      "subjectId": "experience-career",
+      "name": "Hoạt động trải nghiệm, hướng nghiệp",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-experience-g11-p1220",
+        "subjectFamily": "experience",
+        "strand": null,
+        "pageStart": 1220,
+        "pageEnd": 1223,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-experience-g11-p1220",
+          "subjectFamily": "experience",
+          "strand": null,
+          "pageStart": 1220,
+          "pageEnd": 1223,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 11,
+      "subjectId": "local-education",
+      "name": "Nội dung giáo dục địa phương",
+      "required": true,
+      "status": "needs-local-source",
+      "draftLessons": 0,
+      "questions": 0,
+      "tracks": {
+        "foundation": 0,
+        "standard": 0,
+        "advanced": 0
+      },
+      "source": null,
+      "sources": [],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa có bài biên soạn cho môn–lớp này.",
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 11,
+      "subjectId": "geography",
+      "name": "Địa lí",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-geography-g11-p576",
+        "subjectFamily": "geography",
+        "strand": null,
+        "pageStart": 576,
+        "pageEnd": 585,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-geography-g11-p576",
+          "subjectFamily": "geography",
+          "strand": null,
+          "pageStart": 576,
+          "pageEnd": 585,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+      ]
+    },
+    {
+      "grade": 11,
+      "subjectId": "economics-law",
+      "name": "Giáo dục kinh tế và pháp luật",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-civic-g11-p333",
+        "subjectFamily": "civic",
+        "strand": null,
+        "pageStart": 333,
+        "pageEnd": 338,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-civic-g11-p333",
+          "subjectFamily": "civic",
+          "strand": null,
+          "pageStart": 333,
+          "pageEnd": 338,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+      ]
+    },
+    {
+      "grade": 11,
+      "subjectId": "physics",
+      "name": "Vật lí",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-physics-g11-p738",
+        "subjectFamily": "physics",
+        "strand": null,
+        "pageStart": 738,
+        "pageEnd": 745,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-physics-g11-p738",
+          "subjectFamily": "physics",
+          "strand": null,
+          "pageStart": 738,
+          "pageEnd": 745,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 11,
+      "subjectId": "chemistry",
+      "name": "Hóa học",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-chemistry-g11-p779",
+        "subjectFamily": "chemistry",
+        "strand": null,
+        "pageStart": 779,
+        "pageEnd": 792,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-chemistry-g11-p779",
+          "subjectFamily": "chemistry",
+          "strand": null,
+          "pageStart": 779,
+          "pageEnd": 792,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 11,
+      "subjectId": "biology",
+      "name": "Sinh học",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-biology-g11-p839",
+        "subjectFamily": "biology",
+        "strand": null,
+        "pageStart": 839,
+        "pageEnd": 855,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-biology-g11-p839",
+          "subjectFamily": "biology",
+          "strand": null,
+          "pageStart": 839,
+          "pageEnd": 855,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 11,
+      "subjectId": "technology",
+      "name": "Công nghệ",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-technology-g11-p912",
+        "subjectFamily": "technology",
+        "strand": "industrial",
+        "pageStart": 912,
+        "pageEnd": 914,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-technology-g11-p912",
+          "subjectFamily": "technology",
+          "strand": "industrial",
+          "pageStart": 912,
+          "pageEnd": 914,
+          "precision": "grade-section-only"
+        },
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-technology-g11-p921",
+          "subjectFamily": "technology",
+          "strand": "agricultural",
+          "pageStart": 921,
+          "pageEnd": 925,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+      ]
+    },
+    {
+      "grade": 11,
+      "subjectId": "informatics",
+      "name": "Tin học",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-informatics-g11-p984",
+        "subjectFamily": "informatics",
+        "strand": "core",
+        "pageStart": 984,
+        "pageEnd": 989,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-informatics-g11-p984",
+          "subjectFamily": "informatics",
+          "strand": "core",
+          "pageStart": 984,
+          "pageEnd": 989,
+          "precision": "grade-section-only"
+        },
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-informatics-g11-p995",
+          "subjectFamily": "informatics",
+          "strand": "applied-specialist",
+          "pageStart": 995,
+          "pageEnd": 996,
+          "precision": "grade-section-only"
+        },
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-informatics-g11-p999",
+          "subjectFamily": "informatics",
+          "strand": "computer-science-specialist",
+          "pageStart": 999,
+          "pageEnd": 1000,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+      ]
+    },
+    {
+      "grade": 11,
+      "subjectId": "music",
+      "name": "Âm nhạc",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-music-g11-p1059",
+        "subjectFamily": "music",
+        "strand": null,
+        "pageStart": 1059,
+        "pageEnd": 1063,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-music-g11-p1059",
+          "subjectFamily": "music",
+          "strand": null,
+          "pageStart": 1059,
+          "pageEnd": 1063,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 11,
+      "subjectId": "art",
+      "name": "Mĩ thuật",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-art-g11-p1121",
+        "subjectFamily": "art",
+        "strand": null,
+        "pageStart": 1121,
+        "pageEnd": 1131,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-art-g11-p1121",
+          "subjectFamily": "art",
+          "strand": null,
+          "pageStart": 1121,
+          "pageEnd": 1131,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 12,
+      "subjectId": "literature",
+      "name": "Ngữ văn",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 1
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-language-g12-p128",
+        "subjectFamily": "language",
+        "strand": null,
+        "pageStart": 128,
+        "pageEnd": 166,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-language-g12-p128",
+          "subjectFamily": "language",
+          "strand": null,
+          "pageStart": 128,
+          "pageEnd": 166,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 12,
+      "subjectId": "math",
+      "name": "Toán",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 3,
+      "questions": 12,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 1
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-math-g12-p271",
+        "subjectFamily": "math",
+        "strand": null,
+        "pageStart": 271,
+        "pageEnd": 289,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-math-g12-p271",
+          "subjectFamily": "math",
+          "strand": null,
+          "pageStart": 271,
+          "pageEnd": 289,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 12,
+      "subjectId": "foreign-1",
+      "name": "Ngoại ngữ 1",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 4,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-foreign-1-g12-p1294",
+        "subjectFamily": "foreign-1",
+        "strand": null,
+        "pageStart": 1294,
+        "pageEnd": 1303,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-foreign-1-g12-p1294",
+          "subjectFamily": "foreign-1",
+          "strand": null,
+          "pageStart": 1294,
+          "pageEnd": 1303,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 12,
+      "subjectId": "history",
+      "name": "Lịch sử",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 0,
+        "standard": 2,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-history-g12-p525",
+        "subjectFamily": "history",
+        "strand": null,
+        "pageStart": 525,
+        "pageEnd": 557,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-history-g12-p525",
+          "subjectFamily": "history",
+          "strand": null,
+          "pageStart": 525,
+          "pageEnd": 557,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+      ]
+    },
+    {
+      "grade": 12,
+      "subjectId": "physical-education",
+      "name": "Giáo dục thể chất",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-physical-education-g12-p1175",
+        "subjectFamily": "physical-education",
+        "strand": null,
+        "pageStart": 1175,
+        "pageEnd": 1184,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-physical-education-g12-p1175",
+          "subjectFamily": "physical-education",
+          "strand": null,
+          "pageStart": 1175,
+          "pageEnd": 1184,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 12,
+      "subjectId": "defense-security",
+      "name": "Giáo dục quốc phòng và an ninh",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": null,
+      "sources": [],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 12,
+      "subjectId": "experience-career",
+      "name": "Hoạt động trải nghiệm, hướng nghiệp",
+      "required": true,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-experience-g12-p1223",
+        "subjectFamily": "experience",
+        "strand": null,
+        "pageStart": 1223,
+        "pageEnd": 1249,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-experience-g12-p1223",
+          "subjectFamily": "experience",
+          "strand": null,
+          "pageStart": 1223,
+          "pageEnd": 1249,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 12,
+      "subjectId": "local-education",
+      "name": "Nội dung giáo dục địa phương",
+      "required": true,
+      "status": "needs-local-source",
+      "draftLessons": 0,
+      "questions": 0,
+      "tracks": {
+        "foundation": 0,
+        "standard": 0,
+        "advanced": 0
+      },
+      "source": null,
+      "sources": [],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa có bài biên soạn cho môn–lớp này.",
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 12,
+      "subjectId": "geography",
+      "name": "Địa lí",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 0,
+        "standard": 2,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-geography-g12-p585",
+        "subjectFamily": "geography",
+        "strand": null,
+        "pageStart": 585,
+        "pageEnd": 606,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-geography-g12-p585",
+          "subjectFamily": "geography",
+          "strand": null,
+          "pageStart": 585,
+          "pageEnd": 606,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+      ]
+    },
+    {
+      "grade": 12,
+      "subjectId": "economics-law",
+      "name": "Giáo dục kinh tế và pháp luật",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-civic-g12-p338",
+        "subjectFamily": "civic",
+        "strand": null,
+        "pageStart": 338,
+        "pageEnd": 348,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-civic-g12-p338",
+          "subjectFamily": "civic",
+          "strand": null,
+          "pageStart": 338,
+          "pageEnd": 348,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+      ]
+    },
+    {
+      "grade": 12,
+      "subjectId": "physics",
+      "name": "Vật lí",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-physics-g12-p745",
+        "subjectFamily": "physics",
+        "strand": null,
+        "pageStart": 745,
+        "pageEnd": 759,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-physics-g12-p745",
+          "subjectFamily": "physics",
+          "strand": null,
+          "pageStart": 745,
+          "pageEnd": 759,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 12,
+      "subjectId": "chemistry",
+      "name": "Hóa học",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 1,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-chemistry-g12-p792",
+        "subjectFamily": "chemistry",
+        "strand": null,
+        "pageStart": 792,
+        "pageEnd": 815,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-chemistry-g12-p792",
+          "subjectFamily": "chemistry",
+          "strand": null,
+          "pageStart": 792,
+          "pageEnd": 815,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 12,
+      "subjectId": "biology",
+      "name": "Sinh học",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 2,
+      "questions": 8,
+      "tracks": {
+        "foundation": 1,
+        "standard": 0,
+        "advanced": 1
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-biology-g12-p855",
+        "subjectFamily": "biology",
+        "strand": null,
+        "pageStart": 855,
+        "pageEnd": 880,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-biology-g12-p855",
+          "subjectFamily": "biology",
+          "strand": null,
+          "pageStart": 855,
+          "pageEnd": 880,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 12,
+      "subjectId": "technology",
+      "name": "Công nghệ",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-technology-g12-p914",
+        "subjectFamily": "technology",
+        "strand": "industrial",
+        "pageStart": 914,
+        "pageEnd": 918,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-technology-g12-p914",
+          "subjectFamily": "technology",
+          "strand": "industrial",
+          "pageStart": 914,
+          "pageEnd": 918,
+          "precision": "grade-section-only"
+        },
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-technology-g12-p925",
+          "subjectFamily": "technology",
+          "strand": "agricultural",
+          "pageStart": 925,
+          "pageEnd": 938,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+      ]
+    },
+    {
+      "grade": 12,
+      "subjectId": "informatics",
+      "name": "Tin học",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-informatics-g12-p989",
+        "subjectFamily": "informatics",
+        "strand": "core",
+        "pageStart": 989,
+        "pageEnd": 993,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-informatics-g12-p989",
+          "subjectFamily": "informatics",
+          "strand": "core",
+          "pageStart": 989,
+          "pageEnd": 993,
+          "precision": "grade-section-only"
+        },
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-informatics-g12-p996",
+          "subjectFamily": "informatics",
+          "strand": "applied-specialist",
+          "pageStart": 996,
+          "pageEnd": 998,
+          "precision": "grade-section-only"
+        },
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-informatics-g12-p1000",
+          "subjectFamily": "informatics",
+          "strand": "computer-science-specialist",
+          "pageStart": 1000,
+          "pageEnd": 1023,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+        "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+      ]
+    },
+    {
+      "grade": 12,
+      "subjectId": "music",
+      "name": "Âm nhạc",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-music-g12-p1063",
+        "subjectFamily": "music",
+        "strand": null,
+        "pageStart": 1063,
+        "pageEnd": 1075,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-music-g12-p1063",
+          "subjectFamily": "music",
+          "strand": null,
+          "pageStart": 1063,
+          "pageEnd": 1075,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    },
+    {
+      "grade": 12,
+      "subjectId": "art",
+      "name": "Mĩ thuật",
+      "required": false,
+      "status": "authored-subset",
+      "draftLessons": 1,
+      "questions": 3,
+      "tracks": {
+        "foundation": 0,
+        "standard": 1,
+        "advanced": 0
+      },
+      "source": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-art-g12-p1131",
+        "subjectFamily": "art",
+        "strand": null,
+        "pageStart": 1131,
+        "pageEnd": 1153,
+        "precision": "grade-section-only"
+      },
+      "sources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-art-g12-p1131",
+          "subjectFamily": "art",
+          "strand": null,
+          "pageStart": 1131,
+          "pageEnd": 1153,
+          "precision": "grade-section-only"
+        }
+      ],
+      "publishedLessons": 0,
+      "officialOutcomeCount": null,
+      "gaps": [
+        "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+        "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+      ]
+    }
+  ]
+}

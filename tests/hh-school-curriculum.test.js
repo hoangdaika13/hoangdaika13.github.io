@@ -50,5 +50,9 @@ test("license and publication gates reject reference-only and machine-generated 
   assert.equal(curriculum.licenseGate(curriculum.SOURCE), false);
   assert.equal(curriculum.licenseGate(curriculum.ORIGINAL), true);
   assert.equal(curriculum.canPublish(pack.lessons.find((lesson) => lesson.contentStatus === "machine_generated")), false);
-  assert.equal(curriculum.canPublish({ ...pack.lessons[0], contentStatus: "reviewed" }), true);
+  assert.equal(curriculum.canPublish({ ...pack.lessons[0], contentStatus: "reviewed" }), false, "changing a status alone must not forge editorial review");
+  const reviewedFixture = { ...pack.lessons[0], contentStatus: "reviewed", reviewerId: "test-only-reviewer", reviewedAt: "2026-10-27T00:00:00Z", reviewEvidence: { fixture: "A test of the publication gate; no production approval" } };
+  assert.equal(curriculum.canPublish(reviewedFixture), true);
+  assert.equal(curriculum.canPublish({ ...reviewedFixture, reviewedAt: "invalid" }), false);
+  assert.equal(curriculum.canPublish({ ...reviewedFixture, reviewEvidence: {} }), false);
 });

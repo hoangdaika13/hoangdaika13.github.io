@@ -56,10 +56,13 @@ async function indexes(db) {
 function publicId(value) { return value?._id ? String(value._id) : clean(value?.id, 100); }
 function sanitizeState(input, user, profileId) {
   if (!input || typeof input !== "object" || Array.isArray(input)) fail(400, "Trạng thái học tập không hợp lệ.", "EDUCATION_STATE_INVALID");
+  if (String(input.ownerId || "") !== String(user._id) || String(input.learnerProfileId || "") !== String(profileId) || input.profile?.id && String(input.profile.id) !== String(profileId)) fail(403, "Trạng thái không khớp chủ tài khoản hoặc hồ sơ; dữ liệu chưa được ghi.", "EDUCATION_STATE_OWNER_MISMATCH");
+  if (!Number.isInteger(input.schemaVersion) || input.schemaVersion < 1 || input.schemaVersion > 3 || input.studyWorkspace?.version > 1) fail(422, "Phiên bản dữ liệu chưa hỗ trợ; giữ bản gốc trên thiết bị.", "EDUCATION_STATE_VERSION_UNSUPPORTED");
+  if (input.storageArchive?.required) fail(422, "Bản tóm tắt không thể thay thế lịch sử đầy đủ; chưa đồng bộ.", "EDUCATION_STATE_ARCHIVE_REQUIRED");
   const serialized = JSON.stringify(input);
-  if (Buffer.byteLength(serialized, "utf8") > 280000) fail(413, "Trạng thái học tập vượt giới hạn 280 KB.", "EDUCATION_STATE_TOO_LARGE");
+  if (Buffer.byteLength(serialized, "utf8") > 280000) fail(413, "Lịch sử đầy đủ vượt giới hạn đồng bộ 280 KB; dữ liệu trên thiết bị được giữ, chưa đồng bộ.", "EDUCATION_STATE_TOO_LARGE");
   const clone = JSON.parse(serialized);
-  clone.schemaVersion = 2;
+  clone.schemaVersion = 3;
   clone.ownerId = String(user._id);
   clone.learnerProfileId = profileId;
   clone.role = roleOf(user);
@@ -228,6 +231,16 @@ async function assignments(req, res, db, user, body) {
   return res.status(200).json({ ok: true, item: { ...doc, id: String(result.insertedId) } });
 }
 
+const cleanSchoolMultiline = (value, max = 12000) => String(value ?? "").replace(/\r\n?/g, "\n").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, " ").replace(/[ \t]+\n/g, "\n").trim().slice(0, max);
+function submissionRevision(value) { return value === undefined ? 0 : Number.isSafeInteger(value) && value >= 0 ? value : null; }
+function submittedRevisionInput(value) { if (value === undefined || value === null || value === "" || typeof value === "boolean") return null; const number = Number(value); return Number.isSafeInteger(number) && number >= 0 ? number : null; }
+function submissionHistoryEntry(submission, event, now) {
+  const fields = ["answer", "status", "submittedAt", "updatedAt", "score", "feedback", "rubricScores", "gradedBy", "gradedAt", "gradingRevision"];
+  return Object.assign({ event, answerRevision: submissionRevision(submission.answerRevision), archivedAt: now }, Object.fromEntries(fields.filter(key => submission[key] !== undefined).map(key => [key, submission[key]])));
+}
+function submissionSizeAllowed(submission, historyEntry) { return Buffer.byteLength(JSON.stringify({ ...submission, history: [...(submission.history || []), ...(historyEntry ? [historyEntry] : [])] }), "utf8") <= 14000000; }
+function submissionVersionFilter(submission) { return { _id: submission._id, answerRevision: submission.answerRevision === undefined ? { $exists: false } : submission.answerRevision, gradingRevision: submission.gradingRevision === undefined ? { $exists: false } : submission.gradingRevision }; }
+
 async function submissions(req, res, db, user, body) {
   const role = roleOf(user); const collection = db.collection("education_submissions");
   if (req.method === "GET") {
@@ -243,17 +256,43 @@ async function submissions(req, res, db, user, body) {
     const assignment = await db.collection("education_assignments").findOne({ _id: assignmentId, status: "assigned" }); if (!assignment) return res.status(404).json({ error: "Không tìm thấy bài giao." });
     if (Array.isArray(assignment.targetLearnerProfileIds) && assignment.targetLearnerProfileIds.length && !assignment.targetLearnerProfileIds.includes(learnerProfileId)) return res.status(403).json({ error: "Bài giao này không dành cho hồ sơ học sinh hiện tại." });
     const enrolled = await db.collection("education_enrollments").findOne({ learnerOwnerId: user._id, learnerProfileId, classId: assignment.classId, status: "active" }); if (!enrolled) return res.status(403).json({ error: "Bạn không thuộc lớp nhận bài này." });
-    const answer = clean(body.answer, 12000); if (!answer) return res.status(400).json({ error: "Bài làm đang trống." }); const now = new Date(); const status = now > assignment.dueAt ? "submitted-late" : "submitted";
-    await collection.updateOne({ assignmentId, learnerOwnerId: user._id, learnerProfileId }, { $set: { answer, status, submittedAt: now, updatedAt: now, schemaVersion: 3 }, $unset: { score: "", feedback: "", rubricScores: "", gradedBy: "", gradedAt: "" }, $setOnInsert: { createdAt: now } }, { upsert: true }); await audit(db, user, "education:submission:submit", { assignmentId: String(assignmentId), learnerProfileId, status }); return res.status(200).json({ ok: true, status });
+    const answer = cleanSchoolMultiline(body.answer, 12000); if (!answer) return res.status(400).json({ error: "Bài làm đang trống." });
+    const scope = { assignmentId, learnerOwnerId: user._id, learnerProfileId }, existing = await collection.findOne(scope), now = new Date(), status = now > assignment.dueAt ? "submitted-late" : "submitted";
+    const currentRevision = existing ? submissionRevision(existing.answerRevision) : 0, expectedRevision = submittedRevisionInput(body.expectedRevision);
+    if (currentRevision === null || existing && (submissionRevision(existing.gradingRevision) === null || existing.schemaVersion !== undefined && (!Number.isInteger(existing.schemaVersion) || existing.schemaVersion > 3) || existing.history !== undefined && !Array.isArray(existing.history))) return res.status(422).json({ error: "Lịch sử bài nộp chưa tương thích; dữ liệu gốc được giữ." });
+    if (body.expectedRevision !== undefined && expectedRevision === null) return res.status(400).json({ error: "Phiên bản dự kiến của bài nộp không hợp lệ." });
+    if (existing && expectedRevision !== currentRevision || !existing && expectedRevision !== null && expectedRevision !== 0) return res.status(409).json({ error: "Bài nộp đã thay đổi. Hãy tải lại bản mới trước khi gửi bản sửa.", code: "EDUCATION_SUBMISSION_CONFLICT", answerRevision: currentRevision });
+    const answerRevision = currentRevision + 1, changes = { answer, status, answerRevision, gradingRevision: 0, submittedAt: now, updatedAt: now, schemaVersion: 3 };
+    let submissionId;
+    if (existing) {
+      const entry = submissionHistoryEntry(existing, "superseded-answer", now);
+      if (!submissionSizeAllowed({ ...existing, ...changes }, entry)) return res.status(413).json({ error: "Lịch sử bài nộp đã đạt dung lượng hỗ trợ; bản cũ được giữ, chưa nhận bản sửa mới." });
+      const written = await collection.updateOne({ ...scope, ...submissionVersionFilter(existing) }, { $set: changes, $unset: { score: "", feedback: "", rubricScores: "", gradedBy: "", gradedAt: "" }, $push: { history: entry } });
+      if (written.modifiedCount !== 1) return res.status(409).json({ error: "Bài hoặc nhận xét đã thay đổi trong lúc gửi. Hãy tải lại trước khi sửa.", code: "EDUCATION_SUBMISSION_CONFLICT" });
+      submissionId = existing._id;
+    } else {
+      const document = { ...scope, ...changes, history: [], createdAt: now };
+      try { submissionId = (await collection.insertOne(document)).insertedId; } catch (error) { if (error?.code === 11000) return res.status(409).json({ error: "Bài đã được gửi ở một phiên khác. Hãy tải lại.", code: "EDUCATION_SUBMISSION_CONFLICT" }); throw error; }
+    }
+    await audit(db, user, "education:submission:submit", { assignmentId: String(assignmentId), learnerProfileId, status, answerRevision });
+    return res.status(200).json({ ok: true, status, answerRevision, submissionId: String(submissionId) });
   }
   if (req.method === "PATCH") {
     if (!["teacher", "school-admin", "platform-admin"].includes(role)) return res.status(403).json({ error: "Chỉ giáo viên được chấm bài." });
     const submission = await collection.findOne({ _id: objectId(body.submissionId, "Bài nộp không hợp lệ.") }); if (!submission) return res.status(404).json({ error: "Không tìm thấy bài nộp." });
     const assignment = await db.collection("education_assignments").findOne({ _id: submission.assignmentId }); const classDoc = assignment && await teacherClass(db, user, assignment.classId, role); if (!classDoc) return res.status(403).json({ error: "Bạn không được chấm bài này." });
-    const numericScore = Number(body.score); if (!Number.isFinite(numericScore) || numericScore < 0 || numericScore > 100) return res.status(400).json({ error: "Điểm phải là số từ 0 đến 100." });
+    const currentRevision = submissionRevision(submission.answerRevision), inputRevision = submittedRevisionInput(body.answerRevision), expectedRevision = inputRevision === null && currentRevision === 0 && body.answerRevision === undefined ? 0 : inputRevision;
+    if (currentRevision === null || submissionRevision(submission.gradingRevision) === null || submission.schemaVersion !== undefined && (!Number.isInteger(submission.schemaVersion) || submission.schemaVersion > 3) || submission.history !== undefined && !Array.isArray(submission.history)) return res.status(422).json({ error: "Phiên bản bài nộp chưa tương thích; dữ liệu gốc được giữ." });
+    if (expectedRevision !== currentRevision) return res.status(409).json({ error: "Bản trả lời đã thay đổi. Hãy tải lại và nhận xét đúng phiên bản mới.", code: "EDUCATION_SUBMISSION_CONFLICT", answerRevision: currentRevision });
+    const numericScore = typeof body.score === "boolean" || body.score === null || String(body.score ?? "").trim() === "" ? NaN : Number(body.score); if (!Number.isFinite(numericScore) || numericScore < 0 || numericScore > 100) return res.status(400).json({ error: "Điểm phải là số từ 0 đến 100." });
     if (body.rubricScores !== undefined && !Array.isArray(body.rubricScores)) return res.status(400).json({ error: "Điểm rubric không hợp lệ." });
-    const score = Math.round(numericScore * 100) / 100; const feedback = clean(body.feedback, 3000); const rubricScores = (body.rubricScores || []).slice(0, 20).map((item) => ({ criterion: clean(item?.criterion, 120), score: Math.max(0, Math.min(100, Number.isFinite(Number(item?.score)) ? Number(item.score) : 0)), note: clean(item?.note, 500) })); const status = body.requireRedo ? "redo-required" : "returned"; const now = new Date();
-    await collection.updateOne({ _id: submission._id }, { $set: { score, feedback, rubricScores, status, gradedBy: user._id, gradedAt: now, updatedAt: now } }); await audit(db, user, "education:submission:grade", { submissionId: String(submission._id), score, status }); return res.status(200).json({ ok: true, status, score });
+    const score = Math.round(numericScore * 100) / 100, feedback = cleanSchoolMultiline(body.feedback, 3000), rubricScores = (body.rubricScores || []).slice(0, 20).map(item => ({ criterion: clean(item?.criterion, 120), score: Math.max(0, Math.min(100, Number.isFinite(Number(item?.score)) ? Number(item.score) : 0)), note: cleanSchoolMultiline(item?.note, 500) })), status = body.requireRedo ? "redo-required" : "returned", now = new Date();
+    const gradingRevision = (submissionRevision(submission.gradingRevision) || 0) + 1, entry = submission.gradedAt ? submissionHistoryEntry(submission, "prior-feedback", now) : null;
+    if (!submissionSizeAllowed({ ...submission, score, feedback, rubricScores, status, gradingRevision }, entry)) return res.status(413).json({ error: "Lịch sử nhận xét đã đạt dung lượng hỗ trợ; dữ liệu cũ được giữ." });
+    const written = await collection.updateOne(submissionVersionFilter(submission), { $set: { score, feedback, rubricScores, status, gradingRevision, gradedBy: user._id, gradedAt: now, updatedAt: now }, ...(entry ? { $push: { history: entry } } : {}) });
+    if (written.modifiedCount !== 1) return res.status(409).json({ error: "Bài hoặc nhận xét đã thay đổi trong lúc chấm. Hãy tải lại.", code: "EDUCATION_SUBMISSION_CONFLICT" });
+    await audit(db, user, "education:submission:grade", { submissionId: String(submission._id), score, status, answerRevision: currentRevision, gradingRevision });
+    return res.status(200).json({ ok: true, status, score, answerRevision: currentRevision, gradingRevision });
   }
   return res.status(405).json({ error: "Method not allowed" });
 }
@@ -310,7 +349,7 @@ async function admin(req, res, db, user, body) {
   const collection = db.collection("education_reviews");
   if (req.method === "GET") {
     const view = clean(req.query.view, 40);
-    if (view === "content") return res.status(200).json({ items: await db.collection("education_content_versions").find({ status: { $ne: "deleted" } }).sort({ updatedAt: -1 }).limit(300).toArray() });
+    if (view === "content") return res.status(200).json({ items: await db.collection("education_content_versions").find({ status: { $ne: "deleted" } }).sort({ updatedAt: -1, version: -1 }).limit(300).toArray() });
     if (view === "duplicates") {
       const items = await db.collection("education_content_versions").aggregate([{ $match: { status: { $ne: "deleted" } } }, { $group: { _id: "$checksum", count: { $sum: 1 }, contentIds: { $addToSet: "$contentId" } } }, { $match: { count: { $gt: 1 } } }, { $limit: 100 }]).toArray();
       return res.status(200).json({ items });
@@ -320,9 +359,10 @@ async function admin(req, res, db, user, body) {
   if (req.method === "PATCH") {
     if (clean(body.action, 30) === "update-draft") {
       const contentId = id(body.contentId); const latest = await db.collection("education_content_versions").findOne({ contentId }, { sort: { version: -1 } }); if (!latest) return res.status(404).json({ error: "Không tìm thấy nội dung nháp." });
+      const baseVersion = Number(body.baseVersion ?? latest.version); if (!Number.isSafeInteger(baseVersion) || baseVersion < 1) return res.status(400).json({ error: "Phiên bản gốc không hợp lệ." }); if (baseVersion !== Number(latest.version)) return res.status(409).json({ error: "Bản nháp đã có phiên bản mới; tải lại trước khi lưu.", code: "CONTENT_VERSION_CONFLICT" });
       const payload = body.payload && typeof body.payload === "object" ? body.payload : {}; const serialized = JSON.stringify(payload); if (Buffer.byteLength(serialized, "utf8") > 120000) return res.status(413).json({ error: "Nội dung nháp vượt giới hạn 120 KB." });
       const now = new Date(); const version = Number(latest.version || 0) + 1; const doc = { ...latest, _id: undefined, version, title: clean(body.title || latest.title, 160), payload, checksum: tokenHash(serialized), status: "draft", contentStatus: "machine_generated", updatedBy: user._id, updatedAt: now, createdAt: now };
-      const result = await db.collection("education_content_versions").insertOne(doc); await audit(db, user, "education:content:update-draft", { contentId, version }); return res.status(200).json({ ok: true, item: { ...doc, id: String(result.insertedId) } });
+      let result; try { result = await db.collection("education_content_versions").insertOne(doc); } catch (error) { if (error.code === 11000) return res.status(409).json({ error: "Bản nháp vừa được cập nhật bởi phiên khác; hãy tải lại.", code: "CONTENT_VERSION_CONFLICT" }); throw error; } await audit(db, user, "education:content:update-draft", { contentId, version }); return res.status(200).json({ ok: true, item: { ...doc, id: String(result.insertedId) } });
     }
     if (role !== "platform-admin") return res.status(403).json({ error: "Reviewer chỉ được đề xuất, không được xuất bản." });
     const reviewId = objectId(body.reviewId, "Phiếu duyệt không hợp lệ."); const action = clean(body.action, 30); const allowed = new Set(["reviewed", "approved", "unpublished", "rolled-back"]); if (!allowed.has(action)) return res.status(400).json({ error: "Trạng thái xuất bản không hợp lệ." });
@@ -356,5 +396,5 @@ async function handler(req, res) {
     return res.status(404).json({ error: "HH School API resource không tồn tại." });
   });
 }
-handler.__test = { roleOf, tokenHash, sanitizeState, canAccessLearner, progress };
+handler.__test = { roleOf, tokenHash, sanitizeState, canAccessLearner, progress, submissions, assignments, classes, admin };
 module.exports = handler;

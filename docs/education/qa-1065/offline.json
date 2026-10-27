@@ -1,0 +1,110 @@
+{
+  "at": "2026-10-27T08:41:58.997Z",
+  "results": [
+    {
+      "offline": "Real production Service Worker serves previously visited lesson after native offline reload; note and queued progress survive IndexedDB reload",
+      "status": "New work invalidates old cloud acknowledgement"
+    },
+    {
+      "online": "Production background sync handler uploads only the authenticated learner, returns a confirmed revision, removes queue; UI manual acknowledgement keeps no stale retry",
+      "trigger": "Native Background Sync registration plus CDP dispatch to make OS event scheduling deterministic"
+    },
+    {
+      "hydration": "Fetching an older cloud revision does not erase a local note or falsely label the merged work as synced"
+    }
+  ],
+  "errors": [],
+  "apiCalls": [
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    }
+  ],
+  "environment": "Real Chromium Service Worker, CacheStorage and IndexedDB; unchanged production progress handler; explicit QA identity and in-memory MongoDB transport"
+}

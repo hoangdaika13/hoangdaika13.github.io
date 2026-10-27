@@ -18,7 +18,7 @@
   let searchSequence = 0;
 
   function searchRecords() {
-    return root.HHSchoolCurriculum.GRADES.flatMap((grade) => root.HHSchoolCurriculum.packForGrade(grade.number).lessons.map((lesson) => ({
+    return root.HHSchoolCurriculum.GRADES.flatMap((grade) => root.HHSchoolCurriculum.packForGrade(grade.number).lessons.filter(lesson => root.HHSchoolCurriculum.canPublish(lesson)).map((lesson) => ({
       lessonId: lesson.lessonId, gradeId: lesson.gradeId, subjectId: lesson.subjectId,
       subjectName: root.HHSchoolCurriculum.subjectBy(lesson.subjectId)?.name || lesson.subjectId,
       title: lesson.title, outcome: lesson.outcome
@@ -39,7 +39,7 @@
   }
 
   function assertDependencies() {
-    if (!root.HHSchoolCurriculum || !root.HHSchoolCore) throw new Error("HH School curriculum/core chưa được tải.");
+    if (!root.HHSchoolCurriculum || !root.HHSchoolCore || !root.HHSchoolWorkspace || !root.HHSchoolContent || !root.HHSchoolAssessments) throw new Error("HH School curriculum/core chưa được tải.");
   }
 
   function resolveView(view) {
@@ -194,7 +194,7 @@
 
   function teacherView(state) {
     if (!root.HHSchoolCore.can(state.role, "create-class") && !root.HHSchoolCore.can(state.role, "platform-admin")) return forbidden("Teacher Mode", "Tài khoản này chưa được phân công vai trò giáo viên.");
-    return `<section class="hhs-view"><header class="hhs-view-head"><div><small>TEACHER MODE V2</small><h1>Lớp học và bài giao</h1><p>Dữ liệu lớp chỉ mở cho giáo viên được phân công; mã mời có hạn và chỉ hiện một lần ngay sau khi tạo hoặc đổi mã.</p></div><button type="button" data-teacher-create-class>Tạo lớp</button></header><div class="hhs-teacher-grid"><section><h2>Lớp của tôi</h2>${state.classes.map((item) => `<article><strong>${escape(item.name)}</strong><span>${item.studentCount || 0} học sinh</span><small>${item.inviteActive ? "Mã mời đang hoạt động" : "Mã mời đã tắt"}</small><div><button type="button" data-class-invite="${attr(item.id)}">Đổi mã mời</button><button type="button" data-class-disable="${attr(item.id)}">Tắt mã</button></div></article>`).join("") || `<div class="hhs-empty"><p>Chưa tạo lớp.</p></div>`}</section><form data-teacher-assignment><h2>Giao bài mới</h2><label>Tiêu đề<input name="title" required maxlength="120"></label><label>Lớp<select name="classId" required>${state.classes.map((item) => `<option value="${attr(item.id)}">${escape(item.name)}</option>`).join("")}</select></label><label>Hạn nộp<input type="datetime-local" name="dueAt" required></label><label><input type="checkbox" name="lockAnswers" checked> Ẩn phần giải thích đến hạn <small>Đây không phải khóa bảo mật cho bài luyện cục bộ.</small></label><button type="submit" ${state.classes.length ? "" : "disabled"}>Giao bài</button></form></div><section class="hhs-assignment-list"><h2>Bài đã giao</h2>${state.assignments.map((item) => `<article><strong>${escape(item.title)}</strong><span>${escape(item.status || "assigned")}</span><small>${item.dueAt ? new Date(item.dueAt).toLocaleString("vi-VN") : "Không có hạn"}</small></article>`).join("") || "<p>Chưa có bài giao.</p>"}</section></section>`;
+    return `<section class="hhs-view"><header class="hhs-view-head"><div><small>TEACHER MODE V2</small><h1>Lớp học và bài giao</h1><p>Dữ liệu lớp chỉ mở cho giáo viên được phân công; mã mời có hạn và chỉ hiện một lần ngay sau khi tạo hoặc đổi mã.</p></div><button type="button" data-teacher-create-class>Tạo lớp</button></header><div class="hhs-teacher-grid"><section><h2>Lớp của tôi</h2>${state.classes.map((item) => `<article><strong>${escape(item.name)}</strong><span>${item.studentCount || 0} học sinh</span><small>${item.inviteActive ? "Mã mời đang hoạt động" : "Mã mời đã tắt"}</small><div><button type="button" data-class-invite="${attr(item.id)}">Đổi mã mời</button><button type="button" data-class-disable="${attr(item.id)}">Tắt mã</button><button type="button" data-hsw-class-submissions="${attr(item.id || item._id)}">Xem và nhận xét bài nộp</button></div></article>`).join("") || `<div class="hhs-empty"><p>Chưa tạo lớp.</p></div>`}</section><form data-teacher-assignment><h2>Giao bài mới</h2><label>Tiêu đề<input name="title" required maxlength="120"></label><label>Lớp<select name="classId" required>${state.classes.map((item) => `<option value="${attr(item.id)}">${escape(item.name)}</option>`).join("")}</select></label><label>Hạn nộp<input type="datetime-local" name="dueAt" required></label><label>Bài học liên quan · lớp ${state.profile.grade}<select name="lessonIds" multiple size="5">${root.HHSchoolCurriculum.packForGrade(state.profile.grade).lessons.map(lesson => `<option value="${attr(lesson.lessonId)}">${escape(lesson.title)}</option>`).join("")}</select></label><p>Bài luyện cục bộ có lời giải để tự học; không dùng làm đề thi giữ kín đáp án.</p><button type="submit" ${state.classes.length ? "" : "disabled"}>Giao bài</button></form></div><section class="hhs-assignment-list"><h2>Bài đã giao</h2>${state.assignments.map((item) => `<article><strong>${escape(item.title)}</strong><span>${escape(item.status || "assigned")}</span><small>${item.dueAt ? new Date(item.dueAt).toLocaleString("vi-VN") : "Không có hạn"}</small></article>`).join("") || "<p>Chưa có bài giao.</p>"}</section></section>`;
   }
 
   function familyView(state) {
@@ -217,7 +217,7 @@
     const scrollHost = instance.host.closest(".app-main"); const mainScroll = scrollHost?.scrollTop || 0; const workspaceScroll = host.scrollTop;
     const active = instance.host.ownerDocument.activeElement; const focusName = active && instance.host.contains(active) ? active.getAttribute("name") : "";
     const renderer = { today: todayView, paths: pathsView, subjects: subjectsView, practice: (s) => practiceView(s, false), assessments: (s) => practiceView(s, true), library: libraryView, progress: progressView, lesson: lessonView, teacher: teacherView, family: familyView, admin: adminView }[view] || todayView;
-    host.innerHTML = renderer(state);
+    host.innerHTML = instance.workspace?.render(view) ?? renderer(state);
     instance.host.querySelectorAll("[data-school-view]").forEach((button) => button.toggleAttribute("aria-current", button.dataset.schoolView === view));
     (root.requestAnimationFrame || ((callback) => setTimeout(callback, 0)))(() => {
       if (!mounted || mounted !== instance) return;
@@ -267,6 +267,9 @@
     const host = instance.host;
     instance.click = async (event) => {
       const button = event.target.closest("button"); if (!button) return;
+      const persistence = instance.store.getPersistence?.();
+      if (["loading", "protected"].includes(persistence?.status) && !button.dataset.schoolView && !button.hasAttribute("data-hsw-recovery")) return toast(instance, persistence.error || "Đang khôi phục dữ liệu; hãy chờ trước khi chỉnh sửa.", "warning");
+      try { if (await instance.workspace?.click(event, button)) return; } catch (error) { return toast(instance, error.message, "warning"); }
       if (button.dataset.schoolView) return routeTo(button.dataset.schoolView);
       if (button.hasAttribute("data-school-study-together")) { root.location.hash = "#/learn/study-together"; return; }
       if (button.dataset.schoolGrade) {
@@ -287,13 +290,13 @@
         const state = instance.store.get(); const lesson = resolveLesson(state, state.activeLessonId); if (!lesson) return toast(instance, "Bài học hiện chưa có dữ liệu khả dụng.", "warning"); const entry = state.progress[lesson.lessonId] || { step: 0, status: "learning" };
         const delta = button.hasAttribute("data-lesson-next") ? 1 : -1;
         if (delta > 0 && Number(entry.step || 0) >= lesson.steps.length - 1) {
-          instance.store.update((draft) => { const current = draft.progress[lesson.lessonId] || {}; draft.progress[lesson.lessonId] = { ...current, step: lesson.steps.length - 1, status: "completed", completedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }; return draft; }, "lesson:complete");
-          toast(instance, "Đã hoàn thành bài. Tiến độ đã được lưu và sẽ đồng bộ khi có mạng.", "success"); return routeTo("today");
+          instance.store.update((draft) => root.HHSchoolCore.recordLessonStep ? root.HHSchoolCore.recordLessonStep(draft, lesson.lessonId, { step: lesson.steps.length - 1, kind: "viewed", completed: true }) : { ...draft, progress: { ...draft.progress, [lesson.lessonId]: { ...draft.progress[lesson.lessonId], step: lesson.steps.length - 1, status: "viewed", updatedAt: new Date().toISOString() } } }, "lesson:viewed");
+          toast(instance, "Đã ghi nhận lượt đọc. Làm phần tự luyện để có bằng chứng kỹ năng.", "success"); return routeTo("today");
         }
-        instance.store.update((draft) => { const current = draft.progress[lesson.lessonId] || { step: 0, status: "learning", startedAt: new Date().toISOString() }; const nextStep = Math.max(0, Math.min(lesson.steps.length - 1, current.step + delta)); draft.progress[lesson.lessonId] = { ...current, step: nextStep, status: current.step === lesson.steps.length - 1 && delta > 0 ? "completed" : "learning", updatedAt: new Date().toISOString() }; return draft; }, "lesson:step");
+        instance.store.update((draft) => { const nextStep = Math.max(0, Math.min(lesson.steps.length - 1, (Number(draft.progress[lesson.lessonId]?.step) || 0) + delta)); return root.HHSchoolCore.recordLessonStep(draft, lesson.lessonId, { step: nextStep, kind: "viewed" }); }, "lesson:step");
         return renderView(instance);
       }
-      if (button.dataset.lessonStep) { instance.store.update((state) => { const lesson = resolveLesson(state, state.activeLessonId); if (!lesson) return state; const current = state.progress[lesson.lessonId] || { step: 0, status: "learning" }; const requested = Number(button.dataset.lessonStep); if (requested <= current.step + 1) current.step = requested; state.activeLessonId = lesson.lessonId; state.progress[lesson.lessonId] = current; return state; }, "lesson:step-jump"); return renderView(instance); }
+      if (button.dataset.lessonStep !== undefined) { instance.store.update((state) => { const lesson = resolveLesson(state, state.activeLessonId); if (!lesson) return state; const requested = Number(button.dataset.lessonStep); if (!Number.isInteger(requested) || requested < 0 || requested >= lesson.steps.length) return state; const next = root.HHSchoolCore.recordLessonStep(state, lesson.lessonId, { step: requested, kind: "viewed" }); next.activeLessonId = lesson.lessonId; return next; }, "lesson:step-jump"); return renderView(instance); }
       if (button.hasAttribute("data-reveal-answer")) { const answer = button.parentElement?.querySelector("[data-guided-answer]"); if (!answer) return toast(instance, "Nội dung hướng dẫn không còn ở bước hiện tại.", "warning"); answer.hidden = !answer.hidden; button.textContent = answer.hidden ? "Hiện đáp án có hướng dẫn" : "Ẩn đáp án"; return; }
       if (button.dataset.questionExplanation) { const state = instance.store.get(); const question = questionById(state, button.dataset.questionExplanation); const output = button.closest("[data-school-question]")?.querySelector("[data-question-result]"); if (question && output) { const detail = document.createElement("span"); detail.textContent = question.explanation || "Hãy xem lại từng bước trong bài học."; output.append(detail); button.remove(); } return; }
       if (button.dataset.tutorAction) return tutor(instance, button.dataset.tutorAction);
@@ -322,14 +325,16 @@
       if (button.dataset.familyOpen) {
         const target = instance.store.get().familyProfiles.find((profile) => (profile.accessKey || profile.id) === button.dataset.familyOpen);
         if (!target) return toast(instance, "Không tìm thấy hồ sơ đã liên kết.", "warning");
-        try { const own = target.accessScope !== "linked"; const accessKey = target.accessKey || target.id; const ownState = own ? target.id === instance.store.get().learnerProfileId ? instance.store.get() : root.HHSchoolCore.createStore({ currentUser: instance.options.currentUser, profile: target }).get() : null; const response = own ? { report: { attempts: ownState.attempts.length, mistakes: ownState.mistakes.length, due: ownState.reviews.filter((item) => new Date(item.dueAt) <= new Date()).length, completedLessons: Object.values(ownState.progress).filter((item) => item.status === "completed").length, skills: Object.keys(ownState.mastery).length }, updatedAt: ownState.updatedAt } : await instance.sync.load(target.id, "linked", target.linkId); const report = response.report || {}; instance.store.update((state) => { state.activeFamilyProfileId = accessKey; state.familyReports ||= {}; state.familyReports[accessKey] = { attempts: Number(report.attempts || 0), mistakes: Number(report.mistakes || 0), due: Number(report.due || 0), completedLessons: Number(report.completedLessons || 0), skills: Number(report.skills || 0), updatedAt: response.updatedAt || report.updatedAt || new Date().toISOString() }; return state; }, "family:profile-open"); renderView(instance); return toast(instance, `Đã tải báo cáo tổng hợp của ${target.name}.`, "success"); } catch (error) { return toast(instance, `Không thể xem hồ sơ chưa được liên kết: ${error.message}`, "warning"); }
+        try { const own = target.accessScope !== "linked"; const accessKey = target.accessKey || target.id; let ownState = null; if (own) { if (target.id === instance.store.get().learnerProfileId) ownState = instance.store.get(); else { const targetStore = root.HHSchoolCore.createStore({ currentUser: instance.options.currentUser, profile: target }); await targetStore.ready; ownState = targetStore.get(); } } const response = own ? { report: { attempts: ownState.attempts.length, mistakes: ownState.mistakes.length, due: ownState.reviews.filter((item) => new Date(item.dueAt) <= new Date()).length, completedLessons: Object.values(ownState.progress).filter((item) => item.status === "completed").length, skills: Object.keys(ownState.mastery).length }, updatedAt: ownState.updatedAt } : await instance.sync.load(target.id, "linked", target.linkId); const report = response.report || {}; instance.store.update((state) => { state.activeFamilyProfileId = accessKey; state.familyReports ||= {}; state.familyReports[accessKey] = { attempts: Number(report.attempts || 0), mistakes: Number(report.mistakes || 0), due: Number(report.due || 0), completedLessons: Number(report.completedLessons || 0), skills: Number(report.skills || 0), updatedAt: response.updatedAt || report.updatedAt || new Date().toISOString() }; return state; }, "family:profile-open"); renderView(instance); return toast(instance, `Đã tải báo cáo tổng hợp của ${target.name}.`, "success"); } catch (error) { return toast(instance, `Không thể xem hồ sơ chưa được liên kết: ${error.message}`, "warning"); }
       }
-      if (button.dataset.familyInvite) { const state = instance.store.get(); const target = state.familyProfiles.find((profile) => (profile.accessKey || profile.id) === button.dataset.familyInvite); if (!target || target.accessScope === "linked") return toast(instance, "Không thể tạo lời mời cho hồ sơ không thuộc tài khoản.", "warning"); try { let targetState = target.id === state.learnerProfileId ? state : root.HHSchoolCore.createStore({ currentUser: instance.options.currentUser, profile: target }).get(); const remote = await instance.sync.load(target.id); if (remote.state) targetState = root.HHSchoolCore.mergeStates(targetState, remote.state, { currentUser: instance.options.currentUser, profile: target }); await instance.sync.save(target.id, targetState, Number(remote.revision || 0)); const response = await instance.sync.family({ action: "create-invite", learnerProfileId: target.id, learnerName: target.name }); return toast(instance, `Lời mời: ${response.token} · hết hạn ${new Date(response.expiresAt).toLocaleString("vi-VN")}`, "success"); } catch (error) { return toast(instance, error.message, "warning"); } }
+      if (button.dataset.familyInvite) { const state = instance.store.get(); const target = state.familyProfiles.find((profile) => (profile.accessKey || profile.id) === button.dataset.familyInvite); if (!target || target.accessScope === "linked") return toast(instance, "Không thể tạo lời mời cho hồ sơ không thuộc tài khoản.", "warning"); try { let targetState = state; if (target.id !== state.learnerProfileId) { const targetStore = root.HHSchoolCore.createStore({ currentUser: instance.options.currentUser, profile: target }); await targetStore.ready; targetState = targetStore.get(); } const remote = await instance.sync.load(target.id); if (remote.state) targetState = root.HHSchoolCore.mergeStates(targetState, remote.state, { currentUser: instance.options.currentUser, profile: target }); await instance.sync.save(target.id, targetState, Number(remote.revision || 0)); const response = await instance.sync.family({ action: "create-invite", learnerProfileId: target.id, learnerName: target.name }); return toast(instance, `Lời mời: ${response.token} · hết hạn ${new Date(response.expiresAt).toLocaleString("vi-VN")}`, "success"); } catch (error) { return toast(instance, error.message, "warning"); } }
       if (button.hasAttribute("data-code-stop")) { instance.codeWorker?.terminate?.(); instance.codeWorker = null; const output = instance.host.querySelector("[data-code-output]"); if (output) output.textContent = "Đã dừng sandbox."; return; }
       if (button.dataset.adminReview) { instance.store.update((state) => { state.reviewQueue.push({ id: `review-${Date.now()}`, lessonId: button.dataset.adminReview, status: "proposed", createdAt: new Date().toISOString() }); return state; }, "content:review-proposed"); renderView(instance); return toast(instance, "Đã đưa bài vào hàng đề xuất chỉnh sửa.", "success"); }
       if (button.hasAttribute("data-admin-new-draft")) { try { const response = await instance.sync.createDraft({ kind: "lesson", title: "Bản nháp bài học mới", payload: { steps: [], questions: [] }, licenseCode: "HH-ORIGINAL" }); instance.store.update((state) => { state.contentDrafts.push({ ...response.item, id: response.item.id || response.item.contentId }); return state; }, "content:draft-create"); renderView(instance); return toast(instance, "Đã tạo bản nháp trên máy chủ; trạng thái machine_generated, chưa xuất bản.", "success"); } catch (error) { return toast(instance, `Không thể tạo bản nháp: ${error.message}`, "warning"); } }
     };
     instance.change = (event) => {
+      const persistence = instance.store.getPersistence?.(); if (["loading", "protected"].includes(persistence?.status)) return toast(instance, persistence.error || "Đang khôi phục dữ liệu.", "warning");
+      try { if (instance.workspace?.change(event)) return; } catch (error) { return toast(instance, error.message, "warning"); }
       if (event.target.matches("[data-school-elective]")) {
         instance.store.update((state) => { const selected = new Set(state.profile.electiveSubjectIds || []); event.target.checked ? selected.add(event.target.value) : selected.delete(event.target.value); if (selected.size <= 4) state.profile.electiveSubjectIds = [...selected]; return state; }, "profile:electives"); renderView(instance);
       }
@@ -337,10 +342,12 @@
       if (event.target.matches("[data-family-pressure]")) instance.store.update((state) => { state.preferences.pressureNotifications = !event.target.checked; return state; }, "family:pressure-notifications");
     };
     instance.submit = async (event) => {
+      const persistence = instance.store.getPersistence?.(); if (["loading", "protected"].includes(persistence?.status)) { event.preventDefault(); return toast(instance, persistence.error || "Đang khôi phục dữ liệu.", "warning"); }
+      try { const handled = instance.workspace?.submit(event); if (event.defaultPrevented) { await handled; return; } } catch (error) { event.preventDefault(); return toast(instance, error.message, "warning"); }
       const questionForm = event.target.closest("[data-school-question]");
       if (questionForm) { event.preventDefault(); return submitQuestion(instance, questionForm); }
       const assignment = event.target.closest("[data-teacher-assignment]");
-       if (assignment) { event.preventDefault(); if (assignment.dataset.submitting === "true") return; assignment.dataset.submitting = "true"; if (!root.HHSchoolCore.can(instance.store.get().role, "assign") && !root.HHSchoolCore.can(instance.store.get().role, "platform-admin")) { assignment.dataset.submitting = "false"; return toast(instance, "Tài khoản không có quyền giao bài.", "warning"); } const form = new FormData(assignment); const title = root.HHSchoolCore.clean(form.get("title"), 120); const classId = root.HHSchoolCore.safeId(form.get("classId")); const dueDate = new Date(form.get("dueAt")); if (!title || !classId || !Number.isFinite(dueDate.getTime())) { assignment.dataset.submitting = "false"; return toast(instance, "Hãy nhập tiêu đề, lớp và hạn nộp hợp lệ.", "warning"); } const item = { id: `assignment-${Date.now()}`, title, classId, dueAt: dueDate.toISOString(), lockAnswers: form.get("lockAnswers") === "on", status: "assigned", createdAt: new Date().toISOString(), syncStatus: "syncing" }; instance.store.update((state) => { state.assignments.push(item); return state; }, "assignment:create"); try { const response = await instance.sync.createAssignment(item); instance.store.update((state) => { const saved = state.assignments.find((entry) => entry.id === item.id); if (saved) Object.assign(saved, response.item || {}, { syncStatus: "synced" }); return state; }, "assignment:sync-success"); assignment.dataset.submitting = "false"; renderView(instance); return toast(instance, "Đã giao bài trên máy chủ.", "success"); } catch (error) { instance.store.update((state) => { const saved = state.assignments.find((entry) => entry.id === item.id); if (saved) Object.assign(saved, { syncStatus: "local-only", syncError: error.message }); return state; }, "assignment:sync-failed"); assignment.dataset.submitting = "false"; renderView(instance); return toast(instance, `Bài mới chỉ lưu trên thiết bị: ${error.message}`, "warning"); } }
+       if (assignment) { event.preventDefault(); if (assignment.dataset.submitting === "true") return; assignment.dataset.submitting = "true"; if (!root.HHSchoolCore.can(instance.store.get().role, "assign") && !root.HHSchoolCore.can(instance.store.get().role, "platform-admin")) { assignment.dataset.submitting = "false"; return toast(instance, "Tài khoản không có quyền giao bài.", "warning"); } const form = new FormData(assignment); const title = root.HHSchoolCore.clean(form.get("title"), 120); const classId = root.HHSchoolCore.safeId(form.get("classId")); const dueDate = new Date(form.get("dueAt")); if (!title || !classId || !Number.isFinite(dueDate.getTime())) { assignment.dataset.submitting = "false"; return toast(instance, "Hãy nhập tiêu đề, lớp và hạn nộp hợp lệ.", "warning"); } const item = { id: `assignment-${Date.now()}`, title, classId, dueAt: dueDate.toISOString(), lockAnswers: false, lessonIds: form.getAll("lessonIds"), status: "assigned", createdAt: new Date().toISOString(), syncStatus: "syncing" }; instance.store.update((state) => { state.assignments.push(item); return state; }, "assignment:create"); try { const response = await instance.sync.createAssignment(item); instance.store.update((state) => { const saved = state.assignments.find((entry) => entry.id === item.id); if (saved) Object.assign(saved, response.item || {}, { syncStatus: "synced" }); return state; }, "assignment:sync-success"); assignment.dataset.submitting = "false"; renderView(instance); return toast(instance, "Đã giao bài trên máy chủ.", "success"); } catch (error) { instance.store.update((state) => { const saved = state.assignments.find((entry) => entry.id === item.id); if (saved) Object.assign(saved, { syncStatus: "local-only", syncError: error.message }); return state; }, "assignment:sync-failed"); assignment.dataset.submitting = "false"; renderView(instance); return toast(instance, `Bài mới chỉ lưu trên thiết bị: ${error.message}`, "warning"); } }
       const familyAccept = event.target.closest("[data-family-accept]");
       if (familyAccept) { event.preventDefault(); const token = new FormData(familyAccept).get("token"); try { const response = await instance.sync.family({ action: "accept-invite", token }); toast(instance, `Đã liên kết hồ sơ ${response.learnerProfileId}.`, "success"); familyAccept.reset(); await hydrate(instance); } catch (error) { toast(instance, error.message, "warning"); } }
       const classJoin = event.target.closest("[data-class-join]");
@@ -353,10 +360,18 @@
     };
     instance.keydown = (event) => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); host.querySelector("[data-school-search]")?.focus(); } if (event.key === "Escape") host.querySelector("[data-school-dialog]")?.close(); };
     instance.input = (event) => {
+      if (event.isComposing) return;
+      if (["loading", "protected"].includes(instance.store.getPersistence?.().status)) return;
+      try { if (instance.workspace?.input(event)) return; } catch (error) { return toast(instance, error.message, "warning"); }
       if (event.target.matches("[data-subject-filter]")) { const term = root.HHSchoolCurriculum.normalizeText(event.target.value); host.querySelectorAll("[data-school-subject]").forEach((item) => item.hidden = !root.HHSchoolCurriculum.normalizeText(item.textContent).includes(term)); }
       if (event.target.matches("[data-school-search]")) showSearch(instance, event.target.value);
     };
-    host.addEventListener("click", instance.click); host.addEventListener("change", instance.change); host.addEventListener("submit", instance.submit); host.addEventListener("input", instance.input); document.addEventListener("keydown", instance.keydown);
+    instance.compositionEnd = (event) => {
+      (root.requestAnimationFrame || ((callback) => setTimeout(callback, 0)))(() => {
+        if (mounted === instance && event.target.isConnected) instance.input({ target: event.target, isComposing: false });
+      });
+    };
+    host.addEventListener("click", instance.click); host.addEventListener("change", instance.change); host.addEventListener("submit", instance.submit); host.addEventListener("input", instance.input); host.addEventListener("compositionend", instance.compositionEnd); document.addEventListener("keydown", instance.keydown);
   }
 
   async function submitQuestion(instance, form) {
@@ -413,12 +428,25 @@
   }
 
   async function syncNow(instance) {
+    await instance.store.ready; await instance.store.whenSaved?.();
+    if (mounted !== instance) return;
+    const persistence = instance.store.getPersistence?.();
+    if (["protected", "loading"].includes(persistence?.status)) return toast(instance, persistence.error || "Chưa đọc xong dữ liệu.", "warning");
     const state = instance.store.get();
-    if (!instance.options.currentUser?.id) return toast(instance, "Tiến độ đã lưu trên thiết bị. Hãy đăng nhập để đồng bộ đa thiết bị.", "info");
-    try { const response = await instance.sync.save(state.learnerProfileId, state, Number(state.serverRevision || 0)); instance.store.update((next) => { next.syncStatus = "synced"; next.serverRevision = response.revision; next.syncConflict = null; next.lastSyncedAt = response.updatedAt || new Date().toISOString(); return next; }, "sync:success"); toast(instance, "Tiến độ đã đồng bộ theo tài khoản và hồ sơ học sinh.", "success"); }
-    catch (error) {
-      if (error.status === 409) { instance.store.update((next) => { next.syncStatus = "conflict"; next.syncConflict = error.data?.conflict || null; return next; }, "sync:conflict"); return syncConflictDialog(instance, error.data?.conflict); }
-      instance.store.update((next) => { next.syncStatus = "local-only"; return next; }, "sync:failed"); await root.HHSchoolOffline?.enqueue?.(state.ownerId, state.learnerProfileId, { url: "/api/education/progress", method: "PUT", body: { learnerProfileId: state.learnerProfileId, state, baseRevision: Number(state.serverRevision || 0) } }).catch(() => {}); toast(instance, `Đang lưu offline: ${error.message}`, "warning");
+    if (!instance.options.currentUser?.id) return toast(instance, persistence?.status === "saved-device" ? "Tiến độ đã lưu trên thiết bị. Đăng nhập để dùng đồng bộ máy chủ." : "Chưa xác nhận lưu trên thiết bị; hãy xuất backup và kiểm tra trạng thái lưu.", "info");
+    try {
+      const response = await instance.sync.save(state.learnerProfileId, state, Number(state.serverRevision || 0));
+      if (mounted !== instance) return;
+      const edited = instance.store.get().revision !== state.revision;
+      instance.store.update(next => { next.syncStatus = edited ? "local-only" : "synced"; next.serverRevision = response.revision; next.syncConflict = null; next.lastSyncedAt = response.updatedAt || new Date().toISOString(); return next; }, "sync:success");
+      await root.HHSchoolOffline?.clearAcknowledged?.(state).catch(() => {});
+      toast(instance, edited ? "Máy chủ đã nhận bản trước; có thay đổi mới trên thiết bị cần đồng bộ tiếp." : "Tiến độ đã đồng bộ theo tài khoản và hồ sơ học sinh.", "success");
+    } catch (error) {
+      if (mounted !== instance) return;
+      if (error.status === 409) { instance.store.update(next => { next.syncStatus = "conflict"; next.syncConflict = error.data?.conflict || null; return next; }, "sync:conflict"); return syncConflictDialog(instance, error.data?.conflict); }
+      instance.store.update(next => { next.syncStatus = "local-only"; return next; }, "sync:failed");
+      if (![400, 403, 413, 422].includes(error.status)) await root.HHSchoolOffline?.enqueue?.(state.ownerId, state.learnerProfileId, { url: "/api/education/progress", method: "PUT", body: { learnerProfileId: state.learnerProfileId, state, baseRevision: Number(state.serverRevision || 0) } }).catch(() => {});
+      toast(instance, "Chưa đồng bộ máy chủ: " + error.message, "warning");
     }
   }
 
@@ -462,23 +490,26 @@
   }
 
   async function hydrate(instance) {
+    await instance.store.ready;
+    if (mounted !== instance) return;
     let initial = instance.store.get();
-    const offline = await root.HHSchoolOffline?.loadProfile?.(initial.ownerId, initial.learnerProfileId).catch(() => null);
-    if (offline?.state && mounted === instance && new Date(offline.updatedAt || offline.state.updatedAt || 0) > new Date(initial.updatedAt || 0)) {
-      instance.store.replace(root.HHSchoolCore.mergeStates(initial, offline.state, { currentUser: instance.options.currentUser })); renderView(instance); initial = instance.store.get();
-    }
+    renderView(instance);
+    if (instance.store.getPersistence?.().status === "protected") return;
     if (!instance.options.currentUser?.id) return;
-    const tasks = [instance.sync.load(initial.learnerProfileId), instance.sync.assignments(initial.learnerProfileId)];
+    const tasks = [instance.sync.load(initial.learnerProfileId), instance.sync.assignments(initial.learnerProfileId), instance.sync.submissions("learnerProfileId=" + encodeURIComponent(initial.learnerProfileId))];
     if (["teacher", "school-admin", "platform-admin"].includes(initial.role)) tasks.push(instance.sync.classes());
     if (["parent", "platform-admin"].includes(initial.role)) tasks.push(instance.sync.request("/family"));
     const results = await Promise.allSettled(tasks);
+    if (mounted !== instance || instance.store.getPersistence?.().status === "protected") return;
     const progress = results[0]?.status === "fulfilled" ? results[0].value : null;
     const assignmentData = results[1]?.status === "fulfilled" ? results[1].value : null;
     const classData = results.find((entry) => entry.status === "fulfilled" && Array.isArray(entry.value?.items) && entry.value.items.some((item) => Object.hasOwn(item, "studentCount")))?.value;
     const familyData = results.at(-1)?.status === "fulfilled" && ["parent", "platform-admin"].includes(initial.role) ? results.at(-1).value : null;
     instance.store.update((state) => {
       if (progress?.state) { const merged = root.HHSchoolCore.mergeStates(state, progress.state, { currentUser: instance.options.currentUser }); Object.assign(state, merged); state.serverRevision = progress.revision || 0; state.syncStatus = "synced"; }
-      if (assignmentData?.items) state.assignments = assignmentData.items;
+      if (assignmentData?.items) state.assignments = assignmentData.items.map(item => ({ ...item, id: String(item.id || item._id) }));
+      const submitted = results[2]?.status === "fulfilled" ? results[2].value?.items : null;
+      if (submitted) { const ids = new Set(submitted.map(item => String(item.assignmentId))); state.submissions = state.submissions.filter(item => !ids.has(String(item.assignmentId))).concat(submitted.map(item => { const remote = { ...item, id: String(item.id || item._id), assignmentId: String(item.assignmentId) }; const local = state.submissions.find(row => String(row.assignmentId) === remote.assignmentId && row.status === "draft-device"); return local ? { ...remote, ...local, serverRecord: remote, remoteRevision: remote.answerRevision || 0 } : remote; })); }
       if (classData?.items) state.classes = classData.items;
       if (familyData?.items) {
         state.familyLinks = familyData.items;
@@ -488,6 +519,7 @@
           state.familyProfiles = [...own, ...linked].slice(0, 12);
         }
       }
+      if (progress?.state) state.syncStatus = root.HHSchoolCore.sameLearningContent(state, progress.state) ? "synced" : "local-only";
       return state;
     }, "backend:hydrate");
     renderView(instance);
@@ -498,14 +530,16 @@
     const currentUser = options.currentUser || null; const store = options.store || root.HHSchoolCore.createStore({ currentUser }); const view = normalizeView(options.view);
     const wrapper = document.createElement("div"); wrapper.innerHTML = shellMarkup(store.get(), view); host.replaceChildren(wrapper.firstElementChild);
     const instance = { rootHost: host, host: host.firstElementChild, options, view, store, sync: new root.HHSchoolSync({ apiBase: options.apiBase || "/api/education" }), searchRecords: searchRecords(), searchWorker: null, searchRequestId: "" };
-    mounted = instance; bind(instance); renderView(instance); hydrate(instance).catch((error) => toast(instance, `Đang dùng dữ liệu offline: ${error.message}`, "warning"));
-    const persistOffline = (state) => root.HHSchoolOffline?.saveProfile?.(state.ownerId, state.learnerProfileId, state).catch(() => {});
-    persistOffline(store.get());
-    root.HHSchoolOffline?.savePack?.(root.HHSchoolCurriculum.packForGrade(store.get().profile.grade)).catch(() => {});
-    instance.unsubscribe = store.subscribe((state) => persistOffline(state));
+    mounted = instance;
+    instance.workspace = root.HHSchoolWorkspace?.create(instance, { render: () => renderView(instance), toast: message => toast(instance, message), download, dialog: html => dialog(instance, html) });
+    bind(instance); renderView(instance); hydrate(instance).catch((error) => { if (mounted === instance) toast(instance, `Đang dùng dữ liệu offline: ${error.message}`, "warning"); });
+    let priorPersistenceStatus=store.getPersistence?.().status;
+    instance.unsubscribePersistence = store.subscribePersistence?.((value) => { const wasLoading=priorPersistenceStatus==="loading"; priorPersistenceStatus=value.status; if(wasLoading&&value.status!=="loading"&&mounted===instance)renderView(instance); const button = instance.host.querySelector("[data-school-sync]"); if (button) { button.title = value.error || (value.pending ? "Đang lưu trên thiết bị" : "Đã lưu trên thiết bị; trạng thái máy chủ được hiển thị trên nút"); const status=store.get().syncStatus; button.textContent=status==="synced"?"Đã đồng bộ":status==="conflict"?"Xung đột":options.currentUser?.id?"Chờ đồng bộ":"Đồng bộ"; } });
     instance.serviceWorkerMessage = (event) => {
-      if (event.data?.type !== "HH_SCHOOL_SYNC_RESULT" || mounted !== instance) return;
-      const conflictResult = event.data.results?.find?.((item) => item.conflict);
+      if (event.data?.type !== "HH_SCHOOL_SYNC_RESULT" || mounted !== instance || event.data.ownerId !== instance.store.get().ownerId) return;
+      const acknowledged = event.data.results?.filter?.(item => item.ok && item.learnerProfileId === instance.store.get().learnerProfileId && Number.isSafeInteger(item.serverRevision)).sort((a,b) => b.serverRevision-a.serverRevision)[0];
+      if (acknowledged && acknowledged.serverRevision > Number(instance.store.get().serverRevision || 0)) instance.store.update(state => { state.serverRevision=acknowledged.serverRevision; state.syncStatus=state.revision===acknowledged.localRevision?"synced":"local-only"; state.lastSyncedAt=acknowledged.updatedAt || new Date().toISOString(); return state; }, "sync:background-success");
+      const conflictResult = event.data.results?.find?.((item) => item.conflict && item.learnerProfileId === instance.store.get().learnerProfileId);
       if (!conflictResult) return;
       const conflict = conflictResult.conflictData || null;
       instance.store.update((state) => { state.syncStatus = "conflict"; state.syncConflict = conflict; return state; }, "sync:background-conflict");
@@ -516,7 +550,7 @@
   }
 
   function unmount() {
-    if (!mounted) return; mounted.unsubscribe?.(); mounted.searchWorker?.terminate?.(); mounted.codeWorker?.terminate?.(); root.navigator?.serviceWorker?.removeEventListener?.("message", mounted.serviceWorkerMessage); mounted.host?.removeEventListener("click", mounted.click); mounted.host?.removeEventListener("change", mounted.change); mounted.host?.removeEventListener("submit", mounted.submit); mounted.host?.removeEventListener("input", mounted.input); document.removeEventListener("keydown", mounted.keydown); mounted.rootHost?.replaceChildren(); mounted = null;
+    if (!mounted) return; mounted.workspace?.destroy(); mounted.unsubscribePersistence?.(); mounted.unsubscribe?.(); mounted.searchWorker?.terminate?.(); mounted.codeWorker?.terminate?.(); root.navigator?.serviceWorker?.removeEventListener?.("message", mounted.serviceWorkerMessage); mounted.host?.removeEventListener("click", mounted.click); mounted.host?.removeEventListener("change", mounted.change); mounted.host?.removeEventListener("submit", mounted.submit); mounted.host?.removeEventListener("input", mounted.input); mounted.host?.removeEventListener("compositionend", mounted.compositionEnd); document.removeEventListener("keydown", mounted.keydown); mounted.rootHost?.replaceChildren(); mounted = null;
   }
 
   const api = Object.freeze({ mount, unmount, supports, views: VIEWS, normalizeView });

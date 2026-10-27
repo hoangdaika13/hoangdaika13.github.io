@@ -1,0 +1,151 @@
+{
+  "at": "2026-10-27T08:43:35.072Z",
+  "results": [
+    {
+      "scenario": "future-local",
+      "passed": true,
+      "checks": [
+        "native protected UI",
+        "no edit",
+        "recovery export preserves original data",
+        "navigation does not overwrite"
+      ]
+    },
+    {
+      "scenario": "corrupt-local",
+      "passed": true,
+      "checks": [
+        "native protected UI",
+        "no edit",
+        "recovery export preserves original data",
+        "navigation does not overwrite"
+      ]
+    },
+    {
+      "scenario": "future-idb",
+      "passed": true,
+      "checks": [
+        "native protected UI",
+        "no edit",
+        "recovery export preserves original data",
+        "navigation does not overwrite"
+      ]
+    },
+    {
+      "scenario": "corrupt-idb",
+      "passed": true,
+      "checks": [
+        "native protected UI",
+        "no edit",
+        "recovery export preserves original data",
+        "navigation does not overwrite"
+      ]
+    },
+    {
+      "scenario": "missing-idb",
+      "passed": true,
+      "checks": [
+        "unsupported IndexedDB is visible",
+        "local fallback checked instead of assuming archive save"
+      ],
+      "status": {
+        "status": "saved-device",
+        "error": "IndexedDB không được trình duyệt hỗ trợ.",
+        "archived": false,
+        "pending": false
+      }
+    },
+    {
+      "scenario": "quota",
+      "passed": true,
+      "checks": [
+        "both actual write paths fail",
+        "UI does not claim save"
+      ],
+      "status": {
+        "status": "error",
+        "error": "QA IndexedDB quota exhausted",
+        "archived": false,
+        "pending": false
+      }
+    },
+    {
+      "scenario": "network-retry",
+      "passed": true,
+      "attempts": 2,
+      "checks": [
+        "pack failure shown",
+        "retry loads verified pack",
+        "progress identity retained"
+      ]
+    },
+    {
+      "scenario": "checksum-retry",
+      "passed": true,
+      "checks": [
+        "modified pack rejected before cache",
+        "retry accepts original SHA256"
+      ]
+    },
+    {
+      "scenario": "rapid-grade-abort",
+      "passed": true,
+      "checks": [
+        "obsolete fetch aborted",
+        "selected grade wins",
+        "aborted pack never cached"
+      ],
+      "failed": [
+        {
+          "url": "http://127.0.0.1:57581/data/hh-school/curriculum/grade-2.json?v=dce0bf306d69",
+          "error": "net::ERR_ABORTED"
+        }
+      ]
+    },
+    {
+      "scenario": "ime-exam-timeout",
+      "passed": true,
+      "checks": [
+        "native IME stays local until commit",
+        "timer preserves field node",
+        "autosave/reload exact Unicode",
+        "controlled hidden event and clock jump retain hard deadline",
+        "timeout once across reload"
+      ],
+      "clock": "Playwright controlled clock; visibility event explicitly doubled"
+    },
+    {
+      "scenario": "practice-pause",
+      "passed": true,
+      "checks": [
+        "practice pause freezes advisory timer",
+        "pause reload persists",
+        "resume is explicit"
+      ]
+    },
+    {
+      "scenario": "tts-opt-in",
+      "passed": true,
+      "checks": [
+        "native SpeechSynthesisUtterance configured only on click",
+        "transcript/lang/rate",
+        "stop and unmount cancel"
+      ],
+      "audioMeasurement": "dispatch spy only; audible output not measured"
+    },
+    {
+      "scenario": "tts-unsupported",
+      "passed": true,
+      "checks": [
+        "unsupported speech state",
+        "original transcript remains available"
+      ]
+    }
+  ],
+  "errors": [],
+  "limits": [
+    "Backend responses intentionally503",
+    "Clock and hidden visibility are controlled test doubles",
+    "TTS dispatch checked, actual audio waveform not measured"
+  ]
+}

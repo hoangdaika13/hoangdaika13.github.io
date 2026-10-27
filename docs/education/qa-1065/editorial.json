@@ -1,0 +1,143 @@
+{
+  "at": "2026-10-27T08:43:59.069Z",
+  "results": [
+    {
+      "editor": "Native forms create original draft, append version2 and send proposal through production admin handler",
+      "publication": "All versions remain drafts, no forged approval"
+    },
+    {
+      "permissions": "Student edit rejected403 with no added version",
+      "responsive": "1440/375, DPR2, native keyboard controls"
+    }
+  ],
+  "errors": [],
+  "apiCalls": [
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-editor",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-editor",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-editor",
+      "status": 200
+    },
+    {
+      "resource": "admin",
+      "method": "GET",
+      "actor": "qa-editor",
+      "status": 200
+    },
+    {
+      "resource": "admin",
+      "method": "GET",
+      "actor": "qa-editor",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-editor",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-editor",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-editor",
+      "status": 200
+    },
+    {
+      "resource": "admin",
+      "method": "POST",
+      "actor": "qa-editor",
+      "status": 200
+    },
+    {
+      "resource": "admin",
+      "method": "GET",
+      "actor": "qa-editor",
+      "status": 200
+    },
+    {
+      "resource": "admin",
+      "method": "GET",
+      "actor": "qa-editor",
+      "status": 200
+    },
+    {
+      "resource": "admin",
+      "method": "PATCH",
+      "actor": "qa-editor",
+      "status": 200
+    },
+    {
+      "resource": "admin",
+      "method": "GET",
+      "actor": "qa-editor",
+      "status": 200
+    },
+    {
+      "resource": "admin",
+      "method": "GET",
+      "actor": "qa-editor",
+      "status": 200
+    },
+    {
+      "resource": "admin",
+      "method": "POST",
+      "actor": "qa-editor",
+      "status": 200
+    },
+    {
+      "resource": "admin",
+      "method": "GET",
+      "actor": "qa-editor",
+      "status": 200
+    },
+    {
+      "resource": "admin",
+      "method": "GET",
+      "actor": "qa-editor",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "admin",
+      "method": "POST",
+      "actor": "qa-student",
+      "status": 403
+    }
+  ],
+  "environment": "Native Chromium and unchanged production admin handlers; explicit QA cookie identities and in-memory MongoDB transport"
+}

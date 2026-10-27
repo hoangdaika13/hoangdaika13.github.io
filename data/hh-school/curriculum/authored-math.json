@@ -1,0 +1,3060 @@
+[
+  {
+    "grade": 1,
+    "subjectId": "math",
+    "slug": "count-ten",
+    "track": "foundation",
+    "title": "Đếm và ghép số lượng trong phạm vi 10",
+    "chapter": "Số và số lượng",
+    "semester": 1,
+    "outcome": "Đếm đúng nhóm không quá 10 vật, ghép số với số lượng và giải thích vì sao đổi vị trí không làm đổi số lượng.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Một số cho biết có bao nhiêu vật. Khi đếm, chạm vào từng vật đúng một lần và nói lần lượt một, hai, ba,… Số cuối cùng là số lượng của cả nhóm. Nếu đổi chỗ các vật mà không thêm hoặc bớt, số lượng không đổi.",
+      "Kí hiệu 0 dùng cho nhóm không có vật nào. Có thể ghép mỗi vật với một chấm hoặc một ngón tay để kiểm tra. Đừng nhầm kích thước của vật với số lượng: ba quả bóng lớn vẫn ít hơn bốn quả bóng nhỏ."
+    ],
+    "example": {
+      "prompt": "Trên bàn có ● ● ● ● ●. Có bao nhiêu chấm?",
+      "answer": "5",
+      "method": [
+        "Chạm lần lượt từng chấm, không đếm lại chấm đã chạm.",
+        "Nói các số 1, 2, 3, 4, 5.",
+        "Số cuối là 5, nên nhóm có năm chấm."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Có ● ● ● ●. Nhập số chấm.",
+      "answer": "4",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "Ghép một chấm với một lần đếm; số cuối là 4.",
+      "hints": [
+        "Đếm từ trái sang phải."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Lan có 6 que, đặt thêm 1 que vào nhóm. Nhóm có mấy que?",
+        "answer": "7",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "Đếm sáu que cũ rồi thêm que thứ bảy."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Đổi chỗ năm viên sỏi mà không thêm bớt thì vẫn có năm viên.",
+        "answer": "true",
+        "explanation": "Vị trí thay đổi không làm thay đổi số lượng."
+      },
+      {
+        "type": "essay",
+        "prompt": "Lấy từ 1 đến 10 đồ vật an toàn. Vẽ đúng số chấm tương ứng, đổi chỗ đồ vật rồi kiểm tra lại.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Đếm mỗi vật một lần; số cuối cho biết số lượng; đổi chỗ không làm đổi số lượng."
+      }
+    ],
+    "application": "Lấy từ 1 đến 10 đồ vật an toàn. Vẽ đúng số chấm tương ứng, đổi chỗ đồ vật rồi kiểm tra lại.",
+    "summary": "Đếm mỗi vật một lần; số cuối cho biết số lượng; đổi chỗ không làm đổi số lượng.",
+    "mistakes": [
+      "Vị trí thay đổi không làm thay đổi số lượng.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ],
+    "diagram": {
+      "kind": "dots",
+      "groups": [
+        5
+      ]
+    }
+  },
+  {
+    "grade": 1,
+    "subjectId": "math",
+    "slug": "add-within-ten",
+    "track": "standard",
+    "title": "Gộp hai nhóm và phép cộng trong phạm vi 10",
+    "chapter": "Cộng và trừ",
+    "semester": 1,
+    "outcome": "Biểu diễn phép cộng bằng gộp hai nhóm trong phạm vi 10, đếm thêm đúng số lượt và kiểm tra bằng đổi thứ tự nhóm.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [
+      "g1-math-count-ten"
+    ],
+    "theory": [
+      "Phép cộng diễn tả việc gộp các nhóm hoặc thêm vào một nhóm. Trong 3 + 4 = 7, số 3 và 4 là hai số được gộp, còn 7 là kết quả. Các nhóm phải đang đếm cùng một loại đối tượng hoặc cùng một đơn vị.",
+      "Có thể đếm tất cả đồ vật, hoặc giữ số của nhóm đầu trong đầu rồi đếm thêm. Để tính 3 + 4, giữ 3 rồi đếm thêm 4 lượt: 4, 5, 6, 7. Đổi thứ tự hai nhóm vẫn cho cùng số lượng: 4 + 3 cũng bằng 7."
+    ],
+    "example": {
+      "prompt": "Có 3 bút xanh và 4 bút đỏ. Có tất cả bao nhiêu bút?",
+      "answer": "7",
+      "method": [
+        "Hai nhóm đều là bút nên có thể gộp số lượng.",
+        "Giữ 3, đếm thêm 4 lượt được 7.",
+        "Viết 3 + 4 = 7; kiểm lại bằng bảy chấm."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Một hộp có 2 viên bi, thêm 5 viên. Có tất cả mấy viên?",
+      "answer": "7",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "2 + 5 = 7.",
+      "hints": [
+        "Giữ 5 và đếm thêm 2 lượt cũng được."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Tính 6 + 3.",
+        "answer": "9",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "Giữ 6 rồi đếm 7, 8, 9."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Trong phép 2 + 3, đếm thêm ba lượt bắt đầu bằng 2, 3, 4 nên kết quả là 4.",
+        "answer": "false",
+        "explanation": "Số 2 đã có sẵn; ba lượt đếm thêm phải là 3, 4, 5."
+      },
+      {
+        "type": "essay",
+        "prompt": "Vẽ hai nhóm đồ chơi sao cho tổng không quá 10. Viết phép cộng và giải thích một cách kiểm tra bằng đổi thứ tự hai nhóm.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Cộng là gộp hoặc thêm; mỗi lượt đếm thêm làm số lượng tăng một."
+      }
+    ],
+    "application": "Vẽ hai nhóm đồ chơi sao cho tổng không quá 10. Viết phép cộng và giải thích một cách kiểm tra bằng đổi thứ tự hai nhóm.",
+    "summary": "Cộng là gộp hoặc thêm; mỗi lượt đếm thêm làm số lượng tăng một.",
+    "mistakes": [
+      "Số 2 đã có sẵn; ba lượt đếm thêm phải là 3, 4, 5.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 1,
+    "subjectId": "math",
+    "slug": "missing-addend",
+    "track": "advanced",
+    "title": "Tìm số còn thiếu bằng sơ đồ phần–toàn thể",
+    "chapter": "Cộng và trừ",
+    "semester": 1,
+    "outcome": "Tìm phần còn thiếu khi biết toàn thể không quá 10 và một phần; giải thích bằng sơ đồ phần–toàn thể rồi kiểm tra bằng cộng.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [
+      "g1-math-add-within-ten"
+    ],
+    "theory": [
+      "Khi biết số lượng cả nhóm và một phần, có thể tìm phần còn lại bằng cách đếm thêm hoặc bớt phần đã biết. Bài 4 + ? = 9 hỏi cần thêm mấy vào 4 để được 9, không hỏi kết quả của 4 + 9.",
+      "Vẽ chín ô cho cả nhóm. Đánh dấu bốn ô đã biết. Năm ô chưa đánh dấu chính là phần cần tìm. Đây là suy luận ngược từ toàn thể về một phần, vẫn dùng các số trong phạm vi 10."
+    ],
+    "example": {
+      "prompt": "Hộp có 9 viên bi, gồm 4 viên xanh và một số viên đỏ. Có mấy viên đỏ?",
+      "answer": "5",
+      "method": [
+        "Vẽ 9 ô và tô 4 ô xanh.",
+        "Đếm 5 ô chưa tô; đó là số viên đỏ.",
+        "Kiểm tra 4 + 5 = 9."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Điền số: 3 + ? = 8.",
+      "answer": "5",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "Đếm từ 3 đến 8 cần thêm 5 lượt; 3 + 5 = 8.",
+      "hints": [
+        "Vẽ 8 chấm rồi khoanh 3 chấm."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Có 10 thẻ, 6 thẻ đã lật. Còn mấy thẻ chưa lật?",
+        "answer": "4",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "10 gồm phần 6 và phần 4; 6 + 4 = 10."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Muốn tìm phần còn thiếu của 2 + ? = 7 thì tính 2 + 7.",
+        "answer": "false",
+        "explanation": "7 là toàn thể, không phải phần để gộp thêm. Cần tìm phần bù của 2 trong 7."
+      },
+      {
+        "type": "essay",
+        "prompt": "Tự đặt một bài với tổng không quá 10 và một phần bị che. Vẽ sơ đồ, tìm phần bị che rồi kiểm tra bằng phép cộng.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Biết toàn thể và một phần thì tìm phần còn lại; luôn ghép lại để kiểm tra."
+      }
+    ],
+    "application": "Tự đặt một bài với tổng không quá 10 và một phần bị che. Vẽ sơ đồ, tìm phần bị che rồi kiểm tra bằng phép cộng.",
+    "summary": "Biết toàn thể và một phần thì tìm phần còn lại; luôn ghép lại để kiểm tra.",
+    "mistakes": [
+      "7 là toàn thể, không phải phần để gộp thêm. Cần tìm phần bù của 2 trong 7.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 2,
+    "subjectId": "math",
+    "slug": "place-value-thousand",
+    "track": "foundation",
+    "title": "Trăm, chục, đơn vị và số đến 1.000",
+    "chapter": "Số và phép tính",
+    "semester": 1,
+    "outcome": "Đọc giá trị hàng trăm, chục, đơn vị của số không quá 1.000 và giải thích vai trò giữ hàng của chữ số 0.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Cứ mười đơn vị gộp thành một chục; mười chục gộp thành một trăm. Trong số 347, chữ số 3 chỉ ba trăm, chữ số 4 chỉ bốn chục, chữ số 7 chỉ bảy đơn vị. Vì vậy 347 = 300 + 40 + 7.",
+      "Giá trị của một chữ số phụ thuộc vị trí của nó. Trong 707 có bảy trăm, không có chục và bảy đơn vị. Số 0 ở hàng chục giữ đúng vị trí cho các hàng khác; bỏ nó sẽ thành 77, một số khác."
+    ],
+    "example": {
+      "prompt": "Phân tích số 526. Chữ số hàng chục có giá trị bao nhiêu?",
+      "answer": "20",
+      "method": [
+        "Xác định các hàng từ phải sang trái: đơn vị, chục, trăm.",
+        "Chữ số 2 nằm ở hàng chục nên biểu thị hai chục.",
+        "Hai chục bằng 20; 526 = 500 + 20 + 6."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Số có 4 trăm, 0 chục và 8 đơn vị là số nào?",
+      "answer": "408",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "400 + 0 + 8 = 408.",
+      "hints": [
+        "Viết đủ ba vị trí trăm–chục–đơn vị."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Trong số 672, chữ số 6 có giá trị bao nhiêu?",
+        "answer": "600",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "6 ở hàng trăm nên có giá trị 600."
+      },
+      {
+        "type": "boolean",
+        "prompt": "505 và 55 bằng nhau vì bỏ số 0 không làm đổi số.",
+        "answer": "false",
+        "explanation": "0 giữ hàng chục trong 505; bỏ đi làm chữ số 5 bên trái chuyển từ hàng trăm sang hàng chục."
+      },
+      {
+        "type": "essay",
+        "prompt": "Dùng thẻ hàng trăm, chục và đơn vị để tạo ba số khác nhau. Giải thích tác dụng của số 0 khi một hàng không có nhóm nào.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Mười đơn vị thành một chục, mười chục thành một trăm; vị trí quyết định giá trị chữ số."
+      }
+    ],
+    "application": "Dùng thẻ hàng trăm, chục và đơn vị để tạo ba số khác nhau. Giải thích tác dụng của số 0 khi một hàng không có nhóm nào.",
+    "summary": "Mười đơn vị thành một chục, mười chục thành một trăm; vị trí quyết định giá trị chữ số.",
+    "mistakes": [
+      "0 giữ hàng chục trong 505; bỏ đi làm chữ số 5 bên trái chuyển từ hàng trăm sang hàng chục.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 2,
+    "subjectId": "math",
+    "slug": "regroup-addition",
+    "track": "standard",
+    "title": "Cộng có nhớ bằng cách đổi mười đơn vị thành một chục",
+    "chapter": "Số và phép tính",
+    "semester": 1,
+    "outcome": "Cộng hai số có hai chữ số có nhớ ở hàng đơn vị, giải thích việc đổi mười đơn vị thành một chục và thử lại kết quả.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [
+      "g2-math-place-value-thousand"
+    ],
+    "theory": [
+      "Khi cộng theo cột, đặt các chữ số cùng hàng thẳng nhau. Cộng từ hàng đơn vị. Nếu được 10 đơn vị trở lên, đổi mười đơn vị thành một chục rồi chuyển chục đó sang cột chục; đây là ý nghĩa của “nhớ một”.",
+      "Ví dụ 28 + 17: tám đơn vị cộng bảy đơn vị thành mười lăm đơn vị, tức một chục và năm đơn vị. Giữ năm ở cột đơn vị, cộng thêm một chục vào tổng số chục. Không viết cả 15 vào một cột rồi đọc nối chữ số."
+    ],
+    "example": {
+      "prompt": "Tính 28 + 17.",
+      "answer": "45",
+      "method": [
+        "Đặt 28 trên 17, hàng đơn vị thẳng hàng đơn vị.",
+        "8 + 7 = 15: viết 5 đơn vị, nhớ 1 chục.",
+        "2 + 1 + 1 = 4 chục, được 45; kiểm tra 45 − 17 = 28."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Tính 36 + 27.",
+      "answer": "63",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "6 + 7 = 13, viết 3 nhớ 1; 3 + 2 + 1 = 6 chục.",
+      "hints": [
+        "Xử lý hàng đơn vị trước."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Tính 47 + 28.",
+        "answer": "75",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "7 + 8 = 15, viết 5 nhớ 1; 4 + 2 + 1 = 7 chục."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Ở 28 + 17, số nhớ 1 có nghĩa là một đơn vị.",
+        "answer": "false",
+        "explanation": "Số nhớ 1 được chuyển sang hàng chục, nên biểu thị một chục."
+      },
+      {
+        "type": "essay",
+        "prompt": "Tạo một phép cộng hai số có hai chữ số phải nhớ ở hàng đơn vị. Vẽ bó chục để giải thích số nhớ thay vì chỉ đọc quy tắc.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Cùng hàng đặt thẳng cột; đổi đủ mười đơn vị thành một chục rồi cộng vào hàng kế."
+      }
+    ],
+    "application": "Tạo một phép cộng hai số có hai chữ số phải nhớ ở hàng đơn vị. Vẽ bó chục để giải thích số nhớ thay vì chỉ đọc quy tắc.",
+    "summary": "Cùng hàng đặt thẳng cột; đổi đủ mười đơn vị thành một chục rồi cộng vào hàng kế.",
+    "mistakes": [
+      "Số nhớ 1 được chuyển sang hàng chục, nên biểu thị một chục.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 2,
+    "subjectId": "math",
+    "slug": "equal-groups",
+    "track": "advanced",
+    "title": "Phân biệt số nhóm và số vật trong mỗi nhóm",
+    "chapter": "Nhân và chia",
+    "semester": 1,
+    "outcome": "Phân biệt số nhóm với số phần tử mỗi nhóm, chọn phép nhân/chia đúng cho tình huống các nhóm bằng nhau.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Khi các nhóm có số lượng bằng nhau, dùng phép nhân để viết gọn phép cộng lặp lại. Bốn nhóm, mỗi nhóm hai vật, có tổng 2 + 2 + 2 + 2 = 8 vật. Trong bài có lời văn cần ghi rõ đang nói đến số nhóm hay số vật mỗi nhóm.",
+      "Chia đều và chia thành nhóm là hai câu hỏi khác nhau. Có 10 bút chia đều cho 5 bạn thì hỏi mỗi bạn nhận mấy bút. Có 10 bút, mỗi túi 2 bút thì hỏi cần mấy túi. Cả hai có thể kiểm tra bằng cách nhân số nhóm với số vật mỗi nhóm."
+    ],
+    "example": {
+      "prompt": "Có 5 túi, mỗi túi 2 quả cam. Có tất cả mấy quả?",
+      "answer": "10",
+      "method": [
+        "Số túi là 5, số quả trong một túi là 2.",
+        "Cộng 2 năm lần: 2 + 2 + 2 + 2 + 2 = 10.",
+        "Kiểm tra chia 10 quả thành 5 nhóm bằng nhau, mỗi nhóm 2 quả."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Có 4 đôi tất, mỗi đôi 2 chiếc. Có tất cả mấy chiếc?",
+      "answer": "8",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "Mỗi đôi có 2 chiếc, nên 4 nhóm bằng nhau có 2 + 2 + 2 + 2 = 8 chiếc.",
+      "hints": [
+        "Đừng dùng số đôi làm số chiếc."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Có 15 bông hoa, cắm đều vào 5 lọ. Mỗi lọ có mấy bông?",
+        "answer": "3",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "Chia 15 thành 5 nhóm bằng nhau, mỗi nhóm 3; 5 nhóm 3 được 15."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Ba túi chứa lần lượt 2, 3, 5 viên bi có thể tính tổng bằng 3 × 2.",
+        "answer": "false",
+        "explanation": "Phép nhân theo nhóm bằng nhau chỉ dùng khi mỗi nhóm có cùng số lượng."
+      },
+      {
+        "type": "essay",
+        "prompt": "Vẽ hai cách chia 10 chấm: thành 5 nhóm bằng nhau và thành các nhóm 2 chấm. Nói rõ mỗi cách đang trả lời câu hỏi nào.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Nhân gắn với nhóm bằng nhau; khi chia phải xác định đang tìm số nhóm hay số phần trong một nhóm."
+      }
+    ],
+    "application": "Vẽ hai cách chia 10 chấm: thành 5 nhóm bằng nhau và thành các nhóm 2 chấm. Nói rõ mỗi cách đang trả lời câu hỏi nào.",
+    "summary": "Nhân gắn với nhóm bằng nhau; khi chia phải xác định đang tìm số nhóm hay số phần trong một nhóm.",
+    "mistakes": [
+      "Phép nhân theo nhóm bằng nhau chỉ dùng khi mỗi nhóm có cùng số lượng.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 3,
+    "subjectId": "math",
+    "slug": "division-remainder",
+    "track": "foundation",
+    "title": "Chia có dư và điều kiện của số dư",
+    "chapter": "Chia và kiểm tra",
+    "semester": 1,
+    "outcome": "Tìm thương và số dư của phép chia số tự nhiên; kiểm tra số bị chia = số chia × thương + dư với 0 ≤ dư < số chia.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Trong phép chia có dư, chia được càng nhiều nhóm đủ như nhau càng tốt; phần chưa đủ thành một nhóm là số dư. Viết dưới dạng: số bị chia = số chia × thương + số dư. Số dư phải nhỏ hơn số chia và không âm.",
+      "Nếu chia 17 que thành nhóm 5 que thì có ba nhóm đủ, còn hai que: 17 = 5 × 3 + 2. Viết thương 2 dư 7 là chưa chia hết mức, vì bảy que còn có thể tạo thêm một nhóm năm."
+    ],
+    "example": {
+      "prompt": "17 : 5 được thương mấy và dư mấy?",
+      "answer": "Thương 3, dư 2",
+      "method": [
+        "Lập các nhóm 5 que: dùng 15 que được 3 nhóm.",
+        "17 − 15 = 2 que còn lại.",
+        "2 nhỏ hơn 5; kiểm tra 5 × 3 + 2 = 17."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Chia 23 cho 4. Nhập số dư.",
+      "answer": "3",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "4 × 5 = 20, còn 3; 3 < 4.",
+      "hints": [
+        "Tìm bội của 4 gần 23 nhưng không vượt quá."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Chia 29 cho 6. Nhập thương.",
+        "answer": "4",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "6 × 4 = 24, còn 5; thương 4 và dư 5 hợp lệ vì 5 < 6."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Một phép chia cho 4 có thể có số dư bằng 4.",
+        "answer": "false",
+        "explanation": "Nếu dư đủ 4 thì tạo được thêm một nhóm; số dư phải nhỏ hơn số chia."
+      },
+      {
+        "type": "essay",
+        "prompt": "Một lớp có 26 bạn đi xe, mỗi xe chở tối đa 4 bạn. Tính thương và số dư; giải thích vì sao số xe cần dùng không chỉ bằng thương.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Phép chia có dư thỏa số bị chia = số chia × thương + dư, với 0 ≤ dư < số chia."
+      }
+    ],
+    "application": "Một lớp có 26 bạn đi xe, mỗi xe chở tối đa 4 bạn. Tính thương và số dư; giải thích vì sao số xe cần dùng không chỉ bằng thương.",
+    "summary": "Phép chia có dư thỏa số bị chia = số chia × thương + dư, với 0 ≤ dư < số chia.",
+    "mistakes": [
+      "Nếu dư đủ 4 thì tạo được thêm một nhóm; số dư phải nhỏ hơn số chia.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 3,
+    "subjectId": "math",
+    "slug": "unit-fraction",
+    "track": "standard",
+    "title": "Một phần bằng nhau của một toàn thể",
+    "chapter": "Phần bằng nhau",
+    "semester": 1,
+    "outcome": "Nhận ra một phần trong nhiều phần bằng nhau của cùng toàn thể, biểu diễn bằng phân số đơn vị và đối chiếu trên hình.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Chia một hình hoặc một nhóm thành các phần bằng nhau rồi chọn đúng một phần. Nếu chia thành bốn phần bằng nhau thì một phần được viết 1/4 và đọc là một phần tư. Số 4 cho biết toàn thể đã được chia thành bốn phần bằng nhau.",
+      "Phải xác định cùng một toàn thể trước khi so sánh. Với cùng một chiếc bánh, một trong hai phần bằng nhau lớn hơn một trong bốn phần bằng nhau. Không thể chỉ nhìn mẫu số để so hai miếng lấy từ hai chiếc bánh có kích thước khác nhau."
+    ],
+    "example": {
+      "prompt": "Một băng giấy chia 4 đoạn bằng nhau. Một đoạn là bao nhiêu phần băng giấy?",
+      "answer": "1/4",
+      "method": [
+        "Xác nhận cả bốn đoạn có độ dài bằng nhau.",
+        "Chọn một đoạn trong tổng bốn đoạn.",
+        "Viết 1/4; ghép đủ bốn đoạn sẽ trở lại toàn thể."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Một hình tròn chia 5 phần bằng nhau, tô một phần. Nhập phân số biểu thị phần tô.",
+      "answer": "1/5",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "Chọn 1 trong 5 phần bằng nhau nên viết 1/5.",
+      "hints": [
+        "Tử số cho biết số phần chọn."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Một băng giấy dài 12 cm chia đều thành 3 phần. Mỗi phần dài bao nhiêu cm?",
+        "answer": "4",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "12 : 3 = 4 cm; ba đoạn 4 cm ghép lại dài 12 cm."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Chia một chiếc bánh thành bốn miếng không bằng nhau thì mỗi miếng đều là 1/4 chiếc bánh.",
+        "answer": "false",
+        "explanation": "Kí hiệu phân số phần bằng nhau yêu cầu các phần bằng nhau."
+      },
+      {
+        "type": "essay",
+        "prompt": "Gấp băng giấy thành hai rồi thành bốn đoạn bằng nhau. So sánh 1/2 và 1/4 trên cùng băng; giải thích bằng hình thay vì chỉ đọc số.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Phân số đơn vị mô tả một phần trong nhiều phần bằng nhau của cùng một toàn thể."
+      }
+    ],
+    "application": "Gấp băng giấy thành hai rồi thành bốn đoạn bằng nhau. So sánh 1/2 và 1/4 trên cùng băng; giải thích bằng hình thay vì chỉ đọc số.",
+    "summary": "Phân số đơn vị mô tả một phần trong nhiều phần bằng nhau của cùng một toàn thể.",
+    "mistakes": [
+      "Kí hiệu phân số phần bằng nhau yêu cầu các phần bằng nhau.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ],
+    "diagram": {
+      "kind": "fraction",
+      "numerator": 1,
+      "denominator": 4
+    }
+  },
+  {
+    "grade": 3,
+    "subjectId": "math",
+    "slug": "perimeter-reasoning",
+    "track": "advanced",
+    "title": "Chu vi: phân biệt độ dài đường bao với diện tích",
+    "chapter": "Đo lường và hình học",
+    "semester": 2,
+    "outcome": "Tính chu vi hình chữ nhật, xử lý đoạn cổng không rào và phân biệt đơn vị độ dài với đơn vị diện tích.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Chu vi là tổng độ dài các cạnh của đường bao một hình. Với hình chữ nhật có chiều dài a và chiều rộng b, hai cạnh dài bằng nhau và hai cạnh rộng bằng nhau nên chu vi bằng a + b + a + b. Có thể viết gọn (a + b) × 2.",
+      "Chu vi dùng đơn vị độ dài như cm hoặc m. Diện tích nói về phần mặt bên trong và dùng đơn vị vuông; hai đại lượng không giống nhau. Khi đề nói rào quanh vườn, hãy đọc rõ có để lại cổng không rào hay không."
+    ],
+    "example": {
+      "prompt": "Hình chữ nhật dài 8 cm, rộng 5 cm. Tính chu vi.",
+      "answer": "26",
+      "method": [
+        "Đường bao gồm hai cạnh 8 cm và hai cạnh 5 cm.",
+        "Tính (8 + 5) × 2 = 26.",
+        "Kết luận chu vi 26 cm, không phải 26 cm²."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Hình chữ nhật dài 9 m, rộng 4 m. Nhập chu vi theo mét.",
+      "answer": "26",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "(9 + 4) × 2 = 26 m.",
+      "hints": [
+        "Tính tổng một chiều dài và một chiều rộng rồi nhân 2."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Một vườn chữ nhật dài 10 m, rộng 6 m, chừa cổng 2 m. Cần bao nhiêu mét hàng rào?",
+        "answer": "30",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "Chu vi là (10 + 6) × 2 = 32 m; trừ đoạn cổng 2 m còn 30 m."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Chu vi hình chữ nhật luôn bằng chiều dài nhân chiều rộng.",
+        "answer": "false",
+        "explanation": "Tích chiều dài và chiều rộng liên quan diện tích, còn chu vi là tổng bốn cạnh."
+      },
+      {
+        "type": "essay",
+        "prompt": "Vẽ hai hình chữ nhật có cạnh là số nguyên cm và cùng chu vi 20 cm. Tính diện tích từng hình và nhận xét chu vi bằng nhau có buộc diện tích bằng nhau không.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Chu vi đo đường bao; ghi đúng đơn vị và đọc điều kiện về đoạn không rào."
+      }
+    ],
+    "application": "Vẽ hai hình chữ nhật có cạnh là số nguyên cm và cùng chu vi 20 cm. Tính diện tích từng hình và nhận xét chu vi bằng nhau có buộc diện tích bằng nhau không.",
+    "summary": "Chu vi đo đường bao; ghi đúng đơn vị và đọc điều kiện về đoạn không rào.",
+    "mistakes": [
+      "Tích chiều dài và chiều rộng liên quan diện tích, còn chu vi là tổng bốn cạnh.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 4,
+    "subjectId": "math",
+    "slug": "equivalent-fractions",
+    "track": "foundation",
+    "title": "Phân số bằng nhau và ý nghĩa của rút gọn",
+    "chapter": "Phân số",
+    "semester": 1,
+    "outcome": "Tạo và rút gọn phân số bằng cách nhân/chia đồng thời tử và mẫu với cùng số khác 0; giải thích bằng mô hình phần bằng nhau.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Một lượng có thể được viết bằng nhiều phân số. Nếu chia mỗi phần của 1/2 thành ba phần nhỏ bằng nhau thì lượng đã chọn trở thành 3/6. Nhân cả tử và mẫu với cùng một số tự nhiên khác 0 giữ nguyên giá trị phân số.",
+      "Rút gọn là làm ngược: chia cả tử và mẫu cho cùng một ước chung khác 0. Ví dụ 6/8 = 3/4 khi chia cả hai cho 2. Không được chỉ chia tử hoặc chỉ chia mẫu, vì khi đó lượng biểu thị sẽ thay đổi."
+    ],
+    "example": {
+      "prompt": "Rút gọn 6/8.",
+      "answer": "3/4",
+      "method": [
+        "6 và 8 cùng chia hết cho 2.",
+        "Chia tử và mẫu cho 2: (6 : 2)/(8 : 2) = 3/4.",
+        "Nhân trở lại cả tử và mẫu của 3/4 với 2 được 6/8."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Rút gọn 10/15.",
+      "answer": "2/3",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "Chia cả 10 và 15 cho 5 được 2/3.",
+      "hints": [
+        "Tìm một ước chung của tử và mẫu."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Điền số: 3/5 = ?/20.",
+        "answer": "12",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "Mẫu 5 được nhân 4 thành 20, nên tử 3 cũng nhân 4 thành 12."
+      },
+      {
+        "type": "boolean",
+        "prompt": "6/8 = 3/8 vì có thể chia riêng tử cho 2.",
+        "answer": "false",
+        "explanation": "Muốn giữ giá trị phải chia cả tử và mẫu cho cùng một số khác 0."
+      },
+      {
+        "type": "essay",
+        "prompt": "Dùng hai băng giấy bằng nhau: tô 2/3 của băng thứ nhất và 4/6 của băng thứ hai. Giải thích vì sao phần tô bằng nhau.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Phân số không đổi giá trị khi nhân hoặc chia đồng thời tử và mẫu với cùng số khác 0."
+      }
+    ],
+    "application": "Dùng hai băng giấy bằng nhau: tô 2/3 của băng thứ nhất và 4/6 của băng thứ hai. Giải thích vì sao phần tô bằng nhau.",
+    "summary": "Phân số không đổi giá trị khi nhân hoặc chia đồng thời tử và mẫu với cùng số khác 0.",
+    "mistakes": [
+      "Muốn giữ giá trị phải chia cả tử và mẫu cho cùng một số khác 0.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ],
+    "diagram": {
+      "kind": "fraction",
+      "numerator": 3,
+      "denominator": 4
+    }
+  },
+  {
+    "grade": 4,
+    "subjectId": "math",
+    "slug": "fraction-addition",
+    "track": "standard",
+    "title": "Cộng phân số: vì sao cần cùng mẫu số",
+    "chapter": "Phân số",
+    "semester": 1,
+    "outcome": "Cộng phân số cùng mẫu hoặc quy đồng khi cần, giải thích vì sao cộng tử và giữ mẫu chung thay vì cộng hai mẫu.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [
+      "g4-math-equivalent-fractions"
+    ],
+    "theory": [
+      "Mẫu số cho biết kích thước các phần bằng nhau đang đếm. Với 2/7 + 3/7, cả hai đang đếm phần bảy nên cộng số phần: được 5/7. Giữ nguyên mẫu 7, không cộng hai mẫu thành 14.",
+      "Khi mẫu khác nhau, đổi về các phần có cùng kích thước. Chẳng hạn 1/2 = 2/4 nên 1/2 + 1/4 = 2/4 + 1/4 = 3/4. Chỉ sau khi cùng mẫu mới cộng tử; kiểm tra tổng lớn hơn từng số hạng nếu các số đều dương."
+    ],
+    "example": {
+      "prompt": "Tính 1/2 + 1/4.",
+      "answer": "3/4",
+      "method": [
+        "Đổi 1/2 thành 2/4 để hai số cùng đếm phần tư.",
+        "Cộng 2/4 + 1/4 = 3/4.",
+        "Trên hình chia bốn phần, hai phần cộng một phần thành ba phần."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Tính 2/5 + 1/5.",
+      "answer": "3/5",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "Hai mẫu bằng nhau nên cộng tử 2 + 1 = 3, giữ mẫu 5.",
+      "hints": [
+        "Các phần được cộng cùng kích thước."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Tính 1/3 + 1/6.",
+        "answer": "1/2",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "1/3 = 2/6; cộng được 3/6 rồi rút gọn thành 1/2."
+      },
+      {
+        "type": "boolean",
+        "prompt": "1/2 + 1/3 = 2/5 bằng cách cộng cả tử lẫn mẫu.",
+        "answer": "false",
+        "explanation": "Mỗi phân số đang dùng phần có kích thước khác nhau; phải quy đồng rồi cộng tử."
+      },
+      {
+        "type": "essay",
+        "prompt": "Tự chọn hai phân số có mẫu khác nhau, dùng băng giấy giải thích việc quy đồng, rồi kiểm tra kết quả bằng cách ước lượng so với 1.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Cộng các phần cùng kích thước: quy đồng khi cần, cộng tử và giữ mẫu chung."
+      }
+    ],
+    "application": "Tự chọn hai phân số có mẫu khác nhau, dùng băng giấy giải thích việc quy đồng, rồi kiểm tra kết quả bằng cách ước lượng so với 1.",
+    "summary": "Cộng các phần cùng kích thước: quy đồng khi cần, cộng tử và giữ mẫu chung.",
+    "mistakes": [
+      "Mỗi phân số đang dùng phần có kích thước khác nhau; phải quy đồng rồi cộng tử.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 4,
+    "subjectId": "math",
+    "slug": "mean-reverse",
+    "track": "advanced",
+    "title": "Tìm số còn thiếu từ số trung bình cộng",
+    "chapter": "Thống kê và lập luận",
+    "semester": 2,
+    "outcome": "Tìm tổng và số còn thiếu từ trung bình cộng, ghi đúng số số hạng và kiểm tra bằng tính lại trung bình.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Số trung bình cộng của nhiều số bằng tổng của chúng chia cho số số hạng. Nếu biết trung bình cộng và số số hạng, có thể tìm lại tổng bằng phép nhân. Sau đó trừ các số đã biết để tìm số còn thiếu.",
+      "Trung bình cộng biểu thị mức chia đều theo tổng; không nhất thiết là một số đã xuất hiện trong dữ liệu. Khi kiểm tra một lời giải, tính lại tổng và chia cho đúng số lượng, không chia cho số lượng các số đã biết."
+    ],
+    "example": {
+      "prompt": "Ba bạn có trung bình 8 quyển vở. Hai bạn có 6 và 9 quyển. Bạn còn lại có mấy quyển?",
+      "answer": "9",
+      "method": [
+        "Tổng số vở của ba bạn là 8 × 3 = 24.",
+        "Hai bạn đã biết có 6 + 9 = 15 quyển.",
+        "Bạn còn lại có 24 − 15 = 9; kiểm tra (6 + 9 + 9) : 3 = 8."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Bốn số có trung bình 7. Tổng bốn số bằng bao nhiêu?",
+      "answer": "28",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "Tổng bằng trung bình nhân số số hạng: 7 × 4 = 28.",
+      "hints": [
+        "Làm ngược phép chia dùng tính trung bình."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Ba số có trung bình 10; hai số là 8 và 11. Số còn lại bằng bao nhiêu?",
+        "answer": "11",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "Tổng là 30, trừ 8 và 11 còn 11."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Trung bình cộng của 4 và 8 là 6, dù 6 không có trong hai số ban đầu.",
+        "answer": "true",
+        "explanation": "Trung bình được tính từ tổng và số lượng, không bắt buộc trùng một giá trị đã có."
+      },
+      {
+        "type": "essay",
+        "prompt": "Thu thập số trang đọc được trong ba ngày. Đặt mục tiêu trung bình cho ngày thứ tư rồi tính số trang cần đọc, kiểm tra mục tiêu có vừa sức không.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Biết trung bình và số số hạng thì tìm tổng; giữ đúng số lượng khi kiểm tra."
+      }
+    ],
+    "application": "Thu thập số trang đọc được trong ba ngày. Đặt mục tiêu trung bình cho ngày thứ tư rồi tính số trang cần đọc, kiểm tra mục tiêu có vừa sức không.",
+    "summary": "Biết trung bình và số số hạng thì tìm tổng; giữ đúng số lượng khi kiểm tra.",
+    "mistakes": [
+      "Trung bình được tính từ tổng và số lượng, không bắt buộc trùng một giá trị đã có.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 5,
+    "subjectId": "math",
+    "slug": "decimal-place",
+    "track": "foundation",
+    "title": "Số thập phân và dấu phẩy theo giá trị hàng",
+    "chapter": "Số thập phân",
+    "semester": 1,
+    "outcome": "Đọc giá trị các hàng thập phân, đặt dấu phẩy thẳng cột khi cộng/trừ và giải thích số 0 tận cùng không đổi giá trị.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Bên phải dấu phẩy lần lượt là hàng phần mười, phần trăm, phần nghìn. Số 2,35 có hai đơn vị, ba phần mười và năm phần trăm; cũng có thể hiểu là 235 phần trăm. Thêm số 0 tận cùng bên phải phần thập phân không đổi giá trị: 2,5 = 2,50.",
+      "Khi cộng hoặc trừ số thập phân, thẳng dấu phẩy để các hàng cùng giá trị nằm cùng cột. Có thể thêm số 0 ở cuối phần thập phân để dễ đặt tính. Không căn hai số theo chữ số cuối như khi ghép chữ."
+    ],
+    "example": {
+      "prompt": "Tính 12,5 + 3,27.",
+      "answer": "15.77",
+      "method": [
+        "Viết 12,5 thành 12,50 để thấy hai hàng phần trăm.",
+        "Đặt dấu phẩy thẳng nhau rồi cộng: 12,50 + 3,27.",
+        "Được 15,77; kiểm tra tổng gần 13 + 3 = 16 nên hợp lý."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Tính 4,08 + 2,7.",
+      "answer": "6.78",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "4,08 + 2,70 = 6,78.",
+      "hints": [
+        "Viết 2,7 thành 2,70."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Tính 10 − 3,45.",
+        "answer": "6.55",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "Viết 10,00 rồi trừ 3,45 được 6,55."
+      },
+      {
+        "type": "boolean",
+        "prompt": "0,50 lớn hơn 0,5 vì có nhiều chữ số hơn.",
+        "answer": "false",
+        "explanation": "0,50 và 0,5 bằng nhau: năm mươi phần trăm bằng năm phần mười."
+      },
+      {
+        "type": "essay",
+        "prompt": "Viết ba giá tiền giả định có phần thập phân trong cùng một đơn vị, đặt phép cộng và giải thích vì sao phải căn dấu phẩy.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Các hàng thập phân có giá trị khác nhau; cộng trừ cần thẳng dấu phẩy."
+      }
+    ],
+    "application": "Viết ba giá tiền giả định có phần thập phân trong cùng một đơn vị, đặt phép cộng và giải thích vì sao phải căn dấu phẩy.",
+    "summary": "Các hàng thập phân có giá trị khác nhau; cộng trừ cần thẳng dấu phẩy.",
+    "mistakes": [
+      "0,50 và 0,5 bằng nhau: năm mươi phần trăm bằng năm phần mười.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 5,
+    "subjectId": "math",
+    "slug": "percentage",
+    "track": "standard",
+    "title": "Tỉ số phần trăm và xác định đúng toàn thể",
+    "chapter": "Tỉ số phần trăm",
+    "semester": 2,
+    "outcome": "Xác định đại lượng làm 100%, tính phần trăm hoặc phần trăm của một số và giải bài giảm giá có nêu đại lượng gốc.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Phần trăm là cách biểu thị tỉ số trên một trăm: 25% = 25/100 = 1/4. Muốn tính tỉ số phần trăm của phần so với toàn thể, chia phần cho toàn thể rồi nhân 100. Cần xác định rõ đại lượng nào được coi là 100%.",
+      "Muốn tìm p% của một số, có thể nhân số đó với p rồi chia 100. Nếu giá niêm yết được giảm 20% thì số tiền giảm lấy theo giá niêm yết, còn giá phải trả bằng 80% giá ấy. Tỉ số phần trăm đổi khi đổi đại lượng làm gốc."
+    ],
+    "example": {
+      "prompt": "Lớp có 40 bạn, 10 bạn tham gia câu lạc bộ. Tỉ lệ tham gia là bao nhiêu phần trăm?",
+      "answer": "25",
+      "method": [
+        "Toàn thể là 40 bạn, được coi là 100%.",
+        "Tính 10 : 40 = 0,25 rồi nhân 100.",
+        "Tỉ lệ là 25%; kiểm tra 25% của 40 bằng 10."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Tính 15% của 200.",
+      "answer": "30",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "200 × 15 : 100 = 30.",
+      "hints": [
+        "10% là 20, 5% là 10."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Một quyển vở giá 20 nghìn đồng được giảm 10%. Phải trả bao nhiêu nghìn đồng?",
+        "answer": "18",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "Giảm 2 nghìn, còn 18 nghìn; cũng là 90% của 20."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Nếu A bằng 50% của B thì B cũng bằng 50% của A.",
+        "answer": "false",
+        "explanation": "Đổi đại lượng gốc làm đổi tỉ số; nếu A = B/2 thì B = 200% của A."
+      },
+      {
+        "type": "essay",
+        "prompt": "Lập hai cách giải một bài giảm giá: tính tiền giảm rồi trừ và tính phần trăm còn lại. Nêu rõ số nào là 100%.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Phần trăm là tỉ số trên 100; phải chỉ rõ toàn thể làm gốc."
+      }
+    ],
+    "application": "Lập hai cách giải một bài giảm giá: tính tiền giảm rồi trừ và tính phần trăm còn lại. Nêu rõ số nào là 100%.",
+    "summary": "Phần trăm là tỉ số trên 100; phải chỉ rõ toàn thể làm gốc.",
+    "mistakes": [
+      "Đổi đại lượng gốc làm đổi tỉ số; nếu A = B/2 thì B = 200% của A.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 5,
+    "subjectId": "math",
+    "slug": "rectangular-volume",
+    "track": "advanced",
+    "title": "Thể tích khối hộp và số khối lập phương đơn vị",
+    "chapter": "Hình khối và đo lường",
+    "semester": 2,
+    "outcome": "Tính thể tích khối hộp bằng số khối lập phương đơn vị, giữ ba kích thước cùng đơn vị và giải thích đổi đơn vị thể tích.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Thể tích cho biết phần không gian một vật chiếm chỗ. Một khối lập phương cạnh 1 cm có thể tích 1 cm³. Khối hộp dài a, rộng b, cao h có a × b khối đơn vị trong một lớp và h lớp, nên thể tích V = a × b × h khi các số đo cùng đơn vị.",
+      "Đổi đơn vị phải xét cả ba chiều. Vì 1 dm = 10 cm, khối 1 dm³ chứa 10 × 10 × 10 = 1.000 cm³, không phải 10 cm³. Với hộp rỗng, thể tích chứa được thường dùng kích thước bên trong."
+    ],
+    "example": {
+      "prompt": "Hộp chữ nhật bên trong dài 8 cm, rộng 5 cm, cao 4 cm. Thể tích bằng bao nhiêu cm³?",
+      "answer": "160",
+      "method": [
+        "Một lớp có 8 × 5 = 40 khối lập phương 1 cm³.",
+        "Có 4 lớp nên có 40 × 4 = 160 khối.",
+        "V = 8 × 5 × 4 = 160 cm³."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Khối hộp dài 6 cm, rộng 3 cm, cao 2 cm có thể tích bao nhiêu cm³?",
+      "answer": "36",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "6 × 3 × 2 = 36 cm³.",
+      "hints": [
+        "Tính một lớp trước."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Một bể có đáy 20 cm × 10 cm chứa nước cao 5 cm. Thể tích nước là bao nhiêu cm³?",
+        "answer": "1000",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "20 × 10 × 5 = 1.000 cm³; đây là kích thước phần nước."
+      },
+      {
+        "type": "boolean",
+        "prompt": "1 dm³ = 10 cm³ vì 1 dm = 10 cm.",
+        "answer": "false",
+        "explanation": "Thể tích có ba chiều, nên hệ số đổi là 10 × 10 × 10 = 1.000."
+      },
+      {
+        "type": "essay",
+        "prompt": "Một hộp cần chứa ít nhất 120 khối 1 cm³. Tìm hai bộ kích thước nguyên khác nhau, tính thể tích và giải thích vì sao chưa thể kết luận cách nào tốn ít bìa hơn chỉ từ thể tích.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Thể tích khối hộp bằng tích ba kích thước cùng đơn vị; đổi đơn vị thể tích phải xét ba chiều."
+      }
+    ],
+    "application": "Một hộp cần chứa ít nhất 120 khối 1 cm³. Tìm hai bộ kích thước nguyên khác nhau, tính thể tích và giải thích vì sao chưa thể kết luận cách nào tốn ít bìa hơn chỉ từ thể tích.",
+    "summary": "Thể tích khối hộp bằng tích ba kích thước cùng đơn vị; đổi đơn vị thể tích phải xét ba chiều.",
+    "mistakes": [
+      "Thể tích có ba chiều, nên hệ số đổi là 10 × 10 × 10 = 1.000.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 6,
+    "subjectId": "math",
+    "slug": "negative-integers",
+    "track": "foundation",
+    "title": "Số nguyên âm và thứ tự trên trục số",
+    "chapter": "Số nguyên",
+    "semester": 1,
+    "outcome": "So sánh số nguyên trên trục số, tính cộng/trừ bằng chuyển động và phân biệt số âm với giá trị tuyệt đối.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Số nguyên gồm số nguyên âm, số 0 và số nguyên dương. Trên trục số, chiều sang phải là chiều tăng; vì vậy −1 lớn hơn −3 dù khoảng cách từ −3 đến 0 lớn hơn. Dấu trừ có thể chỉ số âm hoặc phép trừ, cần đọc theo ngữ cảnh.",
+      "Giá trị tuyệt đối là khoảng cách đến 0 nên không âm: |−3| = 3. Khoảng cách không phải chính số ban đầu. Nhiệt độ −3 °C thấp hơn −1 °C; khoản nợ 3 đơn vị có thể được mô hình hóa bằng −3 nhưng không có nghĩa bạn đang sở hữu 3 đơn vị."
+    ],
+    "example": {
+      "prompt": "Trong hai số −3 và −1, số lớn hơn bằng bao nhiêu?",
+      "answer": "-1",
+      "method": [
+        "Đánh dấu −3 và −1 trên trục có mốc 0.",
+        "−1 nằm bên phải −3.",
+        "Kết luận −1 > −3; khoảng cách đến 0 không dùng thay cho thứ tự."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Tính −4 + 7.",
+      "answer": "3",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "Từ −4 dịch phải 7 đơn vị đến 3.",
+      "hints": [
+        "Bù 4 để về 0 rồi còn 3."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Tính 5 − 8.",
+        "answer": "-3",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "Từ 5 dịch trái 8 đơn vị đến −3."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Vì |−8| > |−2| nên −8 > −2.",
+        "answer": "false",
+        "explanation": "Giá trị tuyệt đối so khoảng cách đến 0; trong các số âm, số ở xa 0 hơn nằm bên trái và nhỏ hơn."
+      },
+      {
+        "type": "essay",
+        "prompt": "Đặt tình huống nhiệt độ hoặc thang máy có mốc 0. Giải thích một phép cộng và một phép trừ số nguyên bằng chuyển động trên trục.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Số bên phải lớn hơn; giá trị tuyệt đối là khoảng cách, không phải thứ tự."
+      }
+    ],
+    "application": "Đặt tình huống nhiệt độ hoặc thang máy có mốc 0. Giải thích một phép cộng và một phép trừ số nguyên bằng chuyển động trên trục.",
+    "summary": "Số bên phải lớn hơn; giá trị tuyệt đối là khoảng cách, không phải thứ tự.",
+    "mistakes": [
+      "Giá trị tuyệt đối so khoảng cách đến 0; trong các số âm, số ở xa 0 hơn nằm bên trái và nhỏ hơn.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ],
+    "diagram": {
+      "kind": "number-line",
+      "minimum": -5,
+      "maximum": 5,
+      "marked": [
+        -3,
+        -1,
+        0
+      ]
+    }
+  },
+  {
+    "grade": 6,
+    "subjectId": "math",
+    "slug": "gcd-lcm",
+    "track": "standard",
+    "title": "Chọn ƯCLN hay BCNN từ ý nghĩa bài toán",
+    "chapter": "Chia hết và số nguyên tố",
+    "semester": 1,
+    "outcome": "Phân biệt tình huống chia nhóm dùng ước với tình huống gặp chu kỳ dùng bội; tìm ƯCLN/BCNN và kiểm tra chia hết.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Ước chung lớn nhất của hai số là số lớn nhất chia hết cả hai số ấy. Nó phù hợp với việc chia thành nhiều nhóm giống nhau, không còn thừa, khi cần số nhóm lớn nhất. Bội chung nhỏ nhất là số dương nhỏ nhất chia hết cho cả hai số, thường xuất hiện ở các chu kỳ gặp nhau.",
+      "Có thể phân tích số thành thừa số nguyên tố. Với 12 = 2² × 3 và 18 = 2 × 3², ƯCLN lấy số mũ nhỏ nhất của các thừa số chung: 2 × 3 = 6. BCNN lấy số mũ lớn nhất của mọi thừa số xuất hiện: 2² × 3² = 36."
+    ],
+    "example": {
+      "prompt": "Hai đèn nháy theo chu kỳ 12 giây và 18 giây. Vừa cùng nháy, sau ít nhất mấy giây lại cùng nháy?",
+      "answer": "36",
+      "method": [
+        "Thời điểm cùng nháy phải là bội của cả 12 và 18.",
+        "Chọn bội chung dương nhỏ nhất: BCNN(12,18) = 36.",
+        "Kiểm tra 36 : 12 = 3 và 36 : 18 = 2."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Tìm ƯCLN của 18 và 24.",
+      "answer": "6",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "18 = 2 × 3²; 24 = 2³ × 3. ƯCLN = 2 × 3 = 6.",
+      "hints": [
+        "Tìm thừa số nguyên tố chung với số mũ nhỏ nhất."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Có 24 bút và 36 vở chia thành nhiều phần quà giống nhau nhất, không thừa. Có mấy phần quà?",
+        "answer": "12",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "Số phần phải là ước chung; nhiều nhất là ƯCLN(24,36) = 12."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Bài hỏi hai chu kỳ gặp lại sớm nhất luôn dùng ƯCLN của hai chu kỳ.",
+        "answer": "false",
+        "explanation": "Thời điểm gặp lại phải là bội chung, nên thường dùng BCNN chứ không phải ƯCLN."
+      },
+      {
+        "type": "essay",
+        "prompt": "Đặt hai bài dùng cùng cặp số nhưng một bài cần ƯCLN, bài kia cần BCNN. Giải thích loại đại lượng mà đáp án đang đếm.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Hiểu nghĩa chia hết trước khi chọn: chia nhóm chung dùng ước, gặp lại theo chu kỳ dùng bội."
+      }
+    ],
+    "application": "Đặt hai bài dùng cùng cặp số nhưng một bài cần ƯCLN, bài kia cần BCNN. Giải thích loại đại lượng mà đáp án đang đếm.",
+    "summary": "Hiểu nghĩa chia hết trước khi chọn: chia nhóm chung dùng ước, gặp lại theo chu kỳ dùng bội.",
+    "mistakes": [
+      "Thời điểm gặp lại phải là bội chung, nên thường dùng BCNN chứ không phải ƯCLN.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 6,
+    "subjectId": "math",
+    "slug": "fraction-expression",
+    "track": "advanced",
+    "title": "Tính phân số với thứ tự phép tính và dấu ngoặc",
+    "chapter": "Phân số",
+    "semester": 2,
+    "outcome": "Tính biểu thức phân số có ngoặc, nhân/chia và cộng/trừ đúng thứ tự; giữ điều kiện chia và phân biệt số hạng với thừa số.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Phân số vừa là một số vừa biểu thị phép chia. Khi tính biểu thức, làm trong ngoặc trước, rồi nhân chia, cuối cùng cộng trừ. Với phép chia cho một phân số khác 0, nhân với phân số nghịch đảo của nó; điều kiện khác 0 phải được giữ.",
+      "Nên rút gọn thừa số chung trước khi nhân để giảm số lớn. Chỉ được rút gọn các thừa số của tích, không gạch bỏ tùy ý các số hạng trong một tổng. Khi kết quả vượt 1 hoặc âm, đó vẫn có thể là giá trị phân số hợp lệ."
+    ],
+    "example": {
+      "prompt": "Tính (1/2 + 1/3) : (5/6).",
+      "answer": "1",
+      "method": [
+        "Trong ngoặc: 1/2 + 1/3 = 3/6 + 2/6 = 5/6.",
+        "Chia cho 5/6 khác 0 là nhân 6/5.",
+        "(5/6) × (6/5) = 1; một số khác 0 chia chính nó bằng 1."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Tính 3/4 × 8/9.",
+      "answer": "2/3",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "Rút gọn 3 với 9 và 8 với 4 được 2/3.",
+      "hints": [
+        "Đây là tích nên có thể rút gọn thừa số chung."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Tính 2/3 − 1/2 × 2/5.",
+        "answer": "7/15",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "Nhân trước: 1/2 × 2/5 = 1/5. Sau đó 2/3 − 1/5 = 7/15."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Có thể rút gọn 2 trong (2 + 3)/2 để được 1 + 3.",
+        "answer": "false",
+        "explanation": "2 và 3 là số hạng trong tổng; không được rút gọn như thừa số chung của một tích."
+      },
+      {
+        "type": "essay",
+        "prompt": "Viết hai biểu thức dùng cùng các số 1/2, 1/3, 5/6 nhưng khác vị trí dấu ngoặc và cho kết quả khác nhau. Giải thích thứ tự tính.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Giữ thứ tự phép tính, điều kiện phép chia và phân biệt số hạng với thừa số."
+      }
+    ],
+    "application": "Viết hai biểu thức dùng cùng các số 1/2, 1/3, 5/6 nhưng khác vị trí dấu ngoặc và cho kết quả khác nhau. Giải thích thứ tự tính.",
+    "summary": "Giữ thứ tự phép tính, điều kiện phép chia và phân biệt số hạng với thừa số.",
+    "mistakes": [
+      "2 và 3 là số hạng trong tổng; không được rút gọn như thừa số chung của một tích.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 7,
+    "subjectId": "math",
+    "slug": "rational-numbers",
+    "track": "foundation",
+    "title": "Biểu diễn số hữu tỉ và tính dấu của tích",
+    "chapter": "Số hữu tỉ",
+    "semester": 1,
+    "outcome": "Biểu diễn số hữu tỉ âm bằng phân số tương đương, tính cộng/nhân/chia và phân biệt quy tắc dấu của từng phép toán.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Số hữu tỉ viết được dưới dạng a/b với a, b là số nguyên và b khác 0. Một số có nhiều cách biểu diễn: −3/4 = −6/8 = 3/(−4). Dấu âm có thể đặt ở tử, mẫu hoặc trước phân số, nhưng chỉ một dấu âm thì số vẫn âm.",
+      "Tích hai số cùng dấu là số dương; khác dấu là số âm. Khi cộng hai số khác dấu, so độ lớn rồi lấy dấu của số có độ lớn lớn hơn. Không dùng quy tắc dấu của phép nhân cho phép cộng: −2 + (−3) = −5, không phải +5."
+    ],
+    "example": {
+      "prompt": "Tính (−3/4) × (−8/9).",
+      "answer": "2/3",
+      "method": [
+        "Hai số âm nhân nhau cho kết quả dương.",
+        "Nhân độ lớn: (3 × 8)/(4 × 9), rút gọn được 2/3.",
+        "Kiểm tra kết quả dương và nhỏ hơn 1."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Tính −2/3 + 1/6.",
+      "answer": "-1/2",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "−2/3 = −4/6; cộng 1/6 được −3/6 = −1/2.",
+      "hints": [
+        "Cộng khác dấu bằng hiệu độ lớn, không dùng quy tắc của phép nhân."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Tính (−5/6) : (5/3).",
+        "answer": "-1/2",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "Nhân với nghịch đảo 3/5: −5/6 × 3/5 = −1/2."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Hai số âm cộng nhau luôn cho số dương.",
+        "answer": "false",
+        "explanation": "Quy tắc “âm nhân âm thành dương” chỉ áp dụng phép nhân; cộng hai số âm vẫn âm."
+      },
+      {
+        "type": "essay",
+        "prompt": "Chọn một số hữu tỉ âm, viết ba phân số bằng nó rồi đặt một phép cộng và một phép nhân để so sánh quy tắc dấu.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Số hữu tỉ có mẫu khác 0; quy tắc dấu phụ thuộc phép toán."
+      }
+    ],
+    "application": "Chọn một số hữu tỉ âm, viết ba phân số bằng nó rồi đặt một phép cộng và một phép nhân để so sánh quy tắc dấu.",
+    "summary": "Số hữu tỉ có mẫu khác 0; quy tắc dấu phụ thuộc phép toán.",
+    "mistakes": [
+      "Quy tắc “âm nhân âm thành dương” chỉ áp dụng phép nhân; cộng hai số âm vẫn âm.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 7,
+    "subjectId": "math",
+    "slug": "direct-proportion",
+    "track": "standard",
+    "title": "Tỉ lệ thuận và đại lượng không đổi",
+    "chapter": "Tỉ lệ và đại lượng",
+    "semester": 1,
+    "outcome": "Kiểm tra quan hệ y = kx bằng hệ số không đổi, giải bài đơn giá/vận tốc và nhận ra phản ví dụ có phần phí cố định.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Hai đại lượng y và x tỉ lệ thuận khi y = kx với một hệ số k không đổi. Khi x khác 0 thì tỉ số y/x luôn bằng k. Chỉ thấy hai đại lượng cùng tăng chưa đủ kết luận tỉ lệ thuận; phải kiểm tra tỉ số hoặc quan hệ y = kx.",
+      "Nếu cùng một loại vở có đơn giá không đổi thì tiền bằng số vở nhân đơn giá. Nếu còn phí vận chuyển cố định, tiền trả = đơn giá × số lượng + phí; khi đó tổng tiền không còn tỉ lệ thuận với số lượng."
+    ],
+    "example": {
+      "prompt": "3 quyển vở giá 24 nghìn, đơn giá không đổi. 5 quyển giá bao nhiêu nghìn?",
+      "answer": "40",
+      "method": [
+        "Tìm hệ số k = 24 : 3 = 8 nghìn/quyển.",
+        "Tiền 5 quyển là y = 8 × 5 = 40 nghìn.",
+        "Kiểm tra 40 : 5 = 24 : 3 = 8."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Một xe đi đều 60 km mỗi giờ. Trong 2,5 giờ đi được bao nhiêu km?",
+      "answer": "150",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "Quãng đường tỉ lệ thuận với thời gian khi vận tốc không đổi: 60 × 2,5 = 150 km.",
+      "hints": [
+        "Xác định hệ số 60 km/giờ."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "y tỉ lệ thuận với x; x = 4 thì y = 10. Khi x = 6, y bằng bao nhiêu?",
+        "answer": "15",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "k = 10/4 = 2,5; y = 2,5 × 6 = 15."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Tiền taxi bằng 10 nghìn phí mở cửa cộng 12 nghìn mỗi km thì tổng tiền tỉ lệ thuận với số km.",
+        "answer": "false",
+        "explanation": "Phí cố định làm tỉ số tiền/số km thay đổi; quan hệ không có dạng y = kx."
+      },
+      {
+        "type": "essay",
+        "prompt": "Lập một bảng ba cặp số cho quan hệ tỉ lệ thuận và một bảng cùng tăng nhưng không tỉ lệ thuận. Giải thích bằng tỉ số.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Tỉ lệ thuận cần cùng một hệ số k; cùng tăng không đủ."
+      }
+    ],
+    "application": "Lập một bảng ba cặp số cho quan hệ tỉ lệ thuận và một bảng cùng tăng nhưng không tỉ lệ thuận. Giải thích bằng tỉ số.",
+    "summary": "Tỉ lệ thuận cần cùng một hệ số k; cùng tăng không đủ.",
+    "mistakes": [
+      "Phí cố định làm tỉ số tiền/số km thay đổi; quan hệ không có dạng y = kx.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 7,
+    "subjectId": "math",
+    "slug": "triangle-congruence",
+    "track": "advanced",
+    "title": "Chứng minh hai tam giác bằng nhau theo cạnh–cạnh–cạnh",
+    "chapter": "Tam giác và lập luận",
+    "semester": 2,
+    "outcome": "Chỉ rõ ba cặp cạnh và thứ tự đỉnh tương ứng để dùng trường hợp cạnh–cạnh–cạnh, rồi suy góc hoặc đoạn bằng nhau.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Hai tam giác bằng nhau nếu có thể đặt chồng để các đỉnh và cạnh tương ứng trùng nhau. Trường hợp cạnh–cạnh–cạnh cho phép kết luận bằng nhau khi ba cặp cạnh tương ứng bằng nhau. Thứ tự ghi tên tam giác phải bảo toàn sự tương ứng các đỉnh.",
+      "Ví dụ AB = DE, BC = EF, AC = DF thì A tương ứng D, B tương ứng E, C tương ứng F. Từ đó suy ra góc B bằng góc E. Không được chọn thứ tự tên tùy ý sau khi đã xác định các cặp cạnh."
+    ],
+    "example": {
+      "prompt": "Cho AB = DE, BC = EF, AC = DF; góc B = 50°. Góc E bằng bao nhiêu độ?",
+      "answer": "50",
+      "method": [
+        "Ba cặp cạnh tương ứng bằng nhau nên ΔABC = ΔDEF theo cạnh–cạnh–cạnh.",
+        "Theo thứ tự tương ứng, B ↔ E.",
+        "Suy ra góc E = góc B = 50°."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Hai tam giác bằng nhau có hai cạnh tương ứng lần lượt 7 cm và x cm. x bằng bao nhiêu?",
+      "answer": "7",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "Các cạnh tương ứng của hai tam giác bằng nhau có độ dài bằng nhau.",
+      "hints": [
+        "Xác định đúng cặp tương ứng."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "AB = AC, M là trung điểm BC. Biết góc BMA = 90°. Góc AMC bằng bao nhiêu độ?",
+        "answer": "90",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "Hai góc BMA và AMC kề bù trên đường thẳng BC nên tổng 180°, do đó góc AMC = 90°. Có thể liên hệ hai tam giác ABM và ACM bằng nhau."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Nếu AB = DE, BC = EF, AC = DF thì có thể kết luận ΔABC = ΔEFD với bất kỳ hình nào.",
+        "answer": "false",
+        "explanation": "Tên tam giác phải ghi đúng cặp đỉnh: A↔D, B↔E, C↔F; đổi thứ tự tùy ý làm sai tương ứng."
+      },
+      {
+        "type": "essay",
+        "prompt": "Vẽ tam giác cân ABC, lấy M là trung điểm BC. Dùng ba cặp cạnh để chứng minh ABM và ACM bằng nhau; suy ra AM là phân giác góc A.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Chứng minh cần nêu đủ giả thiết, trường hợp bằng nhau và thứ tự đỉnh tương ứng."
+      }
+    ],
+    "application": "Vẽ tam giác cân ABC, lấy M là trung điểm BC. Dùng ba cặp cạnh để chứng minh ABM và ACM bằng nhau; suy ra AM là phân giác góc A.",
+    "summary": "Chứng minh cần nêu đủ giả thiết, trường hợp bằng nhau và thứ tự đỉnh tương ứng.",
+    "mistakes": [
+      "Tên tam giác phải ghi đúng cặp đỉnh: A↔D, B↔E, C↔F; đổi thứ tự tùy ý làm sai tương ứng.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 8,
+    "subjectId": "math",
+    "slug": "factor-common",
+    "track": "foundation",
+    "title": "Phân tích đa thức thành nhân tử chung",
+    "chapter": "Đa thức",
+    "semester": 1,
+    "outcome": "Đặt nhân tử chung của đa thức, giữ đúng dấu và hệ số rồi khai triển ngược để kiểm tra.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Phân tích thành nhân tử là viết một tổng thành một tích có giá trị bằng nó. Nếu mọi hạng tử có cùng một thừa số, có thể đặt thừa số ấy ra ngoài: ab + ac = a(b + c). Khi làm xong, khai triển lại để kiểm tra.",
+      "Với 6x² + 9x, thừa số chung là 3x, vì 6x² = 3x·2x và 9x = 3x·3. Được 3x(2x + 3). Cần giữ dấu và số mũ đúng; nếu đặt nhân tử âm thì dấu trong ngoặc cũng đổi tương ứng."
+    ],
+    "example": {
+      "prompt": "Phân tích 6x² + 9x thành nhân tử.",
+      "answer": "3x(2x + 3)",
+      "method": [
+        "Tìm thừa số chung của hệ số 6, 9 là 3 và của x², x là x.",
+        "Chia từng hạng tử cho 3x được 2x và 3.",
+        "Viết 3x(2x + 3), nhân lại được 6x² + 9x."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Tính nhanh 17 × 12 + 17 × 8.",
+      "answer": "340",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "Đặt 17 ra ngoài: 17(12 + 8) = 17 × 20 = 340.",
+      "hints": [
+        "Nhận ra hai tích cùng có thừa số 17."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Với x = 2, giá trị 6x² + 9x bằng bao nhiêu?",
+        "answer": "42",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "6 × 4 + 9 × 2 = 42; dạng 3x(2x + 3) cũng cho 6 × 7 = 42."
+      },
+      {
+        "type": "boolean",
+        "prompt": "6x² + 9x = 3x(2x + 9).",
+        "answer": "false",
+        "explanation": "Chia 9x cho 3x được 3, không phải 9; khai triển vế phải sẽ cho 6x² + 27x."
+      },
+      {
+        "type": "essay",
+        "prompt": "Tự chọn đa thức có hai hoặc ba hạng tử cùng nhân tử. Viết thành tích, chỉ rõ bước chia từng hạng tử rồi kiểm tra bằng khai triển.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Đặt nhân tử chung là biến tổng thành tích; khai triển ngược kiểm tra từng hệ số."
+      }
+    ],
+    "application": "Tự chọn đa thức có hai hoặc ba hạng tử cùng nhân tử. Viết thành tích, chỉ rõ bước chia từng hạng tử rồi kiểm tra bằng khai triển.",
+    "summary": "Đặt nhân tử chung là biến tổng thành tích; khai triển ngược kiểm tra từng hệ số.",
+    "mistakes": [
+      "Chia 9x cho 3x được 3, không phải 9; khai triển vế phải sẽ cho 6x² + 27x.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 8,
+    "subjectId": "math",
+    "slug": "linear-equation",
+    "track": "standard",
+    "title": "Phương trình bậc nhất một ẩn và phép biến đổi tương đương",
+    "chapter": "Phương trình",
+    "semester": 1,
+    "outcome": "Giải phương trình bậc nhất một ẩn bằng phép biến đổi tương đương, giải thích việc giữ cân bằng và thử lại nghiệm.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Phương trình là đẳng thức chứa ẩn. Nghiệm là giá trị của ẩn làm hai vế bằng nhau. Cộng hoặc trừ cùng một biểu thức ở hai vế, hoặc nhân chia hai vế với cùng một số khác 0, giữ nguyên tập nghiệm.",
+      "Với 3x − 5 = 10, cộng 5 vào cả hai vế để được 3x = 15 rồi chia hai vế cho 3. Quy tắc “chuyển vế đổi dấu” là cách viết gọn của việc cộng hoặc trừ cùng một lượng ở cả hai vế, không phải đổi dấu tùy ý."
+    ],
+    "example": {
+      "prompt": "Giải 3x − 5 = 10.",
+      "answer": "5",
+      "method": [
+        "Cộng 5 vào hai vế: 3x = 15.",
+        "Chia hai vế cho 3 khác 0: x = 5.",
+        "Thay x = 5: 3 × 5 − 5 = 10, đúng."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Giải 4x + 7 = 19.",
+      "answer": "3",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "Trừ 7 hai vế được 4x = 12; chia 4 được x = 3.",
+      "hints": [
+        "Tách hạng tử chứa x trước."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Giải 2(x − 3) = 10.",
+        "answer": "8",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "Chia 2 được x − 3 = 5, rồi cộng 3 được x = 8."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Có thể chia cả hai vế của phương trình cho 0 để tìm nghiệm.",
+        "answer": "false",
+        "explanation": "Phép chia cho 0 không xác định, không phải phép biến đổi tương đương."
+      },
+      {
+        "type": "essay",
+        "prompt": "Lập phương trình cho tình huống có phí cố định và phí theo số lượng. Giải rồi kiểm tra giá trị tìm được có phù hợp điều kiện thực tế không.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Mỗi phép biến đổi phải giữ cân bằng hai vế và có điều kiện hợp lệ; luôn thử lại nghiệm."
+      }
+    ],
+    "application": "Lập phương trình cho tình huống có phí cố định và phí theo số lượng. Giải rồi kiểm tra giá trị tìm được có phù hợp điều kiện thực tế không.",
+    "summary": "Mỗi phép biến đổi phải giữ cân bằng hai vế và có điều kiện hợp lệ; luôn thử lại nghiệm.",
+    "mistakes": [
+      "Phép chia cho 0 không xác định, không phải phép biến đổi tương đương.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 8,
+    "subjectId": "math",
+    "slug": "similar-triangles",
+    "track": "advanced",
+    "title": "Tam giác đồng dạng và tỉ số chiều dài",
+    "chapter": "Hình học đồng dạng",
+    "semester": 2,
+    "outcome": "Dùng đúng tỉ số các cạnh tương ứng khi giải bài đồng dạng, suy tỉ số diện tích và nêu điều kiện mô hình đo bằng bóng.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Hai tam giác đồng dạng có các góc tương ứng bằng nhau và các cạnh tương ứng tỉ lệ. Khác với bằng nhau, đồng dạng cho phép thay đổi kích thước theo cùng một tỉ số. Khi biết tỉ số đồng dạng k, mọi chiều dài tương ứng nhân k, còn diện tích nhân k².",
+      "Trong thực hành đo chiều cao bằng bóng, cần cùng thời điểm, mặt đất phẳng và vật đứng thẳng để tạo các cặp góc thích hợp. Khi đó tỉ số chiều cao/bóng của hai vật bằng nhau. Không dùng mô hình nếu điều kiện hình học không bảo đảm."
+    ],
+    "example": {
+      "prompt": "Cọc cao 1,5 m có bóng 2 m; cây có bóng 8 m cùng điều kiện. Cây cao bao nhiêu mét?",
+      "answer": "6",
+      "method": [
+        "Hai tam giác vuông tạo bởi vật và bóng có góc chiếu sáng bằng nhau nên đồng dạng.",
+        "Tỉ số bóng cây/bóng cọc là 8/2 = 4.",
+        "Chiều cao cây là 1,5 × 4 = 6 m."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Hai tam giác đồng dạng có tỉ số chiều dài lớn/nhỏ là 3. Cạnh nhỏ 4 cm ứng với cạnh lớn bao nhiêu cm?",
+      "answer": "12",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "4 × 3 = 12 cm.",
+      "hints": [
+        "Đảm bảo lấy đúng hai cạnh tương ứng."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Hai hình tam giác đồng dạng có tỉ số chiều dài 2. Tỉ số diện tích bằng bao nhiêu?",
+        "answer": "4",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "Diện tích đổi theo bình phương tỉ số: 2² = 4."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Nếu cạnh tăng 2 lần trong hai tam giác đồng dạng thì diện tích tăng 2 lần.",
+        "answer": "false",
+        "explanation": "Đáy và chiều cao cùng tăng 2 lần nên diện tích tăng 4 lần."
+      },
+      {
+        "type": "essay",
+        "prompt": "Thiết kế cách đo chiều cao vật bằng bóng; nêu các điều kiện làm mô hình đúng và ít nhất một nguồn sai số khi đo.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Đồng dạng giữ góc, giữ tỉ số cạnh; tỉ số diện tích là bình phương tỉ số chiều dài."
+      }
+    ],
+    "application": "Thiết kế cách đo chiều cao vật bằng bóng; nêu các điều kiện làm mô hình đúng và ít nhất một nguồn sai số khi đo.",
+    "summary": "Đồng dạng giữ góc, giữ tỉ số cạnh; tỉ số diện tích là bình phương tỉ số chiều dài.",
+    "mistakes": [
+      "Đáy và chiều cao cùng tăng 2 lần nên diện tích tăng 4 lần.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 9,
+    "subjectId": "math",
+    "slug": "square-root",
+    "track": "foundation",
+    "title": "Căn bậc hai số học và điều kiện không âm",
+    "chapter": "Căn thức",
+    "semester": 1,
+    "outcome": "Phân biệt căn bậc hai số học với nghiệm phương trình bình phương, giữ điều kiện không âm và dùng √(x²) = |x|.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Căn bậc hai số học của a ≥ 0 là số không âm có bình phương bằng a, kí hiệu √a. Vì vậy √25 = 5. Phương trình x² = 25 lại có hai nghiệm 5 và −5; đừng nhầm kí hiệu căn số học với toàn bộ nghiệm của phương trình.",
+      "Với x bất kỳ, √(x²) = |x|. Chẳng hạn x = −3 thì √9 = 3 = |−3|, không phải −3. Trong phạm vi số thực, biểu thức dưới dấu căn bậc hai phải không âm."
+    ],
+    "example": {
+      "prompt": "Tính √[(-3)²], tức căn bậc hai số học của bình phương −3.",
+      "answer": "3",
+      "method": [
+        "Bình phương −3 được 9.",
+        "Căn bậc hai số học của 9 là 3, vì chọn số không âm.",
+        "Áp dụng √(x²) = |x| để kiểm tra."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Tính √64.",
+      "answer": "8",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "8 ≥ 0 và 8² = 64 nên √64 = 8.",
+      "hints": [
+        "Căn số học không lấy kết quả âm."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Nếu √x = 6 thì x bằng bao nhiêu?",
+        "answer": "36",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "Bình phương hai vế không âm được x = 36; thay lại √36 = 6."
+      },
+      {
+        "type": "boolean",
+        "prompt": "√(x²) = x với mọi số thực x.",
+        "answer": "false",
+        "explanation": "Đúng là |x|; khi x âm, x không thể là kết quả không âm của căn số học."
+      },
+      {
+        "type": "essay",
+        "prompt": "Giải thích sự khác nhau giữa tính √49 và giải phương trình x² = 49; dùng một giá trị âm để kiểm tra phát biểu √(x²) = x.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Căn số học luôn không âm; biểu thức dưới căn không âm; √(x²) = |x|."
+      }
+    ],
+    "application": "Giải thích sự khác nhau giữa tính √49 và giải phương trình x² = 49; dùng một giá trị âm để kiểm tra phát biểu √(x²) = x.",
+    "summary": "Căn số học luôn không âm; biểu thức dưới căn không âm; √(x²) = |x|.",
+    "mistakes": [
+      "Đúng là |x|; khi x âm, x không thể là kết quả không âm của căn số học.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 9,
+    "subjectId": "math",
+    "slug": "quadratic-roots",
+    "track": "standard",
+    "title": "Phương trình bậc hai và kiểm tra nghiệm",
+    "chapter": "Phương trình bậc hai",
+    "semester": 2,
+    "outcome": "Giải phương trình bậc hai bằng nhân tử hoặc biệt thức, giữ điều kiện a ≠ 0 và kiểm tra nghiệm thực.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Phương trình bậc hai một ẩn có dạng ax² + bx + c = 0 với a khác 0. Có thể thử phân tích nhân tử nếu thuận lợi; nếu không, tính biệt thức Δ = b² − 4ac. Δ dương có hai nghiệm thực phân biệt, bằng 0 có nghiệm kép, âm không có nghiệm thực.",
+      "Khi Δ ≥ 0, nghiệm là x = (−b ± √Δ)/(2a). Cả tử số phải chia cho 2a; giữ dấu ngoặc khi thay b âm. Sau khi tính, thay nghiệm vào phương trình ban đầu hoặc kiểm tra tổng và tích nghiệm khi áp dụng được."
+    ],
+    "example": {
+      "prompt": "Giải x² − 5x + 6 = 0. Nhập nghiệm nhỏ hơn.",
+      "answer": "2",
+      "method": [
+        "Tìm hai số có tổng 5 và tích 6: 2, 3.",
+        "Viết (x − 2)(x − 3) = 0, suy ra x = 2 hoặc x = 3.",
+        "Nghiệm nhỏ hơn là 2; thay vào được 4 − 10 + 6 = 0."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Với x² − 6x + 9 = 0, nghiệm kép bằng bao nhiêu?",
+      "answer": "3",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "(x − 3)² = 0 nên x = 3.",
+      "hints": [
+        "Có thể nhận ra hằng đẳng thức hoặc tính Δ = 0."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Với 2x² − 7x + 3 = 0, nghiệm lớn hơn bằng bao nhiêu?",
+        "answer": "3",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "Δ = 49 − 24 = 25; x = (7 ± 5)/4, được 3 và 1/2."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Với a khác 0 và Δ âm, phương trình bậc hai không có nghiệm trong tập số thực.",
+        "answer": "true",
+        "explanation": "Bình phương một số thực không âm; công thức đòi căn bậc hai thực của Δ nên không có khi Δ âm."
+      },
+      {
+        "type": "essay",
+        "prompt": "Lập một phương trình bậc hai từ hai nghiệm đã chọn, giải bằng hai cách nếu được và kiểm tra tổng/tích nghiệm.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Giữ điều kiện a ≠ 0, tính đúng Δ và dấu ngoặc; kết quả cần được thử lại."
+      }
+    ],
+    "application": "Lập một phương trình bậc hai từ hai nghiệm đã chọn, giải bằng hai cách nếu được và kiểm tra tổng/tích nghiệm.",
+    "summary": "Giữ điều kiện a ≠ 0, tính đúng Δ và dấu ngoặc; kết quả cần được thử lại.",
+    "mistakes": [
+      "Bình phương một số thực không âm; công thức đòi căn bậc hai thực của Δ nên không có khi Δ âm.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 9,
+    "subjectId": "math",
+    "slug": "linear-system-model",
+    "track": "advanced",
+    "title": "Lập hệ hai ẩn từ tổng và giá tiền",
+    "chapter": "Hệ phương trình",
+    "semester": 2,
+    "outcome": "Đặt hai ẩn có đơn vị, lập hai phương trình từ dữ kiện độc lập, giải bằng thế/cộng và kiểm tra điều kiện số lượng.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Một hệ hai phương trình bậc nhất hai ẩn cần một cặp số thỏa đồng thời cả hai phương trình. Trong bài toán thực tế, đặt ẩn và ghi đơn vị trước; mỗi điều kiện độc lập của đề tạo một phương trình.",
+      "Có thể giải bằng thế hoặc cộng đại số. Phương pháp cộng đại số chọn hệ số để một ẩn triệt tiêu khi cộng hoặc trừ. Khi tìm được cặp nghiệm, kiểm tra cả hai phương trình và các điều kiện như số lượng phải nguyên, không âm."
+    ],
+    "example": {
+      "prompt": "Mua 10 vé gồm vé người lớn 50 nghìn và vé trẻ em 30 nghìn, tổng 380 nghìn. Có bao nhiêu vé người lớn?",
+      "answer": "4",
+      "method": [
+        "Gọi x là số vé người lớn, y là số vé trẻ em: x + y = 10, 50x + 30y = 380.",
+        "Nhân phương trình đầu với 30 rồi trừ khỏi phương trình tiền: 20x = 80.",
+        "x = 4, y = 6; kiểm tra 200 + 180 = 380 và tổng 10 vé."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Giải hệ x + y = 7, x − y = 1. Nhập x.",
+      "answer": "4",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "Cộng hai phương trình: 2x = 8, nên x = 4; khi đó y = 3.",
+      "hints": [
+        "Chọn phép cộng để y triệt tiêu."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Giải hệ x + y = 9, 2x + y = 13. Nhập y.",
+        "answer": "5",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "Trừ phương trình đầu khỏi phương trình sau được x = 4, nên y = 5."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Chỉ cần cặp số thỏa một phương trình của hệ là đủ để kết luận nghiệm của hệ.",
+        "answer": "false",
+        "explanation": "Nghiệm hệ phải thỏa đồng thời mọi phương trình, đồng thời thỏa điều kiện thực tế nếu có."
+      },
+      {
+        "type": "essay",
+        "prompt": "Tự đặt một bài mua hai loại đồ dùng có tổng số món và tổng tiền. Lập hệ, giải, kiểm tra số lượng và giải thích nếu nghiệm phân số không phù hợp.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Đặt ẩn rõ đơn vị; hai điều kiện tạo hai phương trình; kiểm tra nghiệm trong toàn hệ."
+      }
+    ],
+    "application": "Tự đặt một bài mua hai loại đồ dùng có tổng số món và tổng tiền. Lập hệ, giải, kiểm tra số lượng và giải thích nếu nghiệm phân số không phù hợp.",
+    "summary": "Đặt ẩn rõ đơn vị; hai điều kiện tạo hai phương trình; kiểm tra nghiệm trong toàn hệ.",
+    "mistakes": [
+      "Nghiệm hệ phải thỏa đồng thời mọi phương trình, đồng thời thỏa điều kiện thực tế nếu có.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 10,
+    "subjectId": "math",
+    "slug": "sets-and-logic",
+    "track": "foundation",
+    "title": "Giao, hợp và đếm phần tử của hai tập hợp",
+    "chapter": "Tập hợp và mệnh đề",
+    "semester": 1,
+    "outcome": "Phân biệt giao, hợp, đúng một và ít nhất một; đếm hợp hai tập bằng cách trừ phần bị đếm hai lần.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Hợp A ∪ B gồm các phần tử thuộc ít nhất một trong hai tập. Giao A ∩ B gồm các phần tử thuộc đồng thời cả hai. Khi cộng số phần tử của A và B, các phần tử trong giao đã bị đếm hai lần nên phải trừ một lần: |A ∪ B| = |A| + |B| − |A ∩ B|.",
+      "Biểu đồ Ven giúp tách ba vùng: chỉ thuộc A, thuộc cả hai, chỉ thuộc B. Đọc cụm “ít nhất một” khác với “đúng một”. Nếu xét cả lớp, cần biết tổng số học sinh để tính số không thuộc tập nào."
+    ],
+    "example": {
+      "prompt": "Trong lớp, 18 bạn thích bóng đá, 12 bạn thích cầu lông, 5 bạn thích cả hai. Có bao nhiêu bạn thích ít nhất một môn?",
+      "answer": "25",
+      "method": [
+        "Cộng 18 + 12 được 30 nhưng năm bạn thích cả hai bị tính hai lần.",
+        "Trừ phần giao một lần: 30 − 5 = 25.",
+        "Ba vùng là 13 chỉ bóng đá, 5 cả hai, 7 chỉ cầu lông, tổng 25."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "A có 15 phần tử, B có 11, giao có 4. Hợp có bao nhiêu phần tử?",
+      "answer": "22",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "15 + 11 − 4 = 22.",
+      "hints": [
+        "Giao đã đếm hai lần khi cộng."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Trong lớp 30 bạn, có 22 bạn thuộc A ∪ B. Có mấy bạn không thuộc cả A lẫn B?",
+        "answer": "8",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "30 − 22 = 8."
+      },
+      {
+        "type": "boolean",
+        "prompt": "“Thích ít nhất một môn” và “chỉ thích đúng một môn” luôn là cùng một tập học sinh.",
+        "answer": "false",
+        "explanation": "Người thích cả hai thuộc “ít nhất một” nhưng không thuộc “đúng một”."
+      },
+      {
+        "type": "essay",
+        "prompt": "Tạo một bảng khảo sát nhỏ với hai sở thích, vẽ Ven và giải thích công thức đếm hợp bằng ba vùng rời nhau.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Phần giao bị đếm hai lần khi cộng; phân biệt ít nhất một, đúng một và không tập nào."
+      }
+    ],
+    "application": "Tạo một bảng khảo sát nhỏ với hai sở thích, vẽ Ven và giải thích công thức đếm hợp bằng ba vùng rời nhau.",
+    "summary": "Phần giao bị đếm hai lần khi cộng; phân biệt ít nhất một, đúng một và không tập nào.",
+    "mistakes": [
+      "Người thích cả hai thuộc “ít nhất một” nhưng không thuộc “đúng một”.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 10,
+    "subjectId": "math",
+    "slug": "quadratic-function",
+    "track": "standard",
+    "title": "Đỉnh và giá trị nhỏ nhất của hàm bậc hai",
+    "chapter": "Hàm số và đồ thị",
+    "semester": 1,
+    "outcome": "Tìm đỉnh và giá trị cực trị của parabol trên R bằng hoàn thành bình phương, phân biệt hướng mở và điều kiện miền xét.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Hàm bậc hai y = ax² + bx + c, a khác 0, có đồ thị parabol. Trục đối xứng x = −b/(2a), tung độ đỉnh được tính bằng cách thay hoành độ này vào hàm. Nếu a dương, đỉnh là điểm thấp nhất; nếu a âm, đỉnh là điểm cao nhất trên toàn trục số.",
+      "Có thể hoàn thành bình phương để nhìn rõ cực trị. Với y = x² − 4x + 5 = (x − 2)² + 1, bình phương luôn không âm nên y ≥ 1, dấu bằng khi x = 2. Nếu bài chỉ xét một khoảng, cần kiểm tra đỉnh có thuộc khoảng ấy không."
+    ],
+    "example": {
+      "prompt": "Tìm giá trị nhỏ nhất của y = x² − 4x + 5 trên R.",
+      "answer": "1",
+      "method": [
+        "Viết x² − 4x + 5 = (x − 2)² + 1.",
+        "Vì (x − 2)² ≥ 0 nên y ≥ 1.",
+        "x = 2 làm bình phương bằng 0, nên giá trị nhỏ nhất là 1."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Tung độ đỉnh của y = (x + 1)² + 3 bằng bao nhiêu?",
+      "answer": "3",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "Đỉnh tại x = −1, khi đó y = 3.",
+      "hints": [
+        "Dạng bình phương cộng hằng số cho thấy giá trị nhỏ nhất."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Giá trị lớn nhất của y = −(x − 3)² + 7 trên R bằng bao nhiêu?",
+        "answer": "7",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "Bình phương không âm nên đối của nó không dương; y ≤ 7 khi x = 3."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Mọi parabol đều có giá trị nhỏ nhất trên R.",
+        "answer": "false",
+        "explanation": "Nếu hệ số a âm, hàm giảm không bị chặn dưới khi |x| lớn; parabol khi đó có giá trị lớn nhất."
+      },
+      {
+        "type": "essay",
+        "prompt": "Chọn một hàm bậc hai, tìm đỉnh và giải thích cực trị bằng cả hệ số a và dạng bình phương; sau đó xét một khoảng không chứa hoành độ đỉnh.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Dấu a quyết định hướng mở; dạng hoàn thành bình phương giúp chứng minh giá trị cực trị."
+      }
+    ],
+    "application": "Chọn một hàm bậc hai, tìm đỉnh và giải thích cực trị bằng cả hệ số a và dạng bình phương; sau đó xét một khoảng không chứa hoành độ đỉnh.",
+    "summary": "Dấu a quyết định hướng mở; dạng hoàn thành bình phương giúp chứng minh giá trị cực trị.",
+    "mistakes": [
+      "Nếu hệ số a âm, hàm giảm không bị chặn dưới khi |x| lớn; parabol khi đó có giá trị lớn nhất.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 10,
+    "subjectId": "math",
+    "slug": "linear-region",
+    "track": "advanced",
+    "title": "Miền nghiệm và lựa chọn phương án có lợi nhất",
+    "chapter": "Bất phương trình và mô hình",
+    "semester": 2,
+    "outcome": "Xác định miền nghiệm đa giác của hệ bậc nhất hai ẩn và so giá trị mục tiêu tuyến tính tại các đỉnh hợp lệ.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Bất phương trình bậc nhất hai ẩn mô tả một nửa mặt phẳng. Một hệ bất phương trình là phần giao các miền. Khi gắn với bài toán sản xuất, x và y thường còn có điều kiện không âm hoặc nguyên; phải giữ các điều kiện này.",
+      "Với miền nghiệm là đa giác đóng, bị chặn, biểu thức tuyến tính đạt giá trị lớn nhất và nhỏ nhất tại ít nhất một đỉnh. Cách làm: tìm các đỉnh hợp lệ, tính giá trị mục tiêu ở từng đỉnh rồi so sánh. Nếu số sản phẩm phải nguyên, kiểm tra tính nguyên; kết luận cho biến thực chưa đủ cho mọi bài nguyên."
+    ],
+    "example": {
+      "prompt": "x ≥ 0, y ≥ 0, x + y ≤ 4. Tìm giá trị lớn nhất của F = 3x + 2y.",
+      "answer": "12",
+      "method": [
+        "Miền tam giác có các đỉnh (0,0), (4,0), (0,4).",
+        "Tính F lần lượt: 0, 12, 8.",
+        "Giá trị lớn nhất 12 đạt tại (4,0), thỏa toàn bộ điều kiện."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Với x,y ≥ 0 và x + y ≤ 5, giá trị lớn nhất của 2x + y bằng bao nhiêu?",
+      "answer": "10",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "Các đỉnh (0,0),(5,0),(0,5) cho các giá trị 0,10,5.",
+      "hints": [
+        "Vẽ miền rồi xét đỉnh."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Với x,y ≥ 0, x ≤ 3, y ≤ 2, giá trị lớn nhất của x + 4y bằng bao nhiêu?",
+        "answer": "11",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "Miền chữ nhật; (3,2) cho 3 + 8 = 11."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Một điểm làm F lớn nhưng vi phạm một điều kiện của hệ vẫn là phương án tối ưu hợp lệ.",
+        "answer": "false",
+        "explanation": "Chỉ được tối ưu trên miền nghiệm; điểm ngoài miền không phải phương án cho phép."
+      },
+      {
+        "type": "essay",
+        "prompt": "Đặt bài toán hai sản phẩm với hai tài nguyên giới hạn. Viết điều kiện, vẽ miền, xét các đỉnh và nêu điều kiện nguyên nếu sản phẩm không chia nhỏ được.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Tối ưu phải giữ toàn bộ ràng buộc; miền đa giác bị chặn cho phép xét các đỉnh."
+      }
+    ],
+    "application": "Đặt bài toán hai sản phẩm với hai tài nguyên giới hạn. Viết điều kiện, vẽ miền, xét các đỉnh và nêu điều kiện nguyên nếu sản phẩm không chia nhỏ được.",
+    "summary": "Tối ưu phải giữ toàn bộ ràng buộc; miền đa giác bị chặn cho phép xét các đỉnh.",
+    "mistakes": [
+      "Chỉ được tối ưu trên miền nghiệm; điểm ngoài miền không phải phương án cho phép.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 11,
+    "subjectId": "math",
+    "slug": "exponential-logarithm",
+    "track": "foundation",
+    "title": "Lũy thừa, hàm mũ và logarit là phép tìm số mũ",
+    "chapter": "Hàm mũ và logarit",
+    "semester": 2,
+    "outcome": "Chuyển giữa đẳng thức lũy thừa và logarit, giữ điều kiện cơ số/số trong logarit và nhận ra quy tắc sai với tổng.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Nếu a > 0 và a khác 1, logₐ b là số mũ x sao cho aˣ = b; cần b > 0. Ví dụ log₂ 8 = 3 vì 2³ = 8. Logarit không phải phép chia b cho a, dù trong vài trường hợp tình cờ có cùng kết quả.",
+      "Với số dương phù hợp, logarit của tích bằng tổng logarit; logarit của thương bằng hiệu; logarit của lũy thừa đưa số mũ thành hệ số. Không có quy tắc log(x + y) = log x + log y. Trước khi biến đổi phương trình logarit, viết điều kiện xác định."
+    ],
+    "example": {
+      "prompt": "Tính log₂ 32.",
+      "answer": "5",
+      "method": [
+        "Tìm x sao cho 2ˣ = 32.",
+        "Vì 2⁵ = 32 nên x = 5.",
+        "Điều kiện cơ số 2 > 0, khác 1 và số 32 > 0 đều thỏa."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Tính log₃ 81.",
+      "answer": "4",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "3⁴ = 81 nên log₃ 81 = 4.",
+      "hints": [
+        "Liệt kê lũy thừa của 3."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Giải 2ˣ = 1/8. Nhập x.",
+        "answer": "-3",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "1/8 = 2⁻³, nên x = −3."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Với x,y > 0, log(x + y) luôn bằng log x + log y.",
+        "answer": "false",
+        "explanation": "Quy tắc cộng logarit áp dụng cho tích xy, không cho tổng x + y."
+      },
+      {
+        "type": "essay",
+        "prompt": "Tự chọn một cơ số hợp lệ và viết ba đẳng thức lũy thừa tương ứng ba đẳng thức logarit; nêu điều kiện và kiểm tra một phản ví dụ cho quy tắc sai về tổng.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Logarit tìm số mũ; điều kiện cơ số và số trong logarit phải được giữ."
+      }
+    ],
+    "application": "Tự chọn một cơ số hợp lệ và viết ba đẳng thức lũy thừa tương ứng ba đẳng thức logarit; nêu điều kiện và kiểm tra một phản ví dụ cho quy tắc sai về tổng.",
+    "summary": "Logarit tìm số mũ; điều kiện cơ số và số trong logarit phải được giữ.",
+    "mistakes": [
+      "Quy tắc cộng logarit áp dụng cho tích xy, không cho tổng x + y.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 11,
+    "subjectId": "math",
+    "slug": "derivative-rate",
+    "track": "standard",
+    "title": "Đạo hàm là tốc độ thay đổi tức thời",
+    "chapter": "Đạo hàm",
+    "semester": 2,
+    "outcome": "Giải thích đạo hàm từ tốc độ thay đổi trung bình, tính đạo hàm đa thức đơn giản và giữ đúng đơn vị trong bài chuyển động.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Tỉ số [f(x + h) − f(x)]/h với h khác 0 đo tốc độ thay đổi trung bình trên đoạn có độ dài h. Nếu giới hạn khi h tiến tới 0 tồn tại thì đó là đạo hàm f′(x), biểu thị tốc độ thay đổi tức thời và hệ số góc tiếp tuyến.",
+      "Với f(x) = x², hiệu bình phương cho [ (x + h)² − x² ]/h = 2x + h, nên f′(x) = 2x. Nếu s(t) là quãng đường tính bằng mét và t bằng giây thì s′(t) có đơn vị m/s; đạo hàm thay đổi ý nghĩa theo đại lượng của hàm."
+    ],
+    "example": {
+      "prompt": "s(t) = t², t tính giây, s tính mét. Tốc độ tại t = 3 bằng bao nhiêu m/s?",
+      "answer": "6",
+      "method": [
+        "Đạo hàm s′(t) = 2t.",
+        "Thay t = 3 được s′(3) = 6.",
+        "Đơn vị là m/s, không phải mét; đây là tốc độ tức thời."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "f(x) = x² + 3x. f′(2) bằng bao nhiêu?",
+      "answer": "7",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "f′(x) = 2x + 3, nên f′(2) = 7.",
+      "hints": [
+        "Đạo hàm tổng bằng tổng đạo hàm."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "y = 3x² − 4x + 1. Hệ số góc tiếp tuyến tại x = 1 bằng bao nhiêu?",
+        "answer": "2",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "y′ = 6x − 4; tại x = 1 được 2."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Đạo hàm tại một điểm luôn bằng giá trị của hàm tại điểm đó.",
+        "answer": "false",
+        "explanation": "Giá trị hàm mô tả mức của đại lượng; đạo hàm mô tả tốc độ thay đổi, thường khác cả số và đơn vị."
+      },
+      {
+        "type": "essay",
+        "prompt": "Chọn một hàm vị trí theo thời gian, tính một tốc độ trung bình và một tốc độ tức thời; giải thích vì sao chúng có thể khác nhau.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Đạo hàm là giới hạn tốc độ thay đổi; kiểm tra cả giá trị và đơn vị."
+      }
+    ],
+    "application": "Chọn một hàm vị trí theo thời gian, tính một tốc độ trung bình và một tốc độ tức thời; giải thích vì sao chúng có thể khác nhau.",
+    "summary": "Đạo hàm là giới hạn tốc độ thay đổi; kiểm tra cả giá trị và đơn vị.",
+    "mistakes": [
+      "Giá trị hàm mô tả mức của đại lượng; đạo hàm mô tả tốc độ thay đổi, thường khác cả số và đơn vị.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 11,
+    "subjectId": "math",
+    "slug": "spatial-lines",
+    "track": "advanced",
+    "title": "Đường thẳng vuông góc với mặt phẳng: dùng đủ điều kiện",
+    "chapter": "Quan hệ vuông góc trong không gian",
+    "semester": 2,
+    "outcome": "Dùng đủ điều kiện đường thẳng vuông góc mặt phẳng, xác định chân đường cao và phân biệt cạnh bên với khoảng cách.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Một đường thẳng vuông góc với mặt phẳng nếu vuông góc với mọi đường thẳng nằm trong mặt phẳng ấy theo định nghĩa thích hợp. Để chứng minh, thường chỉ cần nó vuông góc với hai đường thẳng cắt nhau cùng nằm trong mặt phẳng.",
+      "Điều kiện “cắt nhau” không được bỏ. Hai đường song song trong mặt phẳng chỉ cho cùng một phương, chưa kiểm soát đủ phương thứ hai. Khi tính khoảng cách từ điểm tới mặt phẳng, phải xác định chân đường vuông góc, không chọn tùy một đoạn nối xuống mặt."
+    ],
+    "example": {
+      "prompt": "SA vuông góc với mặt phẳng (ABC), SA = 5 cm. Khoảng cách từ S tới (ABC) bằng bao nhiêu cm?",
+      "answer": "5",
+      "method": [
+        "A thuộc mặt phẳng (ABC).",
+        "SA vuông góc mặt phẳng nên A là chân đường vuông góc từ S.",
+        "Khoảng cách bằng SA = 5 cm."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Hình chóp có SO vuông góc đáy, SO = 12. Khoảng cách từ S tới mặt phẳng đáy bằng bao nhiêu?",
+      "answer": "12",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "SO chính là đoạn vuông góc từ S tới đáy.",
+      "hints": [
+        "Đừng dùng cạnh bên nếu chưa chứng minh vuông góc."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Trong tam giác vuông SAB tại A, SA = 3, AB = 4. SB bằng bao nhiêu?",
+        "answer": "5",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "Áp dụng định lý Pythagore: SB² = 3² + 4² = 25, nên SB = 5."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Vuông góc với hai đường thẳng song song của mặt phẳng luôn đủ để kết luận vuông góc mặt phẳng.",
+        "answer": "false",
+        "explanation": "Hai đường song song chỉ cùng một phương; tiêu chuẩn thông dụng cần hai đường cắt nhau nằm trong mặt phẳng."
+      },
+      {
+        "type": "essay",
+        "prompt": "Vẽ hình chóp có một cạnh bên vuông góc đáy. Chứng minh ít nhất hai cặp đường vuông góc và chỉ rõ chân đường cao trước khi tính khoảng cách.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Chứng minh không gian cần đủ điều kiện về vị trí và vuông góc; khoảng cách dùng đoạn vuông góc."
+      }
+    ],
+    "application": "Vẽ hình chóp có một cạnh bên vuông góc đáy. Chứng minh ít nhất hai cặp đường vuông góc và chỉ rõ chân đường cao trước khi tính khoảng cách.",
+    "summary": "Chứng minh không gian cần đủ điều kiện về vị trí và vuông góc; khoảng cách dùng đoạn vuông góc.",
+    "mistakes": [
+      "Hai đường song song chỉ cùng một phương; tiêu chuẩn thông dụng cần hai đường cắt nhau nằm trong mặt phẳng.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 12,
+    "subjectId": "math",
+    "slug": "derivative-extrema",
+    "track": "foundation",
+    "title": "Từ dấu đạo hàm đến khoảng tăng giảm và cực trị",
+    "chapter": "Ứng dụng đạo hàm",
+    "semester": 1,
+    "outcome": "Lập dấu đạo hàm để nhận khoảng tăng/giảm và cực trị; dùng phản ví dụ để bác bỏ việc mọi nghiệm đạo hàm đều là cực trị.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Nếu đạo hàm dương trên một khoảng thì hàm tăng trên khoảng đó; nếu đạo hàm âm thì hàm giảm. Điểm đạo hàm bằng 0 là điểm cần xét, chưa tự động là cực trị. Cần kiểm tra dấu đạo hàm hai phía và miền xác định.",
+      "Đạo hàm đổi từ dương sang âm cho cực đại; đổi từ âm sang dương cho cực tiểu trong điều kiện quen thuộc. Ví dụ f(x) = x³ có f′(0) = 0 nhưng vẫn tăng qua 0, nên 0 không phải điểm cực trị. Cực trị địa phương cũng khác giá trị lớn nhất/nhỏ nhất trên một đoạn."
+    ],
+    "example": {
+      "prompt": "f(x) = x³ − 3x. Giá trị tại điểm cực tiểu bằng bao nhiêu?",
+      "answer": "-2",
+      "method": [
+        "f′(x) = 3x² − 3 = 3(x − 1)(x + 1).",
+        "Dấu đạo hàm là dương, âm, dương qua các mốc −1 và 1; x = 1 là cực tiểu.",
+        "f(1) = 1 − 3 = −2."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "f(x) = (x − 2)² + 1. Hoành độ điểm cực tiểu bằng bao nhiêu?",
+      "answer": "2",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "f′(x) = 2(x − 2), đổi từ âm sang dương tại x = 2.",
+      "hints": [
+        "Xét dấu hai phía của nghiệm đạo hàm."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Số điểm cực trị của f(x) = x³ trên R là bao nhiêu?",
+        "answer": "0",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "f′(x) = 3x² không đổi dấu qua 0; hàm tăng trên R nên không có cực trị."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Mọi nghiệm của f′(x) = 0 đều là điểm cực trị của f.",
+        "answer": "false",
+        "explanation": "Đạo hàm có thể không đổi dấu, như f(x) = x³ tại 0."
+      },
+      {
+        "type": "essay",
+        "prompt": "Lập bảng dấu đạo hàm cho một hàm bậc ba; phân biệt các nghiệm đạo hàm và các điểm thực sự có cực trị.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Nghiệm đạo hàm là điểm cần xét; sự đổi dấu mới quyết định cực trị theo tiêu chuẩn đang dùng."
+      }
+    ],
+    "application": "Lập bảng dấu đạo hàm cho một hàm bậc ba; phân biệt các nghiệm đạo hàm và các điểm thực sự có cực trị.",
+    "summary": "Nghiệm đạo hàm là điểm cần xét; sự đổi dấu mới quyết định cực trị theo tiêu chuẩn đang dùng.",
+    "mistakes": [
+      "Đạo hàm có thể không đổi dấu, như f(x) = x³ tại 0.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 12,
+    "subjectId": "math",
+    "slug": "definite-integral",
+    "track": "standard",
+    "title": "Tích phân xác định và diện tích có dấu",
+    "chapter": "Nguyên hàm và tích phân",
+    "semester": 2,
+    "outcome": "Tính tích phân bằng hiệu nguyên hàm và phân biệt tích phân có dấu với diện tích khi hàm đổi dấu.",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Tích phân xác định từ a đến b của f(x) có thể tính bằng F(b) − F(a) nếu F là một nguyên hàm phù hợp của f. Dấu hằng số của nguyên hàm bị triệt tiêu trong hiệu, nên kết quả là một số.",
+      "Tích phân biểu thị tổng có dấu, còn diện tích hình phẳng là số không âm. Khi đồ thị nằm dưới trục hoành, phần tích phân tương ứng âm. Muốn tính diện tích giữa đồ thị và trục, chia khoảng tại những điểm đổi dấu rồi lấy đúng dấu, tương đương tích phân |f(x)|."
+    ],
+    "example": {
+      "prompt": "Tính tích phân từ 0 đến 2 của f(x) = x.",
+      "answer": "2",
+      "method": [
+        "Một nguyên hàm là F(x) = x²/2.",
+        "Tính F(2) − F(0) = 4/2 − 0 = 2.",
+        "Kiểm tra hình học: tam giác dưới đường y = x có đáy 2, cao 2, diện tích 2."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Tính tích phân từ 0 đến 1 của 2x.",
+      "answer": "1",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "Nguyên hàm là x², hiệu tại hai đầu là 1 − 0 = 1.",
+      "hints": [
+        "Dùng F(b) − F(a), không quên cận dưới."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Diện tích giữa y = x và trục hoành trên đoạn [−1;1] bằng bao nhiêu?",
+        "answer": "1",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "Mỗi phía có tam giác diện tích 1/2, tổng là 1; tích phân có dấu trên toàn đoạn lại bằng 0."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Tích phân của một hàm trên một đoạn luôn bằng diện tích không âm giữa đồ thị và trục hoành.",
+        "answer": "false",
+        "explanation": "Tích phân có dấu; phần dưới trục cho số âm. Diện tích cần xử lý dấu hoặc dùng |f(x)|."
+      },
+      {
+        "type": "essay",
+        "prompt": "Tìm một hàm đổi dấu trên một đoạn, tính cả tích phân có dấu và diện tích; giải thích khác biệt bằng hình.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Dùng hiệu nguyên hàm để tính tích phân; phân biệt tích phân có dấu với diện tích."
+      }
+    ],
+    "application": "Tìm một hàm đổi dấu trên một đoạn, tính cả tích phân có dấu và diện tích; giải thích khác biệt bằng hình.",
+    "summary": "Dùng hiệu nguyên hàm để tính tích phân; phân biệt tích phân có dấu với diện tích.",
+    "mistakes": [
+      "Tích phân có dấu; phần dưới trục cho số âm. Diện tích cần xử lý dấu hoặc dùng |f(x)|.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  },
+  {
+    "grade": 12,
+    "subjectId": "math",
+    "slug": "conditional-probability",
+    "track": "advanced",
+    "title": "Xác suất có điều kiện và thay đổi không gian xét",
+    "chapter": "Xác suất có điều kiện",
+    "semester": 2,
+    "outcome": "Thu hẹp đúng nhóm theo điều kiện B, tính P(A|B) khi P(B) > 0 và phân biệt với xác suất đảo điều kiện P(B|A).",
+    "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
+    "prerequisites": [],
+    "theory": [
+      "Xác suất P(A|B) hỏi khả năng A khi đã biết B xảy ra; vì vậy chỉ xét các trường hợp trong B. Với P(B) > 0, P(A|B) = P(A ∩ B)/P(B). Không được giữ mẫu số của toàn bộ không gian nếu thông tin B đã thu hẹp nhóm đang xét.",
+      "Có thể dùng bảng hai chiều để tránh nhầm P(A|B) và P(B|A). Ví dụ trong nhóm có 20 người đi xe buýt, 12 người mang ô, thì tỉ lệ mang ô biết đi xe buýt là 12/20. Tỉ lệ đi xe buýt biết mang ô còn cần tổng số người mang ô, không suy ra chỉ từ 12 và 20."
+    ],
+    "example": {
+      "prompt": "Trong 40 học sinh, 20 bạn đi xe buýt; trong 20 bạn đó có 12 bạn mang ô. Chọn một bạn biết rằng bạn ấy đi xe buýt. Xác suất bạn ấy mang ô bằng bao nhiêu?",
+      "answer": "3/5",
+      "method": [
+        "Điều kiện đã biết giới hạn nhóm xét còn 20 người đi xe buýt.",
+        "Trong nhóm này có 12 người mang ô nên xác suất là 12/20.",
+        "Rút gọn thành 3/5; không dùng mẫu 40."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "P(A ∩ B) = 0,12 và P(B) = 0,3. Tính P(A|B).",
+      "answer": "0.4",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "P(A|B) = 0,12/0,3 = 0,4.",
+      "hints": [
+        "Chia cho xác suất của điều kiện B."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Một hộp có 3 bi đỏ và 2 bi xanh. Biết viên đã lấy là đỏ và không hoàn lại. Xác suất viên thứ hai đỏ bằng bao nhiêu?",
+        "answer": "1/2",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "Còn 2 đỏ, 2 xanh, tổng 4; xác suất đỏ là 2/4 = 1/2."
+      },
+      {
+        "type": "boolean",
+        "prompt": "P(A|B) luôn bằng P(B|A) khi hai điều kiện đều có xác suất dương.",
+        "answer": "false",
+        "explanation": "Hai tỉ số có mẫu khác nhau; chỉ bằng trong các cấu hình đặc biệt."
+      },
+      {
+        "type": "essay",
+        "prompt": "Lập bảng hai chiều với bốn ô đều không âm, tính P(A|B) và P(B|A), rồi giải thích mỗi mẫu số đang đếm nhóm nào.",
+        "rubric": [
+          {
+            "criterion": "Mô hình hoặc dữ kiện",
+            "maxScore": 2,
+            "descriptor": "Xác định đúng đại lượng, điều kiện hoặc hình minh họa cần dùng."
+          },
+          {
+            "criterion": "Lập luận và cách làm",
+            "maxScore": 2,
+            "descriptor": "Trình bày các bước có lý do và phù hợp điều kiện bài toán."
+          },
+          {
+            "criterion": "Kiểm tra và kết luận",
+            "maxScore": 1,
+            "descriptor": "Đối chiếu kết quả, đơn vị hoặc trường hợp đặc biệt; chấp nhận phương pháp hợp lệ khác."
+          }
+        ],
+        "explanation": "Tự đối chiếu theo rubric; chưa có nhận xét hoặc điểm của giáo viên. Xác suất có điều kiện phải thay đúng nhóm xét và giữ P(B) > 0; tránh đảo điều kiện."
+      }
+    ],
+    "application": "Lập bảng hai chiều với bốn ô đều không âm, tính P(A|B) và P(B|A), rồi giải thích mỗi mẫu số đang đếm nhóm nào.",
+    "summary": "Xác suất có điều kiện phải thay đúng nhóm xét và giữ P(B) > 0; tránh đảo điều kiện.",
+    "mistakes": [
+      "Hai tỉ số có mẫu khác nhau; chỉ bằng trong các cấu hình đặc biệt.",
+      "Không chỉ ghi kết quả: hãy chỉ ra dữ kiện, phép tính và bước kiểm tra trong ví dụ."
+    ]
+  }
+]

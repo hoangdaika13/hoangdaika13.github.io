@@ -1,0 +1,3475 @@
+[
+  {
+    "grade": 1,
+    "subjectId": "nature-society",
+    "slug": "living-and-nonliving",
+    "track": "foundation",
+    "title": "Quan sát cây và đồ vật quanh em",
+    "chapter": "Thực vật, động vật và quan sát",
+    "semester": 1,
+    "outcome": "So sánh cây với đồ vật qua dấu hiệu lớn lên; mô tả điều đã quan sát mà không gán nguyên nhân khi chưa có bằng chứng.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Một cây đang sống có thể lớn lên khi được chăm sóc phù hợp. Cây cần nước, không khí và điều kiện ánh sáng thích hợp; nhiều cây có rễ, thân, lá. Đồ vật như chiếc thìa không tự lớn lên dù được đặt cạnh cây. Không phải vật nào chuyển động cũng là vật sống: xe đồ chơi có thể chạy nhờ pin.",
+      "Khi quan sát, hãy nói điều em thật sự nhìn thấy: “lá có màu xanh”, “thân cao hơn tuần trước”. Câu “cây đang vui” là cách tưởng tượng, không phải điều có thể đo trực tiếp. Chỉ quan sát cây an toàn, không nếm lá hoặc chạm cây lạ."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Cây đậu cao thêm sau một tuần, chiếc thìa bên cạnh không đổi. Quan sát nào mô tả sự lớn lên?",
+      "answer": "Cây đậu cao hơn",
+      "method": [
+        "So sánh cùng một cây ở hai thời điểm.",
+        "Nhìn mốc chiều cao thay vì chỉ nhìn màu chậu.",
+        "Ghi: cây cao hơn; chưa cần đoán nguyên nhân từ một lần quan sát."
+      ]
+    },
+    "guided": {
+      "type": "single",
+      "prompt": "Vật nào thường có thể lớn lên khi được chăm sóc phù hợp?",
+      "options": [
+        "Cây đậu",
+        "Chiếc cốc",
+        "Viên gạch"
+      ],
+      "answer": "0",
+      "explanation": "Cây đậu là cơ thể sống; cốc và gạch không lớn lên theo quá trình sống.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Câu nào là điều quan sát trực tiếp?",
+        "options": [
+          "Cây muốn đi chơi",
+          "Lá cây có ba vết nhỏ",
+          "Cây thích chiếc chậu này nhất"
+        ],
+        "answer": "1",
+        "explanation": "Số vết trên lá có thể nhìn và đếm; ý muốn của cây là suy diễn. "
+      },
+      {
+        "type": "boolean",
+        "prompt": "Mọi vật chuyển động đều là vật sống.",
+        "answer": "false",
+        "explanation": "Đồ chơi hoặc xe có thể chuyển động nhờ cơ cấu, không phải vì chúng là cơ thể sống."
+      },
+      {
+        "type": "essay",
+        "prompt": "Chọn một cây quen thuộc và một đồ vật an toàn. Vẽ chúng, viết hoặc nói hai điều thật sự quan sát được; không nếm hoặc hái cây lạ.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Quan sát khác với tưởng tượng; chuyển động không đủ để kết luận vật sống."
+      }
+    ],
+    "application": "Chọn một cây quen thuộc và một đồ vật an toàn. Vẽ chúng, viết hoặc nói hai điều thật sự quan sát được; không nếm hoặc hái cây lạ.",
+    "summary": "Quan sát khác với tưởng tượng; chuyển động không đủ để kết luận vật sống.",
+    "mistakes": [
+      "Đồ chơi hoặc xe có thể chuyển động nhờ cơ cấu, không phải vì chúng là cơ thể sống.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 1,
+    "subjectId": "nature-society",
+    "slug": "weather-observation",
+    "track": "standard",
+    "title": "Nhìn dấu hiệu thời tiết trước khi ra ngoài",
+    "chapter": "Trái Đất và bầu trời",
+    "semester": 2,
+    "outcome": "Nhận biết dấu hiệu nắng, mưa, gió tại một thời điểm và chọn cách chuẩn bị phù hợp trước khi ra ngoài.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Thời tiết là trạng thái trời ở một nơi trong một thời gian ngắn: có thể nắng, mưa, nhiều mây, nóng, lạnh hoặc có gió. Các dấu hiệu có thể cùng xuất hiện; trời có mây chưa chắc đang mưa. Muốn biết đang mưa, có thể quan sát giọt nước rơi hoặc mặt đất bị ướt do mưa.",
+      "Ghi thời điểm quan sát để không nhầm sáng và chiều. Chọn trang phục theo tình trạng thực tế và hướng dẫn của người lớn. Quan sát qua cửa sổ hoặc nơi an toàn; không đứng dưới cây hay ra chỗ trống khi có giông để tự kiểm tra."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Sáng trời nắng, chiều có mưa. Có phải ghi chép buổi sáng sai không?",
+      "answer": "Không, thời tiết có thể thay đổi theo thời điểm",
+      "method": [
+        "Xác định hai ghi chép thuộc hai thời điểm khác nhau.",
+        "Thời tiết trong ngày có thể thay đổi.",
+        "Giữ cả hai ghi chép kèm giờ thay vì xóa quan sát cũ."
+      ]
+    },
+    "guided": {
+      "type": "single",
+      "prompt": "Ghi chép nào rõ nhất?",
+      "options": [
+        "Hôm nay trời lạ",
+        "Lúc 8 giờ, trước nhà có nắng và ít mây",
+        "Trời lúc nào cũng giống nhau"
+      ],
+      "answer": "1",
+      "explanation": "Thời điểm và dấu hiệu cụ thể giúp đối chiếu quan sát.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Khi có giông, cách quan sát phù hợp là gì?",
+        "options": [
+          "Ra giữa sân cầm ô kim loại",
+          "Đứng dưới cây cao",
+          "Quan sát từ chỗ trú an toàn theo người lớn"
+        ],
+        "answer": "2",
+        "explanation": "Bài học dùng quan sát an toàn, không yêu cầu tiếp cận hiện tượng nguy hiểm."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Nếu buổi sáng có nắng thì cả ngày chắc chắn không mưa.",
+        "answer": "false",
+        "explanation": "Thời tiết thay đổi; một thời điểm không quyết định cả ngày."
+      },
+      {
+        "type": "essay",
+        "prompt": "Vẽ bảng ba ngày, mỗi ngày quan sát cùng một giờ từ nơi an toàn. Dùng biểu tượng và một câu mô tả, ghi rõ nếu em bỏ lỡ thời điểm.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Ghi thời điểm, nơi và dấu hiệu; quan sát thời tiết phải an toàn."
+      }
+    ],
+    "application": "Vẽ bảng ba ngày, mỗi ngày quan sát cùng một giờ từ nơi an toàn. Dùng biểu tượng và một câu mô tả, ghi rõ nếu em bỏ lỡ thời điểm.",
+    "summary": "Ghi thời điểm, nơi và dấu hiệu; quan sát thời tiết phải an toàn.",
+    "mistakes": [
+      "Thời tiết thay đổi; một thời điểm không quyết định cả ngày.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 2,
+    "subjectId": "nature-society",
+    "slug": "habitat-needs",
+    "track": "foundation",
+    "title": "Môi trường sống và nhu cầu của sinh vật",
+    "chapter": "Thực vật và động vật",
+    "semester": 1,
+    "outcome": "Liên hệ một sinh vật với nơi sống và nhu cầu cơ bản; giải thích vì sao không phải mọi môi trường đều phù hợp với mọi loài.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Môi trường sống là nơi sinh vật tìm được những điều kiện cần thiết như nước, thức ăn, không khí và chỗ ở. Cá thường sống trong nước, còn nhiều loài chim làm tổ trên cây hoặc công trình. Không phải mọi loài cùng nhóm đều sống ở một kiểu nơi duy nhất.",
+      "Khi đọc tranh, tìm các yếu tố gắn với đời sống của con vật, không chỉ màu nền. Không bắt con vật chuyển sang môi trường khác để thử. Với vật nuôi cần làm theo hướng dẫn của người chăm sóc; bài học quan sát tranh hoặc con vật ở khoảng cách an toàn."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Tranh có cá trong hồ nước và chim trên cành. Yếu tố nào cho cá môi trường sống phù hợp?",
+      "answer": "Nước trong hồ và các điều kiện phù hợp của hồ",
+      "method": [
+        "Xác định con vật đang xét là cá, không phải chim.",
+        "Cá cần môi trường nước phù hợp để sống.",
+        "Không suy ra mọi hồ đều phù hợp vì chất lượng nước và loài cá còn khác nhau."
+      ]
+    },
+    "guided": {
+      "type": "single",
+      "prompt": "Hành động nào giúp tìm hiểu môi trường sống mà không gây hại?",
+      "options": [
+        "Mang cá ra sân khô để thử",
+        "Quan sát tranh và hồ ở vị trí an toàn",
+        "Bắt chim nhốt vào hộp kín"
+      ],
+      "answer": "1",
+      "explanation": "Quan sát không cần tước điều kiện sống của sinh vật.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Phát biểu nào hợp lý?",
+        "options": [
+          "Mỗi sinh vật cần những điều kiện sống phù hợp",
+          "Mọi sinh vật đều sống được trong hộp kín",
+          "Có nước là đủ cho mọi sinh vật"
+        ],
+        "answer": "0",
+        "explanation": "Ngoài nước còn có thức ăn, không khí, nơi ở và điều kiện riêng."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Chỉ cần chuyển một con vật tới nơi em thích thì nó sẽ sống tốt.",
+        "answer": "false",
+        "explanation": "Nơi ở phải phù hợp với nhu cầu của loài, không dựa vào sở thích của người quan sát."
+      },
+      {
+        "type": "essay",
+        "prompt": "Chọn một con vật qua tranh. Vẽ nơi sống và ghi ba điều kiện con vật cần; nêu một việc bảo vệ nơi sống không làm phiền con vật.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Môi trường sống cung cấp nhiều điều kiện; tìm hiểu bằng cách không làm hại sinh vật."
+      }
+    ],
+    "application": "Chọn một con vật qua tranh. Vẽ nơi sống và ghi ba điều kiện con vật cần; nêu một việc bảo vệ nơi sống không làm phiền con vật.",
+    "summary": "Môi trường sống cung cấp nhiều điều kiện; tìm hiểu bằng cách không làm hại sinh vật.",
+    "mistakes": [
+      "Nơi ở phải phù hợp với nhu cầu của loài, không dựa vào sở thích của người quan sát.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 2,
+    "subjectId": "nature-society",
+    "slug": "season-and-safety",
+    "track": "standard",
+    "title": "Phân biệt mùa và thời tiết trong một ngày",
+    "chapter": "Trái Đất và bầu trời",
+    "semester": 2,
+    "outcome": "Phân biệt đặc điểm mùa với thời tiết từng ngày; dùng dấu hiệu thực tế để lựa chọn việc làm an toàn.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Một ngày có thể nóng hoặc mưa, nhưng mùa được nhận ra qua đặc điểm thời tiết lặp lại trong một khoảng dài. Ở các vùng khác nhau của Việt Nam, cách cảm nhận mùa có thể khác: có nơi rõ mùa mưa và mùa khô, có nơi thường nói đến xuân, hạ, thu, đông.",
+      "Khi nói về mùa ở địa phương, cần ghi rõ nơi và dựa vào nhiều ngày quan sát hoặc thông tin đáng tin cậy. Không dùng một ngày lạnh để kết luận cả vùng đã đổi mùa. Việc chuẩn bị mưa, nắng hoặc lạnh nên theo dự báo và hướng dẫn phù hợp."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Hôm nay đang mùa khô nhưng có mưa. Có thể kết luận ghi tên mùa chắc chắn sai không?",
+      "answer": "Không",
+      "method": [
+        "Một trận mưa là thời tiết trong thời gian ngắn.",
+        "Mùa được nhận diện từ đặc điểm kéo dài, không phải một ngày duy nhất.",
+        "Ghi hiện tượng hôm nay, vẫn cần thông tin dài hơn để đánh giá mùa."
+      ]
+    },
+    "guided": {
+      "type": "single",
+      "prompt": "Muốn tìm đặc điểm mùa ở nơi em sống, dữ liệu nào hữu ích hơn?",
+      "options": [
+        "Một phút nhìn trời",
+        "Nhiều ngày quan sát và thông tin địa phương",
+        "Màu áo em thích"
+      ],
+      "answer": "1",
+      "explanation": "Đặc điểm mùa cần khoảng thời gian dài và đúng địa phương.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Vì sao ghi tên địa phương khi mô tả mùa?",
+        "options": [
+          "Vì đặc điểm mùa có thể khác theo vùng",
+          "Vì mọi vùng luôn giống nhau",
+          "Chỉ để trang trí bảng"
+        ],
+        "answer": "0",
+        "explanation": "Vị trí địa lí và điều kiện địa phương làm cách phân mùa khác nhau."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Một ngày mưa đủ chứng minh mọi nơi ở Việt Nam đang vào cùng một mùa.",
+        "answer": "false",
+        "explanation": "Một ngày và một địa điểm không đại diện cho mọi nơi hoặc cả mùa."
+      },
+      {
+        "type": "essay",
+        "prompt": "Hỏi người lớn về cách gọi mùa ở địa phương, đối chiếu với lịch quan sát của em; ghi rõ thông tin do ai cung cấp và chưa kết luận từ một ngày.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Thời tiết ngắn hạn khác đặc điểm mùa; luôn nêu nơi và khoảng thời gian."
+      }
+    ],
+    "application": "Hỏi người lớn về cách gọi mùa ở địa phương, đối chiếu với lịch quan sát của em; ghi rõ thông tin do ai cung cấp và chưa kết luận từ một ngày.",
+    "summary": "Thời tiết ngắn hạn khác đặc điểm mùa; luôn nêu nơi và khoảng thời gian.",
+    "mistakes": [
+      "Một ngày và một địa điểm không đại diện cho mọi nơi hoặc cả mùa.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 3,
+    "subjectId": "nature-society",
+    "slug": "plant-parts",
+    "track": "foundation",
+    "title": "Rễ, thân, lá và chức năng phối hợp",
+    "chapter": "Thực vật và chức năng",
+    "semester": 1,
+    "outcome": "Nêu chức năng chính của rễ, thân, lá và giải thích bằng ví dụ cách các bộ phận phối hợp nuôi cây.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Nhiều cây có rễ giúp giữ cây và hút nước, thân nâng đỡ và vận chuyển, lá tiếp nhận ánh sáng và tham gia tạo chất dinh dưỡng. Các bộ phận phối hợp; không nên hiểu một bộ phận tự thực hiện toàn bộ công việc sống.",
+      "Có cây mang dạng thân, rễ, lá đặc biệt nên khi quan sát cần dựa vào vị trí và chức năng, không chỉ tên gọi dân gian. Chỉ quan sát cây quen thuộc; không nhổ cây, bóc vỏ hoặc nếm bộ phận để kiểm tra chức năng."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Một cây bị héo sau thời gian đất quá khô. Bộ phận nào thường hút nước từ đất?",
+      "answer": "Rễ",
+      "method": [
+        "Xác định nước cần đi từ đất vào cây.",
+        "Rễ thường tiếp xúc đất và đảm nhiệm hút nước.",
+        "Thân và lá cũng tham gia sử dụng, vận chuyển; không kết luận mọi trường hợp héo chỉ do thiếu nước."
+      ]
+    },
+    "guided": {
+      "type": "single",
+      "prompt": "Bộ phận nào thường nâng đỡ lá và vận chuyển trong cây?",
+      "options": [
+        "Thân",
+        "Chậu",
+        "Nhãn tên cây"
+      ],
+      "answer": "0",
+      "explanation": "Thân là bộ phận của cây; chậu và nhãn không thuộc cơ thể cây.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Cách tìm hiểu cây phù hợp là gì?",
+        "options": [
+          "Nhổ cây công cộng để xem rễ",
+          "Quan sát cây quen thuộc hoặc sơ đồ",
+          "Nếm lá lạ để nhận biết"
+        ],
+        "answer": "1",
+        "explanation": "Dùng quan sát hoặc sơ đồ, không gây hại hay tiếp xúc không an toàn."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Cây chỉ cần một bộ phận, các bộ phận còn lại không có vai trò.",
+        "answer": "false",
+        "explanation": "Các bộ phận có chức năng khác nhau và phối hợp giúp cây sống."
+      },
+      {
+        "type": "essay",
+        "prompt": "Vẽ cây quen thuộc, ghi vị trí rễ, thân, lá cùng một chức năng của từng phần. Nêu điều quan sát được và điều em biết từ sơ đồ.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Rễ, thân, lá có chức năng khác nhau và phối hợp; quan sát không làm hại cây."
+      }
+    ],
+    "application": "Vẽ cây quen thuộc, ghi vị trí rễ, thân, lá cùng một chức năng của từng phần. Nêu điều quan sát được và điều em biết từ sơ đồ.",
+    "summary": "Rễ, thân, lá có chức năng khác nhau và phối hợp; quan sát không làm hại cây.",
+    "mistakes": [
+      "Các bộ phận có chức năng khác nhau và phối hợp giúp cây sống.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 3,
+    "subjectId": "nature-society",
+    "slug": "earth-day-night",
+    "track": "standard",
+    "title": "Ngày và đêm trong mô hình Trái Đất",
+    "chapter": "Trái Đất và bầu trời",
+    "semester": 2,
+    "outcome": "Dùng mô hình Trái Đất được Mặt Trời chiếu sáng để giải thích sự luân phiên ngày đêm tại một vị trí.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Trong mô hình đơn giản, Mặt Trời chiếu sáng khoảng một nửa Trái Đất tại một thời điểm. Nửa hướng về Mặt Trời có ban ngày; nửa quay ra phía không được chiếu trực tiếp có ban đêm. Trái Đất tự quay làm một địa điểm lần lượt đi qua hai vùng ấy.",
+      "Có thể dùng quả bóng và đèn làm mô hình, đánh dấu một điểm rồi xoay bóng. Mô hình không thể hiện đầy đủ độ lớn, khoảng cách hoặc thời gian thật. Không nhìn trực tiếp vào Mặt Trời hoặc dùng đèn quá chói để quan sát."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Điểm A trên mô hình quay từ phía được chiếu sáng sang phía tối. Tại A chuyển từ gì sang gì?",
+      "answer": "Từ ngày sang đêm",
+      "method": [
+        "Xác định vùng sáng biểu thị ban ngày.",
+        "Theo dõi đúng điểm A khi quả bóng quay.",
+        "Khi A sang vùng không được chiếu trực tiếp, mô hình biểu thị ban đêm."
+      ]
+    },
+    "guided": {
+      "type": "single",
+      "prompt": "Nguyên nhân chính tạo chu kì ngày đêm trong mô hình là gì?",
+      "options": [
+        "Trái Đất tự quay",
+        "Mặt Trời bật rồi tắt mỗi ngày",
+        "Mặt Trăng che mọi nơi hằng đêm"
+      ],
+      "answer": "0",
+      "explanation": "Trái Đất tự quay làm từng nơi lần lượt hướng về và quay khỏi Mặt Trời.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Giới hạn nào cần nói khi dùng bóng và đèn?",
+        "options": [
+          "Khoảng cách và kích thước không đúng tỉ lệ thật",
+          "Mô hình giống hoàn toàn mọi chi tiết",
+          "Bóng phải nóng như Mặt Trời"
+        ],
+        "answer": "0",
+        "explanation": "Mô hình giữ ý chính về chiếu sáng và chuyển động, không tái tạo tất cả tỉ lệ."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Mọi nơi trên Trái Đất đều cùng là ban ngày tại một thời điểm.",
+        "answer": "false",
+        "explanation": "Mặt Trời không chiếu trực tiếp đồng thời toàn bộ bề mặt Trái Đất."
+      },
+      {
+        "type": "essay",
+        "prompt": "Vẽ ba vị trí của một điểm trên quả bóng khi xoay trước đèn; giải thích ngày, đêm và một giới hạn của mô hình.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Ngày đêm gắn với sự tự quay và vùng được chiếu sáng; mô hình chỉ biểu diễn những yếu tố chọn lọc."
+      }
+    ],
+    "application": "Vẽ ba vị trí của một điểm trên quả bóng khi xoay trước đèn; giải thích ngày, đêm và một giới hạn của mô hình.",
+    "summary": "Ngày đêm gắn với sự tự quay và vùng được chiếu sáng; mô hình chỉ biểu diễn những yếu tố chọn lọc.",
+    "mistakes": [
+      "Mặt Trời không chiếu trực tiếp đồng thời toàn bộ bề mặt Trái Đất.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 4,
+    "subjectId": "science",
+    "slug": "water-states",
+    "track": "foundation",
+    "title": "Nước chuyển thể: quan sát khác với kết luận",
+    "chapter": "Chất",
+    "semester": 1,
+    "outcome": "Nhận biết nóng chảy, đông đặc, bay hơi và ngưng tụ; tách mô tả hiện tượng nước khỏi suy đoán chưa được kiểm tra.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Nước có thể ở thể rắn, lỏng hoặc khí. Nước đá nhận nhiệt có thể nóng chảy thành nước lỏng; nước lỏng có thể bay hơi; hơi nước gặp điều kiện lạnh thích hợp có thể ngưng tụ thành giọt lỏng. Bay hơi có thể xảy ra ở mặt thoáng mà không cần nước đang sôi.",
+      "Giọt nước phía ngoài cốc lạnh thường do hơi nước trong không khí ngưng tụ trên thành cốc, không nhất thiết là nước trong cốc xuyên qua vật liệu. Phân biệt hơi nước không nhìn thấy với các hạt nước rất nhỏ tạo vùng mờ. Quan sát bằng hình hoặc cốc nước mát, không tự đun hay chạm nước nóng."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Bên ngoài cốc lạnh xuất hiện giọt nước. Cách giải thích phù hợp là gì?",
+      "answer": "Hơi nước trong không khí ngưng tụ trên thành lạnh",
+      "method": [
+        "Xác định giọt nằm ngoài cốc.",
+        "Thành cốc lạnh làm hơi nước gần nó ngưng tụ.",
+        "Cần đối chiếu để tránh kết luận cốc bị thủng chỉ từ việc thấy giọt."
+      ]
+    },
+    "guided": {
+      "type": "single",
+      "prompt": "Hiện tượng nào là nóng chảy?",
+      "options": [
+        "Nước đá thành nước lỏng",
+        "Hơi thành giọt trên nắp lạnh",
+        "Nước lỏng mất dần ở mặt thoáng"
+      ],
+      "answer": "0",
+      "explanation": "Nóng chảy là chuyển từ rắn sang lỏng.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Quần áo có thể khô dù trời không làm nước sôi vì sao?",
+        "options": [
+          "Bay hơi xảy ra ở mặt thoáng",
+          "Nước chỉ bay hơi đúng 100 °C",
+          "Nước biến mất không theo quá trình nào"
+        ],
+        "answer": "0",
+        "explanation": "Bay hơi không đòi nước sôi; điều kiện môi trường ảnh hưởng tốc độ."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Nước chỉ có thể bay hơi khi đang sôi.",
+        "answer": "false",
+        "explanation": "Bay hơi có thể diễn ra ở mặt thoáng tại nhiều nhiệt độ."
+      },
+      {
+        "type": "essay",
+        "prompt": "Lập bảng ba hiện tượng chuyển thể từ tranh hoặc đời sống an toàn. Ghi thể trước, thể sau và giải thích; không tự đun nước để thử.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Phân biệt nóng chảy, bay hơi và ngưng tụ; không suy nguyên nhân chỉ từ vị trí giọt nước."
+      }
+    ],
+    "application": "Lập bảng ba hiện tượng chuyển thể từ tranh hoặc đời sống an toàn. Ghi thể trước, thể sau và giải thích; không tự đun nước để thử.",
+    "summary": "Phân biệt nóng chảy, bay hơi và ngưng tụ; không suy nguyên nhân chỉ từ vị trí giọt nước.",
+    "mistakes": [
+      "Bay hơi có thể diễn ra ở mặt thoáng tại nhiều nhiệt độ.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ],
+    "diagram": {
+      "kind": "state-changes",
+      "states": [
+        "rắn",
+        "lỏng",
+        "khí"
+      ]
+    }
+  },
+  {
+    "grade": 4,
+    "subjectId": "science",
+    "slug": "sound-vibration",
+    "track": "standard",
+    "title": "Âm thanh và vật dao động",
+    "chapter": "Năng lượng",
+    "semester": 2,
+    "outcome": "Liên hệ sự phát âm với dao động của vật và mô tả bằng chứng quan sát được trong một tình huống đơn giản.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Âm thanh thường gắn với dao động của vật, tức chuyển động qua lại quanh một vị trí. Khi dây đàn rung, nó làm môi trường xung quanh dao động và âm truyền đến tai. Nhìn thấy vật chuyển động một chiều không đủ để gọi là dao động tạo âm theo mô hình này.",
+      "Âm có thể truyền qua chất khí, lỏng và rắn; độ to còn phụ thuộc nguồn, khoảng cách và môi trường. Không đặt vật gây âm sát tai hoặc thử âm quá lớn. Bài học dùng sơ đồ hoặc âm lượng nhỏ, dừng nếu không thoải mái."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Dây đàn ngừng rung thì âm nhỏ dần rồi tắt. Điều gì được minh họa?",
+      "answer": "Nguồn âm gắn với dao động",
+      "method": [
+        "Theo dõi dây đang rung và âm đang nghe.",
+        "Khi dao động giảm, âm do dây phát ra cũng giảm.",
+        "Không từ một dây đàn suy ra mọi nguồn đều có cấu tạo giống dây."
+      ]
+    },
+    "guided": {
+      "type": "single",
+      "prompt": "Vật nào đang dao động?",
+      "options": [
+        "Thước rung qua lại sau khi gảy nhẹ",
+        "Viên bi đi thẳng một lượt",
+        "Quyển sách nằm yên"
+      ],
+      "answer": "0",
+      "explanation": "Dao động là chuyển động qua lại, khác một lần đi thẳng.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Cách quan sát âm an toàn là gì?",
+        "options": [
+          "Dùng âm lượng nhỏ, không dí nguồn sát tai",
+          "Tăng âm tối đa để nghe rõ",
+          "Đập mạnh mọi vật để kiểm tra"
+        ],
+        "answer": "0",
+        "explanation": "Giữ âm nhỏ và khoảng cách phù hợp, không cần gây tiếng lớn."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Âm thanh chỉ truyền qua không khí, không thể truyền qua vật rắn.",
+        "answer": "false",
+        "explanation": "Âm có thể truyền qua nhiều môi trường, trong đó có chất rắn."
+      },
+      {
+        "type": "essay",
+        "prompt": "Mô tả một nguồn âm quen thuộc và bộ phận dao động. Dùng tranh hoặc quan sát nhẹ nhàng, nêu vì sao không thử bằng âm lượng lớn.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Nguồn âm gắn với dao động và môi trường truyền; bảo vệ tai khi tìm hiểu âm."
+      }
+    ],
+    "application": "Mô tả một nguồn âm quen thuộc và bộ phận dao động. Dùng tranh hoặc quan sát nhẹ nhàng, nêu vì sao không thử bằng âm lượng lớn.",
+    "summary": "Nguồn âm gắn với dao động và môi trường truyền; bảo vệ tai khi tìm hiểu âm.",
+    "mistakes": [
+      "Âm có thể truyền qua nhiều môi trường, trong đó có chất rắn.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 5,
+    "subjectId": "science",
+    "slug": "mixture-separation",
+    "track": "foundation",
+    "title": "Tách hỗn hợp dựa trên tính chất khác nhau",
+    "chapter": "Chất và hỗn hợp",
+    "semester": 1,
+    "outcome": "Chọn lọc, lắng hoặc phương pháp tách thích hợp theo tính chất thành phần; nêu giới hạn của lọc đối với chất đã hòa tan.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Hỗn hợp gồm từ hai chất trở lên được trộn với nhau. Cách tách phụ thuộc tính chất: hạt không tan có thể bị giữ bởi vật lọc phù hợp; chất rắn hòa tan không được tách chỉ bằng một tờ giấy lọc thông thường.",
+      "Cát lẫn trong nước có thể được giữ lại khi lọc, trong khi muối hòa tan đi qua cùng nước. Muốn thu muối từ nước muối có thể khai thác sự bay hơi, nhưng không tự đun ở nhà để làm bài. Dùng sơ đồ hoặc dữ liệu cho sẵn và không uống hỗn hợp thí nghiệm."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Lọc hỗn hợp cát, muối đã tan và nước qua giấy lọc. Chất nào thường bị giữ lại?",
+      "answer": "Cát",
+      "method": [
+        "Phân biệt hạt không tan với chất đã hòa tan.",
+        "Hạt cát đủ lớn bị giữ bởi giấy lọc.",
+        "Muối đã tan vẫn ở trong phần nước qua lọc."
+      ]
+    },
+    "guided": {
+      "type": "single",
+      "prompt": "Hỗn hợp nào có thể tách phần rắn không tan bằng lọc phù hợp?",
+      "options": [
+        "Cát và nước",
+        "Muối đã tan hoàn toàn trong nước",
+        "Đường đã tan hoàn toàn trong nước"
+      ],
+      "answer": "0",
+      "explanation": "Lọc thông thường giữ hạt rắn không tan, không giữ từng chất đã hòa tan.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Vì sao không chọn một cách tách cho mọi hỗn hợp?",
+        "options": [
+          "Vì tính chất các thành phần khác nhau",
+          "Vì tên hỗn hợp không quan trọng",
+          "Vì mọi chất đều bay hơi như nhau"
+        ],
+        "answer": "0",
+        "explanation": "Phải dựa vào tính tan, kích thước hạt, nhiệt độ bay hơi và điều kiện khác."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Giấy lọc thông thường luôn giữ hết muối đã hòa tan trong nước.",
+        "answer": "false",
+        "explanation": "Muối hòa tan có thể đi qua cùng nước, không bị giữ như hạt cát."
+      },
+      {
+        "type": "essay",
+        "prompt": "Vẽ sơ đồ tách cát khỏi nước muối. Ghi thành phần trước và sau lọc, giải thích điều chưa tách được; không nếm hay đun hỗn hợp.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Chọn phương pháp tách theo tính chất; lọc hạt không tan khác tách chất hòa tan."
+      }
+    ],
+    "application": "Vẽ sơ đồ tách cát khỏi nước muối. Ghi thành phần trước và sau lọc, giải thích điều chưa tách được; không nếm hay đun hỗn hợp.",
+    "summary": "Chọn phương pháp tách theo tính chất; lọc hạt không tan khác tách chất hòa tan.",
+    "mistakes": [
+      "Muối hòa tan có thể đi qua cùng nước, không bị giữ như hạt cát.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 5,
+    "subjectId": "science",
+    "slug": "simple-electric-circuit",
+    "track": "standard",
+    "title": "Mạch điện kín và vai trò của công tắc",
+    "chapter": "Năng lượng và điện",
+    "semester": 2,
+    "outcome": "Nhận ra mạch kín, mạch hở và tác dụng của công tắc từ sơ đồ; phân biệt bài tập mô hình với thao tác trên nguồn điện thực.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Trong mô hình mạch đơn giản có nguồn điện, dây dẫn và bóng đèn phù hợp, đèn sáng khi có đường dẫn kín từ một cực nguồn qua đèn về cực kia. Công tắc mở làm đứt đường dẫn; công tắc đóng nối lại đường dẫn. Một hình dây trông gần chạm chưa chắc đã tạo tiếp xúc điện.",
+      "Bài học chỉ dùng sơ đồ hoặc bộ học tập điện áp thấp có người lớn hướng dẫn. Không dùng ổ điện gia đình, không nối trực tiếp hai cực pin và không thử vật dẫn bằng cơ thể. Bóng hỏng, pin yếu hoặc tiếp xúc kém cũng có thể làm đèn không sáng dù sơ đồ được vẽ kín."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Mạch đang sáng; mở công tắc trên đường dẫn duy nhất. Đèn thế nào theo mô hình?",
+      "answer": "Đèn tắt",
+      "method": [
+        "Mở công tắc làm đường dẫn bị ngắt.",
+        "Mạch không còn đường dẫn kín qua đèn.",
+        "Theo mô hình đèn tắt; việc kiểm chứng thực cần bộ học tập an toàn."
+      ]
+    },
+    "guided": {
+      "type": "single",
+      "prompt": "Điều kiện cần trong sơ đồ mạch đơn giản là gì?",
+      "options": [
+        "Có đường dẫn kín qua đèn và nguồn phù hợp",
+        "Chỉ đặt pin gần đèn",
+        "Nối bất kỳ dây nào vào ổ điện"
+      ],
+      "answer": "0",
+      "explanation": "Mạch cần đường dẫn kín và linh kiện phù hợp, không dùng nguồn gia đình để thử.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Đèn không sáng. Kết luận nào thận trọng?",
+        "options": [
+          "Có thể do hở mạch, bóng hỏng hoặc nguồn không phù hợp",
+          "Chắc chắn mọi kim loại không dẫn điện",
+          "Chắc chắn sơ đồ học là sai"
+        ],
+        "answer": "0",
+        "explanation": "Một hiện tượng có thể có nhiều nguyên nhân, cần kiểm tra an toàn từng giả thuyết."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Để thử mạch điện học tập, có thể cắm dây trần trực tiếp vào ổ điện gia đình.",
+        "answer": "false",
+        "explanation": "Ổ điện gia đình nguy hiểm; chỉ dùng sơ đồ hoặc bộ học tập phù hợp dưới hướng dẫn."
+      },
+      {
+        "type": "essay",
+        "prompt": "Vẽ một mạch kín và một mạch có công tắc mở. Đánh dấu đường dẫn, dự đoán đèn và nêu ba điều kiện an toàn.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Đường dẫn kín là điều kiện cần; dùng đúng nguồn và linh kiện, không thử với điện gia đình."
+      }
+    ],
+    "application": "Vẽ một mạch kín và một mạch có công tắc mở. Đánh dấu đường dẫn, dự đoán đèn và nêu ba điều kiện an toàn.",
+    "summary": "Đường dẫn kín là điều kiện cần; dùng đúng nguồn và linh kiện, không thử với điện gia đình.",
+    "mistakes": [
+      "Ổ điện gia đình nguy hiểm; chỉ dùng sơ đồ hoặc bộ học tập phù hợp dưới hướng dẫn.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 6,
+    "subjectId": "natural-science",
+    "slug": "measurement-uncertainty",
+    "track": "foundation",
+    "title": "Đo độ dài: dụng cụ, đơn vị và sai lệch",
+    "chapter": "Mở đầu và đo lường",
+    "semester": 1,
+    "outcome": "Đọc phép đo độ dài đúng vạch và đơn vị; chọn dụng cụ phù hợp và nhận xét sai lệch do cách đặt mắt, đặt thước.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Một phép đo cần chọn đại lượng, đơn vị và dụng cụ phù hợp. Giới hạn đo là mức lớn nhất ghi trên dụng cụ; độ chia nhỏ nhất là khoảng giá trị giữa hai vạch liên tiếp. Dụng cụ chia đến milimét không cho phép khẳng định tùy ý nhiều chữ số nhỏ hơn milimét.",
+      "Đặt vạch 0 đúng đầu vật, thước song song chiều dài cần đo và nhìn gần vuông góc để giảm sai lệch thị sai. Nếu dùng đoạn thước không bắt đầu từ 0, lấy số đọc cuối trừ số đọc đầu. Đo lặp lại giúp phát hiện bất thường nhưng không làm mọi sai số tự biến mất."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Đầu vật ở vạch 2,0 cm, cuối ở 8,5 cm. Độ dài bao nhiêu cm?",
+      "answer": "6.5",
+      "method": [
+        "Không lấy riêng số cuối vì đầu vật không đặt ở 0.",
+        "Tính 8,5 − 2,0 = 6,5.",
+        "Ghi 6,5 cm, phù hợp mức chia của dụng cụ."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Đầu vật ở 1,2 cm, cuối ở 6,8 cm. Độ dài bao nhiêu cm?",
+      "answer": "5.6",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-8
+      },
+      "explanation": "6,8 − 1,2 = 5,6 cm.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Cách đọc thước giảm thị sai là gì?",
+        "options": [
+          "Nhìn gần vuông góc tại vạch đọc",
+          "Luôn nhìn xiên từ xa",
+          "Chỉ đọc số lớn nhất trên thước"
+        ],
+        "answer": "0",
+        "explanation": "Nhìn vuông góc giúp vạch và điểm cần đọc không lệch do góc quan sát."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Đo cùng một vật nhiều lần bảo đảm kết quả hoàn toàn không có sai số.",
+        "answer": "false",
+        "explanation": "Đo lặp giúp đánh giá sai lệch ngẫu nhiên, nhưng sai số dụng cụ hoặc đặt thước sai có thể còn."
+      },
+      {
+        "type": "essay",
+        "prompt": "Thiết kế phiếu đo một vật an toàn: dụng cụ, đơn vị, ba lần đọc, cách đặt và một nguồn sai lệch; không tự thêm nhiều chữ số ngoài khả năng đọc.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Giá trị đo cần đơn vị, cách đọc đúng và thông tin về dụng cụ; đọc lệch 0 thì lấy hiệu."
+      }
+    ],
+    "application": "Thiết kế phiếu đo một vật an toàn: dụng cụ, đơn vị, ba lần đọc, cách đặt và một nguồn sai lệch; không tự thêm nhiều chữ số ngoài khả năng đọc.",
+    "summary": "Giá trị đo cần đơn vị, cách đọc đúng và thông tin về dụng cụ; đọc lệch 0 thì lấy hiệu.",
+    "mistakes": [
+      "Đo lặp giúp đánh giá sai lệch ngẫu nhiên, nhưng sai số dụng cụ hoặc đặt thước sai có thể còn.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 6,
+    "subjectId": "natural-science",
+    "slug": "cells-and-organisms",
+    "track": "standard",
+    "title": "Tế bào và các cấp tổ chức của cơ thể",
+    "chapter": "Vật sống",
+    "semester": 1,
+    "outcome": "Sắp xếp tế bào, mô, cơ quan và cơ thể trong ví dụ sinh vật đa bào; phân biệt cơ thể đơn bào với một tế bào của cơ thể đa bào.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Tế bào là đơn vị cấu trúc và hoạt động cơ bản của cơ thể sống. Cơ thể đơn bào gồm một tế bào thực hiện các chức năng sống; cơ thể đa bào gồm nhiều tế bào có thể chuyên hóa và phối hợp. Nhiều tế bào cùng loại, cùng nhiệm vụ tạo mô; các mô phối hợp tạo cơ quan.",
+      "Sơ đồ thường dùng: tế bào → mô → cơ quan → hệ cơ quan → cơ thể. Đây là cách mô tả cơ thể đa bào, không ép cơ thể đơn bào phải có mọi cấp như người. Hình tế bào trong sách là mô hình giản lược, màu tô không phải màu thật của tất cả tế bào."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Trong cơ thể đa bào, nhóm tế bào tương tự phối hợp cùng chức năng thường được gọi là gì?",
+      "answer": "Mô",
+      "method": [
+        "Xác định cấp đang gồm nhiều tế bào phối hợp.",
+        "Mô là cấp tổ chức trên tế bào trong sơ đồ này.",
+        "Một cơ quan thường gồm nhiều loại mô, không phải một tế bào phóng to."
+      ]
+    },
+    "guided": {
+      "type": "single",
+      "prompt": "Phát biểu nào phù hợp?",
+      "options": [
+        "Cơ thể đơn bào có thể sống bằng hoạt động của một tế bào",
+        "Mọi cơ thể đều có tim",
+        "Mọi tế bào đều có cùng hình dạng"
+      ],
+      "answer": "0",
+      "explanation": "Cơ thể sống đa dạng; không lấy cấu tạo một loài áp cho mọi loài.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Thứ tự nào đi từ đơn giản đến phức tạp trong cơ thể đa bào?",
+        "options": [
+          "Tế bào → mô → cơ quan",
+          "Cơ quan → tế bào → mô",
+          "Mô → cơ quan → tế bào"
+        ],
+        "answer": "0",
+        "explanation": "Nhiều tế bào phối hợp thành mô, các mô phối hợp thành cơ quan."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Mọi sinh vật đều phải có đủ cơ quan và hệ cơ quan như người.",
+        "answer": "false",
+        "explanation": "Sinh vật đơn bào không có mô, cơ quan như cơ thể người nhưng vẫn thực hiện chức năng sống."
+      },
+      {
+        "type": "essay",
+        "prompt": "Vẽ sơ đồ cấp tổ chức với một ví dụ cơ thể đa bào; chỉ rõ một giới hạn khi dùng sơ đồ ấy cho sinh vật đơn bào.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Tế bào là đơn vị cơ bản; các cấp trên cần xét theo kiểu cơ thể, không áp cấu tạo người cho mọi sinh vật."
+      }
+    ],
+    "application": "Vẽ sơ đồ cấp tổ chức với một ví dụ cơ thể đa bào; chỉ rõ một giới hạn khi dùng sơ đồ ấy cho sinh vật đơn bào.",
+    "summary": "Tế bào là đơn vị cơ bản; các cấp trên cần xét theo kiểu cơ thể, không áp cấu tạo người cho mọi sinh vật.",
+    "mistakes": [
+      "Sinh vật đơn bào không có mô, cơ quan như cơ thể người nhưng vẫn thực hiện chức năng sống.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 6,
+    "subjectId": "natural-science",
+    "slug": "force-and-mass",
+    "track": "advanced",
+    "title": "Khối lượng khác trọng lượng và ý nghĩa của lực",
+    "chapter": "Lực và năng lượng",
+    "semester": 2,
+    "outcome": "Phân biệt khối lượng đo bằng kg với trọng lượng đo bằng N; tính trọng lượng khi đã cho gia tốc trọng trường của mô hình.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Khối lượng biểu thị mức quán tính và lượng vật chất theo mô tả phổ thông, thường đo bằng kilôgam. Trọng lượng là độ lớn lực hấp dẫn tác dụng lên vật, đo bằng niutơn. Gần mặt đất có thể ước tính P = mg; bài này dùng g ≈ 10 N/kg.",
+      "Vật có khối lượng 2 kg gần mặt đất có trọng lượng khoảng 20 N theo giả định trên. Khối lượng và trọng lượng liên quan nhưng không cùng đại lượng hay đơn vị. Khi thay nơi có cường độ hấp dẫn khác, trọng lượng có thể đổi trong khi khối lượng của vật không tự đổi."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Dùng g = 10 N/kg, vật có khối lượng 3 kg có trọng lượng bao nhiêu N?",
+      "answer": "30",
+      "method": [
+        "Đại lượng cần tìm là lực nên đơn vị N.",
+        "P = mg = 3 × 10 = 30.",
+        "Kết quả là 30 N, khác khối lượng 3 kg."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Dùng g = 10 N/kg, khối lượng 0,5 kg có trọng lượng bao nhiêu N?",
+      "answer": "5",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-8
+      },
+      "explanation": "P = 0,5 × 10 = 5 N.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Cặp đơn vị nào đúng?",
+        "options": [
+          "Khối lượng kg, trọng lượng N",
+          "Khối lượng N, trọng lượng kg",
+          "Cả hai luôn đo bằng cm"
+        ],
+        "answer": "0",
+        "explanation": "Khối lượng và lực là hai loại đại lượng khác nhau."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Vật có trọng lượng 20 N thì khối lượng của nó luôn là 20 kg.",
+        "answer": "false",
+        "explanation": "Cần biết g và dùng m = P/g; với g = 10 N/kg thì m = 2 kg."
+      },
+      {
+        "type": "essay",
+        "prompt": "Dùng dữ liệu giả định cho cùng vật ở hai nơi có g khác nhau. Tính trọng lượng, nêu điều không đổi và giải thích giới hạn mô hình gần mặt đất.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Giữ đúng đại lượng và đơn vị; P = mg phụ thuộc giả định về g."
+      }
+    ],
+    "application": "Dùng dữ liệu giả định cho cùng vật ở hai nơi có g khác nhau. Tính trọng lượng, nêu điều không đổi và giải thích giới hạn mô hình gần mặt đất.",
+    "summary": "Giữ đúng đại lượng và đơn vị; P = mg phụ thuộc giả định về g.",
+    "mistakes": [
+      "Cần biết g và dùng m = P/g; với g = 10 N/kg thì m = 2 kg.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 7,
+    "subjectId": "natural-science",
+    "slug": "atom-element",
+    "track": "foundation",
+    "title": "Nguyên tử, nguyên tố và số proton",
+    "chapter": "Chất và nguyên tử",
+    "semester": 1,
+    "outcome": "Dùng số proton để nhận biết nguyên tố; phân biệt thay đổi số neutron với thay đổi số electron.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Trong mô hình phổ thông, nguyên tử có hạt nhân gồm proton và neutron, electron ở vùng xung quanh. Proton mang điện dương, electron mang điện âm, neutron không mang điện. Nguyên tử trung hòa có số electron bằng số proton.",
+      "Các nguyên tử cùng số proton thuộc cùng nguyên tố hóa học. Số neutron có thể khác giữa các đồng vị của cùng nguyên tố. Không suy rằng hình vẽ quỹ đạo đơn giản mô tả đầy đủ chuyển động electron; mô hình được dùng để theo dõi số hạt và điện tích ở mức nhập môn."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Nguyên tử trung hòa có 8 proton. Có bao nhiêu electron?",
+      "answer": "8",
+      "method": [
+        "Điện tích dương do 8 proton tạo ra cần được cân bằng.",
+        "Mỗi electron có điện tích trái dấu với một proton về độ lớn.",
+        "Nguyên tử trung hòa có 8 electron; neutron không dùng để cân bằng điện tích."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Nguyên tử trung hòa có 11 proton. Số electron bằng bao nhiêu?",
+      "answer": "11",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-8
+      },
+      "explanation": "Số electron bằng số proton trong nguyên tử trung hòa.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Đặc điểm quyết định một nguyên tử thuộc nguyên tố nào là gì?",
+        "options": [
+          "Số proton",
+          "Màu hình vẽ",
+          "Số lớp ghi trên nhãn tùy ý"
+        ],
+        "answer": "0",
+        "explanation": "Số proton xác định nguyên tố; số neutron có thể khác trong các đồng vị."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Hai nguyên tử có cùng số proton nhưng khác số neutron chắc chắn thuộc hai nguyên tố khác nhau.",
+        "answer": "false",
+        "explanation": "Cùng số proton vẫn là cùng nguyên tố; khác neutron có thể là các đồng vị."
+      },
+      {
+        "type": "essay",
+        "prompt": "Lập bảng số proton, neutron, electron cho hai nguyên tử trung hòa giả định cùng nguyên tố; giải thích phần giống và khác mà không coi hình vẽ là ảnh thật.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Nguyên tố được xác định bằng proton; nguyên tử trung hòa có electron bằng proton."
+      }
+    ],
+    "application": "Lập bảng số proton, neutron, electron cho hai nguyên tử trung hòa giả định cùng nguyên tố; giải thích phần giống và khác mà không coi hình vẽ là ảnh thật.",
+    "summary": "Nguyên tố được xác định bằng proton; nguyên tử trung hòa có electron bằng proton.",
+    "mistakes": [
+      "Cùng số proton vẫn là cùng nguyên tố; khác neutron có thể là các đồng vị.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 7,
+    "subjectId": "natural-science",
+    "slug": "speed-and-graph",
+    "track": "standard",
+    "title": "Tốc độ trung bình và đọc bảng quãng đường",
+    "chapter": "Tốc độ",
+    "semester": 1,
+    "outcome": "Tính tốc độ trung bình từ tổng quãng đường và tổng thời gian; đọc dữ kiện và đơn vị trong bảng chuyển động.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Tốc độ trung bình bằng quãng đường đi được chia cho thời gian chuyển động được xét: v = s/t với t > 0. Chọn đúng đơn vị thời gian; 30 phút bằng 0,5 giờ chứ không phải 0,30 giờ. Tốc độ trung bình không khẳng định vật đi đều trong từng giây.",
+      "Trên bảng quãng đường theo thời gian, đoạn tăng nhanh hơn trong cùng thời lượng ứng với tốc độ trung bình lớn hơn ở đoạn đó. Nếu quãng đường giữ nguyên trong một khoảng thì vật không đi thêm trong mô hình đang xét. Cần phân biệt tổng quãng đường với vị trí có hướng."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Đi 12 km trong 30 phút. Tốc độ trung bình bằng bao nhiêu km/h?",
+      "answer": "24",
+      "method": [
+        "Đổi 30 phút thành 0,5 giờ.",
+        "Tính v = 12/0,5 = 24.",
+        "Ghi km/h; không dùng 12/30 rồi ghi sai đơn vị."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Đi 150 m trong 30 s. Tốc độ trung bình bằng bao nhiêu m/s?",
+      "answer": "5",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-8
+      },
+      "explanation": "v = 150/30 = 5 m/s.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Trong 10 giây, A đi thêm 20 m, B đi thêm 30 m. Ai có tốc độ trung bình lớn hơn?",
+        "options": [
+          "B",
+          "A",
+          "Chắc chắn bằng nhau"
+        ],
+        "answer": "0",
+        "explanation": "Cùng thời gian, quãng đường B lớn hơn nên tốc độ trung bình B lớn hơn."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Tốc độ trung bình 20 km/h nghĩa là tại mọi thời điểm đều đúng 20 km/h.",
+        "answer": "false",
+        "explanation": "Giá trị trung bình tổng hợp cả khoảng, không mô tả từng thời điểm."
+      },
+      {
+        "type": "essay",
+        "prompt": "Tạo bảng thời gian–quãng đường gồm một đoạn đi chậm, một đoạn nhanh và một đoạn nghỉ. Tính tốc độ trung bình từng đoạn cùng cả hành trình.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. v = s/t cần thời gian dương và đơn vị thống nhất; trung bình không phải tức thời."
+      }
+    ],
+    "application": "Tạo bảng thời gian–quãng đường gồm một đoạn đi chậm, một đoạn nhanh và một đoạn nghỉ. Tính tốc độ trung bình từng đoạn cùng cả hành trình.",
+    "summary": "v = s/t cần thời gian dương và đơn vị thống nhất; trung bình không phải tức thời.",
+    "mistakes": [
+      "Giá trị trung bình tổng hợp cả khoảng, không mô tả từng thời điểm.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 7,
+    "subjectId": "natural-science",
+    "slug": "photosynthesis-evidence",
+    "track": "advanced",
+    "title": "Quang hợp: điều kiện, sản phẩm và đọc bằng chứng",
+    "chapter": "Trao đổi chất và năng lượng ở sinh vật",
+    "semester": 2,
+    "outcome": "Nêu vai trò ánh sáng và nguyên liệu của quang hợp; nhận ra biến cần thay đổi, điều kiện cần giữ giống nhau khi so sánh hai cây.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Ở mức mô hình phổ thông, cây xanh dùng năng lượng ánh sáng để tổng hợp chất hữu cơ từ nước và carbon dioxide, đồng thời có thể giải phóng oxygen. Diệp lục tham gia hấp thụ ánh sáng. Ánh sáng là nguồn năng lượng, không được gọi là một chất đầu vào có khối lượng giống nước.",
+      "Muốn kiểm tra vai trò của một điều kiện, cần so sánh các nhóm sao cho các yếu tố khác được giữ tương tự. Một cây lớn hơn không tự chứng minh chỉ do ánh sáng, vì nước, giống cây và tuổi cũng có thể khác. Không thực hiện các phép thử dùng hóa chất hoặc đun nóng nếu không có hướng dẫn chuyên môn."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Hai chậu cùng giống, tuổi, đất, nước; một chậu được chiếu sáng, một chậu bị che. Biến đang chủ yếu được thay đổi là gì?",
+      "answer": "Ánh sáng",
+      "method": [
+        "Đọc các điều kiện được giữ giống nhau.",
+        "Khác biệt chủ định là có/không chiếu sáng.",
+        "Dữ liệu sau đó có thể giúp xét vai trò ánh sáng, nhưng vẫn cần kiểm tra cách đo và các sai lệch."
+      ]
+    },
+    "guided": {
+      "type": "single",
+      "prompt": "Vai trò của ánh sáng trong mô hình quang hợp là gì?",
+      "options": [
+        "Cung cấp năng lượng",
+        "Là loại đất thay cho nước",
+        "Là oxygen đã tạo ra"
+      ],
+      "answer": "0",
+      "explanation": "Ánh sáng cung cấp năng lượng cho quá trình, không phải một chất như nước hay khí CO₂.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "So sánh nào giúp xét vai trò của nước tốt hơn?",
+        "options": [
+          "Cùng giống, ánh sáng, đất; thay lượng nước theo kế hoạch",
+          "Một cây lớn ngoài sân và một hạt trong hộp bất kỳ",
+          "Hai cây khác loài, khác mọi điều kiện"
+        ],
+        "answer": "0",
+        "explanation": "Giữ các yếu tố khác tương tự giúp cô lập biến đang nghiên cứu."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Thấy hai cây khác kích thước đủ để chắc chắn kết luận ánh sáng là nguyên nhân duy nhất.",
+        "answer": "false",
+        "explanation": "Có thể còn nhiều biến khác; tương quan quan sát không tự xác nhận nguyên nhân duy nhất."
+      },
+      {
+        "type": "essay",
+        "prompt": "Thiết kế một bảng dữ liệu giả định để xét một yếu tố ảnh hưởng quang hợp. Nêu biến thay đổi, biến giữ, cách quan sát và điều chưa thể kết luận.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Mô hình quang hợp phân biệt chất và năng lượng; chứng cứ cần phép so sánh có kiểm soát."
+      }
+    ],
+    "application": "Thiết kế một bảng dữ liệu giả định để xét một yếu tố ảnh hưởng quang hợp. Nêu biến thay đổi, biến giữ, cách quan sát và điều chưa thể kết luận.",
+    "summary": "Mô hình quang hợp phân biệt chất và năng lượng; chứng cứ cần phép so sánh có kiểm soát.",
+    "mistakes": [
+      "Có thể còn nhiều biến khác; tương quan quan sát không tự xác nhận nguyên nhân duy nhất.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 8,
+    "subjectId": "natural-science",
+    "slug": "pressure-area",
+    "track": "foundation",
+    "title": "Áp suất và diện tích chịu lực",
+    "chapter": "Áp suất",
+    "semester": 1,
+    "outcome": "Tính áp suất bằng p = F/S khi lực vuông góc phân bố đều; giải thích ảnh hưởng diện tích khi giữ nguyên lực.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Áp suất đặc trưng cho tác dụng ép trên một đơn vị diện tích. Trong mô hình lực phân bố đều và vuông góc mặt phẳng, p = F/S, F đo bằng N, S bằng m² thì p tính bằng Pa. Diện tích phải dương và đổi đúng đơn vị trước khi tính.",
+      "Giữ lực như nhau, diện tích nhỏ hơn tạo áp suất lớn hơn. Điều này giúp giải thích đế giày rộng hoặc mũi nhọn trong những bối cảnh phù hợp. Mô hình không mô tả đầy đủ vật biến dạng, lực phân bố không đều hoặc các bề mặt đang chuyển động."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Lực ép 20 N trên diện tích 0,1 m², phân bố đều và vuông góc. Áp suất bao nhiêu Pa?",
+      "answer": "200",
+      "method": [
+        "Xác định F = 20 N, S = 0,1 m².",
+        "Tính p = F/S = 20/0,1 = 200.",
+        "Ghi 200 Pa và giữ giả định lực phân bố đều."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Lực 60 N trên diện tích 0,2 m² tạo áp suất bao nhiêu Pa?",
+      "answer": "300",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-8
+      },
+      "explanation": "p = 60/0,2 = 300 Pa.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Giữ F không đổi, tăng S gấp đôi thì p thế nào?",
+        "options": [
+          "Giảm còn một nửa",
+          "Tăng gấp đôi",
+          "Không thay đổi"
+        ],
+        "answer": "0",
+        "explanation": "p tỉ lệ nghịch với S trong mô hình p = F/S."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Cùng lực ép, diện tích càng lớn thì áp suất càng lớn.",
+        "answer": "false",
+        "explanation": "Theo p = F/S, giữ lực mà tăng diện tích làm áp suất giảm."
+      },
+      {
+        "type": "essay",
+        "prompt": "So sánh hai phương án đế giày bằng dữ kiện giả định về cùng lực và hai diện tích. Tính áp suất, giải thích và nêu một giới hạn của mô hình.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. p = F/S với S > 0, đúng đơn vị và giả định phân bố lực."
+      }
+    ],
+    "application": "So sánh hai phương án đế giày bằng dữ kiện giả định về cùng lực và hai diện tích. Tính áp suất, giải thích và nêu một giới hạn của mô hình.",
+    "summary": "p = F/S với S > 0, đúng đơn vị và giả định phân bố lực.",
+    "mistakes": [
+      "Theo p = F/S, giữ lực mà tăng diện tích làm áp suất giảm.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ],
+    "diagram": {
+      "kind": "pressure",
+      "force": 20,
+      "area": 0.1
+    }
+  },
+  {
+    "grade": 8,
+    "subjectId": "natural-science",
+    "slug": "chemical-equation",
+    "track": "standard",
+    "title": "Cân bằng phương trình và bảo toàn nguyên tử",
+    "chapter": "Phản ứng hóa học",
+    "semester": 1,
+    "outcome": "Đếm nguyên tử từng nguyên tố ở hai vế và điều chỉnh hệ số để cân bằng phương trình; giữ nguyên chỉ số trong công thức chất.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Trong phản ứng hóa học theo mô hình phổ thông, các nguyên tử sắp xếp lại tạo chất mới; số nguyên tử của từng nguyên tố được bảo toàn trong hệ phản ứng. Viết hệ số trước công thức để số nguyên tử mỗi nguyên tố hai vế bằng nhau.",
+      "Không đổi chỉ số trong công thức để cân bằng, vì đổi H₂O thành H₂O₂ là đổi chất. Với H₂ và O₂ tạo H₂O, chọn 2H₂ + O₂ → 2H₂O: mỗi vế có 4 H và 2 O. Đây là bài mô hình trên giấy, không yêu cầu tạo hỗn hợp khí hoặc đốt thử."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Trong 2H₂ + O₂ → 2H₂O, mỗi vế có bao nhiêu nguyên tử H?",
+      "answer": "4",
+      "method": [
+        "Hệ số 2 nhân với chỉ số 2 trong H₂ ở vế trái.",
+        "Vế trái có 2 × 2 = 4 H; vế phải có 2 × 2 = 4 H.",
+        "Số O cũng bằng 2 ở hai vế nên phương trình cân bằng."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Trong 4Al + 3O₂ → 2Al₂O₃, vế phải có bao nhiêu nguyên tử Al?",
+      "answer": "4",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-8
+      },
+      "explanation": "2 đơn vị Al₂O₃, mỗi đơn vị có 2 Al nên tổng 4 Al.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Muốn cân bằng phản ứng cần thay đổi gì?",
+        "options": [
+          "Hệ số trước công thức",
+          "Tùy ý đổi chỉ số của nguyên tố",
+          "Tên nguyên tố"
+        ],
+        "answer": "0",
+        "explanation": "Hệ số đổi số đơn vị chất; chỉ số là thành phần của chất, không đổi tùy ý."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Có thể đổi công thức chất chỉ để số nguyên tử hai vế bằng nhau.",
+        "answer": "false",
+        "explanation": "Đổi chỉ số có thể tạo chất khác, không còn mô tả đúng phản ứng ban đầu."
+      },
+      {
+        "type": "essay",
+        "prompt": "Dùng mô hình thẻ nguyên tử để cân bằng một phương trình đã cho trên giấy. Đếm từng nguyên tố và giải thích vì sao chỉ thay hệ số.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Cân bằng bằng hệ số, bảo toàn số nguyên tử từng nguyên tố; không đổi công thức và không thử phản ứng nguy hiểm."
+      }
+    ],
+    "application": "Dùng mô hình thẻ nguyên tử để cân bằng một phương trình đã cho trên giấy. Đếm từng nguyên tố và giải thích vì sao chỉ thay hệ số.",
+    "summary": "Cân bằng bằng hệ số, bảo toàn số nguyên tử từng nguyên tố; không đổi công thức và không thử phản ứng nguy hiểm.",
+    "mistakes": [
+      "Đổi chỉ số có thể tạo chất khác, không còn mô tả đúng phản ứng ban đầu.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 8,
+    "subjectId": "natural-science",
+    "slug": "food-energy-evidence",
+    "track": "advanced",
+    "title": "Phân tích dữ liệu về khẩu phần thay vì đoán từ một món",
+    "chapter": "Cơ thể người và đọc dữ liệu",
+    "semester": 2,
+    "outcome": "Tính giá trị từ bảng năng lượng giả định theo khối lượng khẩu phần và nêu vì sao một món riêng lẻ chưa đủ đánh giá chế độ ăn.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Chất dinh dưỡng có nhiều vai trò: có chất cung cấp năng lượng, có chất tham gia xây dựng và điều hòa cơ thể. Một loại thức ăn thường chứa nhiều thành phần; tên món không đủ để xác định chính xác toàn bộ giá trị dinh dưỡng của khẩu phần.",
+      "Trong bài đọc dữ liệu, dùng bảng giả định đã cho để so sánh theo cùng đơn vị và cùng lượng ăn. Nhu cầu thực phụ thuộc lứa tuổi, hoạt động và tình trạng cá nhân; bài toán không thay hướng dẫn dinh dưỡng hoặc chăm sóc sức khỏe của chuyên gia. Không suy rằng món ít năng lượng hơn luôn là lựa chọn tốt hơn cho mọi người."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Bảng giả định: 100 g A cho 200 đơn vị năng lượng, 100 g B cho 120. Ăn 50 g A cho bao nhiêu đơn vị theo tỉ lệ tuyến tính?",
+      "answer": "100",
+      "method": [
+        "Cùng loại A, 50 g là một nửa 100 g.",
+        "Theo giả định bảng, năng lượng bằng 200 × 1/2 = 100.",
+        "Không dùng phép tính này để tự đặt chế độ ăn cá nhân."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Bảng giả định cho 80 đơn vị năng lượng trong 100 g. 150 g cho bao nhiêu đơn vị?",
+      "answer": "120",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-8
+      },
+      "explanation": "Theo tỉ lệ trong bảng: 80 × 150/100 = 120.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Kết luận nào đúng mức từ một bảng giả định?",
+        "options": [
+          "Trong cùng lượng, A có giá trị ghi trong bảng cao hơn B",
+          "A luôn tốt nhất cho mọi người",
+          "B chữa được mọi bệnh"
+        ],
+        "answer": "0",
+        "explanation": "Bảng chỉ cho phép so dữ kiện đã nêu; không tạo khuyến nghị sức khỏe chung."
+      },
+      {
+        "type": "boolean",
+        "prompt": "So sánh hai món mà không xét lượng ăn vẫn luôn cho kết luận dinh dưỡng đúng.",
+        "answer": "false",
+        "explanation": "Phải thống nhất lượng và đơn vị, đồng thời xem các thành phần và bối cảnh khác."
+      },
+      {
+        "type": "essay",
+        "prompt": "Tạo bảng hai khẩu phần từ dữ liệu giả định. Tính các tổng theo cùng đơn vị, nêu kết luận giới hạn và câu hỏi cần thêm dữ liệu.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Đọc khẩu phần bằng dữ liệu, đơn vị và bối cảnh; không biến bài tính thành lời khuyên sức khỏe cá nhân."
+      }
+    ],
+    "application": "Tạo bảng hai khẩu phần từ dữ liệu giả định. Tính các tổng theo cùng đơn vị, nêu kết luận giới hạn và câu hỏi cần thêm dữ liệu.",
+    "summary": "Đọc khẩu phần bằng dữ liệu, đơn vị và bối cảnh; không biến bài tính thành lời khuyên sức khỏe cá nhân.",
+    "mistakes": [
+      "Phải thống nhất lượng và đơn vị, đồng thời xem các thành phần và bối cảnh khác.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 9,
+    "subjectId": "natural-science",
+    "slug": "ohm-law",
+    "track": "foundation",
+    "title": "Định luật Ohm và điều kiện điện trở không đổi",
+    "chapter": "Điện",
+    "semester": 1,
+    "outcome": "Vận dụng I = U/R và so sánh biến đổi U, I khi điện trở giữ không đổi; chỉ rõ điều kiện dùng mô hình Ohm.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Với một đoạn mạch tuân theo định luật Ohm trong điều kiện điện trở không đổi, cường độ dòng điện I = U/R. U đo bằng volt, R bằng ohm thì I tính bằng ampere. Điện trở trong mẫu số phải khác 0.",
+      "Giữ R không đổi thì tăng U gấp đôi làm I tăng gấp đôi. Không áp dụng quan hệ này tùy ý cho mọi thiết bị ở mọi nhiệt độ, vì điện trở và đặc tính linh kiện có thể thay đổi. Chỉ tính trên sơ đồ hoặc dữ liệu, không thử với ổ điện gia đình."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Điện trở 6 Ω mắc vào hiệu điện thế 12 V theo điều kiện Ohm. I bằng bao nhiêu A?",
+      "answer": "2",
+      "method": [
+        "U = 12 V, R = 6 Ω.",
+        "I = U/R = 12/6 = 2.",
+        "Kết quả 2 A thuộc mô hình đang xét, không là chỉ dẫn lắp mạch ở nhà."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "R = 10 Ω, U = 5 V. I bằng bao nhiêu A?",
+      "answer": "0.5",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-8
+      },
+      "explanation": "I = 5/10 = 0,5 A.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Giữ R không đổi, giảm U còn một nửa thì I thế nào?",
+        "options": [
+          "Giảm còn một nửa",
+          "Tăng gấp đôi",
+          "Luôn bằng 0"
+        ],
+        "answer": "0",
+        "explanation": "Theo I = U/R, I tỉ lệ thuận U khi R không đổi."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Định luật Ohm dạng I = U/R cho phép bỏ qua điều kiện của linh kiện và nhiệt độ trong mọi bài toán.",
+        "answer": "false",
+        "explanation": "Cần xác định đoạn mạch có tuân theo mô hình và điện trở được xem không đổi trong phạm vi xét."
+      },
+      {
+        "type": "essay",
+        "prompt": "Lập bảng U–I cho một điện trở cố định từ dữ liệu giả định; kiểm tra tỉ số U/I và nêu điều kiện mô hình, an toàn.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. I = U/R cần R khác 0 và điều kiện điện trở không đổi; không tự thử với điện gia đình."
+      }
+    ],
+    "application": "Lập bảng U–I cho một điện trở cố định từ dữ liệu giả định; kiểm tra tỉ số U/I và nêu điều kiện mô hình, an toàn.",
+    "summary": "I = U/R cần R khác 0 và điều kiện điện trở không đổi; không tự thử với điện gia đình.",
+    "mistakes": [
+      "Cần xác định đoạn mạch có tuân theo mô hình và điện trở được xem không đổi trong phạm vi xét.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 9,
+    "subjectId": "natural-science",
+    "slug": "mendel-single-trait",
+    "track": "standard",
+    "title": "Lai một tính trạng trong mô hình trội hoàn toàn",
+    "chapter": "Di truyền",
+    "semester": 2,
+    "outcome": "Lập tổ hợp giao tử để tính xác suất kiểu gene và kiểu hình trong phép lai một tính trạng trội hoàn toàn; phân biệt xác suất với số lượng chắc chắn.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Trong mô hình đơn giản một gene có hai allele A và a, cơ thể lưỡng bội có hai allele ở locus đang xét. Nếu A trội hoàn toàn, AA và Aa biểu hiện kiểu hình trội, aa biểu hiện lặn. “Trội” không có nghĩa tốt hơn, mạnh hơn hoặc phổ biến hơn trong mọi quần thể.",
+      "Phép lai Aa × Aa tạo giao tử A hoặc a ở mỗi bên với xác suất bằng nhau theo giả định phân li đều. Bảng tổ hợp cho AA, Aa, aA, aa, mỗi trường hợp 1/4; gộp Aa và aA cùng kiểu gene được tỉ lệ 1:2:1, kiểu hình 3:1. Đây là mô hình với các giả định rõ, không áp cho mọi tính trạng phức tạp ở người."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Theo mô hình Aa × Aa trội hoàn toàn, xác suất con có kiểu gene aa là bao nhiêu?",
+      "answer": "0.25",
+      "method": [
+        "Mỗi bên cho giao tử a với xác suất 1/2.",
+        "Tổ hợp a từ cả hai bên có xác suất 1/2 × 1/2 = 1/4.",
+        "Viết 0,25; đây là xác suất mỗi lần, không bảo đảm cứ bốn con sẽ có đúng một aa."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Theo cùng mô hình, xác suất kiểu gene dị hợp Aa ở con bằng bao nhiêu?",
+      "answer": "0.5",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-8
+      },
+      "explanation": "Aa hoặc aA chiếm 2 trong 4 tổ hợp, nên bằng 1/2.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Từ “trội” trong mô hình cho biết gì?",
+        "options": [
+          "Cách allele biểu hiện ở kiểu gene dị hợp theo giả định",
+          "Allele chắc chắn tốt hơn",
+          "Allele luôn chiếm 100% quần thể"
+        ],
+        "answer": "0",
+        "explanation": "Trội mô tả quan hệ biểu hiện, không phải giá trị hay tần suất tuyệt đối."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Xác suất aa bằng 1/4 bảo đảm mọi gia đình có bốn con sẽ đúng một con aa.",
+        "answer": "false",
+        "explanation": "Xác suất không ấn định kết quả mỗi nhóm nhỏ; các lần sinh là biến cố theo mô hình."
+      },
+      {
+        "type": "essay",
+        "prompt": "Vẽ bảng tổ hợp Aa × aa, tính xác suất từng kiểu gene và kiểu hình trong mô hình. Nêu ít nhất hai giả định, không dùng để dự đoán tình trạng sức khỏe cá nhân.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Tách kiểu gene, kiểu hình và xác suất; mô hình Mendel đơn giản không đại diện mọi tính trạng."
+      }
+    ],
+    "application": "Vẽ bảng tổ hợp Aa × aa, tính xác suất từng kiểu gene và kiểu hình trong mô hình. Nêu ít nhất hai giả định, không dùng để dự đoán tình trạng sức khỏe cá nhân.",
+    "summary": "Tách kiểu gene, kiểu hình và xác suất; mô hình Mendel đơn giản không đại diện mọi tính trạng.",
+    "mistakes": [
+      "Xác suất không ấn định kết quả mỗi nhóm nhỏ; các lần sinh là biến cố theo mô hình.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 9,
+    "subjectId": "natural-science",
+    "slug": "ecosystem-foodweb",
+    "track": "advanced",
+    "title": "Lưới thức ăn và giới hạn của dự đoán hệ sinh thái",
+    "chapter": "Sinh thái và môi trường",
+    "semester": 2,
+    "outcome": "Đọc đúng chiều mũi tên truyền thức ăn trong chuỗi hoặc lưới; nêu giới hạn dự đoán khi một mắt xích thay đổi.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Chuỗi thức ăn mô tả một đường quan hệ dinh dưỡng; lưới thức ăn gồm nhiều chuỗi liên kết. Mũi tên thường chỉ hướng truyền chất và năng lượng từ sinh vật bị ăn tới sinh vật ăn. Cần thống nhất quy ước mũi tên khi đọc sơ đồ.",
+      "Một loài có thể tham gia nhiều quan hệ nên thay đổi số lượng loài này có thể tác động gián tiếp đến loài khác. Tuy vậy một sơ đồ thức ăn đơn giản chưa đủ dự báo chính xác số lượng thực tế, vì môi trường, nơi ở, bệnh và nhiều yếu tố khác cũng tham gia."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Trong sơ đồ cỏ → thỏ → cáo theo hướng truyền thức ăn, mũi tên cỏ → thỏ nói gì?",
+      "answer": "Thỏ sử dụng cỏ làm thức ăn",
+      "method": [
+        "Xác định quy ước mũi tên từ nguồn thức ăn tới sinh vật ăn.",
+        "Cỏ là mắt xích cung cấp vật chất, năng lượng cho thỏ.",
+        "Không đảo mũi tên thành nhận định cỏ ăn thỏ."
+      ]
+    },
+    "guided": {
+      "type": "single",
+      "prompt": "Vì sao lưới thức ăn khác một chuỗi đơn?",
+      "options": [
+        "Lưới có nhiều chuỗi liên kết",
+        "Lưới chỉ có một loài",
+        "Lưới không có quan hệ ăn–bị ăn"
+      ],
+      "answer": "0",
+      "explanation": "Nhiều loài có hơn một nguồn thức ăn hoặc đối tượng sử dụng nên các chuỗi liên kết.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Dự đoán nào đúng mức từ sơ đồ đơn giản?",
+        "options": [
+          "Có thể nêu hướng tác động và giả thuyết cần kiểm tra",
+          "Biết chính xác mọi số lượng tương lai",
+          "Mọi hệ sinh thái phản ứng giống hệt nhau"
+        ],
+        "answer": "0",
+        "explanation": "Sơ đồ cho quan hệ nhưng thiếu nhiều yếu tố để dự báo chính xác toàn hệ."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Chỉ một sơ đồ ba mắt xích đủ cho biết chính xác số lượng tất cả loài sau nhiều năm.",
+        "answer": "false",
+        "explanation": "Cần dữ liệu và yếu tố môi trường khác; mô hình đơn giản có giới hạn."
+      },
+      {
+        "type": "essay",
+        "prompt": "Tạo lưới thức ăn có ít nhất năm loài theo dữ liệu giả định rõ. Bỏ một mắt xích, đề xuất hai giả thuyết tác động khác nhau và dữ liệu cần thu để phân biệt.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Đọc đúng hướng mũi tên, phân biệt chuỗi và lưới, nêu giới hạn của dự đoán."
+      }
+    ],
+    "application": "Tạo lưới thức ăn có ít nhất năm loài theo dữ liệu giả định rõ. Bỏ một mắt xích, đề xuất hai giả thuyết tác động khác nhau và dữ liệu cần thu để phân biệt.",
+    "summary": "Đọc đúng hướng mũi tên, phân biệt chuỗi và lưới, nêu giới hạn của dự đoán.",
+    "mistakes": [
+      "Cần dữ liệu và yếu tố môi trường khác; mô hình đơn giản có giới hạn.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 10,
+    "subjectId": "physics",
+    "slug": "acceleration-uniform",
+    "track": "foundation",
+    "title": "Gia tốc và chuyển động thẳng biến đổi đều",
+    "chapter": "Động học",
+    "semester": 1,
+    "outcome": "Tính vận tốc trong chuyển động thẳng có gia tốc không đổi bằng v = v₀ + at; giải thích dấu của đại lượng theo chiều trục đã chọn.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Vận tốc cho biết tốc độ thay đổi vị trí có xét chiều; gia tốc cho biết tốc độ thay đổi vận tốc. Trên một trục đã chọn chiều dương, a = (v − v₀)/Δt, với Δt > 0. Đơn vị gia tốc là m/s² nếu vận tốc đo bằng m/s và thời gian bằng s.",
+      "Khi gia tốc không đổi, v = v₀ + at và độ dịch chuyển Δx = v₀t + at²/2. Dấu của a không tự nói vật nhanh dần hay chậm dần: phải so với dấu của vận tốc. Nếu a cùng dấu v thì độ lớn vận tốc tăng; ngược dấu thì giảm trong khoảng chưa đổi chiều."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Vật chuyển động trên chiều dương, v₀ = 2 m/s, a = 3 m/s² không đổi. Sau 4 s, v bằng bao nhiêu m/s?",
+      "answer": "14",
+      "method": [
+        "Giữ cùng hệ trục và thời điểm bắt đầu t = 0.",
+        "v = v₀ + at = 2 + 3 × 4 = 14.",
+        "Gia tốc không đổi là điều kiện để dùng công thức này trực tiếp."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "v₀ = 5 m/s, a = −1 m/s² không đổi. Sau 3 s, v bằng bao nhiêu m/s?",
+      "answer": "2",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-8
+      },
+      "explanation": "v = 5 − 1 × 3 = 2 m/s, vật chưa đổi chiều.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Một vật đang có v âm và a âm. Trong khoảng nhỏ chưa đổi chiều, độ lớn vận tốc thế nào?",
+        "options": [
+          "Tăng",
+          "Giảm",
+          "Luôn bằng 0"
+        ],
+        "answer": "0",
+        "explanation": "v và a cùng dấu nên độ lớn vận tốc tăng, dù cả hai đều âm."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Gia tốc âm luôn có nghĩa vật chuyển động chậm dần.",
+        "answer": "false",
+        "explanation": "Cần xét dấu vận tốc; a âm cùng v âm có thể làm vật nhanh dần theo chiều âm."
+      },
+      {
+        "type": "essay",
+        "prompt": "Tạo bảng v theo thời gian cho chuyển động có a không đổi, chỉ rõ trục và đơn vị. So sánh dấu v, a trước khi nhận xét nhanh/chậm dần.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Gia tốc là biến thiên vận tốc trên thời gian; công thức biến đổi đều cần a không đổi và quy ước dấu."
+      }
+    ],
+    "application": "Tạo bảng v theo thời gian cho chuyển động có a không đổi, chỉ rõ trục và đơn vị. So sánh dấu v, a trước khi nhận xét nhanh/chậm dần.",
+    "summary": "Gia tốc là biến thiên vận tốc trên thời gian; công thức biến đổi đều cần a không đổi và quy ước dấu.",
+    "mistakes": [
+      "Cần xét dấu vận tốc; a âm cùng v âm có thể làm vật nhanh dần theo chiều âm.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 10,
+    "subjectId": "physics",
+    "slug": "momentum-isolation",
+    "track": "advanced",
+    "title": "Động lượng và điều kiện bảo toàn của hệ",
+    "chapter": "Động lượng và năng lượng",
+    "semester": 2,
+    "outcome": "Áp dụng bảo toàn động lượng cho va chạm dính khi tổng ngoại lực có thể bỏ qua; phân biệt bảo toàn động lượng với bảo toàn động năng.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Động lượng của một vật là vectơ p = mv. Trong bài một chiều, dấu của vận tốc biểu thị chiều của động lượng; khối lượng được coi không đổi trong mô hình này. Tổng động lượng là tổng có xét chiều, không phải cộng riêng các độ lớn.",
+      "Hệ được xem cô lập theo phương đang xét khi tổng ngoại lực hoặc xung lượng ngoại lực có thể bỏ qua trong khoảng thời gian xét. Khi đó tổng động lượng trước bằng sau. Một va chạm dính không bảo toàn động năng của các vật trong mô hình, dù động lượng hệ có thể được bảo toàn."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Vật 2 kg chạy 3 m/s va dính vật 1 kg đứng yên, ngoại lực bỏ qua. Vận tốc chung bằng bao nhiêu m/s?",
+      "answer": "2",
+      "method": [
+        "Chọn chiều dương theo vận tốc vật đầu. Động lượng trước: 2 × 3 + 1 × 0 = 6.",
+        "Sau khi dính, khối lượng chung là 3 kg nên 3v = 6.",
+        "v = 2 m/s; không tự kết luận động năng cũng bảo toàn."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Vật 1 kg có v = 4 m/s va dính vật 1 kg có v = −2 m/s trong hệ cô lập. Vận tốc chung bằng bao nhiêu m/s?",
+      "answer": "1",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-8
+      },
+      "explanation": "Tổng động lượng 4 − 2 = 2 kg·m/s, chia tổng khối lượng 2 kg được 1 m/s.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Điều kiện quan trọng khi dùng bảo toàn động lượng là gì?",
+        "options": [
+          "Ngoại lực hoặc xung lượng ngoại lực có thể bỏ qua theo phương xét",
+          "Mọi vật cùng màu",
+          "Va chạm phải phát ra âm lớn"
+        ],
+        "answer": "0",
+        "explanation": "Phải xác định hệ và ảnh hưởng ngoại lực, không chỉ nhìn kiểu va chạm."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Va chạm dính trong hệ cô lập luôn bảo toàn đồng thời động năng của các vật.",
+        "answer": "false",
+        "explanation": "Động lượng có thể bảo toàn nhưng một phần động năng chuyển sang các dạng năng lượng khác."
+      },
+      {
+        "type": "essay",
+        "prompt": "Lập bài va chạm dính một chiều có hai vận tốc trái dấu. Tính vận tốc chung, so sánh động năng trước–sau và nêu điều kiện bỏ qua ngoại lực.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Chọn hệ và phương; cộng động lượng có dấu; bảo toàn động lượng khác bảo toàn động năng."
+      }
+    ],
+    "application": "Lập bài va chạm dính một chiều có hai vận tốc trái dấu. Tính vận tốc chung, so sánh động năng trước–sau và nêu điều kiện bỏ qua ngoại lực.",
+    "summary": "Chọn hệ và phương; cộng động lượng có dấu; bảo toàn động lượng khác bảo toàn động năng.",
+    "mistakes": [
+      "Động lượng có thể bảo toàn nhưng một phần động năng chuyển sang các dạng năng lượng khác.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 11,
+    "subjectId": "physics",
+    "slug": "wave-speed",
+    "track": "foundation",
+    "title": "Bước sóng, tần số và tốc độ truyền sóng",
+    "chapter": "Sóng",
+    "semester": 1,
+    "outcome": "Vận dụng v = λf với đơn vị nhất quán; phân biệt tốc độ truyền sóng với chuyển động của phần tử môi trường.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Bước sóng λ là khoảng cách giữa hai điểm gần nhau nhất trên phương truyền dao động cùng pha trong mô hình sóng tuần hoàn. Tần số f là số chu kì mỗi giây, chu kì T = 1/f. Tốc độ truyền sóng v = λf = λ/T khi các đại lượng thuộc cùng sóng và môi trường xét.",
+      "Tốc độ truyền sóng là tốc độ lan truyền trạng thái dao động, không đồng nhất với tốc độ chuyển động của một phần tử môi trường. Với môi trường được coi không đổi, tăng tần số nguồn thường làm bước sóng giảm để phù hợp quan hệ v = λf; không tự coi v tăng theo f khi v đã do môi trường quyết định."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Sóng có bước sóng 2 m và tần số 5 Hz. Tốc độ truyền bằng bao nhiêu m/s?",
+      "answer": "10",
+      "method": [
+        "Đổi và kiểm tra đơn vị λ = 2 m, f = 5 s⁻¹.",
+        "Tính v = λf = 2 × 5 = 10.",
+        "Kết quả là tốc độ truyền trạng thái dao động, không phải vận tốc mỗi phần tử."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Một sóng truyền với v = 12 m/s và f = 4 Hz. Bước sóng bằng bao nhiêu m?",
+      "answer": "3",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-8
+      },
+      "explanation": "λ = v/f = 12/4 = 3 m.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Giữ tốc độ truyền trong môi trường không đổi, tăng f gấp đôi thì λ thế nào?",
+        "options": [
+          "Giảm còn một nửa",
+          "Tăng gấp đôi",
+          "Không đổi"
+        ],
+        "answer": "0",
+        "explanation": "Từ λ = v/f, λ tỉ lệ nghịch f khi v cố định."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Tốc độ truyền sóng luôn chính là tốc độ chuyển động của phần tử môi trường.",
+        "answer": "false",
+        "explanation": "Hai khái niệm khác nhau: trạng thái lan truyền, còn phần tử thường dao động quanh vị trí cân bằng."
+      },
+      {
+        "type": "essay",
+        "prompt": "Vẽ một sóng tuần hoàn, đánh dấu bước sóng và lập hai bộ λ,f có cùng v. Giải thích đâu là chuyển động của phần tử, đâu là truyền sóng.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. v = λf với đúng đơn vị; tốc độ truyền sóng khác tốc độ dao động của phần tử."
+      }
+    ],
+    "application": "Vẽ một sóng tuần hoàn, đánh dấu bước sóng và lập hai bộ λ,f có cùng v. Giải thích đâu là chuyển động của phần tử, đâu là truyền sóng.",
+    "summary": "v = λf với đúng đơn vị; tốc độ truyền sóng khác tốc độ dao động của phần tử.",
+    "mistakes": [
+      "Hai khái niệm khác nhau: trạng thái lan truyền, còn phần tử thường dao động quanh vị trí cân bằng.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 11,
+    "subjectId": "physics",
+    "slug": "source-internal-resistance",
+    "track": "standard",
+    "title": "Nguồn điện có điện trở trong",
+    "chapter": "Dòng điện và nguồn",
+    "semester": 2,
+    "outcome": "Tính cường độ dòng điện toàn mạch I = E/(R+r) và hiệu điện thế ngoài U = E−Ir trong mô hình nguồn có điện trở trong.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Suất điện động E mô tả năng lượng nguồn cung cấp trên một đơn vị điện tích trong mô hình. Khi nguồn có điện trở trong r và nối với điện trở ngoài R, dòng điện ổn định của mạch đơn giản là I = E/(R + r). Hiệu điện thế hai cực nguồn khi phát điện U = E − Ir.",
+      "E không luôn bằng U khi có dòng điện và r khác 0. Trong mô hình, tăng điện trở ngoài làm dòng giảm và độ giảm thế Ir nhỏ đi. Chỉ phân tích sơ đồ hoặc bộ dữ liệu; không nối tắt nguồn, pin hoặc dùng điện gia đình để đo thử."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Nguồn E = 12 V, r = 1 Ω nối R = 5 Ω. I bằng bao nhiêu A?",
+      "answer": "2",
+      "method": [
+        "Điện trở toàn mạch là R + r = 6 Ω.",
+        "I = 12/6 = 2 A.",
+        "Hiệu điện thế ngoài là U = 12 − 2 × 1 = 10 V."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Nguồn E = 6 V, r = 1 Ω, R = 2 Ω. Hiệu điện thế hai cực nguồn khi phát dòng bằng bao nhiêu V?",
+      "answer": "4",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-8
+      },
+      "explanation": "I = 6/(2 + 1) = 2 A; U = E − Ir = 6 − 2 = 4 V.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Khi r > 0 và nguồn đang phát dòng I > 0, U so với E thế nào theo mô hình?",
+        "options": [
+          "U nhỏ hơn E",
+          "U luôn bằng E",
+          "U luôn lớn hơn E"
+        ],
+        "answer": "0",
+        "explanation": "Độ giảm thế trong nguồn bằng Ir > 0, nên U = E − Ir < E."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Suất điện động luôn bằng hiệu điện thế hai cực nguồn ngay cả khi có dòng và điện trở trong.",
+        "answer": "false",
+        "explanation": "Khi nguồn phát dòng, hiệu điện thế hai cực giảm một lượng Ir theo mô hình."
+      },
+      {
+        "type": "essay",
+        "prompt": "Tạo bảng cho cùng nguồn với ba điện trở ngoài. Tính I,U, kiểm tra U = IR và nêu lý do không thử bằng cách nối tắt nguồn.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Phân biệt E, U và điện trở trong; công thức toàn mạch áp dụng mô hình mạch đơn giản ổn định."
+      }
+    ],
+    "application": "Tạo bảng cho cùng nguồn với ba điện trở ngoài. Tính I,U, kiểm tra U = IR và nêu lý do không thử bằng cách nối tắt nguồn.",
+    "summary": "Phân biệt E, U và điện trở trong; công thức toàn mạch áp dụng mô hình mạch đơn giản ổn định.",
+    "mistakes": [
+      "Khi nguồn phát dòng, hiệu điện thế hai cực giảm một lượng Ir theo mô hình.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 12,
+    "subjectId": "physics",
+    "slug": "thermal-balance",
+    "track": "foundation",
+    "title": "Nhiệt lượng và điều kiện của mô hình cân bằng nhiệt",
+    "chapter": "Vật lí nhiệt",
+    "semester": 1,
+    "outcome": "Tính nhiệt lượng bằng Q = mcΔt trong quá trình không chuyển thể; nêu giả định nhiệt dung riêng và giới hạn khi áp dụng cân bằng nhiệt.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Khi chỉ thay đổi nhiệt độ mà không chuyển thể, nhiệt lượng trao đổi có thể tính Q = mcΔt trong mô hình nhiệt dung riêng c không đổi. m tính bằng kg, c bằng J/(kg·°C), Δt bằng °C thì Q tính bằng J. Mức tăng nhiệt độ khác nhiệt độ cuối.",
+      "Bài cân bằng nhiệt thường giả định hệ cách nhiệt và bỏ qua nhiệt dung vật chứa; khi ấy nhiệt vật nóng tỏa bằng nhiệt vật lạnh thu. Ngoài thực tế vẫn có thất thoát và vật chứa cũng trao đổi nhiệt. Không chạm hay tự đun vật nóng để thực hiện phép tính."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "m = 0,5 kg nước, c = 4.200 J/(kg·°C), tăng 10 °C, không chuyển thể. Cần bao nhiêu J?",
+      "answer": "21000",
+      "method": [
+        "Xác định Δt = 10 °C, không phải nhiệt độ cuối.",
+        "Q = 0,5 × 4.200 × 10 = 21.000 J.",
+        "Giữ giả định không chuyển thể và c coi không đổi."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "m = 2 kg, c = 500 J/(kg·°C), tăng từ 20 °C lên 30 °C. Q bằng bao nhiêu J?",
+      "answer": "10000",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-8
+      },
+      "explanation": "Δt = 30 − 20 = 10 °C; Q = 2 × 500 × 10 = 10.000 J.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Khi dùng Q = mcΔt theo bài này cần kiểm tra gì?",
+        "options": [
+          "Không có chuyển thể trong khoảng xét",
+          "Vật có màu gì",
+          "Luôn lấy Δt bằng nhiệt độ cuối"
+        ],
+        "answer": "0",
+        "explanation": "Chuyển thể đòi mô hình nhiệt lượng khác; phải dùng đúng độ biến thiên nhiệt độ."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Tăng nhiệt độ từ 20 °C lên 30 °C nghĩa là Δt = 30 °C.",
+        "answer": "false",
+        "explanation": "Độ tăng là nhiệt độ cuối trừ đầu: 30 − 20 = 10 °C."
+      },
+      {
+        "type": "essay",
+        "prompt": "Đặt một bài cân bằng nhiệt từ dữ liệu cho sẵn. Nêu ít nhất hai giả định, dự đoán nhiệt độ cân bằng phải nằm giữa các nhiệt độ ban đầu rồi mới tính.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Q = mcΔt cần đúng đơn vị, độ biến thiên và điều kiện không chuyển thể."
+      }
+    ],
+    "application": "Đặt một bài cân bằng nhiệt từ dữ liệu cho sẵn. Nêu ít nhất hai giả định, dự đoán nhiệt độ cân bằng phải nằm giữa các nhiệt độ ban đầu rồi mới tính.",
+    "summary": "Q = mcΔt cần đúng đơn vị, độ biến thiên và điều kiện không chuyển thể.",
+    "mistakes": [
+      "Độ tăng là nhiệt độ cuối trừ đầu: 30 − 20 = 10 °C.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 12,
+    "subjectId": "physics",
+    "slug": "magnetic-induction",
+    "track": "standard",
+    "title": "Từ thông biến thiên và suất điện động cảm ứng",
+    "chapter": "Từ trường và cảm ứng",
+    "semester": 2,
+    "outcome": "Tính độ lớn suất điện động cảm ứng trung bình từ số vòng và độ biến thiên từ thông; phân biệt từ thông mỗi vòng với tổng liên kết từ thông.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Từ thông qua một diện tích phẳng trong từ trường đều là Φ = BS cosα, với α là góc giữa vectơ cảm ứng từ và pháp tuyến của mặt. Khi từ thông qua mạch biến thiên, có thể xuất hiện suất điện động cảm ứng; không chỉ riêng độ lớn B mà cả diện tích hoặc góc cũng có thể làm Φ thay đổi.",
+      "Trong bài biến thiên đều, độ lớn suất điện động trung bình của cuộn N vòng là |E| = N|ΔΦ|/Δt, với Φ tính cho một vòng và Δt > 0. Định luật Lenz xác định chiều tác dụng chống lại sự biến thiên gây ra nó, không có nghĩa chống lại mọi từ trường trong mọi trường hợp."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Cuộn 100 vòng, từ thông mỗi vòng tăng 0,002 Wb trong 0,1 s. Độ lớn suất điện động trung bình bao nhiêu V?",
+      "answer": "2",
+      "method": [
+        "Dùng từ thông mỗi vòng và số vòng N = 100.",
+        "|E| = 100 × 0,002/0,1 = 2 V.",
+        "Đây là giá trị trung bình theo khoảng thời gian đang xét."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Cuộn 50 vòng có |ΔΦ| mỗi vòng là 0,004 Wb trong 0,2 s. |E| trung bình bằng bao nhiêu V?",
+      "answer": "1",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-8
+      },
+      "explanation": "50 × 0,004/0,2 = 1 V.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Giữ B không đổi nhưng quay mặt phẳng vòng dây, từ thông có thể đổi vì sao?",
+        "options": [
+          "Góc giữa pháp tuyến và B thay đổi",
+          "Bằng 0 trong mọi hướng",
+          "Số vòng tự tăng"
+        ],
+        "answer": "0",
+        "explanation": "Φ phụ thuộc cosα, không chỉ riêng B."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Chỉ cần B không đổi thì từ thông chắc chắn không đổi, bất kể diện tích và góc.",
+        "answer": "false",
+        "explanation": "Từ thông còn phụ thuộc diện tích và góc của mặt với từ trường."
+      },
+      {
+        "type": "essay",
+        "prompt": "Phân tích hai cách làm từ thông biến thiên trên sơ đồ, tính một suất điện động trung bình từ dữ liệu và nêu giả định; không tự lắp thiết bị điện công suất lớn.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Từ thông phụ thuộc B,S,góc; cảm ứng liên quan biến thiên từ thông và chiều theo Lenz."
+      }
+    ],
+    "application": "Phân tích hai cách làm từ thông biến thiên trên sơ đồ, tính một suất điện động trung bình từ dữ liệu và nêu giả định; không tự lắp thiết bị điện công suất lớn.",
+    "summary": "Từ thông phụ thuộc B,S,góc; cảm ứng liên quan biến thiên từ thông và chiều theo Lenz.",
+    "mistakes": [
+      "Từ thông còn phụ thuộc diện tích và góc của mặt với từ trường.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 10,
+    "subjectId": "chemistry",
+    "slug": "isotopes-ions",
+    "track": "foundation",
+    "title": "Đồng vị và ion: đổi neutron khác đổi electron",
+    "chapter": "Cấu tạo nguyên tử",
+    "semester": 1,
+    "outcome": "Từ số hiệu nguyên tử Z và số khối A, xác định proton, neutron, electron của nguyên tử hoặc ion; phân biệt đồng vị với ion.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Số hiệu nguyên tử Z là số proton, xác định nguyên tố. Số khối A bằng tổng proton và neutron nên neutron bằng A − Z. Đồng vị của cùng nguyên tố có cùng Z nhưng khác số neutron. Số khối không phải lúc nào cũng bằng giá trị khối lượng nguyên tử trung bình trong bảng tuần hoàn.",
+      "Ion tạo thành khi nguyên tử hoặc nhóm nguyên tử nhận hay nhường electron trong mô hình hóa học; số proton của hạt nhân không đổi chỉ vì tạo ion. Ion dương mất electron, ion âm nhận electron. Cần phân biệt thay đổi electron với thay đổi hạt nhân."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Một nguyên tử có Z = 11, A = 23. Có bao nhiêu neutron?",
+      "answer": "12",
+      "method": [
+        "A là tổng proton và neutron.",
+        "Số neutron = A − Z = 23 − 11 = 12.",
+        "Nguyên tử trung hòa ban đầu có 11 electron; thông tin A không dùng thay số electron."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Nguyên tử có 12 proton nhường 2 electron. Ion tạo ra có bao nhiêu electron?",
+      "answer": "10",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-8
+      },
+      "explanation": "Ban đầu trung hòa có 12 electron; nhường 2 còn 10.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Hai đồng vị của một nguyên tố khác nhau chủ yếu ở đại lượng nào?",
+        "options": [
+          "Số neutron",
+          "Số proton",
+          "Tên nguyên tố"
+        ],
+        "answer": "0",
+        "explanation": "Cùng nguyên tố có cùng proton; đồng vị khác neutron."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Nguyên tử nhường một electron thì số proton trong hạt nhân giảm một.",
+        "answer": "false",
+        "explanation": "Tạo ion theo mô hình này chỉ thay electron, không đổi số proton."
+      },
+      {
+        "type": "essay",
+        "prompt": "Lập bảng cho hai đồng vị và một ion tương ứng: proton, neutron, electron, điện tích. Giải thích vì sao một thay đổi giữ nguyên nguyên tố còn thay đổi khác cần xét hạt nhân.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Giữ riêng Z,A và điện tích; đồng vị khác neutron, ion khác electron."
+      }
+    ],
+    "application": "Lập bảng cho hai đồng vị và một ion tương ứng: proton, neutron, electron, điện tích. Giải thích vì sao một thay đổi giữ nguyên nguyên tố còn thay đổi khác cần xét hạt nhân.",
+    "summary": "Giữ riêng Z,A và điện tích; đồng vị khác neutron, ion khác electron.",
+    "mistakes": [
+      "Tạo ion theo mô hình này chỉ thay electron, không đổi số proton.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 10,
+    "subjectId": "chemistry",
+    "slug": "redox-electrons",
+    "track": "standard",
+    "title": "Oxi hóa–khử và cân bằng số electron",
+    "chapter": "Phản ứng oxi hóa–khử",
+    "semester": 2,
+    "outcome": "Nhận biết sự nhường hoặc nhận electron, xác định quá trình oxi hóa–khử và kiểm tra bảo toàn điện tích trong bán phản ứng đơn giản.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Trong phản ứng oxi hóa–khử, số oxi hóa của một số nguyên tố thay đổi. Theo cách theo dõi electron, quá trình oxi hóa là nhường electron, quá trình khử là nhận electron. Chất khử nhường electron và bị oxi hóa; chất oxi hóa nhận electron và bị khử.",
+      "Khi lập mô hình cân bằng electron, tổng electron nhường phải bằng tổng electron nhận. Đây là công cụ ghi sổ điện tích; không phải mọi phản ứng đều được thực hiện bằng hai cốc riêng như hình minh họa. Không tự trộn hóa chất hoặc đốt chất để làm bài cân bằng."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Zn → Zn²⁺ + 2e⁻. Một nguyên tử Zn nhường bao nhiêu electron?",
+      "answer": "2",
+      "method": [
+        "Điện tích tăng từ 0 lên +2 trong mô hình ion.",
+        "Vế phải có 2 electron để giữ cân bằng điện tích.",
+        "Zn bị oxi hóa, đóng vai trò chất khử trong phản ứng thích hợp."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Mỗi Fe²⁺ nhường 1 electron thành Fe³⁺. Có 3 Fe²⁺ thì tổng nhường bao nhiêu electron theo hệ số?",
+      "answer": "3",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-8
+      },
+      "explanation": "Mỗi hạt nhường 1, ba hạt nhường tổng 3 electron.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Một chất nhận electron được gọi là gì trong phản ứng oxi hóa–khử?",
+        "options": [
+          "Chất oxi hóa",
+          "Chất khử",
+          "Luôn là chất không đổi số oxi hóa"
+        ],
+        "answer": "0",
+        "explanation": "Chất oxi hóa nhận electron và bản thân bị khử."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Oxi hóa luôn là nhận electron còn khử là nhường electron.",
+        "answer": "false",
+        "explanation": "Theo quy ước theo dõi electron: oxi hóa nhường, khử nhận."
+      },
+      {
+        "type": "essay",
+        "prompt": "Chọn hai bán quá trình đã cho, quy đồng số electron rồi cộng trên giấy. Chỉ rõ chất oxi hóa, chất khử và điều không được suy ra về tốc độ phản ứng.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Bảo toàn electron; phân biệt tên chất với quá trình bản thân chất trải qua."
+      }
+    ],
+    "application": "Chọn hai bán quá trình đã cho, quy đồng số electron rồi cộng trên giấy. Chỉ rõ chất oxi hóa, chất khử và điều không được suy ra về tốc độ phản ứng.",
+    "summary": "Bảo toàn electron; phân biệt tên chất với quá trình bản thân chất trải qua.",
+    "mistakes": [
+      "Theo quy ước theo dõi electron: oxi hóa nhường, khử nhận.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 11,
+    "subjectId": "chemistry",
+    "slug": "dynamic-equilibrium",
+    "track": "foundation",
+    "title": "Cân bằng hóa học là cân bằng động",
+    "chapter": "Cân bằng hóa học",
+    "semester": 1,
+    "outcome": "Giải thích cân bằng hóa học bằng sự bằng nhau của tốc độ thuận và nghịch; phân biệt nồng độ ổn định với nồng độ các chất bằng nhau.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Một phản ứng thuận nghịch có thể diễn ra theo chiều thuận và nghịch trong cùng hệ. Ở cân bằng động, tốc độ hai chiều bằng nhau, nên nồng độ các chất vĩ mô không đổi theo thời gian trong điều kiện giữ ổn định. Điều này không có nghĩa phản ứng dừng lại hoặc nồng độ mọi chất bằng nhau.",
+      "Khi thay đổi điều kiện như nhiệt độ, nồng độ hoặc áp suất với hệ khí phù hợp, trạng thái cân bằng có thể thay đổi. Chất xúc tác làm hệ đạt cân bằng nhanh hơn theo mô hình, nhưng không tự đổi hằng số cân bằng ở cùng nhiệt độ. Cần xét phản ứng cụ thể thay vì dùng mẹo cho mọi hệ."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Một hệ ở cân bằng có tốc độ thuận bằng tốc độ nghịch, nhưng nồng độ hai chất khác nhau. Có mâu thuẫn không?",
+      "answer": "Không",
+      "method": [
+        "Cân bằng đòi tốc độ hai chiều bằng nhau.",
+        "Không có điều kiện bắt mọi nồng độ bằng nhau.",
+        "Các nồng độ ổn định theo thời gian vẫn có thể khác nhau."
+      ]
+    },
+    "guided": {
+      "type": "single",
+      "prompt": "Ở cân bằng động, phát biểu nào đúng?",
+      "options": [
+        "Hai chiều vẫn diễn ra với tốc độ bằng nhau",
+        "Mọi phân tử ngừng chuyển hóa",
+        "Nồng độ mọi chất bắt buộc bằng nhau"
+      ],
+      "answer": "0",
+      "explanation": "Cân bằng động nói tốc độ hai chiều bằng nhau, không phải dừng phản ứng.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Thêm xúc tác ở cùng nhiệt độ, tác dụng phù hợp theo mô hình là gì?",
+        "options": [
+          "Giúp đạt cân bằng nhanh hơn",
+          "Luôn làm hằng số cân bằng tăng",
+          "Bảo đảm chỉ còn chất sản phẩm"
+        ],
+        "answer": "0",
+        "explanation": "Xúc tác ảnh hưởng tốc độ đạt trạng thái, không tự đổi hằng số cân bằng ở nhiệt độ cố định."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Nồng độ không đổi ở cân bằng nghĩa là không còn phản ứng ở cấp hạt.",
+        "answer": "false",
+        "explanation": "Hai chiều vẫn diễn ra đồng thời, tốc độ bằng nhau nên không có biến đổi vĩ mô ròng."
+      },
+      {
+        "type": "essay",
+        "prompt": "Vẽ đồ thị tốc độ thuận–nghịch đi tới cùng giá trị và một bảng nồng độ ổn định nhưng không bằng nhau. Giải thích ý nghĩa “động”.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Cân bằng động là tốc độ hai chiều bằng nhau; không nhầm với nồng độ bằng nhau hoặc phản ứng dừng."
+      }
+    ],
+    "application": "Vẽ đồ thị tốc độ thuận–nghịch đi tới cùng giá trị và một bảng nồng độ ổn định nhưng không bằng nhau. Giải thích ý nghĩa “động”.",
+    "summary": "Cân bằng động là tốc độ hai chiều bằng nhau; không nhầm với nồng độ bằng nhau hoặc phản ứng dừng.",
+    "mistakes": [
+      "Hai chiều vẫn diễn ra đồng thời, tốc độ bằng nhau nên không có biến đổi vĩ mô ròng.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 11,
+    "subjectId": "chemistry",
+    "slug": "ph-dilute-strong-acid",
+    "track": "standard",
+    "title": "pH và giả định của phép tính dung dịch loãng",
+    "chapter": "Acid–base và pH",
+    "semester": 1,
+    "outcome": "Tính pH từ nồng độ H⁺ theo mô hình dung dịch loãng và nhận biết giới hạn của giả định dùng nồng độ thay hoạt độ.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "pH trong mô hình phổ thông dung dịch loãng ở điều kiện thích hợp được tính pH = −log₁₀[H⁺], với nồng độ biểu diễn theo mol/L và quy ước đơn vị đi kèm mô hình. Với acid mạnh một nấc phân li hoàn toàn, có thể lấy [H⁺] xấp xỉ nồng độ acid khi ảnh hưởng tự điện li của nước bỏ qua được.",
+      "Nếu [H⁺] = 10⁻³ mol/L thì pH = 3. Giảm pH một đơn vị tương ứng [H⁺] tăng mười lần theo công thức, không phải tăng một lần. Không áp dụng tùy ý giả định acid mạnh cho acid yếu, dung dịch quá đậm đặc hoặc cực loãng; không tự pha acid ở nhà."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Theo mô hình, [H⁺] = 10⁻³ mol/L. pH bằng bao nhiêu?",
+      "answer": "3",
+      "method": [
+        "Viết pH = −log₁₀(10⁻³).",
+        "log₁₀(10⁻³) = −3.",
+        "Đổi dấu được pH = 3; giữ điều kiện mô hình dung dịch loãng."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Theo cùng mô hình, [H⁺] = 10⁻⁵ mol/L. pH bằng bao nhiêu?",
+      "answer": "5",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-8
+      },
+      "explanation": "pH = −log₁₀(10⁻⁵) = 5.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Theo công thức, giảm pH từ 4 xuống 3 thì [H⁺] thế nào?",
+        "options": [
+          "Tăng 10 lần",
+          "Giảm 10 lần",
+          "Chỉ tăng 1 mol/L trong mọi trường hợp"
+        ],
+        "answer": "0",
+        "explanation": "10⁻³/10⁻⁴ = 10, đây là thang logarit."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Có thể lấy [H⁺] bằng nồng độ ban đầu của mọi acid mà không cần xét mức phân li.",
+        "answer": "false",
+        "explanation": "Giả định phân li hoàn toàn không áp cho mọi acid; acid yếu cần mô hình cân bằng phù hợp."
+      },
+      {
+        "type": "essay",
+        "prompt": "Lập bảng ba giá trị [H⁺] là lũy thừa của 10 và pH tương ứng; giải thích thang logarit và nêu giới hạn, không thực hiện pha acid.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. pH là thang logarit; nêu giả định phân li và điều kiện dung dịch trước khi tính."
+      }
+    ],
+    "application": "Lập bảng ba giá trị [H⁺] là lũy thừa của 10 và pH tương ứng; giải thích thang logarit và nêu giới hạn, không thực hiện pha acid.",
+    "summary": "pH là thang logarit; nêu giả định phân li và điều kiện dung dịch trước khi tính.",
+    "mistakes": [
+      "Giả định phân li hoàn toàn không áp cho mọi acid; acid yếu cần mô hình cân bằng phù hợp.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 12,
+    "subjectId": "chemistry",
+    "slug": "ester-hydrolysis",
+    "track": "foundation",
+    "title": "Ester và đọc phương trình thủy phân",
+    "chapter": "Ester và lipid",
+    "semester": 1,
+    "outcome": "Nhận ra nhóm chức ester và xác định phần acid, alcohol tương ứng trong phương trình thủy phân với điều kiện đã cho.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Ester là nhóm hợp chất hữu cơ có nhóm chức đặc trưng; trong phạm vi ester carboxylic đơn chức thường viết R–COO–R′. Cần nhìn nhóm liên kết chứ không chỉ đếm số oxygen. Công thức cấu tạo giúp phân biệt ester với acid hoặc alcohol có số nguyên tử liên quan.",
+      "Trong mô hình thủy phân ester thích hợp, phần gốc acid và alcohol được nhận ra từ liên kết ester. Ví dụ ethyl acetate có thể tạo acetic acid và ethanol trong điều kiện acid, phản ứng thuận nghịch. Trong môi trường kiềm phù hợp tạo muối carboxylate và alcohol. Bài chỉ phân tích sơ đồ, không tự dùng dung môi, acid hay kiềm."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Trong CH₃COOCH₂CH₃, phần alcohol tương ứng sau thủy phân thích hợp là gì?",
+      "answer": "Ethanol",
+      "method": [
+        "Tìm phần –O–CH₂CH₃ nối với nhóm carbonyl.",
+        "Phần này tương ứng alcohol CH₃CH₂OH.",
+        "Phần gốc acid là CH₃COO–; cần giữ điều kiện phản ứng khi viết sản phẩm."
+      ]
+    },
+    "guided": {
+      "type": "single",
+      "prompt": "Nhóm nào đặc trưng cho ester carboxylic đang xét?",
+      "options": [
+        "R–COO–R′",
+        "R–OH đơn lẻ",
+        "Chỉ có liên kết C–C"
+      ],
+      "answer": "0",
+      "explanation": "Nhận diện nhóm chức và cách nối nguyên tử, không chỉ đếm nguyên tử O.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Thủy phân ester trong môi trường kiềm phù hợp thường tạo gì?",
+        "options": [
+          "Muối carboxylate và alcohol",
+          "Chỉ nước trong mọi trường hợp",
+          "Một nguyên tố kim loại mới"
+        ],
+        "answer": "0",
+        "explanation": "Mô hình ester đơn chức tương ứng tạo muối của acid và alcohol."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Chỉ cần thấy hai nguyên tử O trong một phân tử là kết luận chắc chắn đó là ester.",
+        "answer": "false",
+        "explanation": "Cần xem cấu tạo nhóm chức; acid hoặc loại hợp chất khác cũng có thể có hai O."
+      },
+      {
+        "type": "essay",
+        "prompt": "Từ hai công thức ester đơn giản đã cho, đánh dấu phần gốc acid và alcohol. Dự đoán sản phẩm trong từng môi trường, ghi điều kiện thay vì hướng dẫn thí nghiệm ở nhà.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Nhận diện ester bằng nhóm chức và cấu tạo; sản phẩm thủy phân phụ thuộc môi trường."
+      }
+    ],
+    "application": "Từ hai công thức ester đơn giản đã cho, đánh dấu phần gốc acid và alcohol. Dự đoán sản phẩm trong từng môi trường, ghi điều kiện thay vì hướng dẫn thí nghiệm ở nhà.",
+    "summary": "Nhận diện ester bằng nhóm chức và cấu tạo; sản phẩm thủy phân phụ thuộc môi trường.",
+    "mistakes": [
+      "Cần xem cấu tạo nhóm chức; acid hoặc loại hợp chất khác cũng có thể có hai O.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 12,
+    "subjectId": "chemistry",
+    "slug": "galvanic-potential",
+    "track": "standard",
+    "title": "Pin điện hóa và hiệu thế theo dữ liệu chuẩn",
+    "chapter": "Điện hóa",
+    "semester": 2,
+    "outcome": "Xác định anode, cathode từ dữ kiện và tính E°pin bằng thế khử cathode trừ thế khử anode; không nhân thế điện cực theo hệ số phản ứng.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Trong mô hình pin điện hóa, phản ứng oxi hóa và khử được bố trí để electron đi qua mạch ngoài. Anode là nơi oxi hóa, cathode là nơi khử. Với pin đang phát điện kiểu galvanic, electron trong mạch ngoài đi từ anode tới cathode; không nên chỉ nhớ dấu điện cực cho mọi loại thiết bị điện hóa.",
+      "Khi dùng thế khử chuẩn đã cho ở cùng điều kiện quy ước, suất điện động chuẩn của pin được tính E°pin = E°cathode − E°anode. Giá trị bảng là thế khử dù bán phản ứng tại anode thực diễn ra theo chiều oxi hóa. Không nhân giá trị thế với hệ số cân bằng electron."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "E°(Cu²⁺/Cu) = 0,34 V, E°(Zn²⁺/Zn) = −0,76 V; Zn là anode. E°pin bằng bao nhiêu V?",
+      "answer": "1.1",
+      "method": [
+        "Cathode dùng cặp Cu²⁺/Cu có thế khử 0,34 V.",
+        "E°pin = 0,34 − (−0,76) = 1,10 V.",
+        "Không nhân giá trị thế với hệ số electron; dùng đúng dữ liệu chuẩn."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Cathode có thế khử chuẩn 0,80 V, anode có thế khử chuẩn −0,20 V. E°pin bằng bao nhiêu V?",
+      "answer": "1",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-8
+      },
+      "explanation": "0,80 − (−0,20) = 1,00 V.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Quá trình xảy ra ở anode là gì?",
+        "options": [
+          "Oxi hóa",
+          "Khử trong mọi thiết bị",
+          "Không có trao đổi electron"
+        ],
+        "answer": "0",
+        "explanation": "Tên anode gắn với quá trình oxi hóa, không chỉ một dấu điện cực học thuộc."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Khi cân bằng bán phản ứng bằng cách nhân hệ số 2, phải nhân thế điện cực chuẩn lên 2.",
+        "answer": "false",
+        "explanation": "Thế điện cực là đại lượng cường độ theo mô hình chuẩn, không nhân theo hệ số phản ứng."
+      },
+      {
+        "type": "essay",
+        "prompt": "Giải thích một sơ đồ pin từ dữ liệu đã cho: nơi oxi hóa, nơi khử, chiều electron và E°pin; nêu khác biệt giữa dữ liệu chuẩn và phép đo thực.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. E°pin là hiệu hai thế khử đúng vai trò; không nhân thế với hệ số phản ứng."
+      }
+    ],
+    "application": "Giải thích một sơ đồ pin từ dữ liệu đã cho: nơi oxi hóa, nơi khử, chiều electron và E°pin; nêu khác biệt giữa dữ liệu chuẩn và phép đo thực.",
+    "summary": "E°pin là hiệu hai thế khử đúng vai trò; không nhân thế với hệ số phản ứng.",
+    "mistakes": [
+      "Thế điện cực là đại lượng cường độ theo mô hình chuẩn, không nhân theo hệ số phản ứng.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 10,
+    "subjectId": "biology",
+    "slug": "membrane-osmosis",
+    "track": "foundation",
+    "title": "Màng tế bào và vận chuyển nước theo mô hình thẩm thấu",
+    "chapter": "Sinh học tế bào",
+    "semester": 1,
+    "outcome": "Dự đoán chiều vận chuyển nước ròng qua màng theo chênh lệch nồng độ chất tan trong mô hình đã nêu rõ tính thấm và áp suất.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Màng sinh chất giúp phân cách và trao đổi chọn lọc giữa tế bào với môi trường. Khuếch tán là sự chuyển động ròng của chất theo chênh lệch phù hợp; thẩm thấu xét nước qua màng có tính thấm chọn lọc. Không phải mọi chất đều đi qua màng dễ như nhau.",
+      "Trong mô hình đơn giản cùng điều kiện áp suất, nước có xu hướng chuyển từ phía có nồng độ chất tan thấp hơn sang phía có nồng độ chất tan cao hơn nếu các chất tan xét không đi qua màng. Cấu tạo thành tế bào làm phản ứng của tế bào thực vật khác tế bào không có thành; mô hình không dùng để tự suy điều trị hoặc pha dung dịch cho cơ thể."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Màng cho nước qua, không cho chất tan đang xét qua. Hai phía cùng áp suất, A có chất tan thấp hơn B. Nước chuyển ròng theo hướng nào?",
+      "answer": "Từ A sang B",
+      "method": [
+        "Giữ rõ giả định màng thấm nước nhưng không thấm chất tan.",
+        "So sánh nồng độ chất tan: B cao hơn A.",
+        "Theo mô hình đơn giản, dòng nước ròng từ A sang B; chuyển động từng phân tử vẫn diễn ra hai chiều."
+      ]
+    },
+    "guided": {
+      "type": "single",
+      "prompt": "Thành phần nào liên quan trực tiếp tính trao đổi chọn lọc của tế bào?",
+      "options": [
+        "Màng sinh chất",
+        "Nhãn tên mẫu vật",
+        "Màu tô bất kỳ trong sơ đồ"
+      ],
+      "answer": "0",
+      "explanation": "Màng có cấu trúc và cơ chế kiểm soát trao đổi, không phải mọi chất qua như nhau.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Mô tả “chuyển động ròng” có nghĩa gì?",
+        "options": [
+          "Tổng hiệu chuyển động theo một hướng, không phủ nhận chuyển động hai chiều",
+          "Mọi phân tử chỉ chuyển đúng một chiều",
+          "Không có phân tử nào chuyển động"
+        ],
+        "answer": "0",
+        "explanation": "Vẫn có chuyển động hai chiều; dòng ròng là chênh lệch tổng hai hướng."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Nếu nước có dòng ròng từ A sang B thì không có phân tử nước nào đi từ B sang A.",
+        "answer": "false",
+        "explanation": "Dòng ròng nói chênh lệch tổng, không nói từng phân tử chỉ đi một chiều."
+      },
+      {
+        "type": "essay",
+        "prompt": "Vẽ mô hình hai khoang có màng chọn lọc, ghi chất nào qua được, điều kiện áp suất và hướng nước dự đoán. Nêu điều không được áp dụng trực tiếp cho chăm sóc sức khỏe.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Thẩm thấu cần giả định màng và chất tan; phân biệt dòng ròng với chuyển động từng phân tử."
+      }
+    ],
+    "application": "Vẽ mô hình hai khoang có màng chọn lọc, ghi chất nào qua được, điều kiện áp suất và hướng nước dự đoán. Nêu điều không được áp dụng trực tiếp cho chăm sóc sức khỏe.",
+    "summary": "Thẩm thấu cần giả định màng và chất tan; phân biệt dòng ròng với chuyển động từng phân tử.",
+    "mistakes": [
+      "Dòng ròng nói chênh lệch tổng, không nói từng phân tử chỉ đi một chiều.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 10,
+    "subjectId": "biology",
+    "slug": "enzyme-control",
+    "track": "standard",
+    "title": "Enzyme và thiết kế phép so sánh có kiểm soát",
+    "chapter": "Chuyển hóa năng lượng ở tế bào",
+    "semester": 1,
+    "outcome": "Nhận ra biến độc lập, điều kiện cần giữ giống nhau và dữ liệu cần thu khi kiểm tra ảnh hưởng của nhiệt độ hoặc pH lên enzyme.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Enzyme là chất xúc tác sinh học giúp tăng tốc độ phản ứng phù hợp mà không bị tiêu hao ròng theo chu trình xúc tác. Hoạt tính phụ thuộc cấu trúc, cơ chất, nhiệt độ, pH và các điều kiện khác. Không suy rằng càng tăng nhiệt độ thì enzyme luôn hoạt động nhanh hơn, vì cấu trúc có thể bị thay đổi.",
+      "Để xét ảnh hưởng nhiệt độ, giữ loại và lượng enzyme, cơ chất, pH, thời gian và cách đo tương tự; chỉ thay nhiệt độ theo kế hoạch. Số liệu về tốc độ phản ứng cần so trên cùng thời lượng. Một lần thử thiếu đối chứng chưa đủ xác nhận nguyên nhân duy nhất."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Hai mẫu cùng enzyme, cơ chất, pH, thời gian; mẫu A 25 °C, B 40 °C. Biến chủ định đang xét là gì?",
+      "answer": "Nhiệt độ",
+      "method": [
+        "Đọc các điều kiện được giữ giống nhau.",
+        "Nhiệt độ là khác biệt được thiết kế giữa A và B.",
+        "Kết luận về ảnh hưởng còn cần dữ liệu, lặp lại và kiểm soát sai lệch."
+      ]
+    },
+    "guided": {
+      "type": "single",
+      "prompt": "Enzyme trong mô hình đóng vai trò gì?",
+      "options": [
+        "Chất xúc tác sinh học",
+        "Nguồn thay thế mọi cơ chất",
+        "Vật luôn bị tiêu hao hết sau một phản ứng"
+      ],
+      "answer": "0",
+      "explanation": "Enzyme xúc tác, không thay mọi cơ chất và không bị tiêu hao ròng theo chu trình.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Nhận định nào về nhiệt độ đúng mức?",
+        "options": [
+          "Có khoảng phù hợp; nhiệt quá cao có thể làm giảm hoạt tính",
+          "Tăng nhiệt luôn làm mọi enzyme nhanh hơn",
+          "Mọi enzyme chỉ hoạt động ở một nhiệt độ giống nhau"
+        ],
+        "answer": "0",
+        "explanation": "Tác động phụ thuộc enzyme và cấu trúc; không tăng mãi không giới hạn."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Muốn xét tác dụng của nhiệt độ thì có thể đồng thời đổi pH, lượng enzyme và loại cơ chất mà vẫn xác định chắc nhiệt độ là nguyên nhân.",
+        "answer": "false",
+        "explanation": "Đổi nhiều biến cùng lúc làm khó quy nguyên nhân cho một biến."
+      },
+      {
+        "type": "essay",
+        "prompt": "Thiết kế bảng dữ liệu giả định cho hoạt tính enzyme ở ba nhiệt độ. Nêu biến thay đổi, biến giữ, đối chứng và một kết luận không vượt dữ liệu.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Enzyme xúc tác có điều kiện; thí nghiệm cần kiểm soát biến và kết luận vừa đủ bằng chứng."
+      }
+    ],
+    "application": "Thiết kế bảng dữ liệu giả định cho hoạt tính enzyme ở ba nhiệt độ. Nêu biến thay đổi, biến giữ, đối chứng và một kết luận không vượt dữ liệu.",
+    "summary": "Enzyme xúc tác có điều kiện; thí nghiệm cần kiểm soát biến và kết luận vừa đủ bằng chứng.",
+    "mistakes": [
+      "Đổi nhiều biến cùng lúc làm khó quy nguyên nhân cho một biến.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 11,
+    "subjectId": "biology",
+    "slug": "plant-transpiration",
+    "track": "foundation",
+    "title": "Thoát hơi nước và vận chuyển ở thực vật",
+    "chapter": "Trao đổi chất ở thực vật",
+    "semester": 1,
+    "outcome": "Liên hệ thoát hơi nước với vận chuyển nước ở cây; thiết kế phép so sánh chỉ thay đổi độ ẩm và nêu giới hạn khi chưa có số đo.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Nước được hút qua rễ, vận chuyển trong hệ mạch và một phần thoát ra qua bề mặt lá, chủ yếu liên quan khí khổng ở nhiều loài. Thoát hơi nước góp phần tạo lực kéo và điều hòa nhiệt, nhưng cũng làm cây mất nước. Hoạt động khí khổng liên quan cân bằng nhu cầu trao đổi khí và giữ nước.",
+      "Tốc độ thoát hơi chịu ảnh hưởng ánh sáng, gió, độ ẩm và tình trạng cây. Muốn so sánh một yếu tố cần giữ các yếu tố khác tương tự. Không dùng cùng một kết luận định lượng cho mọi loài và mọi thời điểm; cấu trúc lá, số khí khổng và điều kiện khác có thể khác nhau."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Hai lá cùng loại và diện tích, điều kiện khác giữ như nhau; một lá gặp không khí khô hơn. Yếu tố chủ định thay đổi là gì?",
+      "answer": "Độ ẩm không khí",
+      "method": [
+        "Xác định các yếu tố đã được giữ giống nhau.",
+        "Hai điều kiện khác về độ ẩm, không phải số loài hoặc diện tích lá.",
+        "Dữ liệu đo giúp kiểm tra ảnh hưởng, không tự tạo kết luận định lượng khi chưa đo."
+      ]
+    },
+    "guided": {
+      "type": "single",
+      "prompt": "Thoát hơi nước liên quan vai trò nào trong mô hình?",
+      "options": [
+        "Góp phần lực kéo nước và điều hòa nhiệt",
+        "Chỉ là quá trình vô ích trong mọi trường hợp",
+        "Làm cây không cần hút nước"
+      ],
+      "answer": "0",
+      "explanation": "Quá trình có nhiều vai trò nhưng cũng gây mất nước, cần xem cân bằng của cây.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Vì sao không so hai cây bất kỳ rồi quy khác biệt chỉ cho gió?",
+        "options": [
+          "Vì loài, kích thước lá và các điều kiện khác có thể khác",
+          "Vì cây không chứa nước",
+          "Vì gió không bao giờ tác động"
+        ],
+        "answer": "0",
+        "explanation": "Có nhiều biến khác ngoài gió, cần kiểm soát để phân tích nguyên nhân."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Cây thoát hơi nước thì không còn cần hút nước từ rễ.",
+        "answer": "false",
+        "explanation": "Nước mất đi và nhu cầu hoạt động khiến cây phải duy trì cân bằng thu–mất nước trong điều kiện phù hợp."
+      },
+      {
+        "type": "essay",
+        "prompt": "Dựng sơ đồ đường nước từ rễ đến môi trường. Thiết kế một phép so sánh an toàn bằng dữ liệu cho sẵn để xét độ ẩm hoặc gió.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Thoát hơi nước vừa có vai trò vừa làm mất nước; hiểu quá trình trong hệ vận chuyển toàn cây."
+      }
+    ],
+    "application": "Dựng sơ đồ đường nước từ rễ đến môi trường. Thiết kế một phép so sánh an toàn bằng dữ liệu cho sẵn để xét độ ẩm hoặc gió.",
+    "summary": "Thoát hơi nước vừa có vai trò vừa làm mất nước; hiểu quá trình trong hệ vận chuyển toàn cây.",
+    "mistakes": [
+      "Nước mất đi và nhu cầu hoạt động khiến cây phải duy trì cân bằng thu–mất nước trong điều kiện phù hợp.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 11,
+    "subjectId": "biology",
+    "slug": "negative-feedback",
+    "track": "standard",
+    "title": "Điều hòa nội môi và phản hồi âm",
+    "chapter": "Cân bằng nội môi",
+    "semester": 2,
+    "outcome": "Đọc sơ đồ điều hòa nội môi để xác định lệch ban đầu và đáp ứng chống lại độ lệch; giải thích chữ âm không mang nghĩa xấu.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Nội môi là môi trường bên trong cơ thể trong phạm vi mô hình sinh học đang xét. Điều hòa nội môi giúp các đại lượng được duy trì trong khoảng phù hợp, không phải cố định tuyệt đối ở một con số mọi lúc. Hệ điều hòa thường có bộ phận nhận biết, trung tâm xử lý và bộ phận đáp ứng.",
+      "Phản hồi âm tạo đáp ứng làm giảm độ lệch so với khoảng điều hòa. Nếu một đại lượng tăng thì phản ứng có thể góp phần đưa nó giảm trở lại; tên “âm” không có nghĩa phản ứng xấu. Mô hình minh họa không dùng để chẩn đoán hay tự điều trị rối loạn sức khỏe."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Đại lượng X tăng khỏi khoảng điều hòa; đáp ứng làm X giảm về khoảng ấy. Đây là kiểu phản hồi gì?",
+      "answer": "Phản hồi âm",
+      "method": [
+        "Đọc chiều lệch ban đầu: X tăng.",
+        "Đáp ứng chống lại độ lệch bằng cách làm X giảm.",
+        "Gọi phản hồi âm; không đánh giá tốt/xấu chỉ từ chữ “âm”."
+      ]
+    },
+    "guided": {
+      "type": "single",
+      "prompt": "“Giữ ổn định nội môi” được hiểu đúng hơn thế nào?",
+      "options": [
+        "Duy trì trong khoảng phù hợp qua điều hòa",
+        "Mọi giá trị luôn bất biến tuyệt đối",
+        "Không có phản ứng khi môi trường thay đổi"
+      ],
+      "answer": "0",
+      "explanation": "Ổn định sinh học có dao động và điều hòa trong phạm vi phù hợp.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Trong phản hồi âm, đáp ứng thường có quan hệ gì với độ lệch?",
+        "options": [
+          "Làm giảm độ lệch",
+          "Luôn khuếch đại độ lệch",
+          "Không liên quan thông tin nhận biết"
+        ],
+        "answer": "0",
+        "explanation": "Phản hồi âm giảm sai lệch theo mô hình, khác khuếch đại cùng chiều."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Phản hồi âm được gọi là âm vì nó luôn có hại cho cơ thể.",
+        "answer": "false",
+        "explanation": "“Âm” chỉ chiều đáp ứng chống độ lệch trong vòng điều hòa, không phải đánh giá đạo đức hay có hại."
+      },
+      {
+        "type": "essay",
+        "prompt": "Vẽ vòng điều hòa giả định của đại lượng X với các khối nhận biết–xử lý–đáp ứng. Phân tích khi X tăng và giảm, ghi rõ đây là mô hình không dùng để tự chẩn đoán.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Điều hòa giữ trong khoảng; phản hồi âm làm giảm độ lệch và không đồng nghĩa tác động có hại."
+      }
+    ],
+    "application": "Vẽ vòng điều hòa giả định của đại lượng X với các khối nhận biết–xử lý–đáp ứng. Phân tích khi X tăng và giảm, ghi rõ đây là mô hình không dùng để tự chẩn đoán.",
+    "summary": "Điều hòa giữ trong khoảng; phản hồi âm làm giảm độ lệch và không đồng nghĩa tác động có hại.",
+    "mistakes": [
+      "“Âm” chỉ chiều đáp ứng chống độ lệch trong vòng điều hòa, không phải đánh giá đạo đức hay có hại.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 12,
+    "subjectId": "biology",
+    "slug": "dna-information",
+    "track": "foundation",
+    "title": "Thông tin gene: phân biệt tái bản, phiên mã và dịch mã",
+    "chapter": "Di truyền phân tử",
+    "semester": 1,
+    "outcome": "Phân biệt khuôn và sản phẩm của tái bản, phiên mã, dịch mã trong mô hình biểu hiện thông tin gene.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Trong mô hình khái quát, tái bản tạo DNA từ khuôn DNA để sao chép vật chất di truyền; phiên mã tạo RNA từ khuôn DNA; dịch mã sử dụng thông tin trên mRNA để tổng hợp chuỗi polypeptide. Ba quá trình có sản phẩm và vai trò khác nhau, không chỉ là ba tên cho cùng một bước.",
+      "Mã bộ ba trên mRNA được đọc theo khung phù hợp; đổi khung có thể đổi nhiều bộ ba phía sau. Không suy rằng mọi thay đổi trình tự đều gây cùng một hậu quả, vì vị trí, kiểu thay đổi và cơ chế biểu hiện khác nhau. Sơ đồ DNA → RNA → protein là khái quát có phạm vi, không mô tả mọi trường hợp sinh học."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Quá trình tạo RNA từ khuôn DNA trong mô hình đang xét là gì?",
+      "answer": "Phiên mã",
+      "method": [
+        "Phân biệt khuôn là DNA và sản phẩm là RNA.",
+        "Đó là phiên mã, không phải tái bản DNA.",
+        "Dịch mã dùng mRNA để tổng hợp chuỗi polypeptide ở bước khác."
+      ]
+    },
+    "guided": {
+      "type": "single",
+      "prompt": "Sản phẩm chính được nêu của tái bản là gì?",
+      "options": [
+        "DNA",
+        "Chỉ chuỗi polypeptide",
+        "Một enzyme bất kỳ không theo khuôn"
+      ],
+      "answer": "0",
+      "explanation": "Tái bản sao chép DNA; không nhầm với phiên mã tạo RNA.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Vì sao cần giữ khung đọc khi đọc mã bộ ba?",
+        "options": [
+          "Dịch điểm bắt đầu có thể đổi các bộ ba phía sau",
+          "Vì mọi cách chia đều cho cùng thông tin",
+          "Vì mRNA không có thứ tự"
+        ],
+        "answer": "0",
+        "explanation": "Các bộ ba phụ thuộc điểm bắt đầu và khung đọc."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Tái bản, phiên mã và dịch mã luôn tạo cùng một loại sản phẩm.",
+        "answer": "false",
+        "explanation": "Chúng khác khuôn, sản phẩm và vai trò: DNA, RNA và polypeptide trong mô hình khái quát."
+      },
+      {
+        "type": "essay",
+        "prompt": "Lập bảng ba quá trình gồm khuôn, sản phẩm và vai trò; dùng một chuỗi kí hiệu tự tạo để minh họa đổi khung bộ ba, không suy kết quả sức khỏe cá nhân.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Phân biệt ba quá trình theo sản phẩm và vai trò; sơ đồ thông tin là mô hình có giới hạn."
+      }
+    ],
+    "application": "Lập bảng ba quá trình gồm khuôn, sản phẩm và vai trò; dùng một chuỗi kí hiệu tự tạo để minh họa đổi khung bộ ba, không suy kết quả sức khỏe cá nhân.",
+    "summary": "Phân biệt ba quá trình theo sản phẩm và vai trò; sơ đồ thông tin là mô hình có giới hạn.",
+    "mistakes": [
+      "Chúng khác khuôn, sản phẩm và vai trò: DNA, RNA và polypeptide trong mô hình khái quát.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  },
+  {
+    "grade": 12,
+    "subjectId": "biology",
+    "slug": "population-alleles",
+    "track": "advanced",
+    "title": "Tần số allele và điều kiện của mô hình Hardy–Weinberg",
+    "chapter": "Di truyền quần thể",
+    "semester": 2,
+    "outcome": "Tính tần số allele từ số lượng các kiểu gene và phân biệt phép đếm allele với việc áp dụng trạng thái cân bằng Hardy–Weinberg.",
+    "prerequisiteText": "Đọc dữ kiện và bảng đơn giản; các thuật ngữ mới được giải thích trong bài.",
+    "theory": [
+      "Trong quần thể lưỡng bội, đếm allele cần tính hai bản sao ở mỗi cá thể tại locus đang xét. Nếu có nAA, nAa, naa thì tần số A bằng (2nAA + nAa)/(2N), còn a bằng 1 trừ tần số A. Không lấy riêng tỉ lệ cá thể biểu hiện trội làm tần số allele trội.",
+      "Mô hình Hardy–Weinberg với hai allele dùng các giả định như quần thể lớn, ngẫu phối, không có tác động làm đổi tần số allele trong phạm vi xét. Khi cân bằng theo mô hình, tần số kiểu gene là p², 2pq, q². Đây là điều kiện lý tưởng, không tự áp dụng cho mọi quần thể hoặc mọi tính trạng người."
+    ],
+    "terms": [],
+    "example": {
+      "prompt": "Quần thể có 20 AA, 40 Aa, 40 aa. Tần số allele A bằng bao nhiêu?",
+      "answer": "0.4",
+      "method": [
+        "Có N = 100 cá thể nên tổng 200 allele ở locus xét.",
+        "Số allele A = 2 × 20 + 40 = 80.",
+        "p = 80/200 = 0,4; không dùng (20 + 40)/100."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Theo mô hình cân bằng p = 0,6 và q = 0,4. Tần số dị hợp 2pq bằng bao nhiêu?",
+      "answer": "0.48",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-8
+      },
+      "explanation": "2 × 0,6 × 0,4 = 0,48.",
+      "hints": [
+        "Xác định đại lượng hoặc đặc điểm đang so sánh.",
+        "Đối chiếu từng điều kiện với kiến thức trong bài."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Khi nào có thể dùng trực tiếp p², 2pq, q² để mô tả cân bằng lý tưởng?",
+        "options": [
+          "Khi các giả định mô hình phù hợp và được nêu rõ",
+          "Cho mọi quần thể bất kể điều kiện",
+          "Chỉ vì đã có một cá thể dị hợp"
+        ],
+        "answer": "0",
+        "explanation": "Phân bố kiểu gene theo mô hình đòi điều kiện, không là công thức đúng vô điều kiện."
+      },
+      {
+        "type": "boolean",
+        "prompt": "Tần số cá thể có kiểu hình trội luôn bằng tần số allele trội.",
+        "answer": "false",
+        "explanation": "Cá thể trội có thể gồm AA và Aa; tần số allele phải đếm từng bản sao gene."
+      },
+      {
+        "type": "essay",
+        "prompt": "Tạo một quần thể giả định ba kiểu gene, tính tần số allele rồi so với phân bố p²,2pq,q². Nêu điều kiện và điều không được kết luận từ khác biệt một mẫu nhỏ.",
+        "rubric": [
+          {
+            "criterion": "Dữ kiện và mô hình",
+            "maxScore": 2,
+            "descriptor": "Phân biệt quan sát, đại lượng đo và điều kiện giả định; ghi đơn vị nếu cần."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 2,
+            "descriptor": "Dùng kiến thức bài học để nối bằng chứng với kết luận; không suy rộng quá dữ liệu."
+          },
+          {
+            "criterion": "Giới hạn và an toàn",
+            "maxScore": 1,
+            "descriptor": "Nêu sai số, giả định hoặc cách quan sát an toàn; không tự thực hiện thao tác nguy hiểm."
+          }
+        ],
+        "explanation": "Đây là hoạt động tự đối chiếu rubric, chưa có điểm hay nhận xét của giáo viên. Đếm hai allele mỗi cá thể; tần số kiểu hình khác allele; dùng mô hình cân bằng cùng điều kiện."
+      }
+    ],
+    "application": "Tạo một quần thể giả định ba kiểu gene, tính tần số allele rồi so với phân bố p²,2pq,q². Nêu điều kiện và điều không được kết luận từ khác biệt một mẫu nhỏ.",
+    "summary": "Đếm hai allele mỗi cá thể; tần số kiểu hình khác allele; dùng mô hình cân bằng cùng điều kiện.",
+    "mistakes": [
+      "Cá thể trội có thể gồm AA và Aa; tần số allele phải đếm từng bản sao gene.",
+      "Không biến một lần quan sát thành kết luận đúng cho mọi trường hợp; nêu rõ điều kiện mô hình."
+    ]
+  }
+]

@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1064";
+const CACHE = "hh-identity-portal-v1065";
+// Previous release: hh-identity-portal-v1064; ./performance-loader.js?v=725;
 // Previous release: hh-identity-portal-v1063; ./performance-loader.js?v=724; ./all-game.js?v=5; ./all-game.css?v=5;
 // Previous release: hh-identity-portal-v1062; ./performance-loader.js?v=723; ./all-game.js?v=4; ./all-game.css?v=4;
 // Historical release: hh-identity-portal-v1061; ./performance-loader.js?v=722; ./all-game.js?v=3; ./all-game.css?v=3;
@@ -800,13 +801,18 @@ const RUNTIME_ASSETS = [
   "./tool-workspace-pro.js?v=5",
   "./utility-lab-tools.js?v=14",
   "./feature-engines.js?v=2",
-  "./hh-school-curriculum.js?v=3",
-  "./hh-school-core.js?v=4",
-  "./hh-school-offline.js?v=4",
+  "./hh-school-curriculum.js?v=4",
+  "./hh-school-workspace.css?v=1",
+  "./hh-school-assessments.js?v=1",
+  "./hh-school-content-manifest.js?v=1",
+  "./hh-school-content.js?v=1",
+  "./hh-school-workspace.js?v=1",
+  "./hh-school-core.js?v=5",
+  "./hh-school-offline.js?v=5",
   "./hh-school-sync.js?v=4",
   "./hh-school-search-worker.js?v=3",
   "./hh-school-code-worker.js?v=2",
-  "./hh-school.js?v=6",
+  "./hh-school.js?v=7",
   "./study-together.css?v=7",
   "./study-classroom.css?v=1",
   "./study-campus.css?v=1",
@@ -907,7 +913,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=725",
+  "./performance-loader.js?v=726",
   "./auth-platform.js?v=22",
   "./auth-neon-gateway.js?v=35",
   "./script.js?v=295"
@@ -956,24 +962,30 @@ async function updateHHSchoolQueue(db, item, options = {}) {
     const tx = db.transaction(HH_SCHOOL_QUEUE, "readwrite");
     const store = tx.objectStore(HH_SCHOOL_QUEUE);
     if (options.remove) store.delete(item.id);
-    else store.put({ ...item, attempts: options.conflict ? Number(item.attempts || 0) : Number(item.attempts || 0) + 1, syncStatus: options.conflict ? "needs-resolution" : "queued", conflict: options.conflictData || item.conflict || null, lastError: options.error || item.lastError || "", lastAttemptAt: Date.now() });
+    else { const current = store.get(item.id); current.onsuccess = () => { if (current.result) store.put({ ...current.result, attempts: options.conflict ? Number(current.result.attempts || 0) : Number(current.result.attempts || 0) + 1, syncStatus: options.conflict ? "needs-resolution" : "queued", conflict: options.conflictData || current.result.conflict || null, lastError: options.error || current.result.lastError || "", lastAttemptAt: Date.now() }); }; }
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
     tx.onabort = () => reject(tx.error || new Error("HH School queue transaction aborted"));
   });
 }
 async function flushHHSchoolQueue() {
+  // A queued profile must never be sent using a different signed-in cookie.
+  let activeOwner = "";
+  try { const response = await fetch(new URL("/api/auth/me", self.location.origin).href, { credentials: "include", cache: "no-store" }); if (!response.ok) return []; const data = await response.json(); const user = data.user; if (!user?.id && !user?._id) return []; activeOwner = String(user.id || user._id).replace(/[^a-zA-Z0-9._-]/g, "").slice(0, 100); } catch { return []; }
   const db = await openHHSchoolQueue();
   const results = [];
   try {
     const items = await idbRequest(db.transaction(HH_SCHOOL_QUEUE).objectStore(HH_SCHOOL_QUEUE).getAll());
     for (const item of items) {
-      if (item.syncStatus === "needs-resolution") { results.push({ id: item.id, ok: false, conflict: true, conflictData: item.conflict || null, error: item.lastError || "Conflict needs resolution" }); continue; }
+      if (item.ownerId !== activeOwner) continue;
+      if (item.syncStatus === "needs-resolution") { results.push({ id: item.id, learnerProfileId: item.learnerProfileId, ok: false, conflict: true, conflictData: item.conflict || null, error: item.lastError || "Conflict needs resolution" }); continue; }
       try {
-        if (Number(item.attempts || 0) >= Number(item.maxAttempts || 5)) { results.push({ id: item.id, ok: false, terminal: true, error: "Retry limit reached" }); continue; }
+        if (Number(item.attempts || 0) >= Number(item.maxAttempts || 5)) { results.push({ id: item.id, learnerProfileId: item.learnerProfileId, ok: false, terminal: true, error: "Retry limit reached" }); continue; }
         const queued = item.request || {};
         const target = new URL(String(queued.url || ""), self.location.origin);
-        if (target.origin !== self.location.origin || !target.pathname.startsWith("/api/education/")) throw new Error("Unsafe HH School sync target");
+        if (target.origin !== self.location.origin || target.pathname !== "/api/education/progress" || String(queued.method || "PUT").toUpperCase() !== "PUT") throw new Error("Unsafe HH School sync target");
+        const payload = typeof queued.body === "string" ? JSON.parse(queued.body) : queued.body;
+        if (!item.learnerProfileId || item.ownerProfile !== activeOwner + ":" + item.learnerProfileId || payload?.learnerProfileId !== item.learnerProfileId || payload?.state?.ownerId !== activeOwner || payload?.state?.learnerProfileId !== item.learnerProfileId || payload?.state?.profile?.id !== item.learnerProfileId) throw new Error("HH School queued state owner/profile mismatch");
         const response = await fetch(target.href, {
           method: queued.method || "PUT",
           credentials: "include",
@@ -984,22 +996,25 @@ async function flushHHSchoolQueue() {
         if (response.status === 409) {
           const data = await response.json().catch(() => ({}));
           await updateHHSchoolQueue(db, item, { conflict: true, conflictData: data.conflict || null, error: data.error || "HTTP 409" });
-          results.push({ id: item.id, ok: false, conflict: true, conflictData: data.conflict || null, error: data.error || "HTTP 409" });
+          results.push({ id: item.id, learnerProfileId: item.learnerProfileId, ok: false, conflict: true, conflictData: data.conflict || null, error: data.error || "HTTP 409" });
           continue;
         }
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const acknowledged = await response.json();
+        if (!Number.isSafeInteger(acknowledged.revision) || acknowledged.revision < 1) throw new Error("HH School sync response has no confirmed revision");
         await updateHHSchoolQueue(db, item, { remove: true });
-        results.push({ id: item.id, ok: true });
+        results.push({ id: item.id, learnerProfileId: item.learnerProfileId, ok: true, serverRevision: acknowledged.revision, localRevision: payload.state.revision, updatedAt: acknowledged.updatedAt });
       } catch (error) {
         await updateHHSchoolQueue(db, item, { error: String(error?.message || error) });
-        results.push({ id: item.id, ok: false, error: String(error?.message || error) });
+        results.push({ id: item.id, learnerProfileId: item.learnerProfileId, ok: false, error: String(error?.message || error) });
       }
     }
   } finally {
     db.close();
   }
   const clients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-  clients.forEach(client => client.postMessage({ type: "HH_SCHOOL_SYNC_RESULT", results }));
+  const publicResults = results.map(({ conflictData, ...result }) => result);
+  clients.forEach(client => client.postMessage({ type: "HH_SCHOOL_SYNC_RESULT", ownerId: activeOwner, results: publicResults }));
   return results;
 }
 self.addEventListener("sync", event => {

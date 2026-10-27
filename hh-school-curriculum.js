@@ -43,7 +43,7 @@
     geography: subject("geography", "Địa lí", "⌖", true), foreign1: subject("foreign-1", "Ngoại ngữ 1", "A"),
     foreign2: subject("foreign-2", "Ngoại ngữ 2", "A", true), ethnic: subject("ethnic-language", "Tiếng dân tộc thiểu số", "✦", true),
     civic: subject("civic", "Giáo dục công dân", "⚖"), economicsLaw: subject("economics-law", "Giáo dục kinh tế và pháp luật", "⚖", true),
-    informaticsTechnology: subject("informatics-technology", "Tin học và Công nghệ", "⌘"),
+    informaticsTechnology: subject("informatics-technology", "Tin học và Công nghệ", "⌘", false, ["Tin học", "Công nghệ"]),
     informatics: subject("informatics", "Tin học", "⌘", true), technology: subject("technology", "Công nghệ", "⚙", true),
     physics: subject("physics", "Vật lí", "Φ", true), chemistry: subject("chemistry", "Hóa học", "⚗", true), biology: subject("biology", "Sinh học", "❧", true),
     pe: subject("physical-education", "Giáo dục thể chất", "◉"), defense: subject("defense-security", "Giáo dục quốc phòng và an ninh", "◇"),
@@ -52,10 +52,10 @@
     local: subject("local-education", "Nội dung giáo dục địa phương", "⌂")
   });
 
-  const primary12 = [CATALOG.vietnamese, CATALOG.math, CATALOG.ethics, CATALOG.natureSociety, CATALOG.pe, CATALOG.music, CATALOG.art, CATALOG.experience, CATALOG.local, { ...CATALOG.foreign1, optional: true }, CATALOG.ethnic];
-  const primary3 = [CATALOG.vietnamese, CATALOG.math, CATALOG.foreign1, CATALOG.ethics, CATALOG.natureSociety, CATALOG.informaticsTechnology, CATALOG.pe, CATALOG.music, CATALOG.art, CATALOG.experience, CATALOG.local];
-  const primary45 = [CATALOG.vietnamese, CATALOG.math, CATALOG.foreign1, CATALOG.ethics, CATALOG.science, CATALOG.historyGeography, CATALOG.informaticsTechnology, CATALOG.pe, CATALOG.music, CATALOG.art, CATALOG.experience, CATALOG.local];
-  const lowerSecondary = [CATALOG.literature, CATALOG.math, CATALOG.foreign1, CATALOG.civic, CATALOG.historyGeography, CATALOG.naturalScience, { ...CATALOG.technology, optional: false }, { ...CATALOG.informatics, optional: false }, CATALOG.pe, CATALOG.music, CATALOG.art, CATALOG.career, CATALOG.local, CATALOG.foreign2, CATALOG.ethnic];
+  const primary12 = [CATALOG.vietnamese, CATALOG.math, CATALOG.ethics, CATALOG.natureSociety, CATALOG.pe, { ...CATALOG.music, optional: false }, { ...CATALOG.art, optional: false }, CATALOG.experience, CATALOG.local, { ...CATALOG.foreign1, optional: true }, CATALOG.ethnic];
+  const primary3 = [CATALOG.vietnamese, CATALOG.math, CATALOG.foreign1, CATALOG.ethics, CATALOG.natureSociety, CATALOG.informaticsTechnology, CATALOG.pe, { ...CATALOG.music, optional: false }, { ...CATALOG.art, optional: false }, CATALOG.experience, CATALOG.local];
+  const primary45 = [CATALOG.vietnamese, CATALOG.math, CATALOG.foreign1, CATALOG.ethics, CATALOG.science, CATALOG.historyGeography, CATALOG.informaticsTechnology, CATALOG.pe, { ...CATALOG.music, optional: false }, { ...CATALOG.art, optional: false }, CATALOG.experience, CATALOG.local];
+  const lowerSecondary = [CATALOG.literature, CATALOG.math, CATALOG.foreign1, CATALOG.civic, CATALOG.historyGeography, CATALOG.naturalScience, { ...CATALOG.technology, optional: false }, { ...CATALOG.informatics, optional: false }, CATALOG.pe, { ...CATALOG.music, optional: false }, { ...CATALOG.art, optional: false }, CATALOG.career, CATALOG.local, CATALOG.foreign2, CATALOG.ethnic];
   const highRequired = [CATALOG.literature, CATALOG.math, CATALOG.foreign1, CATALOG.history, CATALOG.pe, CATALOG.defense, CATALOG.career, CATALOG.local];
   const highElectives = [CATALOG.geography, CATALOG.economicsLaw, CATALOG.physics, CATALOG.chemistry, CATALOG.biology, CATALOG.technology, CATALOG.informatics, CATALOG.music, CATALOG.art];
 
@@ -90,7 +90,7 @@
   const gradeBy = (grade) => GRADES.find((item) => item.number === Number(grade) || item.id === grade) || GRADES[0];
   const subjectBy = (id) => Object.values(CATALOG).find((item) => item.id === id) || null;
   const licenseGate = (source) => Boolean(source && OPEN_LICENSES.includes(source.licenseCode) && source.sourceUrl && source.sourceTitle && source.publisher && source.attribution && source.retrievedAt && source.evidencePath && source.allowedForCommercialUse !== false);
-  const canPublish = (record) => Boolean(record && PUBLISHABLE_STATUSES.includes(record.contentStatus) && licenseGate(record.source));
+  const canPublish = (record) => Boolean(record && PUBLISHABLE_STATUSES.includes(record.contentStatus) && licenseGate(record.source) && typeof record.reviewerId === "string" && record.reviewerId.trim() && Number.isFinite(Date.parse(record.reviewedAt)) && (typeof record.reviewEvidence === "string" ? record.reviewEvidence.trim() : record.reviewEvidence && typeof record.reviewEvidence === "object" && !Array.isArray(record.reviewEvidence) && Object.keys(record.reviewEvidence).length));
 
   function enrichQuestions(lesson) {
     const base = lesson.questions.map((question) => Object.freeze({ ...question, gradeId: lesson.gradeId, subjectId: lesson.subjectId, lessonId: lesson.lessonId, source: lesson.source, contentStatus: lesson.contentStatus }));

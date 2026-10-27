@@ -39,11 +39,11 @@ test("Assessment V2 grades structured responses and queues human-reviewed work",
   assert.equal(core.gradeQuestion({ type: "matching", answer: { a: "1", b: "2" } }, { b: "2", a: "1" }).correct, true);
   assert.equal(core.gradeQuestion({ type: "order", answer: ["0", "1", "2"] }, ["2", "1", "0"]).correct, false);
   assert.equal(core.gradeQuestion({ type: "order", answer: ["0", "1", "2"] }, ["0", "1", "2"]).correct, true);
-  assert.equal(core.gradeQuestion({ type: "scenario", acceptedKeywords: ["kiểm tra", "dữ kiện"] }, "Em kiểm tra lại dữ kiện").correct, true);
+  assert.equal(core.gradeQuestion({ type: "scenario", acceptedKeywords: ["kiểm tra", "dữ kiện"] }, "Em kiểm tra lại dữ kiện").gradingStatus, "pending-review");
   const pending = core.gradeQuestion({ type: "essay", skillId: "write" }, "Bài viết gốc");
   assert.equal(pending.gradingStatus, "pending-review");
   assert.equal(pending.score, null);
-  assert.equal(core.gradeQuestion({ type: "dictation", answer: "Em yêu trường em" }, "em yeu truong em").correct, true);
+  assert.equal(core.gradeQuestion({ type: "dictation", answer: "Em yêu trường em" }, "em yeu truong em").correct, false);
   assert.equal(core.gradeQuestion({ type: "code", expectedOutput: "5" }, { output: "5" }).correct, true);
   assert.equal(core.gradeQuestion({ type: "upload", skillId: "submit" }, { key: "device:file" }).gradingStatus, "pending-review");
   assert.equal(core.gradeQuestion({ type: "image-mark", skillId: "diagram" }, "góc trên trái").gradingStatus, "pending-review");
@@ -89,7 +89,7 @@ test("portable export/import and daily plan preserve real evidence", () => {
   const payload = store.export();
   assert.equal(JSON.parse(payload).format, "hh-school");
   assert.equal(store.import(payload).profile.grade, 10);
-  assert.ok(core.dailyPlan(store.get(), curriculum).nextLesson.lessonId);
+  assert.equal(core.dailyPlan(store.get(), { packForGrade: () => ({ lessons: [{ lessonId: "published-lesson" }] }) }).nextLesson.lessonId, "published-lesson");
   assert.throws(() => store.import('{"format":"other"}'), /định dạng/i);
 });
 
@@ -114,14 +114,15 @@ test("learning streak follows the device calendar day instead of UTC", () => {
   assert.notEqual(first.lastActiveDay, second.lastActiveDay);
 });
 
-test("mastery needs recall on separate local days and more than one question type", () => {
+test("mastery also needs known independent question families instead of only days and response types", () => {
   const start = new Date(2026, 7, 20, 12).getTime();
   let evidence = {};
   for (let day = 0; day < 4; day += 1) evidence = core.nextMastery(evidence, { correct: true, responseMs: 2000, questionType: "single" }, start + day * 86400000);
   assert.notEqual(evidence.state, "mastered");
   evidence = core.nextMastery(evidence, { correct: true, responseMs: 2000, questionType: "short" }, start + 4 * 86400000);
   assert.equal(evidence.retrievalDays, 5);
-  assert.equal(evidence.state, "mastered");
+  assert.notEqual(evidence.state, "mastered");
+  assert.equal(evidence.distinctFamilies, 0);
 });
 
 test("pending human-reviewed work preserves multiline original without storing an answer key", () => {

@@ -15,7 +15,7 @@ test("HH School accepts only declared route views", () => {
 
 test("/learn lazy-loads only HH School and keeps language routes independent", () => {
   const loader = read("performance-loader.js"); const router = read("script.js"); const worker = read("sw.js");
-  for (const asset of ["hh-school.css?v=4", "hh-school-curriculum.js?v=3", "hh-school-core.js?v=4", "hh-school-offline.js?v=4", "hh-school-sync.js?v=4", "hh-school.js?v=6"]) {
+  for (const asset of ["hh-school.css?v=4", "hh-school-curriculum.js?v=4", "hh-school-core.js?v=5", "hh-school-offline.js?v=5", "hh-school-sync.js?v=4", "hh-school.js?v=7", "hh-school-workspace.js?v=1", "hh-school-workspace.css?v=1", "hh-school-assessments.js?v=1", "hh-school-content.js?v=1", "hh-school-content-manifest.js?v=1"]) {
     assert.match(loader, new RegExp(asset.replace(/[.?]/g, "\\$&")));
     assert.match(worker, new RegExp(asset.replace(/[.?]/g, "\\$&")));
   }
@@ -68,7 +68,7 @@ test("offline progress queue has a real same-origin background sync handler", ()
   assert.match(worker, /addEventListener\("sync"/);
   assert.match(worker, /flushHHSchoolQueue/);
   assert.match(worker, /target\.origin !== self\.location\.origin/);
-  assert.match(worker, /target\.pathname\.startsWith\("\/api\/education\/"\)/);
+  assert.match(worker, /target\.pathname !== "\/api\/education\/progress"/);
   assert.match(worker, /credentials: "include"/);
   assert.match(offline, /maxAttempts: 5/);
   assert.match(offline, /submissionFiles/);
@@ -96,10 +96,12 @@ test("Informatics Worker is a no-eval restricted learning subset", () => {
   assert.match(read("hh-school.js"), /data-code-stop/);
 });
 
-test("Lesson Player commits the tenth step before returning to Today", () => {
+test("Lesson Player records reading without promoting untested completion", () => {
   const client = read("hh-school.js");
   assert.match(client, /entry\.step \|\| 0\) >= lesson\.steps\.length - 1/);
-  assert.match(client, /status: "completed", completedAt:/);
+  assert.match(client, /recordLessonStep/);
+  assert.match(client, /kind: "viewed"/);
+  assert.doesNotMatch(client, /status: "completed", completedAt:/);
   assert.match(client, /return routeTo\("today"\)/);
 });
 

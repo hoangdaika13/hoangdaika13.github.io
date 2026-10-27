@@ -1,0 +1,2396 @@
+{
+  "version": "2026.10.27-authored-drafts-v1",
+  "coverage": {
+    "grades": 12,
+    "catalogueSlots": 168,
+    "subjectsWithDrafts": 146,
+    "draftLessons": 219,
+    "publishedLessons": 0,
+    "officialOutcomeCount": null,
+    "complete": false
+  },
+  "grades": [
+    {
+      "grade": 1,
+      "catalogueSlots": 11,
+      "subjectsWithDrafts": 9,
+      "draftLessons": 13,
+      "publishedLessons": 0,
+      "authoredOutcomeCount": 13,
+      "officialOutcomeCount": null,
+      "complete": false,
+      "subjects": [
+        {
+          "id": "vietnamese",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "math",
+          "status": "authored-subset",
+          "authoredLessons": 3,
+          "publishedLessons": 0,
+          "authoredOutcomes": 3,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "ethics",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "nature-society",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "physical-education",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "music",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "art",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "experience",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "local-education",
+          "status": "needs-local-source",
+          "authoredLessons": 0,
+          "publishedLessons": 0,
+          "authoredOutcomes": 0,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa có bài biên soạn cho môn–lớp này.",
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "foreign-1",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "ethnic-language",
+          "status": "optional-language-unconfigured",
+          "authoredLessons": 0,
+          "publishedLessons": 0,
+          "authoredOutcomes": 0,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa có bài biên soạn cho môn–lớp này.",
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        }
+      ]
+    },
+    {
+      "grade": 2,
+      "catalogueSlots": 11,
+      "subjectsWithDrafts": 9,
+      "draftLessons": 13,
+      "publishedLessons": 0,
+      "authoredOutcomeCount": 13,
+      "officialOutcomeCount": null,
+      "complete": false,
+      "subjects": [
+        {
+          "id": "vietnamese",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "math",
+          "status": "authored-subset",
+          "authoredLessons": 3,
+          "publishedLessons": 0,
+          "authoredOutcomes": 3,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "ethics",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "nature-society",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "physical-education",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "music",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "art",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "experience",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "local-education",
+          "status": "needs-local-source",
+          "authoredLessons": 0,
+          "publishedLessons": 0,
+          "authoredOutcomes": 0,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa có bài biên soạn cho môn–lớp này.",
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "foreign-1",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "ethnic-language",
+          "status": "optional-language-unconfigured",
+          "authoredLessons": 0,
+          "publishedLessons": 0,
+          "authoredOutcomes": 0,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa có bài biên soạn cho môn–lớp này.",
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        }
+      ]
+    },
+    {
+      "grade": 3,
+      "catalogueSlots": 11,
+      "subjectsWithDrafts": 10,
+      "draftLessons": 15,
+      "publishedLessons": 0,
+      "authoredOutcomeCount": 15,
+      "officialOutcomeCount": null,
+      "complete": false,
+      "subjects": [
+        {
+          "id": "vietnamese",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "math",
+          "status": "authored-subset",
+          "authoredLessons": 3,
+          "publishedLessons": 0,
+          "authoredOutcomes": 3,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "foreign-1",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "ethics",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "nature-society",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "informatics-technology",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+          ]
+        },
+        {
+          "id": "physical-education",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "music",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "art",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "experience",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "local-education",
+          "status": "needs-local-source",
+          "authoredLessons": 0,
+          "publishedLessons": 0,
+          "authoredOutcomes": 0,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa có bài biên soạn cho môn–lớp này.",
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        }
+      ]
+    },
+    {
+      "grade": 4,
+      "catalogueSlots": 12,
+      "subjectsWithDrafts": 11,
+      "draftLessons": 17,
+      "publishedLessons": 0,
+      "authoredOutcomeCount": 17,
+      "officialOutcomeCount": null,
+      "complete": false,
+      "subjects": [
+        {
+          "id": "vietnamese",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "math",
+          "status": "authored-subset",
+          "authoredLessons": 3,
+          "publishedLessons": 0,
+          "authoredOutcomes": 3,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "foreign-1",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "ethics",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "science",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "history-geography",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+          ]
+        },
+        {
+          "id": "informatics-technology",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+          ]
+        },
+        {
+          "id": "physical-education",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "music",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "art",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "experience",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "local-education",
+          "status": "needs-local-source",
+          "authoredLessons": 0,
+          "publishedLessons": 0,
+          "authoredOutcomes": 0,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa có bài biên soạn cho môn–lớp này.",
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        }
+      ]
+    },
+    {
+      "grade": 5,
+      "catalogueSlots": 12,
+      "subjectsWithDrafts": 11,
+      "draftLessons": 17,
+      "publishedLessons": 0,
+      "authoredOutcomeCount": 17,
+      "officialOutcomeCount": null,
+      "complete": false,
+      "subjects": [
+        {
+          "id": "vietnamese",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "math",
+          "status": "authored-subset",
+          "authoredLessons": 3,
+          "publishedLessons": 0,
+          "authoredOutcomes": 3,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "foreign-1",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "ethics",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "science",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "history-geography",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+          ]
+        },
+        {
+          "id": "informatics-technology",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+          ]
+        },
+        {
+          "id": "physical-education",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "music",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "art",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "experience",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "local-education",
+          "status": "needs-local-source",
+          "authoredLessons": 0,
+          "publishedLessons": 0,
+          "authoredOutcomes": 0,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa có bài biên soạn cho môn–lớp này.",
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        }
+      ]
+    },
+    {
+      "grade": 6,
+      "catalogueSlots": 15,
+      "subjectsWithDrafts": 12,
+      "draftLessons": 18,
+      "publishedLessons": 0,
+      "authoredOutcomeCount": 18,
+      "officialOutcomeCount": null,
+      "complete": false,
+      "subjects": [
+        {
+          "id": "literature",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "math",
+          "status": "authored-subset",
+          "authoredLessons": 3,
+          "publishedLessons": 0,
+          "authoredOutcomes": 3,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "foreign-1",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "civic",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "history-geography",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+          ]
+        },
+        {
+          "id": "natural-science",
+          "status": "authored-subset",
+          "authoredLessons": 3,
+          "publishedLessons": 0,
+          "authoredOutcomes": 3,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "technology",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+          ]
+        },
+        {
+          "id": "informatics",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+          ]
+        },
+        {
+          "id": "physical-education",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "music",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "art",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "experience-career",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "local-education",
+          "status": "needs-local-source",
+          "authoredLessons": 0,
+          "publishedLessons": 0,
+          "authoredOutcomes": 0,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa có bài biên soạn cho môn–lớp này.",
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "foreign-2",
+          "status": "optional-language-unconfigured",
+          "authoredLessons": 0,
+          "publishedLessons": 0,
+          "authoredOutcomes": 0,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa có bài biên soạn cho môn–lớp này.",
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "ethnic-language",
+          "status": "optional-language-unconfigured",
+          "authoredLessons": 0,
+          "publishedLessons": 0,
+          "authoredOutcomes": 0,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa có bài biên soạn cho môn–lớp này.",
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        }
+      ]
+    },
+    {
+      "grade": 7,
+      "catalogueSlots": 15,
+      "subjectsWithDrafts": 12,
+      "draftLessons": 18,
+      "publishedLessons": 0,
+      "authoredOutcomeCount": 18,
+      "officialOutcomeCount": null,
+      "complete": false,
+      "subjects": [
+        {
+          "id": "literature",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "math",
+          "status": "authored-subset",
+          "authoredLessons": 3,
+          "publishedLessons": 0,
+          "authoredOutcomes": 3,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "foreign-1",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "civic",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "history-geography",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+          ]
+        },
+        {
+          "id": "natural-science",
+          "status": "authored-subset",
+          "authoredLessons": 3,
+          "publishedLessons": 0,
+          "authoredOutcomes": 3,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "technology",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+          ]
+        },
+        {
+          "id": "informatics",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+          ]
+        },
+        {
+          "id": "physical-education",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "music",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "art",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "experience-career",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "local-education",
+          "status": "needs-local-source",
+          "authoredLessons": 0,
+          "publishedLessons": 0,
+          "authoredOutcomes": 0,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa có bài biên soạn cho môn–lớp này.",
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "foreign-2",
+          "status": "optional-language-unconfigured",
+          "authoredLessons": 0,
+          "publishedLessons": 0,
+          "authoredOutcomes": 0,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa có bài biên soạn cho môn–lớp này.",
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "ethnic-language",
+          "status": "optional-language-unconfigured",
+          "authoredLessons": 0,
+          "publishedLessons": 0,
+          "authoredOutcomes": 0,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa có bài biên soạn cho môn–lớp này.",
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        }
+      ]
+    },
+    {
+      "grade": 8,
+      "catalogueSlots": 15,
+      "subjectsWithDrafts": 12,
+      "draftLessons": 18,
+      "publishedLessons": 0,
+      "authoredOutcomeCount": 18,
+      "officialOutcomeCount": null,
+      "complete": false,
+      "subjects": [
+        {
+          "id": "literature",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "math",
+          "status": "authored-subset",
+          "authoredLessons": 3,
+          "publishedLessons": 0,
+          "authoredOutcomes": 3,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "foreign-1",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "civic",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "history-geography",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+          ]
+        },
+        {
+          "id": "natural-science",
+          "status": "authored-subset",
+          "authoredLessons": 3,
+          "publishedLessons": 0,
+          "authoredOutcomes": 3,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "technology",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+          ]
+        },
+        {
+          "id": "informatics",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+          ]
+        },
+        {
+          "id": "physical-education",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "music",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "art",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "experience-career",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "local-education",
+          "status": "needs-local-source",
+          "authoredLessons": 0,
+          "publishedLessons": 0,
+          "authoredOutcomes": 0,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa có bài biên soạn cho môn–lớp này.",
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "foreign-2",
+          "status": "optional-language-unconfigured",
+          "authoredLessons": 0,
+          "publishedLessons": 0,
+          "authoredOutcomes": 0,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa có bài biên soạn cho môn–lớp này.",
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "ethnic-language",
+          "status": "optional-language-unconfigured",
+          "authoredLessons": 0,
+          "publishedLessons": 0,
+          "authoredOutcomes": 0,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa có bài biên soạn cho môn–lớp này.",
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        }
+      ]
+    },
+    {
+      "grade": 9,
+      "catalogueSlots": 15,
+      "subjectsWithDrafts": 12,
+      "draftLessons": 18,
+      "publishedLessons": 0,
+      "authoredOutcomeCount": 18,
+      "officialOutcomeCount": null,
+      "complete": false,
+      "subjects": [
+        {
+          "id": "literature",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "math",
+          "status": "authored-subset",
+          "authoredLessons": 3,
+          "publishedLessons": 0,
+          "authoredOutcomes": 3,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "foreign-1",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "civic",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "history-geography",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+          ]
+        },
+        {
+          "id": "natural-science",
+          "status": "authored-subset",
+          "authoredLessons": 3,
+          "publishedLessons": 0,
+          "authoredOutcomes": 3,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "technology",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+          ]
+        },
+        {
+          "id": "informatics",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+          ]
+        },
+        {
+          "id": "physical-education",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "music",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "art",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "experience-career",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "local-education",
+          "status": "needs-local-source",
+          "authoredLessons": 0,
+          "publishedLessons": 0,
+          "authoredOutcomes": 0,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa có bài biên soạn cho môn–lớp này.",
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "foreign-2",
+          "status": "optional-language-unconfigured",
+          "authoredLessons": 0,
+          "publishedLessons": 0,
+          "authoredOutcomes": 0,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa có bài biên soạn cho môn–lớp này.",
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "ethnic-language",
+          "status": "optional-language-unconfigured",
+          "authoredLessons": 0,
+          "publishedLessons": 0,
+          "authoredOutcomes": 0,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa có bài biên soạn cho môn–lớp này.",
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        }
+      ]
+    },
+    {
+      "grade": 10,
+      "catalogueSlots": 17,
+      "subjectsWithDrafts": 16,
+      "draftLessons": 24,
+      "publishedLessons": 0,
+      "authoredOutcomeCount": 24,
+      "officialOutcomeCount": null,
+      "complete": false,
+      "subjects": [
+        {
+          "id": "literature",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "math",
+          "status": "authored-subset",
+          "authoredLessons": 3,
+          "publishedLessons": 0,
+          "authoredOutcomes": 3,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "foreign-1",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "history",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+          ]
+        },
+        {
+          "id": "physical-education",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "defense-security",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "experience-career",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "local-education",
+          "status": "needs-local-source",
+          "authoredLessons": 0,
+          "publishedLessons": 0,
+          "authoredOutcomes": 0,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa có bài biên soạn cho môn–lớp này.",
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "geography",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+          ]
+        },
+        {
+          "id": "economics-law",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+          ]
+        },
+        {
+          "id": "physics",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "chemistry",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "biology",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "technology",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+          ]
+        },
+        {
+          "id": "informatics",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+          ]
+        },
+        {
+          "id": "music",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "art",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        }
+      ]
+    },
+    {
+      "grade": 11,
+      "catalogueSlots": 17,
+      "subjectsWithDrafts": 16,
+      "draftLessons": 24,
+      "publishedLessons": 0,
+      "authoredOutcomeCount": 24,
+      "officialOutcomeCount": null,
+      "complete": false,
+      "subjects": [
+        {
+          "id": "literature",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "math",
+          "status": "authored-subset",
+          "authoredLessons": 3,
+          "publishedLessons": 0,
+          "authoredOutcomes": 3,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "foreign-1",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "history",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+          ]
+        },
+        {
+          "id": "physical-education",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "defense-security",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "experience-career",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "local-education",
+          "status": "needs-local-source",
+          "authoredLessons": 0,
+          "publishedLessons": 0,
+          "authoredOutcomes": 0,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa có bài biên soạn cho môn–lớp này.",
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "geography",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+          ]
+        },
+        {
+          "id": "economics-law",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+          ]
+        },
+        {
+          "id": "physics",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "chemistry",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "biology",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "technology",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+          ]
+        },
+        {
+          "id": "informatics",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+          ]
+        },
+        {
+          "id": "music",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "art",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        }
+      ]
+    },
+    {
+      "grade": 12,
+      "catalogueSlots": 17,
+      "subjectsWithDrafts": 16,
+      "draftLessons": 24,
+      "publishedLessons": 0,
+      "authoredOutcomeCount": 24,
+      "officialOutcomeCount": null,
+      "complete": false,
+      "subjects": [
+        {
+          "id": "literature",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "math",
+          "status": "authored-subset",
+          "authoredLessons": 3,
+          "publishedLessons": 0,
+          "authoredOutcomes": 3,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "foreign-1",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "history",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+          ]
+        },
+        {
+          "id": "physical-education",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "defense-security",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "experience-career",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "local-education",
+          "status": "needs-local-source",
+          "authoredLessons": 0,
+          "publishedLessons": 0,
+          "authoredOutcomes": 0,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa có bài biên soạn cho môn–lớp này.",
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "geography",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+          ]
+        },
+        {
+          "id": "economics-law",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Cần đối chiếu sửa đổi TT13/2022 và TT17/2025 đúng phần áp dụng."
+          ]
+        },
+        {
+          "id": "physics",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "chemistry",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "biology",
+          "status": "authored-subset",
+          "authoredLessons": 2,
+          "publishedLessons": 0,
+          "authoredOutcomes": 2,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "technology",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+          ]
+        },
+        {
+          "id": "informatics",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao.",
+            "Chưa biên soạn, đối chiếu đầy đủ từng mạch/nhánh và chuyên đề của môn."
+          ]
+        },
+        {
+          "id": "music",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        },
+        {
+          "id": "art",
+          "status": "authored-subset",
+          "authoredLessons": 1,
+          "publishedLessons": 0,
+          "authoredOutcomes": 1,
+          "officialOutcomeCount": null,
+          "complete": false,
+          "gaps": [
+            "Chưa kiểm kê và đối chiếu đầy đủ từng yêu cầu cần đạt hiện hành.",
+            "Chưa có thẩm định chuyên môn hoặc đối chiếu đầy đủ ấn bản sách giáo khoa/sách nâng cao."
+          ]
+        }
+      ]
+    }
+  ]
+}

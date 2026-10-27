@@ -1,0 +1,2647 @@
+[
+  {
+    "prerequisites": [],
+    "grade": 4,
+    "subjectId": "history-geography",
+    "sourcePage": 385,
+    "slug": "doc-chu-giai-phuong-huong",
+    "title": "Đọc chú giải và phương hướng trên sơ đồ",
+    "chapter": "Phương tiện học Lịch sử và Địa lí",
+    "semester": 1,
+    "track": "foundation",
+    "outcome": "Dùng chú giải và mũi tên Bắc để xác định đối tượng, phương hướng tương đối trên sơ đồ giả định.",
+    "theory": [
+      "Sơ đồ giả định dùng trong bài có bốn cột A–D từ trái sang phải và bốn hàng 1–4 từ trên xuống. Mũi tên Bắc hướng lên. Trường học ký hiệu ★ ở B2, giếng nước ký hiệu ○ ở D2, vườn ký hiệu △ ở B4. Chú giải giải thích ý nghĩa ký hiệu; không đoán trường là nơi màu đẹp nhất.",
+      "Khi đã có hướng Bắc, phía dưới là Nam, bên phải là Đông và bên trái là Tây trong sơ đồ này. Giếng D2 ở bên phải trường B2 nên ở phía Đông của trường. Đây không phải bản đồ một địa phương thật, không có tỉ lệ để tính khoảng cách và không dùng làm chỉ dẫn đi lại."
+    ],
+    "terms": [
+      {
+        "term": "Chú giải",
+        "meaning": "Phần giải thích ký hiệu dùng trên bản đồ/sơ đồ."
+      },
+      {
+        "term": "Phương hướng",
+        "meaning": "Bắc, Nam, Đông, Tây theo chỉ dẫn của sơ đồ."
+      }
+    ],
+    "example": {
+      "prompt": "Vườn B4 ở hướng nào so với trường B2?",
+      "method": [
+        "Tìm B2 và B4 trong cùng cột B.",
+        "B4 nằm dưới B2 theo thứ tự hàng của sơ đồ.",
+        "Mũi tên Bắc hướng lên nên phía dưới là Nam."
+      ],
+      "answer": "Vườn ở phía Nam của trường."
+    },
+    "guided": {
+      "prompt": "Giếng D2 ở hướng nào so với trường B2?",
+      "answer": "Đông",
+      "acceptedAnswers": [
+        "phía Đông"
+      ],
+      "explanation": "D2 ở bên phải B2, tương ứng Đông khi Bắc hướng lên.",
+      "hints": [
+        "Đối chiếu hai cột B và D.",
+        "Xem hướng bên phải của mũi tên Bắc."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Ký hiệu ★ trong sơ đồ chỉ gì?",
+        "options": [
+          "Trường học.",
+          "Giếng nước.",
+          "Vườn."
+        ],
+        "answer": "0",
+        "explanation": "Chú giải quy định ★ là trường; hình sao không có một nghĩa cố định ở mọi bản đồ.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "short",
+        "prompt": "Nếu Bắc hướng lên, phía trái sơ đồ là hướng nào?",
+        "answer": "Tây",
+        "acceptedAnswers": [],
+        "explanation": "Đông bên phải, Tây bên trái trong cách đặt hướng của sơ đồ.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "essay",
+        "prompt": "Tự vẽ sơ đồ ba địa điểm giả định, có chú giải và mũi tên Bắc; mô tả hai quan hệ phương hướng.",
+        "grading": {
+          "mode": "manual"
+        },
+        "explanation": "Không phải bản đồ địa giới hoặc hướng dẫn tới nơi thật.",
+        "rubric": [
+          {
+            "criterion": "Ký hiệu",
+            "maxScore": 1,
+            "descriptor": "Mỗi ký hiệu có nghĩa rõ và dùng nhất quán."
+          },
+          {
+            "criterion": "Hướng",
+            "maxScore": 1,
+            "descriptor": "Hai mô tả đúng với mũi tên Bắc đã chọn."
+          },
+          {
+            "criterion": "Phạm vi",
+            "maxScore": 1,
+            "descriptor": "Ghi sơ đồ giả định; không tự thêm khoảng cách khi chưa có tỉ lệ."
+          }
+        ]
+      }
+    ],
+    "application": "Trên giấy kẻ ô, vẽ lại B2, D2, B4 rồi nhờ một bạn dùng chú giải đọc lại sơ đồ.",
+    "mistakes": [
+      "Coi mọi hình sao là trường: luôn đọc chú giải riêng.",
+      "Đo ảnh trên màn hình để tính mét dù chưa có tỉ lệ: sơ đồ này chỉ luyện vị trí."
+    ],
+    "summary": "Đọc chú giải trước, xác định Bắc rồi mới đọc quan hệ hướng. Chỉ kết luận điều sơ đồ cung cấp."
+  },
+  {
+    "prerequisites": [],
+    "grade": 4,
+    "subjectId": "history-geography",
+    "sourcePage": 386,
+    "slug": "hien-vat-anh-va-loi-ke",
+    "title": "Tìm hiểu di sản bằng hiện vật, ảnh và lời kể",
+    "chapter": "Lịch sử và văn hóa quanh em",
+    "semester": 2,
+    "track": "standard",
+    "outcome": "Phân biệt thông tin từ hiện vật, ảnh và lời kể trong một hồ sơ di sản giả định; nêu câu hỏi cần kiểm chứng.",
+    "theory": [
+      "Hồ sơ giả định do HH biên soạn: ảnh một chiếc trống có đường trang trí; phiếu mô tả ghi ‘trống bằng kim loại, đang trưng bày’; lời một người kể rằng lễ hội xưa có đánh trống. Đây là bài tập đọc nguồn, không khẳng định chiếc trống hay lễ hội cụ thể đã được khảo sát.",
+      "Ảnh giúp quan sát hình dáng trong góc chụp; phiếu cung cấp thông tin do người ghi đưa ra; lời kể phản ánh ký ức hoặc truyền thống kể chuyện. Các nguồn hỗ trợ nhau nhưng không tự chứng minh cùng một chiếc trống đã dùng trong lễ hội ấy. Cần hỏi ai tạo nguồn, tạo khi nào, đang nói về vật nào và còn bằng chứng nào khác."
+    ],
+    "terms": [
+      {
+        "term": "Hiện vật",
+        "meaning": "Đồ vật được dùng làm tư liệu tìm hiểu quá khứ."
+      },
+      {
+        "term": "Lời kể",
+        "meaning": "Thông tin do một người kể lại, cần xem người kể và ngữ cảnh."
+      },
+      {
+        "term": "Kiểm chứng",
+        "meaning": "Đối chiếu thông tin trước khi kết luận."
+      }
+    ],
+    "example": {
+      "prompt": "Ảnh có đủ chứng minh năm chiếc trống được làm không?",
+      "method": [
+        "Xác định ảnh chỉ ghi một góc nhìn của vật.",
+        "Tìm xem có niên đại và căn cứ định tuổi trong hồ sơ không.",
+        "Nếu chưa có, chỉ mô tả điều nhìn thấy và đặt câu hỏi về thời gian."
+      ],
+      "answer": "Chưa đủ; cần tư liệu xác định niên đại, không đoán từ vẻ cũ."
+    },
+    "guided": {
+      "prompt": "Nguồn nào trực tiếp cho thấy đường trang trí trong hồ sơ bài học?",
+      "answer": "ảnh",
+      "acceptedAnswers": [
+        "bức ảnh"
+      ],
+      "explanation": "Ảnh cho phép quan sát hình, còn niên đại phải có căn cứ khác.",
+      "hints": [
+        "Chọn nguồn ghi hình, không chọn chỉ từ lời kể."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Câu nào trung thực với hồ sơ?",
+        "options": [
+          "Chiếc trống chắc chắn dùng trong mọi lễ hội.",
+          "Ảnh cho thấy một số đường trang trí, chưa xác định năm chế tạo.",
+          "Vật cũ luôn có niên đại hàng nghìn năm."
+        ],
+        "answer": "1",
+        "explanation": "Mô tả nên giới hạn ở điều nguồn cho biết.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "short",
+        "prompt": "Việc đối chiếu nhiều nguồn trước khi kết luận gọi là gì?",
+        "answer": "kiểm chứng",
+        "acceptedAnswers": [],
+        "explanation": "Kiểm chứng giúp không biến một lời kể thành mọi sự thật.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "essay",
+        "prompt": "Lập bảng ba nguồn trong hồ sơ: điều biết được, điều chưa biết và một câu hỏi cho mỗi nguồn.",
+        "grading": {
+          "mode": "manual"
+        },
+        "explanation": "Nếu học về di sản thật cần đúng địa phương, tài liệu và người phụ trách; bài này không thay hồ sơ địa phương.",
+        "rubric": [
+          {
+            "criterion": "Phân biệt nguồn",
+            "maxScore": 1,
+            "descriptor": "Không trộn nội dung ảnh với lời kể."
+          },
+          {
+            "criterion": "Giới hạn",
+            "maxScore": 1,
+            "descriptor": "Nêu được điều nguồn chưa chứng minh."
+          },
+          {
+            "criterion": "Câu hỏi",
+            "maxScore": 1,
+            "descriptor": "Câu hỏi giúp tìm nguồn bổ sung, không bịa đáp án."
+          }
+        ]
+      }
+    ],
+    "application": "Chọn một ảnh đồ vật gia đình được phép dùng, ghi nguồn ảnh và chỉ mô tả điều thấy; không gọi đó là cổ vật chỉ vì cũ.",
+    "mistakes": [
+      "Cũ là cổ: cần căn cứ niên đại.",
+      "Hai nguồn cùng nhắc trống nên chắc cùng một vật: kiểm tra đối tượng cụ thể."
+    ],
+    "summary": "Nguồn khác nhau cho thông tin khác nhau. Mô tả, suy đoán và điều đã kiểm chứng phải được tách rõ."
+  },
+  {
+    "prerequisites": [],
+    "grade": 5,
+    "subjectId": "history-geography",
+    "sourcePage": 395,
+    "slug": "duong-thoi-gian-moc-lich-su",
+    "title": "Đặt sự kiện lên đường thời gian",
+    "chapter": "Tìm hiểu lịch sử qua mốc thời gian",
+    "semester": 1,
+    "track": "foundation",
+    "outcome": "Sắp các mốc 40, 248, 938 trên đường thời gian sau Công nguyên và phân biệt khoảng cách năm với thứ tự sự kiện.",
+    "theory": [
+      "Ba mốc nhập môn của bài: khởi nghĩa Hai Bà Trưng năm 40, khởi nghĩa Bà Triệu năm 248, chiến thắng Bạch Đằng năm 938 gắn với Ngô Quyền. Chương trình dùng các mốc tiêu biểu để luyện kể và vẽ đường thời gian; bài ngắn này không thay lịch sử đầy đủ của từng sự kiện.",
+      "Với các năm đều sau Công nguyên, năm nhỏ hơn nằm trước năm lớn hơn. Khoảng từ năm 40 đến 248 là 208 năm, không phải 248 sự kiện. Nếu vẽ theo tỉ lệ, đoạn thời gian dài hơn cần đoạn vẽ dài hơn; nếu chỉ vẽ sơ đồ thứ tự, phải ghi rõ không theo tỉ lệ."
+    ],
+    "terms": [
+      {
+        "term": "Mốc thời gian",
+        "meaning": "Năm hoặc thời điểm gắn với một sự kiện."
+      },
+      {
+        "term": "Đường thời gian",
+        "meaning": "Cách xếp sự kiện theo trước–sau."
+      },
+      {
+        "term": "Khoảng thời gian",
+        "meaning": "Độ dài giữa hai mốc."
+      }
+    ],
+    "example": {
+      "prompt": "Sắp 938, 40, 248 từ sớm đến muộn.",
+      "method": [
+        "Kiểm tra cả ba năm đều sau Công nguyên.",
+        "So sánh số năm: 40 nhỏ hơn 248, 248 nhỏ hơn 938.",
+        "Gắn lại đúng sự kiện, không chỉ nhớ dãy số."
+      ],
+      "answer": "40 → 248 → 938."
+    },
+    "guided": {
+      "prompt": "Mốc nào sớm nhất trong 40, 248, 938? Ghi số năm.",
+      "answer": "40",
+      "explanation": "Cả ba sau Công nguyên nên số năm nhỏ nhất sớm nhất.",
+      "hints": [
+        "So sánh cùng một cách ghi năm."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Mốc nào gắn chiến thắng Bạch Đằng trong bài?",
+        "options": [
+          "40",
+          "248",
+          "938"
+        ],
+        "answer": "2",
+        "explanation": "Bài gắn năm 938 với chiến thắng Bạch Đằng của Ngô Quyền.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "short",
+        "prompt": "Khoảng từ năm 40 đến năm 248 là bao nhiêu năm?",
+        "answer": "208 năm",
+        "explanation": "248 − 40 = 208 năm; đây là khoảng thời gian.",
+        "grading": {
+          "mode": "numeric",
+          "unit": "năm",
+          "unitRequired": true,
+          "acceptedUnits": []
+        }
+      },
+      {
+        "type": "essay",
+        "prompt": "Vẽ ba mốc với tên sự kiện; cho biết sơ đồ có theo tỉ lệ không và giải thích cách trình bày.",
+        "grading": {
+          "mode": "manual"
+        },
+        "explanation": "Không yêu cầu kể đầy đủ diễn biến; cần trở lại bài lịch sử chuyên sâu để học tiếp.",
+        "rubric": [
+          {
+            "criterion": "Đúng gắn kết",
+            "maxScore": 1,
+            "descriptor": "Năm và sự kiện không bị đổi chỗ."
+          },
+          {
+            "criterion": "Thứ tự",
+            "maxScore": 1,
+            "descriptor": "Đặt từ sớm tới muộn hợp lý."
+          },
+          {
+            "criterion": "Tỉ lệ",
+            "maxScore": 1,
+            "descriptor": "Ghi rõ theo tỉ lệ hoặc chỉ sơ đồ thứ tự."
+          }
+        ]
+      }
+    ],
+    "application": "Dùng giấy dài và đặt các thẻ năm; thử một bản theo thứ tự và một bản theo khoảng cách năm rồi so sánh.",
+    "mistakes": [
+      "Nhầm thứ tự với khoảng cách: trừ hai mốc khi hỏi bao nhiêu năm.",
+      "Vẽ ba khoảng bằng nhau rồi gọi theo tỉ lệ: phải có quy ước độ dài theo thời gian."
+    ],
+    "summary": "Gắn đúng mốc–sự kiện và phân biệt trước–sau với khoảng năm. Ghi rõ loại đường thời gian đang vẽ."
+  },
+  {
+    "prerequisites": [],
+    "grade": 5,
+    "subjectId": "history-geography",
+    "sourcePage": 394,
+    "slug": "tai-nguyen-va-thien-tai",
+    "title": "Tài nguyên nước, mưa lớn và nguy cơ ngập",
+    "chapter": "Thiên nhiên và đời sống",
+    "semester": 2,
+    "track": "standard",
+    "outcome": "Nêu lợi ích của nước, phân biệt mưa là hiện tượng tự nhiên với nguy cơ do nhiều điều kiện kết hợp, đọc một tình huống ngập giả định.",
+    "theory": [
+      "Nước phục vụ sinh hoạt và sản xuất; cùng một nguồn nước cần được dùng tiết kiệm và bảo vệ. Trong tình huống giả định, hai khu sân nhận cùng một trận mưa: sân A có đất thấm và lối thoát thông; sân B lát kín và lối thoát bị lá chặn. Mực nước ở B tăng nhanh hơn không có nghĩa mưa chỉ rơi ở B.",
+      "Nguy cơ ngập liên quan lượng mưa, mặt đất, khả năng thoát nước và vị trí dân cư; không được quy mọi trường hợp cho một nguyên nhân duy nhất. Quan sát từ tài liệu là một cách học; bài tập không phải cảnh báo thời tiết hiện tại và không yêu cầu học sinh tới vùng nước ngập để kiểm tra."
+    ],
+    "terms": [
+      {
+        "term": "Tài nguyên",
+        "meaning": "Nguồn tự nhiên có thể được sử dụng cho đời sống, cần bảo vệ."
+      },
+      {
+        "term": "Nguy cơ",
+        "meaning": "Khả năng xảy ra tác động bất lợi trong điều kiện cụ thể."
+      }
+    ],
+    "example": {
+      "prompt": "Vì sao sân B giả định có thể ngập nhanh hơn A?",
+      "method": [
+        "Giữ điều kiện mưa như nhau theo đề.",
+        "So sánh mặt sân và lối thoát.",
+        "Nêu hai yếu tố làm nước khó thoát, không nói đó là nguyên nhân cho mọi nơi."
+      ],
+      "answer": "Sân lát kín khó thấm và lối thoát bị chặn có thể làm nước dồn lại."
+    },
+    "guided": {
+      "prompt": "Trong tình huống, lối thoát nước ở sân nào bị lá chặn? Ghi A hoặc B.",
+      "answer": "B",
+      "explanation": "Đây là dữ kiện được cho riêng cho sân B.",
+      "hints": [
+        "Đọc mô tả hai sân, không đoán từ tên."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Nhận định nào hợp lý?",
+        "options": [
+          "Nước chỉ có hại.",
+          "Cùng lượng mưa nhưng điều kiện bề mặt khác có thể tạo mức ngập khác.",
+          "Mọi trận mưa đều gây thiên tai."
+        ],
+        "answer": "1",
+        "explanation": "Tác động tùy điều kiện; nước có nhiều lợi ích nhưng cũng có nguy cơ.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "short",
+        "prompt": "Việc dùng vừa đủ và tránh lãng phí nước gọi là sử dụng nước thế nào?",
+        "answer": "tiết kiệm",
+        "acceptedAnswers": [],
+        "explanation": "Tiết kiệm không có nghĩa bỏ nhu cầu thiết yếu.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "essay",
+        "prompt": "Lập sơ đồ ba việc bảo vệ nguồn nước trong trường và giải thích một việc giúp giảm nguy cơ tắc thoát nước.",
+        "grading": {
+          "mode": "manual"
+        },
+        "explanation": "Đề xuất cho người phụ trách thực hiện việc chuyên môn; học sinh không tự xử lý khu vực nguy hiểm.",
+        "rubric": [
+          {
+            "criterion": "Liên quan",
+            "maxScore": 1,
+            "descriptor": "Việc đề xuất gắn nước hoặc rác, không chỉ khẩu hiệu."
+          },
+          {
+            "criterion": "Nguyên nhân",
+            "maxScore": 1,
+            "descriptor": "Giải thích mối nối với chất lượng hoặc dòng thoát."
+          },
+          {
+            "criterion": "An toàn",
+            "maxScore": 1,
+            "descriptor": "Không yêu cầu trẻ mở cống, chạm điện hay tiếp cận dòng lũ."
+          }
+        ]
+      }
+    ],
+    "application": "Đọc sơ đồ sân giả định và đánh dấu nơi cần người phụ trách kiểm tra; không ra ngoài trong mưa lớn để thu bằng chứng.",
+    "mistakes": [
+      "Có nước là thiên tai: phân biệt nguồn có ích và tác động bất lợi.",
+      "Thấy ngập rồi kết luận chỉ do rác: xét thêm mưa, địa hình và hạ tầng."
+    ],
+    "summary": "Tài nguyên nước cần bảo vệ; nguy cơ ngập là kết quả nhiều điều kiện. Không dùng bài giả định làm dự báo thực tế."
+  },
+  {
+    "prerequisites": [],
+    "grade": 6,
+    "subjectId": "history-geography",
+    "sourcePage": 423,
+    "slug": "phan-loai-nguon-su-lieu",
+    "title": "Nguồn sử liệu: hiện vật, chữ viết, truyền miệng",
+    "chapter": "Vì sao cần học lịch sử",
+    "semester": 1,
+    "track": "foundation",
+    "outcome": "Phân loại nguồn tư liệu trong ví dụ và đặt câu hỏi về tác giả, thời điểm, mục đích trước khi dùng nguồn để kể quá khứ.",
+    "theory": [
+      "Ví dụ giả định: một đồng tiền, một trang sổ mua hàng và lời kể của người từng nghe ông bà kể về một chợ cũ. Đồng tiền là hiện vật; trang sổ là tư liệu chữ viết; lời kể là truyền miệng. Việc gọi tên loại nguồn chưa tự xác nhận niên đại hoặc độ đúng của tất cả nội dung.",
+      "Nguồn có ích cần được đặt vào bối cảnh: ai tạo, khi nào, để làm gì, bản gốc hay sao chép? Một trang sổ cùng thời với việc mua bán có thể gần sự kiện hơn lời kể nhiều đời, nhưng vẫn cần kiểm tra cách ghi và phạm vi. Không xếp mọi nguồn chữ viết luôn đúng, mọi truyền miệng luôn sai."
+    ],
+    "terms": [
+      {
+        "term": "Sử liệu",
+        "meaning": "Tư liệu được dùng tìm hiểu lịch sử."
+      },
+      {
+        "term": "Tư liệu gốc",
+        "meaning": "Nguồn hình thành trực tiếp trong bối cảnh sự kiện/nghiên cứu đang xét, cần xác định cụ thể."
+      },
+      {
+        "term": "Bối cảnh",
+        "meaning": "Hoàn cảnh hình thành và sử dụng nguồn."
+      }
+    ],
+    "example": {
+      "prompt": "Vì sao chưa thể lấy một lời kể làm toàn bộ lịch sử khu chợ?",
+      "method": [
+        "Xác định người kể biết trực tiếp hay nghe lại.",
+        "Tìm thời điểm và phạm vi lời kể.",
+        "Đối chiếu sổ, ảnh, hiện vật hoặc nguồn khác trước khi kết luận."
+      ],
+      "answer": "Cần kiểm tra đường truyền lời kể, thời gian và nguồn bổ sung."
+    },
+    "guided": {
+      "prompt": "Trang sổ mua hàng thuộc nhóm tư liệu nào trong bài?",
+      "answer": "chữ viết",
+      "acceptedAnswers": [
+        "tư liệu chữ viết"
+      ],
+      "explanation": "Trang sổ ghi thông tin bằng chữ và số.",
+      "hints": [
+        "Xét cách thông tin được lưu lại."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Câu hỏi nào giúp đánh giá nguồn?",
+        "options": [
+          "Ai tạo nguồn và khi nào?",
+          "Nguồn có tên dài nhất không?",
+          "Nguồn được chép phông chữ đẹp không?"
+        ],
+        "answer": "0",
+        "explanation": "Tác giả và thời điểm gắn với bối cảnh, không phải trang trí.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "short",
+        "prompt": "Đồng tiền trong ví dụ thuộc loại tư liệu gì?",
+        "answer": "hiện vật",
+        "acceptedAnswers": [],
+        "explanation": "Đồng tiền là đồ vật được xem như tư liệu.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "essay",
+        "prompt": "Lập kế hoạch kiểm tra thông tin giả định ‘chợ đã có từ rất lâu’, dùng ba loại nguồn và chỉ giới hạn mỗi loại.",
+        "grading": {
+          "mode": "manual"
+        },
+        "explanation": "Không được bịa đã phỏng vấn hoặc tìm được hiện vật thật.",
+        "rubric": [
+          {
+            "criterion": "Nguồn phù hợp",
+            "maxScore": 1,
+            "descriptor": "Phân biệt hiện vật, chữ viết, truyền miệng."
+          },
+          {
+            "criterion": "Câu hỏi",
+            "maxScore": 1,
+            "descriptor": "Nêu tác giả/thời điểm/đối tượng cần kiểm tra."
+          },
+          {
+            "criterion": "Đối chiếu",
+            "maxScore": 1,
+            "descriptor": "Không coi một nguồn tự chứng minh toàn bộ câu chuyện."
+          }
+        ]
+      }
+    ],
+    "application": "Phân loại ba thẻ tư liệu do em tự tạo cho một sự kiện hư cấu, ghi rõ đâu là mô phỏng.",
+    "mistakes": [
+      "Nguồn chữ viết luôn đúng: người ghi cũng có mục đích và giới hạn.",
+      "Bản sao cùng tuổi bản gốc: phải tách thời điểm sao chép và thời điểm nội dung nói tới."
+    ],
+    "summary": "Phân loại nguồn là bước đầu; sử dụng nguồn còn cần bối cảnh và đối chiếu."
+  },
+  {
+    "prerequisites": [],
+    "grade": 6,
+    "subjectId": "history-geography",
+    "sourcePage": 420,
+    "slug": "ngay-dem-luan-phien",
+    "title": "Vì sao có ngày và đêm luân phiên?",
+    "chapter": "Trái Đất và chuyển động",
+    "semester": 1,
+    "track": "standard",
+    "outcome": "Dùng mô hình đơn giản giải thích nửa được chiếu sáng, nửa khuất và sự luân phiên ngày đêm do Trái Đất tự quay.",
+    "theory": [
+      "Trong mô hình đèn chiếu một quả cầu, phía hướng về đèn sáng hơn, phía khuất tối. Mô hình gợi việc một phần bề mặt Trái Đất được Mặt Trời chiếu sáng còn phần kia khuất. Không phải Mặt Trời tắt lúc đêm ở một nơi; cùng lúc nơi khác có thể là ban ngày.",
+      "Khi Trái Đất tự quay, một địa điểm lần lượt đi vào phía sáng và phía tối, tạo ngày–đêm luân phiên. Mô hình quả cầu chỉ giản lược kích thước và khoảng cách; không dùng khoảng cách bóng đèn để kết luận đúng tỉ lệ vũ trụ. Độ dài ngày đêm theo mùa còn cần xét trục nghiêng và chuyển động quanh Mặt Trời ở bài khác."
+    ],
+    "terms": [
+      {
+        "term": "Tự quay",
+        "meaning": "Chuyển động quay quanh trục của Trái Đất."
+      },
+      {
+        "term": "Ngày–đêm luân phiên",
+        "meaning": "Một nơi lần lượt được chiếu sáng và khuất sáng."
+      }
+    ],
+    "example": {
+      "prompt": "Điểm A trên quả cầu đang khuất đèn; vì sao sau khi quay có thể sáng?",
+      "method": [
+        "Giữ đèn biểu diễn nguồn sáng, không tự bật/tắt theo điểm A.",
+        "Quay cầu làm A đổi hướng so với đèn.",
+        "A vào nửa sáng nên mô hình biểu diễn chuyển từ đêm sang ngày."
+      ],
+      "answer": "Điểm A đổi vị trí tương đối với nguồn sáng do cầu quay."
+    },
+    "guided": {
+      "prompt": "Chuyển động nào trực tiếp làm ngày–đêm luân phiên trong bài?",
+      "answer": "tự quay",
+      "acceptedAnswers": [
+        "Trái Đất tự quay",
+        "chuyển động tự quay"
+      ],
+      "explanation": "Một địa điểm đi qua nửa sáng và nửa tối khi Trái Đất quay quanh trục.",
+      "hints": [
+        "Phân biệt quay quanh trục với đi quanh Mặt Trời."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Nhận định nào đúng?",
+        "options": [
+          "Mặt Trời tắt ban đêm.",
+          "Cùng lúc mọi nơi đều ban ngày.",
+          "Một nơi tối trong khi nơi khác được chiếu sáng."
+        ],
+        "answer": "2",
+        "explanation": "Nguồn sáng không cần tắt; mặt cầu có phần hướng và phần khuất nguồn sáng.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "short",
+        "prompt": "Trong mô hình, phần khuất nguồn sáng biểu diễn ban gì?",
+        "answer": "đêm",
+        "acceptedAnswers": [],
+        "explanation": "Phần không được chiếu trực tiếp được dùng biểu diễn ban đêm.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "essay",
+        "prompt": "Vẽ hai vị trí của cùng một điểm trên mô hình và giải thích chuyển ngày–đêm; ghi một giới hạn mô hình.",
+        "grading": {
+          "mode": "manual"
+        },
+        "explanation": "Không chấm bằng tên hình vẽ; cần giải thích quan hệ chuyển động và chiếu sáng.",
+        "rubric": [
+          {
+            "criterion": "Nguồn sáng",
+            "maxScore": 1,
+            "descriptor": "Không giải thích bằng việc đèn/Mặt Trời tắt."
+          },
+          {
+            "criterion": "Chuyển động",
+            "maxScore": 1,
+            "descriptor": "Giữ cùng điểm và cho thấy nó đi từ sáng sang tối hoặc ngược lại."
+          },
+          {
+            "criterion": "Giới hạn",
+            "maxScore": 1,
+            "descriptor": "Nêu kích thước/khoảng cách hoặc ánh sáng thực đã giản lược."
+          }
+        ]
+      }
+    ],
+    "application": "Vẽ quả cầu hai nửa sáng–tối trên giấy và đặt mũi tên quay; không nhìn trực tiếp Mặt Trời để thử.",
+    "mistakes": [
+      "Đêm là Mặt Trời tắt: xét đồng thời nửa kia.",
+      "Lấy mô hình giải hết độ dài ngày theo mùa: đó là vấn đề cần thêm yếu tố."
+    ],
+    "summary": "Trái Đất tự quay làm một nơi luân phiên qua phần sáng và tối. Mô hình cần giới hạn rõ."
+  },
+  {
+    "prerequisites": [],
+    "grade": 7,
+    "subjectId": "history-geography",
+    "sourcePage": 432,
+    "slug": "thanh-thi-trung-dai",
+    "title": "Thành thị trung đại và sự trao đổi hàng hóa",
+    "chapter": "Tây Âu thời trung đại",
+    "semester": 1,
+    "track": "standard",
+    "outcome": "Giải thích vai trò thủ công, thương mại và thành thị trong thay đổi kinh tế–xã hội Tây Âu trung đại ở mức nhập môn.",
+    "theory": [
+      "Trong Tây Âu trung đại, sự phát triển thủ công và trao đổi góp phần hình thành, phát triển thành thị. Thợ làm hàng và người buôn bán cần nơi sản xuất, chợ, đường vận chuyển và các quan hệ trao đổi. Thành thị tạo điều kiện cho giao lưu; không chỉ là một cụm nhà đông người.",
+      "Sơ đồ giản lược: sản phẩm thủ công tăng → trao đổi rộng hơn → nhu cầu chợ và dịch vụ tăng. Các mũi tên chỉ quan hệ cần phân tích, không nói mọi nơi phát triển cùng một nhịp hoặc mọi thành thị ra đời bằng một nguyên nhân duy nhất. Vai trò thành thị cần đặt bên quan hệ nông thôn và trật tự xã hội đương thời."
+    ],
+    "terms": [
+      {
+        "term": "Thành thị trung đại",
+        "meaning": "Không gian dân cư gắn thủ công và thương mại trong bối cảnh lịch sử đang học."
+      },
+      {
+        "term": "Trao đổi hàng hóa",
+        "meaning": "Việc mua bán/đổi sản phẩm giữa người và nơi khác nhau."
+      }
+    ],
+    "example": {
+      "prompt": "Vì sao thợ thủ công và thương nhân thường gắn với thành thị?",
+      "method": [
+        "Xác định nhu cầu làm hàng và đưa hàng tới người mua.",
+        "Liên hệ chợ, đường đi và dịch vụ.",
+        "Giải thích thành thị tạo nơi tập trung giao dịch, không coi mọi cư dân cùng một nghề."
+      ],
+      "answer": "Thành thị tạo điều kiện tập trung sản xuất, mua bán và dịch vụ phục vụ trao đổi."
+    },
+    "guided": {
+      "prompt": "Trong bài, hoạt động mua bán hàng hóa được gọi bằng cụm gì?",
+      "answer": "thương mại",
+      "acceptedAnswers": [
+        "trao đổi hàng hóa"
+      ],
+      "explanation": "Thương mại gắn hoạt động trao đổi, mua bán.",
+      "hints": [
+        "Phân biệt làm sản phẩm với đưa sản phẩm tới người mua."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Cách giải thích nào có căn cứ hơn?",
+        "options": [
+          "Thành thị chỉ do nhà cao.",
+          "Thủ công và thương mại góp phần phát triển thành thị.",
+          "Mọi nơi có chợ đều cùng một chế độ xã hội."
+        ],
+        "answer": "1",
+        "explanation": "Cần xem hoạt động và quan hệ lịch sử, không chỉ hình dạng đô thị.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "short",
+        "prompt": "Nhóm người chuyên sản xuất hàng bằng nghề thủ công được gọi là gì?",
+        "answer": "thợ thủ công",
+        "acceptedAnswers": [],
+        "explanation": "Không đồng nhất với người chỉ mua bán hàng.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "essay",
+        "prompt": "Tạo sơ đồ ba mối liên hệ giữa sản xuất, trao đổi và thành thị; nêu một điều sơ đồ chưa thể hiện.",
+        "grading": {
+          "mode": "manual"
+        },
+        "explanation": "Sơ đồ là khái quát nhập môn, không thay diễn biến lịch sử từng thành phố.",
+        "rubric": [
+          {
+            "criterion": "Liên hệ",
+            "maxScore": 1,
+            "descriptor": "Mũi tên có giải thích, không chỉ nối tên."
+          },
+          {
+            "criterion": "Bối cảnh",
+            "maxScore": 1,
+            "descriptor": "Không coi mọi thành phố hiện đại là thành thị trung đại."
+          },
+          {
+            "criterion": "Giới hạn",
+            "maxScore": 1,
+            "descriptor": "Nêu khác biệt theo nơi, thời gian hoặc quan hệ xã hội."
+          }
+        ]
+      }
+    ],
+    "application": "Đọc một tranh thành thị được phép dùng, tách điều thấy trực tiếp khỏi điều cần nguồn lịch sử để kết luận.",
+    "mistakes": [
+      "Nhìn nhà đông là biết vai trò kinh tế: cần bằng chứng hoạt động.",
+      "Sơ đồ một chiều nghĩa là mọi nơi giống nhau: thêm điều kiện và giới hạn."
+    ],
+    "summary": "Thành thị gắn thủ công, thương mại và giao lưu; vai trò ấy cần hiểu trong bối cảnh trung đại."
+  },
+  {
+    "prerequisites": [],
+    "grade": 7,
+    "subjectId": "history-geography",
+    "sourcePage": 428,
+    "slug": "phan-hoa-khi-hau-chau-au",
+    "title": "Đọc sự khác nhau giữa khí hậu ven biển và nội địa",
+    "chapter": "Thiên nhiên châu Âu",
+    "semester": 1,
+    "track": "standard",
+    "outcome": "Tính và so sánh biên độ nhiệt từ hai trạm giả định, liên hệ tác động điều hòa của biển mà không khái quát vượt dữ liệu.",
+    "theory": [
+      "Hai trạm giả định để luyện kỹ năng, không phải số đo thành phố thật: trạm A gần biển có nhiệt độ tháng lạnh nhất 6°C, tháng nóng nhất 18°C; trạm B sâu trong lục địa lần lượt −4°C và 22°C. Biên độ nhiệt năm ở bài là nhiệt độ tháng nóng nhất trừ nhiệt độ tháng lạnh nhất.",
+      "Biển thường có tác dụng điều hòa khiến vùng chịu ảnh hưởng hải dương có chênh lệch nhiệt năm nhỏ hơn vùng nội địa trong những điều kiện tương đồng. Châu Âu còn phân hóa theo vĩ độ, địa hình và hoàn lưu; hai trạm giả định không đủ mô tả mọi nơi. Cần dùng bản đồ khí hậu thật nếu muốn kết luận một địa điểm cụ thể."
+    ],
+    "terms": [
+      {
+        "term": "Biên độ nhiệt năm",
+        "meaning": "Chênh lệch nhiệt độ tháng nóng nhất và lạnh nhất."
+      },
+      {
+        "term": "Ảnh hưởng hải dương",
+        "meaning": "Tác động của biển tới đặc điểm khí hậu."
+      }
+    ],
+    "example": {
+      "prompt": "Tính biên độ nhiệt của trạm B.",
+      "method": [
+        "Lấy nhiệt độ tháng nóng nhất 22°C.",
+        "Trừ tháng lạnh nhất −4°C: 22 − (−4).",
+        "Được 26°C; không tính 22 − 4."
+      ],
+      "answer": "26°C"
+    },
+    "guided": {
+      "prompt": "Biên độ nhiệt trạm A là bao nhiêu °C?",
+      "answer": "12",
+      "grading": {
+        "mode": "numeric",
+        "unit": "°C",
+        "unitRequired": false,
+        "acceptedUnits": [
+          "C"
+        ]
+      },
+      "explanation": "18 − 6 = 12°C.",
+      "hints": [
+        "Lấy tháng nóng nhất trừ tháng lạnh nhất."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Trạm nào có biên độ nhiệt lớn hơn?",
+        "options": [
+          "A",
+          "B",
+          "Hai trạm bằng nhau"
+        ],
+        "answer": "1",
+        "explanation": "A là 12°C, B là 26°C.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "short",
+        "prompt": "Trạm B lớn hơn trạm A bao nhiêu °C về biên độ nhiệt?",
+        "answer": "14 °C",
+        "explanation": "26 − 12 = 14°C.",
+        "grading": {
+          "mode": "numeric",
+          "unit": "°C",
+          "unitRequired": true,
+          "acceptedUnits": [
+            "C"
+          ]
+        }
+      },
+      {
+        "type": "essay",
+        "prompt": "Giải thích một giả thuyết vì sao A chênh lệch nhiệt nhỏ hơn B, và nêu hai yếu tố cần kiểm tra thêm.",
+        "grading": {
+          "mode": "manual"
+        },
+        "explanation": "Đây là bài kỹ năng với dữ liệu giả định, không phải thông báo khí hậu hiện tại.",
+        "rubric": [
+          {
+            "criterion": "Đúng dữ liệu",
+            "maxScore": 1,
+            "descriptor": "Dùng 12°C và 26°C đúng phạm vi."
+          },
+          {
+            "criterion": "Quan hệ",
+            "maxScore": 1,
+            "descriptor": "Liên hệ ảnh hưởng biển, không nói chỉ có một nguyên nhân."
+          },
+          {
+            "criterion": "Bổ sung",
+            "maxScore": 1,
+            "descriptor": "Cần vĩ độ, địa hình hoặc hoàn lưu và dữ liệu trạm thật."
+          }
+        ]
+      }
+    ],
+    "application": "Phác hai biểu tượng trạm ven biển/nội địa và ghi rõ số liệu giả định; không gắn vào một thành phố thật.",
+    "mistakes": [
+      "Trừ số âm thành trừ số dương: viết đủ ngoặc.",
+      "Hai trạm đại diện toàn châu lục: xét thêm các nhân tố."
+    ],
+    "summary": "Tính biên độ bằng nóng nhất trừ lạnh nhất; dùng dữ liệu để nêu giả thuyết khí hậu có điều kiện."
+  },
+  {
+    "prerequisites": [],
+    "grade": 8,
+    "subjectId": "history-geography",
+    "sourcePage": 441,
+    "slug": "cong-nghiep-va-doi-song",
+    "title": "Cách mạng công nghiệp: sản xuất và đời sống thay đổi",
+    "chapter": "Châu Âu và Bắc Mỹ thời cận đại",
+    "semester": 1,
+    "track": "standard",
+    "outcome": "Nêu tác động của máy móc và tổ chức nhà máy, phân biệt thành tựu kỹ thuật với các hệ quả xã hội đa chiều.",
+    "theory": [
+      "Cách mạng công nghiệp khởi đầu ở Anh trong nửa sau thế kỷ XVIII với những thay đổi lớn trong sản xuất, trước hết ở một số ngành như dệt. Máy móc và động lực mới góp phần tăng sản lượng; nhà máy tập trung lao động theo cách khác với nhiều hình thức thủ công trước đó. Đây là quá trình, không chỉ một chiếc máy được phát minh.",
+      "Tác động có nhiều mặt: hàng hóa và vận tải phát triển, đô thị và việc làm biến đổi; điều kiện lao động, ô nhiễm và bất bình đẳng cũng đặt ra vấn đề. Không thể kết luận mọi người lập tức có đời sống tốt hơn chỉ từ sản lượng tăng. Khi học cần hỏi ai được hưởng lợi, ai chịu khó khăn, ở thời gian và nơi nào."
+    ],
+    "terms": [
+      {
+        "term": "Cơ giới hóa",
+        "meaning": "Dùng máy để thay hoặc hỗ trợ thao tác lao động."
+      },
+      {
+        "term": "Nhà máy",
+        "meaning": "Nơi tổ chức sản xuất tập trung với máy móc, lao động và quy trình."
+      }
+    ],
+    "example": {
+      "prompt": "Vì sao tăng sản lượng chưa chứng minh mọi công nhân sống tốt hơn?",
+      "method": [
+        "Tách lượng hàng sản xuất khỏi thu nhập, thời gian và an toàn lao động.",
+        "Nêu thông tin còn cần về người lao động.",
+        "Kết luận tiến bộ kỹ thuật có thể đi cùng vấn đề xã hội."
+      ],
+      "answer": "Cần thêm dữ liệu điều kiện lao động và phân phối lợi ích, không chỉ sản lượng."
+    },
+    "guided": {
+      "prompt": "Quốc gia khởi đầu Cách mạng công nghiệp được bài nêu là nước nào?",
+      "answer": "Anh",
+      "explanation": "Bài giới hạn mô tả khởi đầu ở Anh từ nửa sau thế kỷ XVIII.",
+      "hints": [
+        "Đọc câu mở phần kiến thức."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Nhận định nào phân biệt đúng hai loại thông tin?",
+        "options": [
+          "Có máy mới nên mọi công nhân lập tức giàu.",
+          "Sản lượng tăng là thành tựu, còn đời sống cần xét thêm bằng chứng.",
+          "Ô nhiễm chứng minh máy móc không tạo sản phẩm."
+        ],
+        "answer": "1",
+        "explanation": "Một chỉ số không đại diện toàn bộ tác động xã hội.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "short",
+        "prompt": "Việc dùng máy hỗ trợ hoặc thay thao tác lao động gọi là gì?",
+        "answer": "cơ giới hóa",
+        "acceptedAnswers": [],
+        "explanation": "Đây là một phương diện thay đổi sản xuất.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "essay",
+        "prompt": "Lập bảng hai lợi ích và hai vấn đề có thể đi cùng công nghiệp hóa, kèm loại nguồn cần dùng để kiểm tra.",
+        "grading": {
+          "mode": "manual"
+        },
+        "explanation": "Khái quát này không thay nghiên cứu từng thời kỳ hoặc nơi chốn.",
+        "rubric": [
+          {
+            "criterion": "Hai mặt",
+            "maxScore": 1,
+            "descriptor": "Không chỉ ca ngợi hoặc phủ nhận một chiều."
+          },
+          {
+            "criterion": "Phân biệt",
+            "maxScore": 1,
+            "descriptor": "Tác động sản xuất và xã hội không bị đánh đồng."
+          },
+          {
+            "criterion": "Nguồn",
+            "maxScore": 1,
+            "descriptor": "Đề xuất số liệu, hồ sơ lao động hoặc tư liệu phù hợp, không bịa đã khảo sát."
+          }
+        ]
+      }
+    ],
+    "application": "Phân loại thẻ ‘máy mới’, ‘số giờ làm’, ‘lượng hàng’, ‘chất lượng không khí’ theo điều chúng phản ánh.",
+    "mistakes": [
+      "Một phát minh bằng toàn bộ cách mạng: xét cả tổ chức sản xuất và xã hội.",
+      "Tăng trưởng bằng lợi ích như nhau: xét nhóm người và điều kiện cụ thể."
+    ],
+    "summary": "Cách mạng công nghiệp là quá trình thay đổi kỹ thuật, sản xuất và xã hội; cần đánh giá tác động nhiều chiều."
+  },
+  {
+    "prerequisites": [],
+    "grade": 8,
+    "subjectId": "history-geography",
+    "sourcePage": 439,
+    "slug": "che-do-nuoc-song",
+    "title": "Đọc chế độ nước sông và điều kiện lưu vực",
+    "chapter": "Khí hậu và tài nguyên nước Việt Nam",
+    "semester": 2,
+    "track": "standard",
+    "outcome": "So sánh lưu lượng theo mùa từ dữ liệu giả định và giải thích vì sao không thể áp một lịch mùa lũ cho mọi sông.",
+    "theory": [
+      "Lưu lượng là thể tích nước chảy qua một mặt cắt trong một đơn vị thời gian, thường dùng m³/s; khác độ cao mặt nước. Dữ liệu giả định sông M: tháng 3 là 80 m³/s, tháng 8 là 400 m³/s, tháng 11 là 180 m³/s. Bài chỉ luyện đọc số, không mô tả một con sông thật hay cảnh báo lũ.",
+      "Chế độ nước phụ thuộc mưa, địa hình, diện tích lưu vực, khả năng trữ nước và hoạt động con người. Ở Việt Nam, phân bố mùa mưa khác nhau theo vùng nên không thể nói mọi sông đạt đỉnh cùng tháng. Ba tháng giả định chưa đủ xác định toàn bộ chế độ năm; cần chuỗi số liệu đầy đủ."
+    ],
+    "terms": [
+      {
+        "term": "Lưu lượng",
+        "meaning": "Thể tích nước qua mặt cắt trong một đơn vị thời gian."
+      },
+      {
+        "term": "Lưu vực",
+        "meaning": "Vùng đất cung cấp nước cho một hệ thống sông."
+      }
+    ],
+    "example": {
+      "prompt": "Trong ba tháng cho trước, lưu lượng lớn nhất là tháng nào?",
+      "method": [
+        "Giữ cùng đơn vị m³/s.",
+        "So sánh 80, 400, 180.",
+        "Chọn tháng 8, nhưng không gọi đó là cực đại năm nếu còn thiếu chín tháng."
+      ],
+      "answer": "Tháng 8 cao nhất trong ba tháng đã cho."
+    },
+    "guided": {
+      "prompt": "Lưu lượng tháng 8 gấp mấy lần tháng 3?",
+      "answer": "5",
+      "grading": {
+        "mode": "numeric"
+      },
+      "explanation": "400 ÷ 80 = 5; đây là tỉ số hai giá trị cùng đơn vị.",
+      "hints": [
+        "Lấy lưu lượng tháng 8 chia tháng 3."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Câu nào đúng phạm vi dữ liệu?",
+        "options": [
+          "Sông M chắc chắn cao nhất năm vào tháng 8.",
+          "Tháng 8 lớn nhất trong ba tháng được cho.",
+          "Mọi sông Việt Nam đều lũ tháng 8."
+        ],
+        "answer": "1",
+        "explanation": "Chưa có đủ 12 tháng và sông M chỉ là ví dụ giả định.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "short",
+        "prompt": "Tháng 8 lớn hơn tháng 3 bao nhiêu m³/s?",
+        "answer": "320 m³/s",
+        "explanation": "400 − 80 = 320 m³/s.",
+        "grading": {
+          "mode": "numeric",
+          "unit": "m³/s",
+          "unitRequired": true,
+          "acceptedUnits": [
+            "m3/s"
+          ]
+        }
+      },
+      {
+        "type": "essay",
+        "prompt": "Nêu ba thông tin cần thêm trước khi mô tả chế độ nước của một sông thật và giải thích tác dụng từng thông tin.",
+        "grading": {
+          "mode": "manual"
+        },
+        "explanation": "Đánh giá cách đọc và điều cần biết, không yêu cầu tới bờ sông lấy số liệu.",
+        "rubric": [
+          {
+            "criterion": "Dữ liệu",
+            "maxScore": 1,
+            "descriptor": "Cần đủ thời gian quan sát và đơn vị rõ."
+          },
+          {
+            "criterion": "Lưu vực",
+            "maxScore": 1,
+            "descriptor": "Xét mưa, địa hình hoặc trữ nước."
+          },
+          {
+            "criterion": "Giới hạn",
+            "maxScore": 1,
+            "descriptor": "Không dùng bảng giả định làm dự báo lũ."
+          }
+        ]
+      }
+    ],
+    "application": "Vẽ biểu đồ ba cột cho sông M, ghi ‘giả định’ và không nối thành một đường năm đầy đủ.",
+    "mistakes": [
+      "Lưu lượng là mực nước: kiểm tra đơn vị m³/s và m.",
+      "Thiếu tháng nhưng nói đỉnh cả năm: giữ đúng phạm vi."
+    ],
+    "summary": "Đọc chế độ sông cần đủ chuỗi thời gian và đặc điểm lưu vực; phân biệt lưu lượng với mực nước."
+  },
+  {
+    "prerequisites": [],
+    "grade": 9,
+    "subjectId": "history-geography",
+    "sourcePage": 453,
+    "slug": "khung-hoang-va-nhan-qua",
+    "title": "Đại suy thoái: phân biệt sự kiện, nguyên nhân và hệ quả",
+    "chapter": "Thế giới giữa hai cuộc chiến tranh",
+    "semester": 1,
+    "track": "standard",
+    "outcome": "Đặt giai đoạn 1929–1933 vào diễn biến suy thoái rộng hơn, phân biệt sụp đổ chứng khoán với nhiều nhân tố làm khủng hoảng trầm trọng.",
+    "theory": [
+      "Suy thoái lớn bắt đầu ở Mỹ năm 1929 và lan rộng; giai đoạn 1929–1933 thường được học khi xem sự suy giảm sâu của sản xuất, việc làm và tài chính. Cần phân biệt giai đoạn giảm sâu này với toàn bộ thời gian Đại suy thoái: nguồn Federal Reserve History mô tả thời kỳ ở Mỹ kéo dài tới thời chiến, không kết thúc đơn giản chỉ vì bước sang năm 1933.",
+      "Sụp đổ thị trường chứng khoán năm 1929 là sự kiện quan trọng nhưng không phải lời giải thích duy nhất. Khủng hoảng ngân hàng 1930–1933 và phản ứng chính sách góp phần làm tình hình xấu hơn. Khi lập sơ đồ, tách sự kiện quan sát được, nhân tố tác động và hệ quả; không suy rằng việc xảy ra trước tự động là nguyên nhân duy nhất."
+    ],
+    "terms": [
+      {
+        "term": "Suy thoái",
+        "meaning": "Sự suy giảm hoạt động kinh tế trong một giai đoạn."
+      },
+      {
+        "term": "Nhân tố",
+        "meaning": "Yếu tố góp phần tác động, không nhất thiết duy nhất."
+      },
+      {
+        "term": "Hệ quả",
+        "meaning": "Điều phát sinh hoặc biến đổi do quá trình."
+      }
+    ],
+    "example": {
+      "prompt": "Vì sao ‘chỉ chứng khoán giảm gây ra toàn bộ suy thoái’ chưa đủ?",
+      "method": [
+        "Thừa nhận đây là sự kiện quan trọng.",
+        "Đối chiếu các đợt khủng hoảng ngân hàng và chính sách trong diễn biến.",
+        "Giải thích một biến cố không thay toàn bộ chuỗi nguyên nhân và tác động."
+      ],
+      "answer": "Cần xét nhiều nhân tố và cơ chế truyền tác động, không rút về một sự kiện."
+    },
+    "guided": {
+      "prompt": "Năm mở đầu thời kỳ suy thoái được bài nêu là năm nào?",
+      "answer": "1929",
+      "explanation": "Bài lấy 1929 làm mốc khởi đầu, phân biệt với giai đoạn giảm sâu tới 1933.",
+      "hints": [
+        "Đọc mốc trong câu đầu."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Câu nào phân biệt đúng phạm vi?",
+        "options": [
+          "Mọi hệ quả biến mất vào năm 1933.",
+          "1929–1933 là giai đoạn giảm sâu được học, chưa đồng nghĩa toàn bộ suy thoái chỉ tồn tại bốn năm.",
+          "Chỉ một bảng giá cổ phiếu chứng minh mọi nguyên nhân."
+        ],
+        "answer": "1",
+        "explanation": "Nguồn lịch sử dùng các phạm vi thời gian tùy điều đang nghiên cứu.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "short",
+        "prompt": "Trong các cụm ‘ngân hàng đổ vỡ’, ‘thất nghiệp tăng’, cụm nào trực tiếp nói hệ quả về việc làm?",
+        "answer": "thất nghiệp tăng",
+        "acceptedAnswers": [],
+        "explanation": "Đây là hệ quả về lao động, khác sự kiện tài chính.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "essay",
+        "prompt": "Vẽ sơ đồ có ít nhất hai nhân tố và hai hệ quả của diễn biến suy thoái; chỉ một quan hệ cần thêm tư liệu để chứng minh.",
+        "grading": {
+          "mode": "manual"
+        },
+        "explanation": "Bài là lịch sử kinh tế, không dự báo hoặc hướng dẫn đầu tư hiện tại.",
+        "rubric": [
+          {
+            "criterion": "Phân biệt",
+            "maxScore": 1,
+            "descriptor": "Không trộn mốc, nhân tố và hệ quả thành một danh sách."
+          },
+          {
+            "criterion": "Nhiều chiều",
+            "maxScore": 1,
+            "descriptor": "Không quy mọi việc cho một nguyên nhân duy nhất."
+          },
+          {
+            "criterion": "Căn cứ",
+            "maxScore": 1,
+            "descriptor": "Ghi nguồn và mối liên hệ chưa đủ chứng minh."
+          }
+        ]
+      }
+    ],
+    "application": "Đọc tiêu đề thời gian của nguồn đối chiếu rồi viết một câu giải thích vì sao hai tài liệu có thể chọn mốc kết thúc khác nhau.",
+    "mistakes": [
+      "Một mốc cuối bài bằng chấm dứt mọi tác động: kiểm tra phạm vi nguồn.",
+      "Sự kiện trước bằng nguyên nhân duy nhất: cần cơ chế và đối chiếu."
+    ],
+    "summary": "Học khủng hoảng cần đúng phạm vi thời gian và quan hệ nhiều nhân tố, không đồng nhất một biến cố với toàn bộ nguyên nhân.",
+    "factualReferences": [
+      {
+        "title": "The Great Depression",
+        "publisher": "Federal Reserve History",
+        "url": "https://www.federalreservehistory.org/essays/great-depression",
+        "access": "relevant-sections-opened",
+        "retrievedAt": "2026-10-27"
+      }
+    ]
+  },
+  {
+    "prerequisites": [],
+    "grade": 9,
+    "subjectId": "history-geography",
+    "sourcePage": 447,
+    "slug": "mat-do-va-phan-bo-dan-cu",
+    "title": "Mật độ dân số và giới hạn của số bình quân",
+    "chapter": "Địa lí dân cư",
+    "semester": 1,
+    "track": "foundation",
+    "outcome": "Tính mật độ dân số từ dân số và diện tích cùng phạm vi; không suy mọi nơi có mức tập trung bằng số bình quân.",
+    "theory": [
+      "Mật độ dân số bình quân = dân số chia diện tích, thường dùng người/km². Hai khu giả định, không phải đơn vị hành chính thật: A có 200.000 người trên 1.000 km²; B có 150.000 người trên 500 km². A đông người hơn nhưng chưa chắc mật độ cao hơn vì diện tích cũng khác.",
+      "Mật độ bình quân giúp so sánh tập trung dân cư theo diện tích nhưng không cho biết từng điểm ở trong vùng. Một vùng có khu đông và khu thưa vẫn có một số bình quân chung. Khi dùng dữ liệu thật cần cùng thời điểm, cùng ranh giới và nguồn; không ghép dân số theo địa giới cũ với diện tích theo địa giới mới."
+    ],
+    "terms": [
+      {
+        "term": "Mật độ dân số",
+        "meaning": "Số dân bình quân trên một đơn vị diện tích."
+      },
+      {
+        "term": "Phân bố dân cư",
+        "meaning": "Cách dân cư tập trung hoặc phân tán trong không gian."
+      }
+    ],
+    "example": {
+      "prompt": "Tính mật độ A.",
+      "method": [
+        "Giữ dân số 200.000 người và diện tích 1.000 km².",
+        "Chia 200.000 cho 1.000.",
+        "Ghi đơn vị người/km², không đảo phép chia."
+      ],
+      "answer": "200 người/km²"
+    },
+    "guided": {
+      "prompt": "Mật độ B là bao nhiêu người/km²?",
+      "answer": "300",
+      "grading": {
+        "mode": "numeric",
+        "unit": "người/km²",
+        "unitRequired": false,
+        "acceptedUnits": [
+          "người/km2"
+        ]
+      },
+      "explanation": "150.000 ÷ 500 = 300 người/km².",
+      "hints": [
+        "Lấy số dân chia diện tích."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Khu nào có mật độ cao hơn?",
+        "options": [
+          "A",
+          "B",
+          "Bằng nhau"
+        ],
+        "answer": "1",
+        "explanation": "A là 200, B là 300 người/km² dù B ít dân hơn.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "short",
+        "prompt": "Mật độ B cao hơn A bao nhiêu người/km²?",
+        "answer": "100 người/km²",
+        "explanation": "300 − 200 = 100 người/km².",
+        "grading": {
+          "mode": "numeric",
+          "unit": "người/km²",
+          "unitRequired": true,
+          "acceptedUnits": [
+            "người/km2"
+          ]
+        }
+      },
+      {
+        "type": "essay",
+        "prompt": "Giải thích vì sao mật độ bình quân không mô tả mọi nơi trong vùng; nêu dữ liệu bổ sung cần xem.",
+        "grading": {
+          "mode": "manual"
+        },
+        "explanation": "Không gắn A/B vào một tỉnh thật hoặc tạo số liệu hiện hành.",
+        "rubric": [
+          {
+            "criterion": "Bình quân",
+            "maxScore": 1,
+            "descriptor": "Không gán cùng mật độ cho từng điểm."
+          },
+          {
+            "criterion": "Dữ liệu",
+            "maxScore": 1,
+            "descriptor": "Cần bản đồ phân bố hoặc số liệu đơn vị nhỏ hơn."
+          },
+          {
+            "criterion": "Tương thích",
+            "maxScore": 1,
+            "descriptor": "Năm, ranh giới và đơn vị phải phù hợp."
+          }
+        ]
+      }
+    ],
+    "application": "Chia một hình chữ nhật giả định thành ô, đặt các chấm dân cư không đều nhưng giữ cùng tổng; so với mật độ bình quân.",
+    "mistakes": [
+      "Ít dân luôn thưa hơn: cần xét diện tích.",
+      "Ghép số liệu khác địa giới: kiểm tra phạm vi trước khi chia."
+    ],
+    "summary": "Mật độ là dân số/diện tích cùng phạm vi; số bình quân không thay bản đồ phân bố dân cư."
+  },
+  {
+    "prerequisites": [],
+    "grade": 10,
+    "subjectId": "history",
+    "sourcePage": 486,
+    "slug": "goc-nhin-trong-su-lieu",
+    "title": "Góc nhìn và mục đích của nguồn sử liệu",
+    "chapter": "Sử học và nhận thức lịch sử",
+    "semester": 1,
+    "track": "standard",
+    "outcome": "Đối chiếu hai nguồn mô phỏng về cùng sự việc, xác định người tạo nguồn, mục đích và điều còn thiếu trước khi kết luận.",
+    "theory": [
+      "Hai phiếu mô phỏng do HH viết, không phải tài liệu lưu trữ thật: Phiếu A là thông báo của người tổ chức một phiên chợ, nhấn mạnh hàng hóa phong phú. Phiếu B là ghi chép của một người bán, nói hàng của mình còn nhiều sau phiên. Hai nguồn có góc nhìn khác; một phiên chợ có nhiều hàng không tự mâu thuẫn với việc một người bán chưa hết.",
+      "Phân tích sử liệu cần tác giả, thời điểm, mục đích, đối tượng và điều kiện tạo nguồn. Nguồn gần sự kiện không tự động không thiên lệch; nguồn được viết sau cũng có thể tổng hợp nhiều bằng chứng. Sử học không phải chọn lời mình thích, mà kiểm tra câu hỏi mỗi nguồn có thể trả lời và đối chiếu các khả năng."
+    ],
+    "terms": [
+      {
+        "term": "Góc nhìn",
+        "meaning": "Vị trí, trải nghiệm và cách quan sát của chủ thể nguồn."
+      },
+      {
+        "term": "Mục đích nguồn",
+        "meaning": "Điều người tạo nguồn muốn thực hiện hoặc truyền đạt."
+      },
+      {
+        "term": "Đối chiếu",
+        "meaning": "So sánh thông tin có cùng phạm vi và câu hỏi."
+      }
+    ],
+    "example": {
+      "prompt": "A nói chợ đông hàng, B nói một người bán chưa hết: có nhất thiết một nguồn sai không?",
+      "method": [
+        "Xác định A nói toàn chợ, B nói một người bán.",
+        "Hai mệnh đề có phạm vi khác.",
+        "Giữ khả năng cùng đúng; tìm thêm lượng khách, lượng hàng và tiêu chí đánh giá."
+      ],
+      "answer": "Không nhất thiết mâu thuẫn vì hai nguồn nói phạm vi khác nhau."
+    },
+    "guided": {
+      "prompt": "Nguồn A được viết từ vị trí người nào trong tình huống?",
+      "answer": "người tổ chức",
+      "acceptedAnswers": [
+        "người tổ chức phiên chợ"
+      ],
+      "explanation": "Phiếu mô phỏng nêu rõ người tạo A là người tổ chức.",
+      "hints": [
+        "Tách ai viết khỏi điều họ viết."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Cách xử lý nào phù hợp sử học?",
+        "options": [
+          "Chọn nguồn có lời tích cực hơn.",
+          "Đối chiếu phạm vi, mục đích và bằng chứng của từng nguồn.",
+          "Nguồn gốc luôn đúng mọi điều."
+        ],
+        "answer": "1",
+        "explanation": "Nguồn cần được kiểm tra theo câu hỏi nghiên cứu.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "short",
+        "prompt": "Thông tin ‘người viết muốn đạt điều gì’ thuộc mục nào khi phân tích nguồn?",
+        "answer": "mục đích",
+        "acceptedAnswers": [],
+        "explanation": "Mục đích có thể ảnh hưởng cách chọn và trình bày thông tin.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "essay",
+        "prompt": "Đặt một câu hỏi nghiên cứu về phiên chợ giả định, nêu hai nguồn giúp trả lời và giới hạn từng nguồn.",
+        "grading": {
+          "mode": "manual"
+        },
+        "explanation": "Các phiếu là mô phỏng giáo dục; không được gắn tên kho lưu trữ hoặc nhân vật thật.",
+        "rubric": [
+          {
+            "criterion": "Câu hỏi",
+            "maxScore": 1,
+            "descriptor": "Rõ điều muốn tìm, không quá rộng."
+          },
+          {
+            "criterion": "Nguồn",
+            "maxScore": 1,
+            "descriptor": "Tách người tạo, mục đích và phạm vi."
+          },
+          {
+            "criterion": "Kiểm chứng",
+            "maxScore": 1,
+            "descriptor": "Nêu dữ liệu còn thiếu, không bịa đã thu thập."
+          }
+        ]
+      }
+    ],
+    "application": "Viết bảng nguồn–điều biết–điều chưa biết thay cho phán ‘nguồn tốt/xấu’ thiếu lý do.",
+    "mistakes": [
+      "Khác góc nhìn là một bên sai: kiểm tra cùng phạm vi chưa.",
+      "Nguồn hợp ý là nguồn khách quan: đối chiếu mục đích và bằng chứng."
+    ],
+    "summary": "Góc nhìn và mục đích không làm nguồn vô dụng; chúng giúp xác định cách kiểm tra và giới hạn kết luận."
+  },
+  {
+    "prerequisites": [],
+    "grade": 10,
+    "subjectId": "history",
+    "sourcePage": 490,
+    "slug": "song-thuy-loi-van-minh",
+    "title": "Sông, thủy lợi và cơ sở hình thành văn minh",
+    "chapter": "Một số nền văn minh phương Đông",
+    "semester": 1,
+    "track": "standard",
+    "outcome": "Giải thích mối liên hệ giữa điều kiện tự nhiên, sản xuất, hợp tác và tổ chức xã hội qua trường hợp văn minh Ai Cập ở mức nhập môn.",
+    "theory": [
+      "Văn minh Ai Cập cổ đại gắn với lưu vực sông Nile. Nguồn nước và phù sa tạo điều kiện cho nông nghiệp, nhưng điều kiện tự nhiên không tự làm nên mọi thành tựu. Con người còn cần kinh nghiệm canh tác, công cụ, tổ chức lao động và cách quản lý sản phẩm, đất, nước.",
+      "Mô hình suy luận nhập môn: nhu cầu điều tiết nước → phối hợp lao động → quy tắc và tổ chức → điều kiện phát triển sản xuất, đời sống. Sơ đồ này chỉ gợi quan hệ cần tìm tư liệu, không chứng minh mọi nhà nước đều ra đời chỉ do thủy lợi. Cần đặt cạnh dân cư, kinh tế, chính trị và văn hóa; không giản lược một nền văn minh thành một yếu tố địa lí."
+    ],
+    "terms": [
+      {
+        "term": "Văn minh",
+        "meaning": "Trình độ phát triển văn hóa–xã hội biểu hiện trong tổ chức và thành tựu."
+      },
+      {
+        "term": "Thủy lợi",
+        "meaning": "Hoạt động khai thác, điều tiết nước phục vụ sản xuất và đời sống."
+      },
+      {
+        "term": "Điều kiện tự nhiên",
+        "meaning": "Yếu tố môi trường tạo thuận lợi và khó khăn, không quyết định đơn độc."
+      }
+    ],
+    "example": {
+      "prompt": "Vì sao có dòng sông chưa đủ để giải thích sự phát triển văn minh?",
+      "method": [
+        "Nêu nguồn nước và phù sa là điều kiện.",
+        "Xét cách người sử dụng: kỹ thuật, hợp tác, quản lý.",
+        "Giữ quan hệ nhiều nhân tố thay cho kết luận sông tự tạo mọi thành tựu."
+      ],
+      "answer": "Điều kiện tự nhiên cần đi cùng hành động và tổ chức xã hội của con người."
+    },
+    "guided": {
+      "prompt": "Dòng sông được bài nêu gắn với Ai Cập cổ đại là sông nào?",
+      "answer": "Nile",
+      "acceptedAnswers": [
+        "sông Nile",
+        "sông Nin",
+        "Nin"
+      ],
+      "explanation": "Nile/Nin là tên dòng sông gắn lưu vực Ai Cập trong bài.",
+      "hints": [
+        "Đọc tên ở câu mở."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Mối liên hệ nào được bài đề xuất?",
+        "options": [
+          "Thủy lợi có thể cần phối hợp lao động.",
+          "Có sông là mọi nơi phát triển giống nhau.",
+          "Tự nhiên thay hoàn toàn tổ chức xã hội."
+        ],
+        "answer": "0",
+        "explanation": "Phối hợp là một quan hệ cần phân tích, không phải nguyên nhân duy nhất cho mọi trường hợp.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "short",
+        "prompt": "Hoạt động điều tiết nước phục vụ sản xuất được gọi là gì?",
+        "answer": "thủy lợi",
+        "acceptedAnswers": [],
+        "explanation": "Đây là một cách con người tác động và thích ứng điều kiện nước.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "essay",
+        "prompt": "Lập sơ đồ bốn nhân tố hình thành văn minh và chọn một mũi tên cần tư liệu để kiểm tra.",
+        "grading": {
+          "mode": "manual"
+        },
+        "explanation": "Không yêu cầu khẳng định một mô hình duy nhất cho mọi nền văn minh.",
+        "rubric": [
+          {
+            "criterion": "Đa nhân tố",
+            "maxScore": 1,
+            "descriptor": "Có tự nhiên và các yếu tố kinh tế/xã hội/con người."
+          },
+          {
+            "criterion": "Giải thích",
+            "maxScore": 1,
+            "descriptor": "Mũi tên nêu cơ chế, không chỉ nối tên."
+          },
+          {
+            "criterion": "Nguồn",
+            "maxScore": 1,
+            "descriptor": "Chỉ ra tư liệu cần thêm, không gọi sơ đồ là chứng minh khảo cổ."
+          }
+        ]
+      }
+    ],
+    "application": "Đọc một mô tả công trình cổ được phép sử dụng, tách mô tả vật thể khỏi suy luận về tổ chức xây dựng.",
+    "mistakes": [
+      "Thiên nhiên thuận lợi nên không cần tổ chức: xét cách khai thác.",
+      "Sơ đồ giản lược bằng sự thật toàn bộ: nêu yếu tố bị lược bỏ."
+    ],
+    "summary": "Văn minh cần xét nhiều điều kiện và hoạt động con người; thủy lợi là một mắt xích, không lời giải thích duy nhất."
+  },
+  {
+    "prerequisites": [],
+    "grade": 10,
+    "subjectId": "geography",
+    "sourcePage": 567,
+    "slug": "ti-le-va-khoang-cach",
+    "title": "Tỉ lệ bản đồ và khoảng cách đúng đơn vị",
+    "chapter": "Sử dụng bản đồ",
+    "semester": 1,
+    "track": "foundation",
+    "outcome": "Đổi khoảng cách trên bản in giả định theo tỉ lệ số, phân biệt đường thẳng với quãng đường đi và giới hạn khi ảnh bị phóng.",
+    "theory": [
+      "Tỉ lệ 1:50.000 trên bản in mẫu nghĩa là 1 cm trên bản đồ tương ứng 50.000 cm ngoài thực địa, tức 500 m. Với đoạn thẳng dài 3 cm theo dữ kiện bài, khoảng cách thẳng là 1.500 m hay 1,5 km. Dữ kiện độ dài được đề cho; không lấy thước đo trực tiếp màn hình đã phóng để thay số đó.",
+      "Khoảng cách thẳng giữa hai điểm khác quãng đường đi theo đường uốn. Khi ảnh bị thay kích thước, tỉ lệ số in trên ảnh có thể không còn dùng trực tiếp bằng thước vật lí; thước tỉ lệ cùng phóng theo hình giữ quan hệ biểu diễn. Bài này là tính toán trên mẫu giả định, không dẫn đường thật."
+    ],
+    "terms": [
+      {
+        "term": "Tỉ lệ số",
+        "meaning": "Tỉ số khoảng cách bản đồ với khoảng cách thực cùng đơn vị."
+      },
+      {
+        "term": "Khoảng cách thẳng",
+        "meaning": "Độ dài đoạn nối trực tiếp hai điểm."
+      },
+      {
+        "term": "Thước tỉ lệ",
+        "meaning": "Đoạn biểu diễn độ dài thực gắn với hình bản đồ."
+      }
+    ],
+    "example": {
+      "prompt": "Đoạn bản in mẫu dài 2 cm ở tỉ lệ 1:50.000 tương ứng bao nhiêu km?",
+      "method": [
+        "Nhân 2 × 50.000 = 100.000 cm.",
+        "Đổi 100.000 cm = 1.000 m = 1 km.",
+        "Ghi đây là khoảng cách thẳng theo đoạn mẫu."
+      ],
+      "answer": "1 km"
+    },
+    "guided": {
+      "prompt": "Ở tỉ lệ này, 1 cm tương ứng bao nhiêu mét?",
+      "answer": "500",
+      "grading": {
+        "mode": "numeric",
+        "unit": "m",
+        "unitRequired": false,
+        "acceptedUnits": [
+          "mét"
+        ]
+      },
+      "explanation": "50.000 cm chia 100 bằng 500 m.",
+      "hints": [
+        "Đổi cm sang m bằng cách chia 100."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Lỗi nào cần tránh?",
+        "options": [
+          "Dùng dữ kiện 3 cm đề cho.",
+          "Đổi về cùng đơn vị.",
+          "Đo ảnh đã phóng trên màn hình rồi dùng tỉ lệ số như bản in gốc."
+        ],
+        "answer": "2",
+        "explanation": "Kích thước ảnh đã thay đổi có thể làm phép đo thước trực tiếp không còn khớp tỉ lệ số gốc.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "short",
+        "prompt": "Theo dữ kiện đoạn dài 3 cm trên bản in mẫu, khoảng cách thẳng là bao nhiêu km?",
+        "answer": "1.5 km",
+        "explanation": "3 × 50.000 cm = 150.000 cm = 1,5 km.",
+        "grading": {
+          "mode": "numeric",
+          "unit": "km",
+          "unitRequired": true,
+          "acceptedUnits": {
+            "m": 0.001,
+            "mét": 0.001
+          }
+        }
+      },
+      {
+        "type": "essay",
+        "prompt": "Giải thích vì sao quãng đường đi có thể dài hơn khoảng cách thẳng; nêu cách đo phù hợp trên bản đồ giả định.",
+        "grading": {
+          "mode": "manual"
+        },
+        "explanation": "Không dùng kết quả bài làm chỉ dẫn giao thông ngoài đời.",
+        "rubric": [
+          {
+            "criterion": "Hai đại lượng",
+            "maxScore": 1,
+            "descriptor": "Phân biệt đoạn thẳng với đường đi uốn."
+          },
+          {
+            "criterion": "Tỉ lệ",
+            "maxScore": 1,
+            "descriptor": "Độ dài và tỉ lệ cùng điều kiện hiển thị."
+          },
+          {
+            "criterion": "Đơn vị",
+            "maxScore": 1,
+            "descriptor": "Đổi cm/m/km rõ, không dựa vào số lớn nhỏ."
+          }
+        ]
+      }
+    ],
+    "application": "Vẽ một đoạn thẳng và một đường gấp khúc cùng đầu cuối, cho số đo giả định và tính cả hai.",
+    "mistakes": [
+      "Nhân xong ghi km ngay: đổi từ cm trước.",
+      "Tỉ lệ số luôn đúng với mọi lần phóng ảnh: kiểm tra kích thước bản đồ."
+    ],
+    "summary": "Tính khoảng cách cần tỉ lệ, điều kiện kích thước và đơn vị thống nhất; đường thẳng không tự bằng đường đi."
+  },
+  {
+    "prerequisites": [],
+    "grade": 10,
+    "subjectId": "geography",
+    "sourcePage": 569,
+    "slug": "thoi-tiet-va-khi-hau",
+    "title": "Thời tiết, khí hậu và độ dài chuỗi quan trắc",
+    "chapter": "Khí quyển",
+    "semester": 1,
+    "track": "standard",
+    "outcome": "Phân biệt trạng thái thời tiết trong thời gian ngắn với đặc trưng thống kê nhiều năm; nhận ra kết luận khí hậu quá mức từ một ngày.",
+    "theory": [
+      "Thời tiết mô tả trạng thái khí quyển tại nơi và thời gian cụ thể: hôm nay có mưa, nhiệt độ đo lúc 7 giờ là 18°C. Khí hậu nói tới đặc điểm và sự biến động được tổng hợp qua thời gian dài. Một ngày lạnh chưa đủ bác bỏ đặc trưng khí hậu của một nơi thường ấm.",
+      "Ví dụ giả định: địa điểm A có một ngày 15°C; bảng nhiều năm của A cho thấy các tháng hè thường nóng hơn mùa đông. Hai thông tin không tự mâu thuẫn vì nói thang thời gian khác. Khi so sánh nguồn cần thời điểm đo, phương pháp, độ dài chuỗi và đơn vị; không dùng bảng giả định làm dự báo ngày mai."
+    ],
+    "terms": [
+      {
+        "term": "Thời tiết",
+        "meaning": "Trạng thái khí quyển trong thời gian ngắn tại một nơi."
+      },
+      {
+        "term": "Khí hậu",
+        "meaning": "Đặc trưng và biến động thống kê dài hạn của điều kiện khí quyển."
+      },
+      {
+        "term": "Chuỗi quan trắc",
+        "meaning": "Các phép đo được ghi theo thời gian và phương pháp xác định."
+      }
+    ],
+    "example": {
+      "prompt": "‘Hôm nay lạnh nên khí hậu nơi này luôn lạnh’ sai ở đâu?",
+      "method": [
+        "Nhận diện dữ kiện chỉ một ngày.",
+        "Tách kết luận luôn lạnh nói thời gian dài.",
+        "Yêu cầu chuỗi nhiều năm trước khi kết luận khí hậu."
+      ],
+      "answer": "Đã suy rộng từ một trạng thái ngắn hạn sang đặc trưng dài hạn."
+    },
+    "guided": {
+      "prompt": "Mưa lúc 7 giờ hôm nay là thông tin về thời tiết hay khí hậu?",
+      "answer": "thời tiết",
+      "explanation": "Nó nói thời gian, địa điểm cụ thể trong ngắn hạn.",
+      "hints": [
+        "Chú ý mốc hôm nay và giờ đo."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Nguồn nào phù hợp hơn để tìm đặc điểm khí hậu?",
+        "options": [
+          "Một ảnh trời mưa không rõ ngày.",
+          "Một giá trị đo duy nhất.",
+          "Chuỗi quan trắc nhiều năm có phương pháp và đơn vị rõ."
+        ],
+        "answer": "2",
+        "explanation": "Cần dữ liệu đủ dài và có thể đối chiếu.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "short",
+        "prompt": "Chuỗi số liệu khí hậu cần ghi rõ đơn vị và cách gì để so sánh hợp lý?",
+        "answer": "đo",
+        "acceptedAnswers": [
+          "quan trắc",
+          "thu thập"
+        ],
+        "explanation": "Phương pháp đo/quan trắc ảnh hưởng tính tương thích nguồn.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "essay",
+        "prompt": "Viết hai nhận định từ tình huống A: một về thời tiết, một câu hỏi cần dữ liệu để tìm khí hậu; giải thích khác biệt.",
+        "grading": {
+          "mode": "manual"
+        },
+        "explanation": "Không chấm dựa vào dự đoán trời nóng/lạnh; cần lập luận về dữ liệu.",
+        "rubric": [
+          {
+            "criterion": "Thang thời gian",
+            "maxScore": 1,
+            "descriptor": "Không biến một ngày thành quy luật nhiều năm."
+          },
+          {
+            "criterion": "Dữ liệu",
+            "maxScore": 1,
+            "descriptor": "Nêu chuỗi quan trắc và phương pháp cần thêm."
+          },
+          {
+            "criterion": "Phạm vi",
+            "maxScore": 1,
+            "descriptor": "Ghi tình huống là giả định, không dự báo thực tế."
+          }
+        ]
+      }
+    ],
+    "application": "Phân loại năm tiêu đề giả định thành thông tin một ngày hoặc đặc trưng dài hạn và nói vì sao.",
+    "mistakes": [
+      "Đồng nhất thời tiết với khí hậu: kiểm tra thang thời gian.",
+      "Đường biểu diễn đẹp nghĩa là dữ liệu đáng tin: đọc nguồn và phương pháp."
+    ],
+    "summary": "Thời tiết nói trạng thái cụ thể ngắn hạn, khí hậu cần tổng hợp dài hạn. So sánh phải cùng phạm vi và phương pháp."
+  },
+  {
+    "prerequisites": [],
+    "grade": 11,
+    "subjectId": "history",
+    "sourcePage": 507,
+    "slug": "so-sanh-cach-mang-tu-san",
+    "title": "So sánh cách mạng tư sản theo cùng tiêu chí",
+    "chapter": "Cách mạng tư sản và chủ nghĩa tư bản",
+    "semester": 1,
+    "track": "standard",
+    "outcome": "Đối chiếu các trường hợp Anh, Bắc Mỹ và Pháp theo bối cảnh, mục tiêu và kết quả; tránh coi mọi cuộc cách mạng là cùng một tiến trình.",
+    "theory": [
+      "Chương trình lấy cách mạng ở Anh, chiến tranh giành độc lập của các thuộc địa Anh ở Bắc Mỹ và cách mạng Pháp làm những trường hợp tiêu biểu để tìm vấn đề chung. Các trường hợp không đồng nhất: ở Bắc Mỹ, mục tiêu độc lập khỏi chính quốc nổi bật; trong các trường hợp khác, xung đột với trật tự chính trị và đặc quyền đương thời có cách biểu hiện khác.",
+      "Một bảng so sánh tốt giữ cùng tiêu chí: tiền đề kinh tế/chính trị/xã hội/tư tưởng; lực lượng; mục tiêu; kết quả và giới hạn. Không chỉ có tên gọi cách mạng là suy mọi người tham gia cùng mục tiêu hoặc mọi quyền được thực hiện ngay cho mọi nhóm. Bài nhập môn này cần được học tiếp bằng diễn biến và nguồn của từng trường hợp."
+    ],
+    "terms": [
+      {
+        "term": "Tiền đề",
+        "meaning": "Điều kiện đã hình thành góp phần dẫn tới quá trình."
+      },
+      {
+        "term": "Mục tiêu",
+        "meaning": "Điều các lực lượng muốn đạt, có thể không giống nhau."
+      },
+      {
+        "term": "Tiêu chí so sánh",
+        "meaning": "Phương diện chung dùng đối chiếu các trường hợp."
+      }
+    ],
+    "example": {
+      "prompt": "Vì sao không nên chỉ so ba cuộc cách mạng bằng tên gọi?",
+      "method": [
+        "Tên gọi chỉ nhận diện nhóm vấn đề chung.",
+        "Chọn một tiêu chí như mục tiêu chính trị và xem bối cảnh từng nơi.",
+        "Nêu nét chung cùng khác biệt, không ép ba diễn biến thành bản sao."
+      ],
+      "answer": "Cần bối cảnh, lực lượng, mục tiêu và kết quả cụ thể cho từng trường hợp."
+    },
+    "guided": {
+      "prompt": "Trường hợp nào trong ba ví dụ có mục tiêu giành độc lập khỏi chính quốc nổi bật?",
+      "answer": "Bắc Mỹ",
+      "acceptedAnswers": [
+        "các thuộc địa Anh ở Bắc Mỹ",
+        "chiến tranh giành độc lập ở Bắc Mỹ"
+      ],
+      "explanation": "Đây là đặc điểm được bài nhấn để phân biệt với cách so chỉ theo tên.",
+      "hints": [
+        "Tìm cụm giành độc lập trong phần kiến thức."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Bảng so sánh nào có ích hơn?",
+        "options": [
+          "Ba tên, ba lời khen giống nhau.",
+          "Cùng tiêu chí tiền đề, lực lượng, mục tiêu, kết quả cho từng trường hợp.",
+          "Mỗi trường hợp dùng một tiêu chí không liên quan."
+        ],
+        "answer": "1",
+        "explanation": "Tiêu chí chung giúp chỉ ra giống và khác có căn cứ.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "short",
+        "prompt": "Thuật ngữ chỉ các điều kiện đã hình thành trước quá trình cách mạng là gì?",
+        "answer": "tiền đề",
+        "acceptedAnswers": [],
+        "explanation": "Không đồng nhất tiền đề với kết quả.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "essay",
+        "prompt": "Chọn hai trường hợp và lập dàn ý so sánh theo hai tiêu chí; ghi nguồn cần bổ sung để hoàn thiện.",
+        "grading": {
+          "mode": "manual"
+        },
+        "explanation": "Đây là khung học và câu hỏi nghiên cứu, không thay bài đầy đủ về từng cuộc cách mạng.",
+        "rubric": [
+          {
+            "criterion": "Cùng tiêu chí",
+            "maxScore": 1,
+            "descriptor": "Thực sự đối chiếu cả hai trường hợp."
+          },
+          {
+            "criterion": "Bối cảnh",
+            "maxScore": 1,
+            "descriptor": "Giữ khác biệt mục tiêu và quan hệ chính trị."
+          },
+          {
+            "criterion": "Giới hạn",
+            "maxScore": 1,
+            "descriptor": "Không biến tuyên bố quyền thành khẳng định mọi nhóm lập tức bình đẳng."
+          },
+          {
+            "criterion": "Nguồn",
+            "maxScore": 1,
+            "descriptor": "Không bịa diễn biến hoặc tài liệu chưa đọc."
+          }
+        ]
+      }
+    ],
+    "application": "Dùng bảng còn ô ‘cần nguồn’ thay vì điền dự đoán vào mọi ô để tạo cảm giác đã đủ.",
+    "mistakes": [
+      "Mục tiêu và kết quả là một: tách điều muốn đạt khỏi điều thực tế diễn ra.",
+      "Cùng tên là cùng tiến trình: kiểm tra bối cảnh và lực lượng."
+    ],
+    "summary": "So sánh lịch sử cần cùng tiêu chí và dữ kiện riêng; không xóa khác biệt bằng tên gọi chung."
+  },
+  {
+    "prerequisites": [],
+    "grade": 11,
+    "subjectId": "history",
+    "sourcePage": 513,
+    "slug": "bach-dang-va-nhieu-nhan-to",
+    "title": "Phân tích nhiều nhân tố trong chiến thắng Bạch Đằng năm 938",
+    "chapter": "Chiến tranh bảo vệ Tổ quốc trước 1945",
+    "semester": 2,
+    "track": "standard",
+    "outcome": "Gắn đúng năm 938 với kháng chiến chống Nam Hán, phân biệt sự kiện, kết quả và giải thích nhiều nhân tố.",
+    "theory": [
+      "Chiến thắng Bạch Đằng năm 938 gắn với Ngô Quyền lãnh đạo kháng chiến chống quân Nam Hán. Khi học một cuộc kháng chiến, cần xác định thời gian, không gian, đối tượng xâm lược, cách tổ chức và kết quả; không trộn với những trận Bạch Đằng ở thời kỳ khác.",
+      "Giải thích thắng lợi cần xem sự lãnh đạo, chuẩn bị, phối hợp lực lượng và khả năng tận dụng điều kiện địa hình, sông nước. Nêu một yếu tố quan trọng không có nghĩa các yếu tố khác vô ích. Sơ đồ nhiều nhân tố là khởi đầu để đối chiếu sử liệu, không phải mọi mũi tên tự được chứng minh bởi một câu khen chung."
+    ],
+    "terms": [
+      {
+        "term": "Sự kiện",
+        "meaning": "Việc được xác định trong thời gian, không gian lịch sử."
+      },
+      {
+        "term": "Nhân tố thắng lợi",
+        "meaning": "Yếu tố góp phần tạo kết quả, cần chỉ cơ chế và căn cứ."
+      },
+      {
+        "term": "Đối tượng xâm lược",
+        "meaning": "Lực lượng tiến hành xâm lược trong trường hợp đang xét."
+      }
+    ],
+    "example": {
+      "prompt": "Sửa câu ‘Chỉ địa hình quyết định tất cả thắng lợi’.",
+      "method": [
+        "Thừa nhận điều kiện sông nước có vai trò.",
+        "Xét việc con người nhận biết, chuẩn bị và phối hợp để khai thác điều kiện ấy.",
+        "Đổi khẳng định duy nhất thành phân tích quan hệ tự nhiên–tổ chức–hành động."
+      ],
+      "answer": "Địa hình có vai trò khi gắn với chuẩn bị và tổ chức lực lượng; không thay mọi nhân tố khác."
+    },
+    "guided": {
+      "prompt": "Quân xâm lược trong trường hợp năm 938 là quân nào?",
+      "answer": "Nam Hán",
+      "explanation": "Cần gắn đúng đối tượng với đúng mốc lịch sử.",
+      "hints": [
+        "Đọc đủ tên trường hợp trong phần kiến thức."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Cặp mốc–sự kiện nào đúng trong bài?",
+        "options": [
+          "938 – kháng chiến chống Nam Hán.",
+          "938 – thành lập Liên hợp quốc.",
+          "938 – thành lập ASEAN."
+        ],
+        "answer": "0",
+        "explanation": "Hai tổ chức ở lựa chọn khác thuộc thế kỷ XX, không phải trường hợp này.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "short",
+        "prompt": "Năm 938 thuộc thế kỷ nào? Ghi số La Mã hoặc số thường.",
+        "answer": "X",
+        "acceptedAnswers": [
+          "10"
+        ],
+        "explanation": "Các năm 901–1000 thuộc thế kỷ X.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "essay",
+        "prompt": "Lập sơ đồ ba nhân tố và giải thích một quan hệ phối hợp; nêu tư liệu cần tìm để kiểm tra.",
+        "grading": {
+          "mode": "manual"
+        },
+        "explanation": "Không yêu cầu mô phỏng hành động chiến đấu; đây là phân tích lịch sử.",
+        "rubric": [
+          {
+            "criterion": "Đúng trường hợp",
+            "maxScore": 1,
+            "descriptor": "Không trộn năm, nhân vật và đối tượng từ trận khác."
+          },
+          {
+            "criterion": "Nhiều nhân tố",
+            "maxScore": 1,
+            "descriptor": "Có yếu tố con người và điều kiện tác chiến."
+          },
+          {
+            "criterion": "Cơ chế",
+            "maxScore": 1,
+            "descriptor": "Giải thích vì sao yếu tố góp phần, không chỉ kể tên."
+          },
+          {
+            "criterion": "Nguồn",
+            "maxScore": 1,
+            "descriptor": "Phân biệt kiến thức đã có với điều cần đọc thêm."
+          }
+        ]
+      }
+    ],
+    "application": "Tạo phiếu thời gian–địa điểm–đối tượng–kết quả cho sự kiện trước khi viết đoạn nguyên nhân.",
+    "mistakes": [
+      "Tên Bạch Đằng giống nhau nên cùng một trận: kiểm tra năm.",
+      "Nêu một nhân tố là đủ: liên hệ tổ chức với cách tận dụng điều kiện."
+    ],
+    "summary": "Phân tích kháng chiến bắt đầu từ sự kiện chính xác rồi mới giải thích quan hệ nhiều nhân tố."
+  },
+  {
+    "prerequisites": [],
+    "grade": 11,
+    "subjectId": "geography",
+    "sourcePage": 576,
+    "slug": "gni-binh-quan-va-gioi-han",
+    "title": "GNI bình quân đầu người: cách tính và giới hạn",
+    "chapter": "Sự khác biệt phát triển kinh tế–xã hội",
+    "semester": 1,
+    "track": "foundation",
+    "outcome": "Tính GNI/người từ tổng GNI và số dân tương thích; phân biệt bình quân với thu nhập của từng người.",
+    "theory": [
+      "GNI là tổng thu nhập quốc gia; GNI/người lấy tổng GNI chia dân số trong cùng phạm vi, thời điểm và đơn vị thích hợp. Dữ liệu giả định: A có GNI 600 tỉ USD, dân số 30 triệu người; B có GNI 200 tỉ USD, dân số 20 triệu. Không gắn A/B với quốc gia thật hoặc dùng làm xếp loại hiện hành.",
+      "GNI/người là chỉ tiêu bình quân, không nói mỗi người đều nhận đúng mức ấy hoặc mọi dịch vụ xã hội giống nhau. Phân tích phát triển còn cần cơ cấu kinh tế, giáo dục, sức khỏe và phân phối. Khi dùng ngưỡng phân loại thật phải kiểm tra năm và phương pháp, không dùng một mức bất biến cho mọi năm."
+    ],
+    "terms": [
+      {
+        "term": "GNI",
+        "meaning": "Tổng thu nhập quốc gia."
+      },
+      {
+        "term": "GNI/người",
+        "meaning": "Tổng thu nhập quốc gia chia số dân."
+      },
+      {
+        "term": "Bình quân",
+        "meaning": "Một số tổng hợp, không thay mọi trường hợp cá nhân."
+      }
+    ],
+    "example": {
+      "prompt": "Tính GNI/người A.",
+      "method": [
+        "600 tỉ USD = 600.000 triệu USD.",
+        "Chia 600.000 triệu cho 30 triệu người.",
+        "Được 20.000 USD/người; phân biệt đơn vị tỉ với triệu."
+      ],
+      "answer": "20.000 USD/người"
+    },
+    "guided": {
+      "prompt": "GNI/người B là bao nhiêu USD/người? Không dùng dấu tách nghìn.",
+      "answer": "10000",
+      "grading": {
+        "mode": "numeric",
+        "unit": "USD/người",
+        "unitRequired": false
+      },
+      "explanation": "200.000 triệu USD ÷ 20 triệu người = 10.000 USD/người.",
+      "hints": [
+        "Đưa tỉ USD về triệu USD trước khi chia."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Kết luận nào vượt dữ liệu?",
+        "options": [
+          "A có GNI/người cao hơn B trong ví dụ.",
+          "Mỗi người ở A chắc chắn có đúng 20.000 USD thu nhập.",
+          "Cần cùng năm khi so số liệu."
+        ],
+        "answer": "1",
+        "explanation": "Bình quân không cho biết thu nhập từng người hoặc phân phối.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "short",
+        "prompt": "GNI/người A cao hơn B bao nhiêu USD/người? Không dùng dấu tách nghìn.",
+        "answer": "10000 USD/người",
+        "explanation": "20.000 − 10.000 = 10.000 USD/người.",
+        "grading": {
+          "mode": "numeric",
+          "unit": "USD/người",
+          "unitRequired": true,
+          "acceptedUnits": []
+        }
+      },
+      {
+        "type": "essay",
+        "prompt": "Giải thích vì sao hai nơi cùng GNI/người vẫn có thể khác chất lượng sống; nêu hai chỉ tiêu cần xem thêm.",
+        "grading": {
+          "mode": "manual"
+        },
+        "explanation": "Bài kỹ năng địa lí, không là tư vấn tài chính hoặc bảng xếp hạng quốc gia thật.",
+        "rubric": [
+          {
+            "criterion": "Bình quân",
+            "maxScore": 1,
+            "descriptor": "Không coi giá trị bình quân là thu nhập từng cá nhân."
+          },
+          {
+            "criterion": "Chỉ tiêu",
+            "maxScore": 1,
+            "descriptor": "Nêu giáo dục, sức khỏe, phân phối hoặc chỉ tiêu phù hợp."
+          },
+          {
+            "criterion": "So sánh",
+            "maxScore": 1,
+            "descriptor": "Cùng năm, phạm vi và phương pháp khi dùng dữ liệu thật."
+          }
+        ]
+      }
+    ],
+    "application": "Lập hai cách phân chia cùng tổng 100 đơn vị cho bốn nhân vật giả định để thấy cùng bình quân vẫn khác phân phối.",
+    "mistakes": [
+      "Tỉ chia triệu không đổi đơn vị: viết cùng bậc trước.",
+      "Bình quân cao nghĩa ai cũng giàu: cần xem phân phối."
+    ],
+    "summary": "GNI/người cần đơn vị và phạm vi tương thích; bình quân không thay chỉ tiêu xã hội và dữ liệu phân phối."
+  },
+  {
+    "prerequisites": [],
+    "grade": 11,
+    "subjectId": "geography",
+    "sourcePage": 577,
+    "slug": "chuoi-gia-tri-toan-cau",
+    "title": "Chuỗi giá trị toàn cầu và rủi ro phụ thuộc",
+    "chapter": "Toàn cầu hóa kinh tế",
+    "semester": 1,
+    "track": "standard",
+    "outcome": "Mô tả phân công qua các công đoạn trong một chuỗi giả định và phân biệt doanh thu với giá trị gia tăng.",
+    "theory": [
+      "Chuỗi giả định do HH biên soạn: nhóm A thiết kế sản phẩm, nhóm B tạo linh kiện, nhóm C lắp ráp, nhóm D phân phối. Các nhóm ở những nơi khác nhau và kết nối qua vận tải, thông tin, hợp đồng. Đây là mô hình học toàn cầu hóa, không phải dữ liệu một hãng thật hoặc khẳng định nơi nào luôn nhận công đoạn nào.",
+      "Ở một công đoạn giả định, giá trị sản phẩm bán ra là 150 đơn vị, chi phí đầu vào trung gian là 100, nên giá trị gia tăng giản lược là 50. Không gọi toàn bộ 150 là phần do công đoạn ấy tạo thêm, cũng không đồng nhất 50 với lợi nhuận. Kết nối giúp chuyên môn hóa nhưng có thể tạo phụ thuộc khi một khâu gián đoạn; cần nhìn cả lợi ích và rủi ro."
+    ],
+    "terms": [
+      {
+        "term": "Chuỗi giá trị",
+        "meaning": "Các hoạt động nối nhau để tạo và đưa sản phẩm tới người dùng."
+      },
+      {
+        "term": "Đầu vào trung gian",
+        "meaning": "Hàng hóa/dịch vụ dùng để tạo sản phẩm ở công đoạn tiếp."
+      },
+      {
+        "term": "Giá trị gia tăng",
+        "meaning": "Phần giá trị tạo thêm so với đầu vào trung gian theo mô hình đang xét."
+      }
+    ],
+    "example": {
+      "prompt": "Vì sao không cộng toàn bộ giá bán lặp qua mọi khâu để gọi giá trị mới?",
+      "method": [
+        "Nhận ra giá bán sau đã gồm giá trị đầu vào từ khâu trước.",
+        "Tách phần trung gian đã có khỏi phần tạo thêm.",
+        "Dùng hiệu số theo mô hình để tránh tính trùng."
+      ],
+      "answer": "Cần trừ đầu vào trung gian khi tính giá trị tăng thêm, tránh đếm lặp giá trị đã tạo trước đó."
+    },
+    "guided": {
+      "prompt": "Theo số liệu 150 và 100 đơn vị, giá trị gia tăng giản lược là bao nhiêu?",
+      "answer": "50",
+      "grading": {
+        "mode": "numeric"
+      },
+      "explanation": "150 − 100 = 50 đơn vị; chưa đồng nghĩa lợi nhuận.",
+      "hints": [
+        "Lấy giá trị bán ra trừ đầu vào trung gian."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Trong mô hình, nhóm C làm công đoạn nào?",
+        "options": [
+          "Thiết kế.",
+          "Lắp ráp.",
+          "Phân phối."
+        ],
+        "answer": "1",
+        "explanation": "Đề đã quy định C là lắp ráp, không suy từ tên địa điểm.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "short",
+        "prompt": "Một khâu dừng làm nhiều khâu khác thiếu đầu vào thể hiện rủi ro gì?",
+        "answer": "phụ thuộc",
+        "acceptedAnswers": [
+          "phụ thuộc lẫn nhau"
+        ],
+        "explanation": "Kết nối có thể truyền gián đoạn qua chuỗi.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "essay",
+        "prompt": "Vẽ chuỗi bốn khâu, phân tích một lợi ích và một rủi ro; đề xuất thông tin cần có để đánh giá chuỗi thật.",
+        "grading": {
+          "mode": "manual"
+        },
+        "explanation": "Đề xuất là phân tích học tập, không hứa tối ưu lợi nhuận cho doanh nghiệp thật.",
+        "rubric": [
+          {
+            "criterion": "Công đoạn",
+            "maxScore": 1,
+            "descriptor": "Nối các hoạt động có quan hệ đầu vào/đầu ra."
+          },
+          {
+            "criterion": "Hai mặt",
+            "maxScore": 1,
+            "descriptor": "Không chỉ ca ngợi hoặc chỉ phủ định kết nối."
+          },
+          {
+            "criterion": "Số liệu",
+            "maxScore": 1,
+            "descriptor": "Phân biệt doanh thu, giá trị gia tăng và lợi nhuận."
+          },
+          {
+            "criterion": "Phạm vi",
+            "maxScore": 1,
+            "descriptor": "Ghi rõ mô hình giả định, không bịa hãng hoặc quốc gia."
+          }
+        ]
+      }
+    ],
+    "application": "Dùng thẻ công đoạn và thử bỏ một thẻ để mô tả ảnh hưởng; không gọi thao tác này là mô phỏng đầy đủ thương mại quốc tế.",
+    "mistakes": [
+      "Giá bán cuối bằng đóng góp của mọi khâu cộng lại không trừ trùng: xem đầu vào trung gian.",
+      "Giá trị gia tăng bằng lợi nhuận: còn nhiều khoản phân phối và chi phí khác."
+    ],
+    "summary": "Toàn cầu hóa nối công đoạn và tạo cả cơ hội lẫn phụ thuộc; đo giá trị cần tránh tính trùng."
+  },
+  {
+    "prerequisites": [],
+    "grade": 12,
+    "subjectId": "history",
+    "sourcePage": 525,
+    "slug": "lien-hop-quoc-1945",
+    "title": "Liên hợp quốc: ký Hiến chương và bắt đầu có hiệu lực",
+    "chapter": "Thế giới sau Chiến tranh thế giới thứ hai",
+    "semester": 1,
+    "track": "standard",
+    "outcome": "Phân biệt hai mốc ký và hiệu lực của Hiến chương năm 1945, liên hệ mục tiêu hòa bình và hợp tác với bối cảnh hình thành.",
+    "theory": [
+      "Hiến chương Liên hợp quốc được ký tại San Francisco ngày 26/6/1945 và có hiệu lực ngày 24/10/1945. Hai mốc có vai trò khác nhau: ký văn kiện không đồng nghĩa mọi điều kiện hiệu lực đã hoàn thành ngay. Mốc 24/10 gắn việc tổ chức chính thức ra đời khi Hiến chương có hiệu lực.",
+      "Lời mở đầu và Điều 1 của Hiến chương nêu hướng ngăn thảm họa chiến tranh, giữ hòa bình–an ninh, phát triển quan hệ hữu nghị và hợp tác giải quyết các vấn đề chung. Đây là mục tiêu, không tự chứng minh thế giới từ đó không còn xung đột. Khi đánh giá hoạt động thực tế cần sự kiện, thời điểm và thẩm quyền cụ thể, không gán mọi hành động quốc tế cho cùng một cơ quan."
+    ],
+    "terms": [
+      {
+        "term": "Ký văn kiện",
+        "meaning": "Bước ghi nhận thỏa thuận, khác việc văn kiện có hiệu lực."
+      },
+      {
+        "term": "Có hiệu lực",
+        "meaning": "Thời điểm điều kiện để văn kiện được áp dụng đã được đáp ứng."
+      },
+      {
+        "term": "Mục tiêu",
+        "meaning": "Điều tổ chức hướng tới, cần phân biệt kết quả thực tế."
+      }
+    ],
+    "example": {
+      "prompt": "Vì sao 26/6 và 24/10/1945 không được thay nhau tùy ý?",
+      "method": [
+        "Đọc 26/6 gắn việc ký tại San Francisco.",
+        "Đọc 24/10 gắn hiệu lực theo hồ sơ điều ước.",
+        "Chọn mốc theo đúng câu hỏi về ký hoặc chính thức ra đời."
+      ],
+      "answer": "Vì một mốc là ký Hiến chương, mốc còn lại là Hiến chương có hiệu lực."
+    },
+    "guided": {
+      "prompt": "Hiến chương có hiệu lực trong tháng nào năm 1945? Ghi số tháng.",
+      "answer": "10",
+      "explanation": "Mốc hiệu lực là 24/10/1945.",
+      "hints": [
+        "Tách ngày, tháng và năm trong mốc hiệu lực."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Mốc nào là ngày ký Hiến chương được bài nêu?",
+        "options": [
+          "26/6/1945",
+          "24/10/1945",
+          "8/8/1967"
+        ],
+        "answer": "0",
+        "explanation": "26/6 là mốc ký; 24/10 là hiệu lực; mốc còn lại thuộc thành lập ASEAN.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "short",
+        "prompt": "Thành phố ký Hiến chương trong bài là nơi nào?",
+        "answer": "San Francisco",
+        "acceptedAnswers": [],
+        "explanation": "Hồ sơ điều ước nêu San Francisco, 26 June 1945.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "essay",
+        "prompt": "Giải thích bối cảnh hình thành tổ chức và một mục tiêu; phân biệt mục tiêu với kết quả bằng một câu hỏi nghiên cứu.",
+        "grading": {
+          "mode": "manual"
+        },
+        "explanation": "Đây là bài lịch sử, không phải tư vấn pháp lý hoặc mô tả đầy đủ mọi cơ quan hiện hành.",
+        "rubric": [
+          {
+            "criterion": "Hai mốc",
+            "maxScore": 1,
+            "descriptor": "Không đổi ký thành hiệu lực."
+          },
+          {
+            "criterion": "Bối cảnh và mục tiêu",
+            "maxScore": 1,
+            "descriptor": "Liên hệ nhu cầu hòa bình, hợp tác sau chiến tranh."
+          },
+          {
+            "criterion": "Đánh giá",
+            "maxScore": 1,
+            "descriptor": "Không từ mục tiêu suy mọi hoạt động đều thành công hoặc mọi xung đột chấm dứt."
+          },
+          {
+            "criterion": "Nguồn",
+            "maxScore": 1,
+            "descriptor": "Ghi đúng loại nguồn đang dùng."
+          }
+        ]
+      }
+    ],
+    "application": "Tạo hai thẻ Ký và Hiệu lực, gắn ngày và nguồn, rồi đặt câu hỏi cần mốc nào trước khi trả lời.",
+    "mistakes": [
+      "Nhớ một năm nên coi hai ngày như nhau: phân biệt vai trò sự kiện.",
+      "Tuyên bố hòa bình nghĩa không còn chiến tranh: tách mục tiêu và đánh giá thực tế."
+    ],
+    "summary": "Năm 1945 có các bước hình thành khác nhau; đúng mốc, đúng loại sự kiện và đúng phạm vi mục tiêu là cơ sở đọc lịch sử tổ chức.",
+    "factualReferences": [
+      {
+        "title": "UN Treaty Collection — Charter of the United Nations",
+        "publisher": "United Nations",
+        "url": "https://treaties.un.org/pages/ViewDetails.aspx?chapter=1&clang=_en&mtdsg_no=I-1&src=IND",
+        "access": "official-treaty-entry-opened",
+        "retrievedAt": "2026-10-27"
+      },
+      {
+        "title": "Charter of the United Nations — certified copy",
+        "publisher": "United Nations",
+        "url": "https://treaties.un.org/doc/Publication/CTC/uncharter-all-lang.pdf",
+        "access": "English-preamble-and-article1-opened",
+        "pageStart": 3,
+        "pageEnd": 5,
+        "retrievedAt": "2026-10-27"
+      }
+    ]
+  },
+  {
+    "prerequisites": [],
+    "grade": 12,
+    "subjectId": "history",
+    "sourcePage": 531,
+    "slug": "asean-tuyen-bo-1967",
+    "title": "ASEAN năm 1967: đọc Tuyên bố Bangkok",
+    "chapter": "ASEAN: những chặng đường lịch sử",
+    "semester": 1,
+    "track": "standard",
+    "outcome": "Nêu đúng mốc, nơi thành lập và các nước sáng lập ASEAN, phân biệt thông tin tại năm 1967 với thành viên hiện nay.",
+    "theory": [
+      "ASEAN được thành lập ngày 8/8/1967 tại Bangkok qua Tuyên bố ASEAN, thường gọi Tuyên bố Bangkok. Năm nước sáng lập là Indonesia, Malaysia, Philippines, Singapore và Thái Lan. Con số năm thuộc thời điểm thành lập, không phải tuyên bố số thành viên hiện nay.",
+      "Tuyên bố nêu hợp tác nhằm phát triển kinh tế, tiến bộ xã hội, văn hóa, hòa bình và ổn định khu vực. Đọc văn kiện thành lập giúp hiểu mục đích ban đầu; không đủ một mình để biết mọi thay đổi tổ chức sau đó. Khi học mở rộng, cần ghi nguồn và thời điểm, tránh dùng danh mục ở một mốc lịch sử làm bản đồ thành viên hiện hành."
+    ],
+    "terms": [
+      {
+        "term": "Văn kiện thành lập",
+        "meaning": "Văn bản ghi việc thành lập và các mục đích ban đầu."
+      },
+      {
+        "term": "Nước sáng lập",
+        "meaning": "Nước tham gia thành lập tại mốc đang xét."
+      },
+      {
+        "term": "Mở rộng thành viên",
+        "meaning": "Quá trình có thể diễn ra sau mốc thành lập."
+      }
+    ],
+    "example": {
+      "prompt": "Câu ‘ASEAN có năm thành viên’ cần sửa gì để nói đúng thông tin bài?",
+      "method": [
+        "Xác định năm là số nước sáng lập năm 1967.",
+        "Gắn rõ thời điểm vào câu.",
+        "Không dùng nó trả lời câu hỏi số thành viên hiện nay khi chưa kiểm tra nguồn hiện hành."
+      ],
+      "answer": "ASEAN được thành lập năm 1967 bởi năm nước sáng lập."
+    },
+    "guided": {
+      "prompt": "Tuyên bố thành lập được ký tại thành phố nào?",
+      "answer": "Bangkok",
+      "acceptedAnswers": [
+        "Băng Cốc",
+        "Băng-cốc"
+      ],
+      "explanation": "Văn kiện ghi Bangkok và ngày 8 tháng 8 năm 1967.",
+      "hints": [
+        "Tên thường gọi Tuyên bố Bangkok cũng giúp xác định địa điểm."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Nước nào thuộc nhóm sáng lập năm 1967 được nêu?",
+        "options": [
+          "Thái Lan.",
+          "Việt Nam.",
+          "Timor-Leste."
+        ],
+        "answer": "0",
+        "explanation": "Thái Lan là một trong năm nước sáng lập; câu hỏi chỉ xét năm 1967.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "short",
+        "prompt": "Năm thành lập ASEAN trong bài là năm nào?",
+        "answer": "1967",
+        "acceptedAnswers": [],
+        "explanation": "Không đổi mốc này với các năm gia nhập sau đó.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "essay",
+        "prompt": "Viết đoạn ngắn nối mục đích hợp tác với việc hình thành ASEAN; nêu hai câu hỏi cần nguồn bổ sung để học quá trình phát triển.",
+        "grading": {
+          "mode": "manual"
+        },
+        "explanation": "Không yêu cầu ghi số thành viên hiện tại nếu chưa có cấu hình nguồn cập nhật.",
+        "rubric": [
+          {
+            "criterion": "Mốc và phạm vi",
+            "maxScore": 1,
+            "descriptor": "Nêu đúng năm 1967, không coi nhóm sáng lập là danh sách hiện nay."
+          },
+          {
+            "criterion": "Mục đích",
+            "maxScore": 1,
+            "descriptor": "Dựa trên hợp tác, phát triển và hòa bình trong văn kiện."
+          },
+          {
+            "criterion": "Câu hỏi tiếp",
+            "maxScore": 1,
+            "descriptor": "Cần các mốc mở rộng hoặc thay đổi tổ chức, có thời điểm kiểm tra."
+          },
+          {
+            "criterion": "Nguồn",
+            "maxScore": 1,
+            "descriptor": "Không gắn văn kiện lập hội thành bằng chứng mọi kết quả đã đạt."
+          }
+        ]
+      }
+    ],
+    "application": "Lập dòng thời gian bắt đầu 8/8/1967; các mốc sau để ô cần nguồn thay vì tự điền theo trí nhớ không kiểm tra.",
+    "mistakes": [
+      "Số sáng lập bằng số hiện tại: gắn thời điểm vào mọi số đếm.",
+      "Mục đích thành lập bằng báo cáo thành tích: tìm bằng chứng hoạt động riêng."
+    ],
+    "summary": "Tuyên bố Bangkok cho mốc thành lập và mục đích ban đầu. Lịch sử mở rộng cần các nguồn và mốc bổ sung.",
+    "factualReferences": [
+      {
+        "title": "The ASEAN Declaration (Bangkok Declaration)",
+        "publisher": "ASEAN",
+        "url": "https://asean.org/wp-content/uploads/2022/02/0719.pdf",
+        "access": "official-five-page-declaration-opened",
+        "retrievedAt": "2026-10-27"
+      }
+    ]
+  },
+  {
+    "prerequisites": [],
+    "grade": 12,
+    "subjectId": "geography",
+    "sourcePage": 585,
+    "slug": "gio-mua-va-phan-hoa",
+    "title": "Tính mùa và phân hóa trong thiên nhiên gió mùa",
+    "chapter": "Thiên nhiên nhiệt đới ẩm gió mùa",
+    "semester": 1,
+    "track": "standard",
+    "outcome": "Nhận biết ảnh hưởng gió theo mùa, phân tích vì sao các vùng không có cùng lịch mưa và tác động đời sống.",
+    "theory": [
+      "Thiên nhiên Việt Nam chịu ảnh hưởng nhiệt đới ẩm gió mùa. Hướng và tính chất khối khí thay đổi theo mùa; tác động còn gắn vị trí và địa hình. Gió mùa Đông Bắc có thể gây lạnh rõ ở miền Bắc trong mùa đông; không thể từ đó nói mọi nơi trên cả nước đều có cùng nhiệt độ hoặc thời gian lạnh.",
+      "Mưa cũng phân hóa: hướng sườn núi, khoảng cách biển và đường đi khối khí góp phần làm thời điểm mưa khác nhau. Dữ liệu giả định trạm M chỉ để luyện tính: tháng 1 có 30 mm mưa, tháng 7 có 220 mm. Hai tháng này không chứng minh mọi nơi mưa nhiều nhất tháng 7, cũng không là dự báo năm hiện tại."
+    ],
+    "terms": [
+      {
+        "term": "Gió mùa",
+        "meaning": "Chế độ gió có sự thay đổi hướng theo mùa ở phạm vi đang xét."
+      },
+      {
+        "term": "Phân hóa",
+        "meaning": "Sự khác nhau theo không gian hoặc thời gian."
+      },
+      {
+        "term": "Lượng mưa",
+        "meaning": "Độ dày lớp nước mưa theo cách đo quy ước, thường dùng mm."
+      }
+    ],
+    "example": {
+      "prompt": "Vì sao không dùng bảng hai tháng của M cho toàn Việt Nam?",
+      "method": [
+        "M chỉ là một trạm giả định với hai mốc.",
+        "Thiên nhiên khác theo vị trí, địa hình và hoàn lưu.",
+        "Muốn kết luận thật cần nhiều trạm, đủ chuỗi và nguồn."
+      ],
+      "answer": "Phạm vi dữ liệu không đại diện mọi vùng hoặc cả năm."
+    },
+    "guided": {
+      "prompt": "Ở trạm M giả định, tháng 7 mưa nhiều hơn tháng 1 bao nhiêu mm?",
+      "answer": "190",
+      "grading": {
+        "mode": "numeric",
+        "unit": "mm",
+        "unitRequired": false
+      },
+      "explanation": "220 − 30 = 190 mm.",
+      "hints": [
+        "So cùng đại lượng và đơn vị trước khi trừ."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Nhận định nào thể hiện phân hóa?",
+        "options": [
+          "Mọi nơi mưa cùng tháng.",
+          "Tác động gió mùa còn tùy vị trí và địa hình.",
+          "Một trạm quyết định khí hậu toàn quốc."
+        ],
+        "answer": "1",
+        "explanation": "Vị trí và địa hình góp phần tạo khác biệt.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "short",
+        "prompt": "Gió mùa được bài nêu có thể gây lạnh rõ ở miền Bắc trong mùa đông là gió gì?",
+        "answer": "Đông Bắc",
+        "acceptedAnswers": [
+          "gió mùa Đông Bắc"
+        ],
+        "explanation": "Bài nói có thể và có phạm vi, không cho mọi vùng cùng mức lạnh.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "essay",
+        "prompt": "Nêu một thuận lợi và một khó khăn của tính mùa với hoạt động sản xuất; giải thích dữ liệu cần để chọn thời vụ thật.",
+        "grading": {
+          "mode": "manual"
+        },
+        "explanation": "Đây là phân tích địa lí, không ban hành lịch canh tác hay cảnh báo thời tiết.",
+        "rubric": [
+          {
+            "criterion": "Hai mặt",
+            "maxScore": 1,
+            "descriptor": "Có cả điều kiện thuận lợi và trở ngại."
+          },
+          {
+            "criterion": "Cơ chế",
+            "maxScore": 1,
+            "descriptor": "Liên hệ nước, nhiệt hoặc tính mùa, không chỉ kể tên."
+          },
+          {
+            "criterion": "Nguồn",
+            "maxScore": 1,
+            "descriptor": "Cần địa điểm, chuỗi khí tượng và hướng dẫn phù hợp; không lấy trạm giả định làm khuyến cáo."
+          },
+          {
+            "criterion": "Phân hóa",
+            "maxScore": 1,
+            "descriptor": "Không áp một lịch cho cả nước."
+          }
+        ]
+      }
+    ],
+    "application": "Vẽ hai cột lượng mưa giả định và viết bên cạnh điều có thể/không thể kết luận từ hai cột.",
+    "mistakes": [
+      "Gió mùa đồng nghĩa cả nước cùng thời tiết: xét vị trí và địa hình.",
+      "Lấy tháng 7 của M làm đỉnh năm: còn thiếu mười tháng."
+    ],
+    "summary": "Gió mùa tạo tính mùa nhưng tác động phân hóa. Dữ liệu có giới hạn không thay nhận định cho mọi vùng."
+  },
+  {
+    "prerequisites": [],
+    "grade": 12,
+    "subjectId": "geography",
+    "sourcePage": 588,
+    "slug": "ti-trong-va-quy-mo",
+    "title": "Chuyển dịch cơ cấu: tỉ trọng giảm, quy mô vẫn có thể tăng",
+    "chapter": "Chuyển dịch cơ cấu kinh tế",
+    "semester": 2,
+    "track": "standard",
+    "outcome": "Tính tỉ trọng và so sánh quy mô tuyệt đối qua dữ liệu giả định cùng đơn vị, tránh suy tỉ trọng giảm là giá trị giảm.",
+    "theory": [
+      "Bảng giả định theo cùng giá so sánh, đơn vị quy ước: năm A tổng giá trị là 100, trong đó ngành N là 20; năm B tổng là 200, ngành N là 30. Tỉ trọng ngành N = giá trị ngành chia tổng rồi nhân 100%. Năm A là 20%, năm B là 15%, dù giá trị ngành tăng từ 20 lên 30.",
+      "Cơ cấu phản ánh quan hệ phần–toàn bộ; quy mô phản ánh lượng tuyệt đối. Chuyển dịch tỉ trọng cần đặt cùng tổng thể và phương pháp tính; không lấy giảm tỉ trọng để kết luận ngành mất vai trò hoặc sản xuất sụt giảm. Với số liệu thật còn cần giá hiện hành/giá so sánh, năm, đơn vị, phạm vi và phần phân loại."
+    ],
+    "terms": [
+      {
+        "term": "Tỉ trọng",
+        "meaning": "Giá trị phần chia tổng và nhân 100%."
+      },
+      {
+        "term": "Quy mô tuyệt đối",
+        "meaning": "Lượng của đối tượng theo đơn vị đang xét."
+      },
+      {
+        "term": "Cơ cấu",
+        "meaning": "Mối quan hệ các bộ phận trong một tổng thể."
+      }
+    ],
+    "example": {
+      "prompt": "Vì sao ngành N có giá trị tăng nhưng tỉ trọng giảm?",
+      "method": [
+        "Tính năm A: 20/100 × 100 = 20%.",
+        "Tính năm B: 30/200 × 100 = 15%.",
+        "Tổng tăng nhanh hơn phần N, nên phần chiếm trong tổng nhỏ lại dù lượng vẫn tăng."
+      ],
+      "answer": "Quy mô ngành tăng 20 lên 30, nhưng tổng tăng 100 lên 200 nên tỉ trọng giảm 20% xuống 15%."
+    },
+    "guided": {
+      "prompt": "Tỉ trọng ngành N năm B là bao nhiêu phần trăm?",
+      "answer": "15",
+      "grading": {
+        "mode": "numeric",
+        "unit": "%",
+        "unitRequired": false
+      },
+      "explanation": "30/200 × 100 = 15%.",
+      "hints": [
+        "Chia giá trị ngành cho tổng cùng năm, không chia cho tổng năm A."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Kết luận nào đúng với bảng giả định?",
+        "options": [
+          "Quy mô N giảm vì tỉ trọng giảm.",
+          "Quy mô N tăng trong khi tỉ trọng giảm.",
+          "Tỉ trọng N tăng từ 20% lên 30%."
+        ],
+        "answer": "1",
+        "explanation": "Phải tách giá trị tuyệt đối 20→30 khỏi tỉ trọng 20%→15%.",
+        "grading": {
+          "mode": "exact"
+        }
+      },
+      {
+        "type": "short",
+        "prompt": "Tỉ trọng ngành N năm A là bao nhiêu phần trăm?",
+        "answer": "20 %",
+        "explanation": "20/100 × 100 = 20%.",
+        "grading": {
+          "mode": "numeric",
+          "unit": "%",
+          "unitRequired": true,
+          "acceptedUnits": []
+        }
+      },
+      {
+        "type": "essay",
+        "prompt": "Viết nhận xét 120–150 chữ về cả quy mô và cơ cấu; nêu điều cần kiểm tra trước khi áp dụng cách tính cho bảng thật.",
+        "grading": {
+          "mode": "manual"
+        },
+        "explanation": "Không suy thành dự báo hoặc khuyến nghị đầu tư từ bài kỹ năng.",
+        "rubric": [
+          {
+            "criterion": "Đúng số",
+            "maxScore": 1,
+            "descriptor": "Tính 20%, 15% và giữ quy mô 20, 30."
+          },
+          {
+            "criterion": "Hai phương diện",
+            "maxScore": 1,
+            "descriptor": "Không đồng nhất tỉ trọng với lượng tuyệt đối."
+          },
+          {
+            "criterion": "Phương pháp",
+            "maxScore": 1,
+            "descriptor": "Kiểm tra giá, đơn vị, năm và phạm vi tương thích."
+          },
+          {
+            "criterion": "Trung thực",
+            "maxScore": 1,
+            "descriptor": "Ghi bảng giả định, không gọi là số liệu Việt Nam hiện hành."
+          }
+        ]
+      }
+    ],
+    "application": "Tự tạo một cặp tổng và phần khiến tỉ trọng giữ nguyên nhưng lượng tăng, rồi giải thích bằng phép chia.",
+    "mistakes": [
+      "Giá trị phần là tỉ trọng: cần chia tổng.",
+      "Tỉ trọng giảm bằng quy mô giảm: tính cả hai trước khi nhận xét."
+    ],
+    "summary": "Nhận xét chuyển dịch cơ cấu phải phân biệt phần tương đối và quy mô tuyệt đối, dùng dữ liệu cùng phương pháp."
+  }
+]

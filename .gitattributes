@@ -5,3 +5,5 @@
 /vendor/dompurify-3.4.14.min.js text eol=lf
 # Keep pinned upstream runtime bytes unchanged for SHA-256 verification on Windows.
 vendor/monaco-0.55.1/** -text -whitespace
+# Grade packs are verified against the manifest's SHA-256 bytes.
+data/hh-school/curriculum/*.json text eol=lf
