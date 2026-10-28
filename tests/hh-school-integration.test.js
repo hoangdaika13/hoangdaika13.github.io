@@ -15,7 +15,7 @@ test("HH School accepts only declared route views", () => {
 
 test("/learn lazy-loads only HH School and keeps language routes independent", () => {
   const loader = read("performance-loader.js"); const router = read("script.js"); const worker = read("sw.js");
-  for (const asset of ["hh-school.css?v=4", "hh-school-curriculum.js?v=4", "hh-school-core.js?v=7", "hh-school-offline.js?v=5", "hh-school-sync.js?v=5", "hh-school.js?v=10", "hh-school-workspace.js?v=4", "hh-school-workspace.css?v=3", "hh-school-assessments.js?v=1", "hh-school-content.js?v=1", "hh-school-content-manifest.js?v=2"]) {
+  for (const asset of ["hh-school.css?v=4", "hh-school-curriculum.js?v=4", "hh-school-core.js?v=7", "hh-school-offline.js?v=5", "hh-school-sync.js?v=5", "hh-school.js?v=11", "hh-school-workspace.js?v=4", "hh-school-workspace.css?v=3", "hh-school-assessments.js?v=1", "hh-school-content.js?v=1", "hh-school-content-manifest.js?v=2"]) {
     assert.match(loader, new RegExp(asset.replace(/[.?]/g, "\\$&")));
     assert.match(worker, new RegExp(asset.replace(/[.?]/g, "\\$&")));
   }

@@ -28,7 +28,7 @@
   const groups = Object.freeze({
     brand: {
       styles: [],
-      scripts: ["brand-galaxy-logo.js?v=2", "galaxy-favicon-controller.js?v=2", "hh-core-gateway.js?v=9", "galaxy-shell.js?v=11"]
+      scripts: ["brand-galaxy-logo.js?v=2", "galaxy-favicon-controller.js?v=2", "hh-core-gateway.js?v=10", "galaxy-shell.js?v=11"]
     },
     "auth-effects": {
       /*
@@ -250,8 +250,12 @@
       scripts: [
         "hh-school-curriculum.js?v=4", "hh-school-offline.js?v=5", "hh-school-university-core.js?v=1", "hh-school-core.js?v=7",
         "hh-school-progress-codec.js?v=1", "hh-school-sync.js?v=5", "hh-school-assessments.js?v=1", "hh-school-content-manifest.js?v=2",
-        "hh-school-content.js?v=1", "hh-school-workspace.js?v=4", "hh-school-university-manifest.js?v=1", "hh-school-university-content.js?v=1", "hh-school-university.js?v=1", "hh-school.js?v=10"
+        "hh-school-content.js?v=1", "hh-school-workspace.js?v=4", "hh-school-university-manifest.js?v=1", "hh-school-university-content.js?v=1", "hh-school-university.js?v=1", "hh-school.js?v=11"
       ]
+    },
+    university: {
+      styles: ["hh-university.css?v=1"],
+      scripts: ["hh-university-core.js?v=1", "hh-university-manifest.js?v=1", "hh-university-data.js?v=1", "hh-university.js?v=1"]
     },
     "focus-study-room": {
       styles: ["focus-room.css?v=14"],
@@ -422,6 +426,9 @@
     if (value === "/copyright" || value.startsWith("/copyright/")) return ["open-media-governance"];
     if (value === "/focus-room") return ["focus-study-room"];
     if (value === "/learn/study-together" || value.startsWith("/learn/study-together/")) return ["study-together"];
+    if (value === "/learn/university" || value.startsWith("/learn/university/")) return ["learning", "university"];
+    if (value === "/university/study" || value.startsWith("/university/study/")) return ["learning", "university"];
+    if (value === "/university" || value.startsWith("/university/")) return ["university"];
     if (value.startsWith("/learn")) return ["learning"];
     if (value.startsWith("/english")) return ["english"];
     if (value.startsWith("/japanese")) return ["japanese"];

@@ -63,10 +63,10 @@
   function shellMarkup(state, view) {
     const grade = root.HHSchoolCurriculum.gradeBy(state.profile.grade);
     const plan = root.HHSchoolCore.dailyPlan(state, root.HHSchoolCurriculum);
-    const university = view === "university", primary = university ? ["today", "university"] : ["today", "university", ...PRIMARY.slice(1)];
+    const university = view === "university", primary = university ? ["university"] : PRIMARY;
     return `<section class="hh-school age-${escape(state.profile.ageMode)} ${state.preferences.highContrast ? "is-contrast" : ""} ${state.preferences.dyslexia ? "is-dyslexia" : ""} ${state.preferences.largeText ? "is-large" : ""}" data-hh-school>
       <header class="hhs-topbar">
-        <button class="hhs-brand" type="button" data-school-view="today"><i>HH</i><span><small>PHỔ THÔNG & ĐẠI HỌC</small><strong>HH SCHOOL</strong></span></button>
+        <button class="hhs-brand" type="button" data-school-view="${university ? "university" : "today"}"><i>HH</i><span><small>${university ? "BÀN HỌC ĐẠI HỌC" : "TRƯỜNG HỌC SỐ 1–12"}</small><strong>${university ? "HH UNIVERSITY" : "HH SCHOOL"}</strong></span></button>
         <label class="hhs-search"><span class="sr-only">Tìm bài học</span><input type="search" data-school-search placeholder="Tìm môn, bài học, kỹ năng..." autocomplete="off"><kbd>Ctrl K</kbd></label>
         <div class="hhs-identity">${university ? '<button type="button" data-u-action="pane" data-u-pane="program"><span>Đại học</span><strong>Trường / ngành</strong></button>' : `<button type="button" data-school-grade-open><span>${escape(grade.stage)}</span><strong>${escape(grade.name)}</strong></button>`}<button type="button" ${university ? 'data-u-action="pane" data-u-pane="progress"' : 'data-school-view="progress"'}><span>${escape(university && state.profile.name === "Học sinh HH" ? "Người học HH" : state.profile.name)}</span><strong>${escape(state.role)}</strong></button></div>
       </header>

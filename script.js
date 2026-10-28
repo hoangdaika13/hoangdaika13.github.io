@@ -5728,7 +5728,6 @@ function initAppShell() {
       items: [],
       pages: [
         { id: "today", title: "Hôm nay", route: "/learn/today" },
-        { id: "university", title: "Đại học — học phần & học liệu", route: "/learn/university" },
         { id: "paths", title: "Lộ trình lớp 1–12", route: "/learn/paths" },
         { id: "subjects", title: "Môn học", route: "/learn/subjects" },
         { id: "practice", title: "Luyện tập", route: "/learn/practice" },
@@ -5749,6 +5748,12 @@ function initAppShell() {
       ]
     },
     { id: "study-together", label: "Học cùng nhau", icon: "◉", accent: "#71e8e2", route: "/learn/study-together", items: [] },
+    { id: "university", label: "Đại học & Cao đẳng", icon: "◫", accent: "#67dbc1", route: "/university", items: [], pages: [
+      { id: "schools", title: "Trường & ngành", route: "/university" },
+      { id: "scores", title: "Điểm chuẩn 2020–2026", route: "/university/scores" },
+      { id: "saved", title: "Trường đã lưu", route: "/university/saved" },
+      { id: "study", title: "Bàn học đại học", route: "/university/study" }
+    ] },
     { id: "english", label: "HH English", icon: "E", accent: "#60e9f2", route: "/english", items: [] },
     { id: "japanese", label: "HH Japanese", icon: "日", accent: "#e75158", route: "/japanese", items: [] },
     { id: "chinese", label: "HH Chinese", icon: "中", accent: "#ffcf68", route: "/chinese", items: [] },
@@ -5873,6 +5878,14 @@ function initAppShell() {
       groupIds: ["learn", "focus-room", "study-together", "english", "japanese", "chinese", "phat-phap"]
     },
     {
+      id: "higher-education",
+      label: "Đại học & Cao đẳng",
+      icon: "◫",
+      accent: "#67dbc1",
+      accentSecondary: "#699cff",
+      groupIds: ["university"]
+    },
+    {
       id: "system-admin",
       label: "Quản trị & Hệ thống",
       icon: "⚙",
@@ -5966,7 +5979,7 @@ function initAppShell() {
     "chat-ai": "bot", create: "wand", draw: "brush", "music-ai": "music", "comic-motion": "panels", "media-design": "image", "graphic-design": "pen",
     google: "search", "youtube-main": "video", discord: "messages", communication: "send", remote: "monitor", "cosmic-observatory": "orbit", "play-center": "gamepad", "eonwild-game": "paw", "comic-reader": "reader", cinema: "clapper", "music-library": "headphones", patin: "orbit", fortune: "moon",
     work: "briefcase", "davinci-resolve": "sliders", dev: "code", insights: "chart", copyright: "copyright", learn: "graduation", "focus-room": "timer", "study-together": "messages", english: "english", japanese: "japanese", chinese: "chinese", "phat-phap": "dharma",
-    admin: "crown", system: "settings", support: "heart"
+    university: "graduation", "higher-education": "graduation", admin: "crown", system: "settings", support: "heart"
   });
   const sidebarIconMarkup = (id) => `<svg class="app-sidebar__svg-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">${sidebarIconPaths[sidebarIconNames[id] || "sparkles"]}</svg>`;
   const normalizeSidebarSearch = (value = "") => String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
@@ -7265,6 +7278,10 @@ function initAppShell() {
   const renderRoute = () => {
     if (!isUnlocked()) return;
     let route = routeFromHash();
+    if (route.split("?")[0] === "/learn/university") {
+      route = "/university/study";
+      history.replaceState({}, document.title, `${location.pathname}${location.search}#${route}`);
+    }
     if (route === "/cosmic-observatory" || route.startsWith("/cosmic-observatory/")) {
       route = `/universe${route.slice("/cosmic-observatory".length)}`;
       history.replaceState({}, document.title, `${location.pathname}${location.search}#${route}`);
@@ -7339,6 +7356,7 @@ function initAppShell() {
     document.body.classList.toggle("app-dev-tools-route", route === "/dev-tools" || route.startsWith("/dev-tools/"));
     document.body.classList.toggle("app-all-tools-route", route === "/tools" || route.startsWith("/tools/"));
     document.body.classList.toggle("app-learning-route", (route === "/learn" || route.startsWith("/learn/")) && activeGroup?.id !== "study-together");
+    document.body.classList.toggle("app-university-route", route.split("?")[0] === "/university" || route.startsWith("/university/"));
     document.body.classList.toggle("app-study-together-route", activeGroup?.id === "study-together");
     document.body.classList.toggle("app-focus-study-route", route === "/focus-room");
     document.body.classList.toggle("app-english-route", route === "/english" || route.startsWith("/english/"));
@@ -7407,6 +7425,7 @@ function initAppShell() {
     if (route !== "/communication") window.HHCommunicationOverview?.unmount?.();
     const communicationView = route === "/communication" ? "command-center" : route.split("/").filter(Boolean)[1];
     if (!(route === "/communication" || window.HHCommunicationSuite?.supports?.(communicationView))) window.HHCommunicationSuite?.unmount?.();
+    window.HHUniversity?.unmount?.();
     const learningView = route === "/learn" ? "today" : route.split("/").filter(Boolean)[1];
     if (!(route === "/learn" || window.HHSchool?.supports?.(learningView))) window.HHSchool?.unmount?.();
     if (route !== "/system") window.HHSystemPlatform?.unmount?.();
@@ -7712,10 +7731,16 @@ function initAppShell() {
       else mountSimpleView("Học cùng nhau", "Không tải được module phòng học.", '<button type="button" data-shell-retry-route>Thử lại</button>');
       remember("study-together");
       remember("learn");
+    } else if (routePath === "/university" || routePath.startsWith("/university/")) {
+      updatePageHeader("HH University", "Trường, ngành, chương trình và điểm chuẩn đại học/cao đẳng Việt Nam từ2020 đến2026.", route);
+      pageActions.innerHTML = "";
+      workspace.innerHTML = '<div data-hh-university-host></div>';
+      if (window.HHUniversity?.mount) window.HHUniversity.mount(workspace.firstElementChild, { route, currentUser: readCurrentAuthUser() });
+      else mountSimpleView("Đại học", "Chưa tải được danh mục trường.", '<button type="button" data-shell-retry-route>Thử lại</button>');
     } else if (route === "/learn" || (route.startsWith("/learn/") && window.HHSchool?.supports?.(parts[1]))) {
       const learningRouteView = route === "/learn" ? "today" : parts[1];
       const learningMeta = window.HHSchool?.views?.[window.HHSchool?.normalizeView?.(learningRouteView) || learningRouteView];
-      updatePageHeader(learningMeta?.title || "HH School", "Học tập phổ thông và đại học: nội dung nguyên bản, chương trình có nguồn và tiến độ theo bài làm.", route);
+      updatePageHeader(learningMeta?.title || "HH School", "Học tập lớp1–12: nội dung nguyên bản, luyện tập và tiến độ theo bài làm.", route);
       pageActions.innerHTML = `<button type="button" data-app-route="/learn/practice">Luyện tập</button><button class="app-primary-action" type="button" data-app-route="/learn/today">Hôm nay</button>`;
       workspace.innerHTML = '<div data-hh-school-shell></div>';
       if (window.HHSchool?.mount) window.HHSchool.mount(workspace.firstElementChild, {

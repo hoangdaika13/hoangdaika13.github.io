@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-10-28",
+  "excludedInstitutions": [
+    {
+      "id": "vn-colleges-5717bb56f92e5f",
+      "reason": "Brighton College Vietnam is a school for ages 3–18, not a Vietnamese university or vocational college.",
+      "evidenceUrl": "https://brightoncollege.edu.vn/"
+    },
+    {
+      "id": "vn-colleges-b9ed662a38e586",
+      "reason": "Source name explicitly identifies a trung cấp institution; outside the requested university/college directory.",
+      "evidenceUrl": "https://caodang.com.vn/danh-ba-truong"
+    }
+  ],
+  "levelRule": "Cao đẳng, CĐ and College catalogue entries are college level; 'College' alone never establishes university status. Historical entries and branches are retained with unknown operating status.",
+  "nationalRegisterVerifiedComplete": false
+}

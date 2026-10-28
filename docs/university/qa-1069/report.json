@@ -1,0 +1,177 @@
+{
+  "schemaVersion": 1,
+  "release": 1069,
+  "checkedAt": "2026-10-28T07:18:41.583Z",
+  "baseCommit": "b13619ad37de10c88f4ba2b85e208cd6407aad38",
+  "tests": {
+    "total": 500,
+    "suites": [
+      {
+        "suite": "learning",
+        "tests": 130,
+        "passed": 130,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "all-tools",
+        "tests": 241,
+        "passed": 241,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "security-full",
+        "tests": 107,
+        "passed": 107,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "focused",
+        "tests": 22,
+        "passed": 22,
+        "failed": 0,
+        "skipped": 0
+      }
+    ]
+  },
+  "syntax": {
+    "count": 17,
+    "files": [
+      "hh-core-gateway.js",
+      "hh-school.js",
+      "performance-loader.js",
+      "script.js",
+      "sw.js",
+      "tests/hh-school-integration.test.js",
+      "hh-university-core.js",
+      "hh-university-data.js",
+      "hh-university-manifest.js",
+      "hh-university.js",
+      "scripts/build-hh-university.js",
+      "scripts/hh-university-reference.js",
+      "scripts/import-hh-university-official.js",
+      "scripts/import-hh-university.js",
+      "scripts/qa-hh-university.js",
+      "scripts/report-hh-university.js",
+      "tests/hh-university.test.js"
+    ]
+  },
+  "browser": {
+    "native": "Chromium via Playwright",
+    "cases": 9,
+    "errors": 0,
+    "themes": 16,
+    "contrastChecks": 2080,
+    "contrastFailures": 0,
+    "widths": [
+      375,
+      768,
+      1440
+    ],
+    "DPR": 2,
+    "zoom": "200%",
+    "backend": "Explicit503availability fixture;no private production account writes",
+    "offline": "Real ServiceWorker and previously opened directory/school/year packs"
+  },
+  "coverage": {
+    "institutions": 959,
+    "universities": 327,
+    "colleges": 632,
+    "majors": 12337,
+    "programmes": 21286,
+    "scoreRows": 119621,
+    "schoolsWithProgrammes": 586,
+    "schoolsWithScores": 309,
+    "officialReferenceInstitutions": 224,
+    "officialProgrammeReferences": 1744,
+    "fullyVerifiedNationalRegister": false,
+    "years": {
+      "2020": {
+        "rows": 7694,
+        "schools": 255
+      },
+      "2021": {
+        "rows": 11334,
+        "schools": 258
+      },
+      "2022": {
+        "rows": 10470,
+        "schools": 269
+      },
+      "2023": {
+        "rows": 13008,
+        "schools": 270
+      },
+      "2024": {
+        "rows": 18924,
+        "schools": 289
+      },
+      "2025": {
+        "rows": 25904,
+        "schools": 285
+      },
+      "2026": {
+        "rows": 32287,
+        "schools": 276
+      }
+    }
+  },
+  "screenshots": [
+    {
+      "file": "directory-desktop.png",
+      "sha256": "0222a6fa2ea02a233396f5189dc426c45c469e9574740e16dbe38001d9d38b6f",
+      "bytes": 1382804
+    },
+    {
+      "file": "uit-programmes.png",
+      "sha256": "fc122481089e4e06382ba59e5bf85778a8379863d587105c800384bd7b49c6ab",
+      "bytes": 1245417
+    },
+    {
+      "file": "uit-curriculum.png",
+      "sha256": "eb6ae67cc0c9e527973b6bb251dc641ac57d0b67269c67b1c155f5b83a50901e",
+      "bytes": 1252013
+    },
+    {
+      "file": "uit-scores-2026.png",
+      "sha256": "8400bb0760abe304e67ad83318b412b1bc202736df5cddc7fa5d0407ff4d3e02",
+      "bytes": 1280271
+    },
+    {
+      "file": "uit-history.png",
+      "sha256": "4f270516831de2d2763bf2945769f9c62de27762c2d30bfc982d09ff4d77b62b",
+      "bytes": 1113991
+    },
+    {
+      "file": "scores-light.png",
+      "sha256": "4995d2f48199aacc09a0f3d873db64a5d29227edae2f0b7e3e515090521fb8a9",
+      "bytes": 917688
+    },
+    {
+      "file": "saved-375.png",
+      "sha256": "279a6f1c5137c5a9d16859228561701a25744d23633e6e742d3b9ad1c27a24a8",
+      "bytes": 336638
+    },
+    {
+      "file": "scores-zoom200.png",
+      "sha256": "f66040a222d809de980aa678dd33b624d21f3d27180782becbaba04dc627498b",
+      "bytes": 181672
+    },
+    {
+      "file": "college-programmes.png",
+      "sha256": "1b112c46dfadeef3988560a00ccba089ab29629700b9ce98b2cde42143a138f2",
+      "bytes": 1261185
+    }
+  ],
+  "limits": [
+    "Not a verified complete national register of current institutions.",
+    "Admission programme variants are separate from complete syllabi.",
+    "Most score rows do not explicitly state their scale; it remains unknown.",
+    "MoET accreditation references include historical periods and do not certify present operating or accreditation status.",
+    "Two UIT course-code tables only; complete syllabi for all institutions remain unavailable.",
+    "Current dependency audit CI already fails before this release.",
+    "Deployment verification must occur after push."
+  ]
+}

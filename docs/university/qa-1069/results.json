@@ -1,0 +1,209 @@
+{
+  "at": "2026-10-28T07:14:15.949Z",
+  "results": [
+    {
+      "navigation": "Independent University category and route;24school cards per page;K12 is not mounted",
+      "catalogue": 959
+    },
+    {
+      "programmes": "Native school selection and expandable programme variants",
+      "scores2026": "Separate30and100scales remain visible for UIT combined admission"
+    },
+    {
+      "history": "Actual2020record27.2;method filter;all7year columns;CSV download retains decimals and source"
+    },
+    {
+      "saved": "Bookmark survives real reload;new saved route lists selected school"
+    },
+    {
+      "responsive": "375/768/1440,DPR2,zoom200,scrollable score table and keyboard focus"
+    },
+    {
+      "college": "Cao Đẳng Cộng Đồng Lai Châu",
+      "missingData": "School with no records displays missing-data state,not score0"
+    },
+    {
+      "migration": "K12 no longer contains University tab;legacy URL redirects;existing university study note persists across modules"
+    },
+    {
+      "offline": "Real Service Worker retains visited directory,school and2020pack through offline reload;no unvisited data promised"
+    },
+    {
+      "themes": 16,
+      "contrastChecks": 2080,
+      "pageErrors": 0
+    }
+  ],
+  "errors": [],
+  "assets": [
+    {
+      "url": "/hh-university.css?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-core.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-manifest.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-data.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/directory.json?v=4004393838bb",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/schools/vn-ts-313.json?v=204f8e93d354",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/scores/vn-ts-313/2026.json?v=2510c0e0e58f",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/scores/vn-ts-313/2020.json?v=ecdd70bf5625",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/scores/vn-ts-313/2021.json?v=573bc9072d6b",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/scores/vn-ts-313/2022.json?v=9fb681f9b55a",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/scores/vn-ts-313/2023.json?v=1a50f37eb7bd",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/scores/vn-ts-313/2024.json?v=6292efc85278",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/scores/vn-ts-313/2025.json?v=86f6e4404a8d",
+      "status": 200
+    },
+    {
+      "url": "/hh-university.css?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-core.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-manifest.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-data.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/directory.json?v=4004393838bb",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/schools/vn-ts-313.json?v=204f8e93d354",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/scores/vn-ts-313/2020.json?v=ecdd70bf5625",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/scores/vn-ts-313/2026.json?v=2510c0e0e58f",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/schools/vn-hocmai-43e44d163aa996.json?v=b34ca163e311",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/schools/vn-hocmai-fa990d8702c9b1.json?v=a6ff736b02d4",
+      "status": 200
+    },
+    {
+      "url": "/hh-university.css?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-core.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-manifest.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-data.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/directory.json?v=4004393838bb",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/schools/vn-ts-313.json?v=204f8e93d354",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/scores/vn-ts-313/2020.json?v=ecdd70bf5625",
+      "status": 200
+    },
+    {
+      "url": "/hh-university.css?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-core.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-manifest.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-data.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/directory.json?v=4004393838bb",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/schools/vn-ts-313.json?v=204f8e93d354",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/scores/vn-ts-313/2020.json?v=ecdd70bf5625",
+      "status": 200
+    }
+  ],
+  "environment": {
+    "browser": "Native Chromium",
+    "backend": "Explicit availability503fixture;no production account writes",
+    "source": "Pinned catalogue facts;no browser requests to source aggregators"
+  }
+}

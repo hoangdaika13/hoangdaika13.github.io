@@ -9,3 +9,5 @@ vendor/monaco-0.55.1/** -text -whitespace
 data/hh-school/curriculum/*.json text eol=lf
 data/hh-school/university/*.json text eol=lf
 data/hh-school/university/courses/*.json text eol=lf
+data/hh-university/**/*.json text eol=lf
+data/hh-university/*.json text eol=lf
