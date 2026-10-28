@@ -66,6 +66,7 @@
     "/admin",
     "/learn",
     "/university",
+    "/vietnam-law",
     "/focus-room",
     "/english",
     "/japanese",

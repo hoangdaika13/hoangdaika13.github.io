@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-10-28",
+  "scope": "Only listed fields transcribed from the linked official sources; no claim of current legal validity.",
+  "records": {
+    "41329": {
+      "expectedCode": "31/2024/QH15",
+      "fields": {"title": "Luật Đất đai", "summary": "Luật Đất đai", "type": "Luật", "issuedAt": "2024-01-18", "signer": "Vương Đình Huệ"},
+      "sourceUrl": "https://vanban.chinhphu.vn/?pageid=27160&docid=211189",
+      "pdfUrl": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2024/7/41329/49226-1-2024363-36431-2024-qh15.pdf",
+      "note": "Thuộc tính Công báo đang nhầm trích yếu, loại và ngày ban hành. Đối chiếu trang thuộc tính Chính phủ và phần đầu PDF gốc; giữ thuộc tính nguồn trước hiệu chỉnh để kiểm toán. Không thay đổi hoặc suy đoán tình trạng hiệu lực."
+    }
+  }
+}

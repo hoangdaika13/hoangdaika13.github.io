@@ -1,6 +1,10 @@
 {
   "version": 2,
   "functions": {
+    "api/modules/*/actions.js": {
+      "maxDuration": 30,
+      "includeFiles": "{data/hh-vietnam-law/**,node_modules/pdfjs-dist/legacy/build/**,node_modules/pdfjs-dist/package.json,node_modules/pdfjs-dist/LICENSE,node_modules/parse5/**,node_modules/entities/**,node_modules/@napi-rs/canvas*/**}"
+    },
     "api/**/*.js": {
       "maxDuration": 30
     }
@@ -13,6 +17,10 @@
     {
       "path": "/api/open-media/notices?cron=notification-recovery",
       "schedule": "25 2 * * *"
+    },
+    {
+      "path": "/api/vietnam-law/sync",
+      "schedule": "35 2 * * *"
     }
   ],
   "rewrites": [
@@ -31,6 +39,10 @@
     {
       "source": "/api/social-media/webhooks/:provider",
       "destination": "/api/modules/social-media-tools/actions?socialResource=webhooks&provider=:provider"
+    },
+    {
+      "source": "/api/vietnam-law/:resource",
+      "destination": "/api/modules/vietnam-law/actions?lawResource=:resource"
     },
     {
       "source": "/api/education/:resource",

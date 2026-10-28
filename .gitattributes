@@ -11,3 +11,5 @@ data/hh-school/university/*.json text eol=lf
 data/hh-school/university/courses/*.json text eol=lf
 data/hh-university/**/*.json text eol=lf
 data/hh-university/*.json text eol=lf
+data/hh-vietnam-law/**/*.json text eol=lf
+data/hh-vietnam-law/*.json text eol=lf

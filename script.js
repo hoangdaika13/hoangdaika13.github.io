@@ -5748,6 +5748,16 @@ function initAppShell() {
       ]
     },
     { id: "study-together", label: "Học cùng nhau", icon: "◉", accent: "#71e8e2", route: "/learn/study-together", items: [] },
+    { id: "vietnam-law", label: "Pháp Luật Việt Nam", icon: "§", accent: "#67dbc1", route: "/vietnam-law", items: [], pages: [
+      { id: "home", title: "Trang chủ pháp luật", route: "/vietnam-law" },
+      { id: "library", title: "Kho văn bản pháp luật", route: "/vietnam-law/library" },
+      { id: "articles", title: "Tra cứu điều, khoản, điểm", route: "/vietnam-law/articles" },
+      { id: "fields", title: "Lĩnh vực pháp luật", route: "/vietnam-law/fields" },
+      { id: "status", title: "Theo dõi hiệu lực", route: "/vietnam-law/status" },
+      { id: "ask", title: "AI hỏi đáp pháp luật", route: "/vietnam-law/ask" },
+      { id: "updates", title: "Cập nhật & nguồn", route: "/vietnam-law/updates" },
+      { id: "saved", title: "Văn bản đã lưu", route: "/vietnam-law/saved" }
+    ] },
     { id: "university", label: "Đại học & Cao đẳng", icon: "◫", accent: "#67dbc1", route: "/university", items: [], pages: [
       { id: "schools", title: "Trường & ngành", route: "/university" },
       { id: "scores", title: "Điểm chuẩn 2020–2026", route: "/university/scores" },
@@ -5878,6 +5888,9 @@ function initAppShell() {
       groupIds: ["learn", "focus-room", "study-together", "english", "japanese", "chinese", "phat-phap"]
     },
     {
+      id: "vietnam-law-hub", label: "Pháp Luật Việt Nam", icon: "§", accent: "#67dbc1", accentSecondary: "#699cff", groupIds: ["vietnam-law"]
+    },
+    {
       id: "higher-education",
       label: "Đại học & Cao đẳng",
       icon: "◫",
@@ -5979,7 +5992,7 @@ function initAppShell() {
     "chat-ai": "bot", create: "wand", draw: "brush", "music-ai": "music", "comic-motion": "panels", "media-design": "image", "graphic-design": "pen",
     google: "search", "youtube-main": "video", discord: "messages", communication: "send", remote: "monitor", "cosmic-observatory": "orbit", "play-center": "gamepad", "eonwild-game": "paw", "comic-reader": "reader", cinema: "clapper", "music-library": "headphones", patin: "orbit", fortune: "moon",
     work: "briefcase", "davinci-resolve": "sliders", dev: "code", insights: "chart", copyright: "copyright", learn: "graduation", "focus-room": "timer", "study-together": "messages", english: "english", japanese: "japanese", chinese: "chinese", "phat-phap": "dharma",
-    university: "graduation", "higher-education": "graduation", admin: "crown", system: "settings", support: "heart"
+    "vietnam-law": "book", "vietnam-law-hub": "book", university: "graduation", "higher-education": "graduation", admin: "crown", system: "settings", support: "heart"
   });
   const sidebarIconMarkup = (id) => `<svg class="app-sidebar__svg-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">${sidebarIconPaths[sidebarIconNames[id] || "sparkles"]}</svg>`;
   const normalizeSidebarSearch = (value = "") => String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
@@ -6873,8 +6886,8 @@ function initAppShell() {
   const updatePageHeader = (title, description, route, module) => {
     pageHeader.querySelector("h1").textContent = title;
     pageHeader.querySelector("p:not(.app-page-header__eyebrow)").textContent = description;
-    const crumbs = route.split("/").filter(Boolean);
-    const crumbLabels = { home: "Trang chủ", universe: "Vũ trụ", observatory: "Đài quan sát", dsn: "Liên lạc DSN", surfaces: "Bề mặt hành tinh", timeline: "Dòng thời gian Vũ trụ", learning: "Phòng học thiên văn", create: "Sáng tạo", draw: "Vẽ", remote: "Remote", "chat-ai": "Chat AI", google: "Google", youtube: "YouTube", discord: "Discord", "music-ai": "Làm nhạc AI", music: "Nhạc", cinema: "Phim", copyright: "Bản quyền", fortune: "Xem bói", "phat-phap": "Phật Pháp", beginner: "Lộ trình tu học", situations: "Pháp học đời sống", teachings: "Giáo lý", scriptures: "Canonical Reader", research: "Tìm kiếm học thuật", scholar: "Scholar & OCR Lab", glossary: "Từ điển Phật học", map: "Bản đồ giáo pháp", provenance: "Editorial & Trust Center", practice: "Thiền đường số", rituals: "Nghi thức căn bản", chanting: "Phòng tụng niệm", audio: "Thư viện nghe", schedule: "Lịch tu học", temple: "Trung tâm Phật sự Việt Nam", vietnam: "Phật giáo Việt Nam", profile: "Hồ sơ tu học", request: "Thỉnh kinh", talks: "Pháp thoại Observatory", circles: "Nhóm đọc riêng tư", qna: "HH Phật học có nguồn", journal: "Nhật ký mã hóa", accessibility: "Trợ năng", "data-control": "Tủ dữ liệu", "davinci-resolve": "Tool", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", analytics: "Phân tích", admin: "Admin Panel", learn: "Học tập", "focus-room": "Phòng học tập trung", paths: "Lộ trình cá nhân", mastery: "Skill Graph", review: "Smart Review", mistakes: "Mistake Notebook", lesson: "Lesson Player", coach: "AI Learning Coach", assessments: "Kiểm tra & Chứng chỉ", classroom: "Classroom", "study-together": "Study Together", passport: "Learning Passport", english: "HH English", japanese: "HH Japanese", chinese: "HH Chinese", dictionary: "Từ điển", kanji: "Kanji", grammar: "Ngữ pháp", reader: "Đọc hiểu", jlpt: "Luyện JLPT", notebook: "Sổ tay & SRS", conversation: "Hội thoại", galaxy: "English Galaxy", lab: "19 chế độ học", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
+    const crumbs = route.split("?")[0].split("/").filter(Boolean);
+    const crumbLabels = { "vietnam-law": "Pháp Luật Việt Nam", university: "Đại học & Cao đẳng", home: "Trang chủ", universe: "Vũ trụ", observatory: "Đài quan sát", dsn: "Liên lạc DSN", surfaces: "Bề mặt hành tinh", timeline: "Dòng thời gian Vũ trụ", learning: "Phòng học thiên văn", create: "Sáng tạo", draw: "Vẽ", remote: "Remote", "chat-ai": "Chat AI", google: "Google", youtube: "YouTube", discord: "Discord", "music-ai": "Làm nhạc AI", music: "Nhạc", cinema: "Phim", copyright: "Bản quyền", fortune: "Xem bói", "phat-phap": "Phật Pháp", beginner: "Lộ trình tu học", situations: "Pháp học đời sống", teachings: "Giáo lý", scriptures: "Canonical Reader", research: "Tìm kiếm học thuật", scholar: "Scholar & OCR Lab", glossary: "Từ điển Phật học", map: "Bản đồ giáo pháp", provenance: "Editorial & Trust Center", practice: "Thiền đường số", rituals: "Nghi thức căn bản", chanting: "Phòng tụng niệm", audio: "Thư viện nghe", schedule: "Lịch tu học", temple: "Trung tâm Phật sự Việt Nam", vietnam: "Phật giáo Việt Nam", profile: "Hồ sơ tu học", request: "Thỉnh kinh", talks: "Pháp thoại Observatory", circles: "Nhóm đọc riêng tư", qna: "HH Phật học có nguồn", journal: "Nhật ký mã hóa", accessibility: "Trợ năng", "data-control": "Tủ dữ liệu", "davinci-resolve": "Tool", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", analytics: "Phân tích", admin: "Admin Panel", learn: "Học tập", "focus-room": "Phòng học tập trung", paths: "Lộ trình cá nhân", mastery: "Skill Graph", review: "Smart Review", mistakes: "Mistake Notebook", lesson: "Lesson Player", coach: "AI Learning Coach", assessments: "Kiểm tra & Chứng chỉ", classroom: "Classroom", "study-together": "Study Together", passport: "Learning Passport", english: "HH English", japanese: "HH Japanese", chinese: "HH Chinese", dictionary: "Từ điển", kanji: "Kanji", grammar: "Ngữ pháp", reader: "Đọc hiểu", jlpt: "Luyện JLPT", notebook: "Sổ tay & SRS", conversation: "Hội thoại", galaxy: "English Galaxy", lab: "19 chế độ học", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
     Object.assign(crumbLabels, { play: "HH Play", arcade: "Arcade Galaxy", party: "Party Room", watch: "Watch Party", story: "Story Universe", escape: "Escape Room", rhythm: "Rhythm Arena", pet: "HH Virtual Pet", chill: "Chill Rooms", quiz: "Quiz Arena", game: "Game · EonWild", world: "Thế giới sống", species: "Eon Codex", ecosystem: "Lưới sinh thái", timeline: "Eon Atlas", expeditions: "Thám hiểm", lineage: "Dòng gene", observer: "Observer & Replay", network: "Multiplayer Readiness" });
     if (route === "/universe/timeline" || route.startsWith("/universe/timeline/")) crumbLabels.timeline = "Dòng thời gian Vũ trụ";
     crumbLabels["social-media-tools"] = "Công cụ truyền thông xã hội";
@@ -6885,11 +6898,12 @@ function initAppShell() {
     if (crumbs[0] === "patin") Object.assign(crumbLabels, { patin: "Patin", videos: "Học qua video", map: "Bản đồ nền tảng", competition: "Thi đấu", routine: "Tổ hợp & chuẩn bị", skills: "Kỹ năng", disciplines: "Bộ môn", speed: "Speed", slide: "Slide", slalom: "Slalom", studio: "Minh họa", path: "Lộ trình", gear: "Giày & an toàn", journal: "Nhật ký tập", resources: "Tra cứu" });
     const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIAllPageItems, ...workGalaxyPageItems, ...davinciResolvePages];
     const routeTools = crumbs[0] === "patin" ? (groups.find((item) => item.id === "patin")?.pages || []) : crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIAllPageItems : crumbs[0] === "davinci-resolve" ? davinciResolvePages : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "graphic-design" ? graphicDesignPages : crumbs[0] === "dev-tools" ? developerAllToolItems : crumbs[0] === "work" ? workGalaxyPageItems : knownTools;
+    const lawCrumbs = { library: "Kho văn bản", articles: "Tra cứu điều luật", fields: "Lĩnh vực", status: "Hiệu lực", ask: "Hỏi đáp AI", updates: "Cập nhật", saved: "Đã lưu", document: "Văn bản" };
     let crumbRoute = "";
     breadcrumb.innerHTML = route === "/home" ? `<button type="button" data-app-route="/platform">HH Platform</button><span aria-hidden="true">›</span><button type="button" aria-current="page">HH Galaxy</button>` : [`<button type="button" data-app-route="/platform">HH Platform</button>`, ...crumbs.map((crumb, index) => {
       crumbRoute += `/${crumb}`;
       const isCurrent = index === crumbs.length - 1;
-      const label = isCurrent && module?.title ? module.title : routeTools.find((item) => item.id === crumb)?.title || crumbLabels[crumb] || crumb;
+      const label = isCurrent && module?.title ? module.title : (crumbs[0] === "vietnam-law" && lawCrumbs[crumb]) || routeTools.find((item) => item.id === crumb)?.title || crumbLabels[crumb] || crumb;
       return `<span aria-hidden="true">›</span><button type="button" ${isCurrent ? "aria-current=page" : `data-app-route="${safeText(crumbRoute)}"`}>${safeText(label)}</button>`;
     })].join("");
     pageActions.innerHTML = module ? `<button type="button" data-app-route="/tools">Tất cả công cụ</button><button class="app-primary-action" type="button" data-shell-favorite="${module.id}">☆ Yêu thích</button>` : "";
@@ -7356,6 +7370,7 @@ function initAppShell() {
     document.body.classList.toggle("app-dev-tools-route", route === "/dev-tools" || route.startsWith("/dev-tools/"));
     document.body.classList.toggle("app-all-tools-route", route === "/tools" || route.startsWith("/tools/"));
     document.body.classList.toggle("app-learning-route", (route === "/learn" || route.startsWith("/learn/")) && activeGroup?.id !== "study-together");
+    document.body.classList.toggle("app-vietnam-law-route", route.split("?")[0] === "/vietnam-law" || route.startsWith("/vietnam-law/"));
     document.body.classList.toggle("app-university-route", route.split("?")[0] === "/university" || route.startsWith("/university/"));
     document.body.classList.toggle("app-study-together-route", activeGroup?.id === "study-together");
     document.body.classList.toggle("app-focus-study-route", route === "/focus-room");
@@ -7426,6 +7441,7 @@ function initAppShell() {
     const communicationView = route === "/communication" ? "command-center" : route.split("/").filter(Boolean)[1];
     if (!(route === "/communication" || window.HHCommunicationSuite?.supports?.(communicationView))) window.HHCommunicationSuite?.unmount?.();
     window.HHUniversity?.unmount?.();
+    window.HHVietnamLaw?.unmount?.();
     const learningView = route === "/learn" ? "today" : route.split("/").filter(Boolean)[1];
     if (!(route === "/learn" || window.HHSchool?.supports?.(learningView))) window.HHSchool?.unmount?.();
     if (route !== "/system") window.HHSystemPlatform?.unmount?.();
@@ -7731,6 +7747,12 @@ function initAppShell() {
       else mountSimpleView("Học cùng nhau", "Không tải được module phòng học.", '<button type="button" data-shell-retry-route>Thử lại</button>');
       remember("study-together");
       remember("learn");
+    } else if (routePath === "/vietnam-law" || routePath.startsWith("/vietnam-law/")) {
+      updatePageHeader("Pháp Luật Việt Nam", "Tra cứu văn bản, điều khoản và nguồn pháp luật chính thức.", route);
+      pageActions.innerHTML = "";
+      workspace.innerHTML = '<div data-hh-vietnam-law-host></div>';
+      if (window.HHVietnamLaw?.mount) window.HHVietnamLaw.mount(workspace.firstElementChild, { route, currentUser: readCurrentAuthUser() });
+      else mountSimpleView("Pháp Luật Việt Nam", "Chưa tải được kho pháp luật.", '<button type="button" data-shell-retry-route>Thử lại</button>');
     } else if (routePath === "/university" || routePath.startsWith("/university/")) {
       updatePageHeader("HH University", "Trường, ngành, chương trình và điểm chuẩn đại học/cao đẳng Việt Nam từ2020 đến2026.", route);
       pageActions.innerHTML = "";

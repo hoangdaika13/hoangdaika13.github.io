@@ -28,7 +28,7 @@
   const groups = Object.freeze({
     brand: {
       styles: [],
-      scripts: ["brand-galaxy-logo.js?v=2", "galaxy-favicon-controller.js?v=2", "hh-core-gateway.js?v=10", "galaxy-shell.js?v=11"]
+      scripts: ["brand-galaxy-logo.js?v=2", "galaxy-favicon-controller.js?v=2", "hh-core-gateway.js?v=11", "galaxy-shell.js?v=11"]
     },
     "auth-effects": {
       /*
@@ -253,6 +253,10 @@
         "hh-school-content.js?v=1", "hh-school-workspace.js?v=4", "hh-school-university-manifest.js?v=1", "hh-school-university-content.js?v=1", "hh-school-university.js?v=1", "hh-school.js?v=11"
       ]
     },
+    "vietnam-law": {
+      styles: ["hh-vietnam-law.css?v=1"],
+      scripts: ["hh-vietnam-law-core.js?v=1", "hh-vietnam-law-manifest.js?v=1", "hh-vietnam-law-data.js?v=1", "hh-vietnam-law.js?v=1"]
+    },
     university: {
       styles: ["hh-university.css?v=1"],
       scripts: ["hh-university-core.js?v=1", "hh-university-manifest.js?v=1", "hh-university-data.js?v=1", "hh-university.js?v=1"]
@@ -428,6 +432,7 @@
     if (value === "/learn/study-together" || value.startsWith("/learn/study-together/")) return ["study-together"];
     if (value === "/learn/university" || value.startsWith("/learn/university/")) return ["learning", "university"];
     if (value === "/university/study" || value.startsWith("/university/study/")) return ["learning", "university"];
+    if (value === "/vietnam-law" || value.startsWith("/vietnam-law/")) return ["vietnam-law"];
     if (value === "/university" || value.startsWith("/university/")) return ["university"];
     if (value.startsWith("/learn")) return ["learning"];
     if (value.startsWith("/english")) return ["english"];

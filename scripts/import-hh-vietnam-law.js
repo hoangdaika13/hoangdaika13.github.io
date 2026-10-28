@@ -1,0 +1,16 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),S=require('../utils/vietnam-law-source');
+const root=path.resolve(__dirname,'..'),output=path.join(root,'.study-local/vietnam-law-1070/candidate');
+const QUERIES=['Bộ luật Dân sự','Bộ luật Hình sự','Bộ luật Lao động','Luật Đất đai','Luật Doanh nghiệp','Luật thuế giá trị gia tăng','Luật Hôn nhân và gia đình','Luật trật tự an toàn giao thông đường bộ','Luật công nghệ thông tin','Luật Dữ liệu','Luật Giáo dục','Luật Bảo hiểm xã hội'];
+const EXACT_CODES=['45/2019/QH14','31/2024/QH15','59/2020/QH14','48/2024/QH15','43/2019/QH14','86/2025/QH15','12/2017/QH14','43/2024/QH15'];
+async function refresh(){
+ fs.mkdirSync(path.join(output,'documents'),{recursive:true});const documents=new Map(),queries=[],fullIds=[],failures=[];
+ const options=await S.options();
+ for(const query of ['',...QUERIES]){const result=await S.search({query,pageSize:query?10:40});queries.push({query,sourceHash:result.sourceHash,checkedAt:result.checkedAt,total:result.total,returned:result.documents.length});for(const d of result.documents)documents.set(d.id,d);if(query&&result.documents[0])fullIds.push(result.documents[0].id);await new Promise(r=>setTimeout(r,180));}
+ for(const code of EXACT_CODES){const result=await S.search({query:code,pageSize:5}),exact=result.documents.find(d=>d.code===code);queries.push({query:code,sourceHash:result.sourceHash,checkedAt:result.checkedAt,total:result.total,returned:result.documents.length,selection:'Exact source code match, not first relevance result'});if(exact){documents.set(exact.id,exact);fullIds.push(exact.id);}}
+ const ids=[...new Set(fullIds)];let completed=0;
+ for(const seed of documents.values()){try{const file=path.join(output,'documents',seed.id+'.json');let value;if(fs.existsSync(file)){value=JSON.parse(fs.readFileSync(file,'utf8'));}if(!value||ids.includes(seed.id)&&!value.textIdentity||seed.id==='41329'&&!value.curation){value=ids.includes(seed.id)?await S.document(seed.id,{timeBudgetMs:20000}):await S.detail(seed.id);fs.writeFileSync(file,JSON.stringify({...seed,...value},null,2)+'\n');}completed++;if(completed%15===0)console.log(JSON.stringify({completed,total:documents.size,fullTexts:ids.length}));}catch(e){failures.push({id:seed.id,error:e.message});}}
+ const audit={schemaVersion:1,checkedAt:new Date().toISOString(),provider:'government-gazette-public-search',sourceUrl:S.ORIGIN,apiUrl:S.API,options,queries,documentIds:[...documents.keys()].filter(id=>fs.existsSync(path.join(output,'documents',id+'.json'))),fullIds:ids,failures,scope:'Bootstrap subset only; the production search proxy queries the full available source catalogue. Text is the original publication PDF, not an automatically consolidated current text.',nationalPortalApiConnected:false};fs.writeFileSync(path.join(output,'audit.json'),JSON.stringify(audit,null,2)+'\n');console.log(JSON.stringify({candidate:path.relative(root,output),documents:audit.documentIds.length,fullTexts:ids.length,failures:failures.length}));if(failures.length)process.exitCode=2;
+}
+if(require.main===module){if(!process.argv.includes('--refresh'))console.log('Use --refresh to create a review candidate; no automatic publication.');else refresh().catch(e=>{console.error(e);process.exitCode=1;});}
+module.exports={QUERIES};

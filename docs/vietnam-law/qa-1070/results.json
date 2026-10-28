@@ -1,0 +1,176 @@
+{
+  "at": "2026-10-28T08:44:34.004Z",
+  "results": [
+    {
+      "navigation": "Independent legal category, eight functional destinations, lazy-loaded workspace",
+      "bootstrap": {
+        "documents": 160,
+        "withArticleText": 19,
+        "articleHeadings": 2930,
+        "completeNationalCorpus": false,
+        "currentStatusVerified": 0
+      }
+    },
+    {
+      "reader": "Search actual code, read Civil Code article16 clause1, original PDF page locator,689article headings"
+    },
+    {
+      "personalState": "Bookmark and note persist after unmount and real reload"
+    },
+    {
+      "relations": "Exact directional source groups and separately labelled observed-source versions;zero links never imply no amendments"
+    },
+    {
+      "drafts": "Search text,date fields and expanded filters survive asynchronous redraw"
+    },
+    {
+      "responsive": "375/768/1440,DPR2,200%zoom,visible forced-colors keyboard focus"
+    },
+    {
+      "ai": "Actual API handler enforces401,valid evidence/page/version citations and502fabricated-citation rejection;provider response is an explicit fixture"
+    },
+    {
+      "sync": "Authorized real sync handler persists latest metadata and source check time in explicit memory DB"
+    },
+    {
+      "fallback": "Official search outage returns labelled timestamped bootstrap subset"
+    },
+    {
+      "ime": "Vietnamese composition and note survive delayed status hydration"
+    },
+    {
+      "lookup": "Real extracted point/clause, missing article state, topic navigation and effective-status subset filters"
+    },
+    {
+      "mobile": "Library cards, filters and AI form remain reachable at375px"
+    },
+    {
+      "recovery": "Future-schema state remains byte-identical and can be downloaded for recovery"
+    },
+    {
+      "offline": "Real Service Worker and checksummed visited PDF-extract pack work after offline reload;live API never cached"
+    },
+    {
+      "cleanup": "University and K12 remain reachable;legal listeners/controllers/timers unmount"
+    },
+    {
+      "themes": 16,
+      "contrastChecks": 2007,
+      "pageErrors": 0,
+      "sourceReads": 10
+    }
+  ],
+  "errors": [],
+  "assets": [
+    {
+      "url": "/hh-vietnam-law.css?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-core.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-manifest.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-data.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-vietnam-law/catalogue.json?v=c9c208d93255",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law.css?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-core.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-manifest.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-data.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-vietnam-law/catalogue.json?v=c9c208d93255",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law.css?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-core.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-manifest.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-data.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-vietnam-law/catalogue.json?v=c9c208d93255",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-vietnam-law/documents/18397.json?v=674e3e09c2bf",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law.css?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-core.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-manifest.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-data.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-vietnam-law/catalogue.json?v=c9c208d93255",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-vietnam-law/documents/18397.json?v=674e3e09c2bf",
+      "status": 200
+    }
+  ],
+  "environment": {
+    "browser": "Native Chromium",
+    "database": "Explicit in-memory DB;real handler",
+    "identity": "Explicit guest/member/admin fixtures;no production writes",
+    "ai": "Explicit valid/invalid provider fixtures;not a live model call"
+  }
+}
