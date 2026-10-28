@@ -1,0 +1,431 @@
+{
+  "at": "2026-10-28T03:07:13.527Z",
+  "results": [
+    {
+      "offline": "Real production Service Worker serves previously visited lesson after native offline reload; note and queued progress survive IndexedDB reload",
+      "status": "New work invalidates old cloud acknowledgement"
+    },
+    {
+      "online": "Production background sync handler uploads only the authenticated learner, returns a confirmed revision, removes queue; UI manual acknowledgement keeps no stale retry",
+      "trigger": "Native Background Sync registration plus CDP dispatch to make OS event scheduling deterministic"
+    },
+    {
+      "hydration": "Fetching an older cloud revision does not erase a local note or falsely label the merged work as synced"
+    },
+    {
+      "queuedLarge": [
+        {
+          "attempts": 1500,
+          "bytes": 778514,
+          "revision": 3
+        }
+      ]
+    },
+    {
+      "remoteAfterLarge": {
+        "revision": 4,
+        "transfers": 1,
+        "parts": 20
+      }
+    },
+    {
+      "largeOffline": "Native Service Worker imports production codec and uploads1500 queued attempts as verified parts; complete download preserves every attempt and the unsent note"
+    }
+  ],
+  "errors": [],
+  "apiCalls": [
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 503,
+      "transportFault": "QA interrupts part2"
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 503,
+      "transportFault": "QA interrupts part2"
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    }
+  ],
+  "environment": "Real Chromium Service Worker, CacheStorage and IndexedDB; unchanged production progress handler; explicit QA identity and in-memory MongoDB transport"
+}

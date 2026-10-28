@@ -1,7 +1,7 @@
 'use strict';
 // Real full application shell and HH School renderer. Backend replies are explicit QA doubles.
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict'),{execFileSync}=require('node:child_process');
-const {chromium}=require(process.env.HH_QA_PLAYWRIGHT||'playwright');const repo=path.resolve(__dirname,'..'),output=path.resolve(repo,process.env.HH_QA_OUTPUT||'.study-local/hh-school-shell-1066');
+const {chromium}=require(process.env.HH_QA_PLAYWRIGHT||'playwright');const repo=path.resolve(__dirname,'..'),output=path.resolve(repo,process.env.HH_QA_OUTPUT||'.study-local/hh-school-shell-1067');
 const head=file=>execFileSync('git',['show','HEAD:'+file],{cwd:repo,maxBuffer:10*1048576});
 const csp=JSON.parse(head('vercel.json')).headers.flatMap(h=>h.headers).find(h=>h.key==='Content-Security-Policy').value;
 const errors=[],blocked=[],results=[],requests=[];let browser;

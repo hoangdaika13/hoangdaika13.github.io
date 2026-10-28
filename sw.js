@@ -1,6 +1,7 @@
-const CACHE = "hh-identity-portal-v1066";
+const CACHE = "hh-identity-portal-v1067";
 // Worker dependencies must be part of its installed script graph.
 if (typeof self.importScripts === "function") self.importScripts("./hh-school-progress-codec.js?v=1");
+// Previous release: hh-identity-portal-v1066; ./performance-loader.js?v=727;
 // Previous release: hh-identity-portal-v1065; ./performance-loader.js?v=726;
 // Previous release: hh-identity-portal-v1064; ./performance-loader.js?v=725;
 // Previous release: hh-identity-portal-v1063; ./performance-loader.js?v=724; ./all-game.js?v=5; ./all-game.css?v=5;
@@ -809,14 +810,14 @@ const RUNTIME_ASSETS = [
   "./hh-school-assessments.js?v=1",
   "./hh-school-content-manifest.js?v=2",
   "./hh-school-content.js?v=1",
-  "./hh-school-workspace.js?v=2",
+  "./hh-school-workspace.js?v=3",
   "./hh-school-core.js?v=6",
   "./hh-school-offline.js?v=5",
   "./hh-school-progress-codec.js?v=1",
   "./hh-school-sync.js?v=5",
   "./hh-school-search-worker.js?v=3",
   "./hh-school-code-worker.js?v=2",
-  "./hh-school.js?v=8",
+  "./hh-school.js?v=9",
   "./study-together.css?v=7",
   "./study-classroom.css?v=1",
   "./study-campus.css?v=1",
@@ -917,7 +918,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=727",
+  "./performance-loader.js?v=728",
   "./auth-platform.js?v=22",
   "./auth-neon-gateway.js?v=35",
   "./script.js?v=295"

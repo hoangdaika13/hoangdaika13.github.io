@@ -86,7 +86,10 @@
     if (!C || !A || !content) return null;
     const base = root.HHSchoolCurriculum, sourcePack = base.packForGrade.bind(base);
     const packCache=new Map();
-    let disposed=false, loadingGrade=0, loadError='', errorGrade=0, controller=null, clock=0, noteTimer=0, examTimer=0, writeNote=null, writeExam=null, speechSequence=0, resultMap=new Map(), cachedPractice=null;
+    let disposed=false, loadingGrade=0, loadError='', errorGrade=0, controller=null, clock=0, noteTimer=0, examTimer=0, writeNote=null, writeExam=null, speechSequence=0, resultMap=new Map(), cachedPractice=null, liveLab=null;
+    // Keep the active lab's native controls and computed model through hydration.
+    // The reference belongs to this workspace and is never reused across accounts.
+    function afterRender(){const form=instance.host.querySelector('[data-school-workspace] [data-hsw-lab]');if(!form)return;const node=form.closest('.hsw-lab'),lessonId=state().activeLessonId,kind=form.dataset.hswLab;if(liveLab?.lessonId===lessonId&&liveLab.kind===kind)node.replaceWith(liveLab.node);else liveLab={lessonId,kind,node};}
     let practiceTimer=0, pendingPractice=new Map();
     const state = () => instance.store.get(), prefs = () => study(state());
     const update = (fn, event='workspace:update') => instance.store.update(s => {s.studyWorkspace=study(s);fn(s.studyWorkspace,s);return s;},event);
@@ -277,7 +280,7 @@
       return false;
     }
     clock=root.setInterval(()=>{if(disposed||instance.view!=='assessments')return;const p=prefs(),s=p.examSessions[p.activeExamId];if(!s||s.status==='submitted')return;const remaining=A.remainingMs(s,Date.now()),output=instance.host.querySelector('[data-hsw-exam-clock]');if(output)output.textContent=clockText(remaining);if(remaining<=0&&s.mode==='mock'&&s.status!=='paused'){flushEdits();mutateExam({type:'tick'});render();}},1000);
-    return Object.freeze({render:draw,beforeRender:flushEdits,click,change,input,submit,ensureGrade,refreshSearch,destroy(){savePractice();disposed=true;controller?.abort();root.clearInterval(clock);root.clearTimeout(noteTimer);root.clearTimeout(examTimer);root.clearTimeout(assignmentTimer);teacherRequest++;editorialRequest++;try{writeExam?.();writeNote?.();writeAssignment?.();}catch{}speechSequence++;root.speechSynthesis?.cancel();if(root.HHSchoolCurriculum===adapter)root.HHSchoolCurriculum=base;}});
+    return Object.freeze({render:draw,beforeRender:flushEdits,afterRender,click,change,input,submit,ensureGrade,refreshSearch,destroy(){savePractice();disposed=true;liveLab=null;controller?.abort();root.clearInterval(clock);root.clearTimeout(noteTimer);root.clearTimeout(examTimer);root.clearTimeout(assignmentTimer);teacherRequest++;editorialRequest++;try{writeExam?.();writeNote?.();writeAssignment?.();}catch{}speechSequence++;root.speechSynthesis?.cancel();if(root.HHSchoolCurriculum===adapter)root.HHSchoolCurriculum=base;}});
   }
   const api=Object.freeze({VERSION,study,permitted,sections,learningPlan,diagramMarkup,questionFields,readAnswer,create});root.HHSchoolWorkspace=api;if(typeof module==='object'&&module.exports)module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);

@@ -1,0 +1,115 @@
+{
+  "release": 1067,
+  "previousRelease": 1066,
+  "verifiedAt": "2026-10-28T03:08:35.593Z",
+  "coverage": {
+    "grades": 12,
+    "catalogueSlots": 168,
+    "subjectsWithDrafts": 146,
+    "draftLessons": 225,
+    "publishedLessons": 0,
+    "officialOutcomeCount": null,
+    "complete": false,
+    "questions": 822
+  },
+  "suites": [
+    {
+      "command": "npm run test:learning",
+      "tests": 119,
+      "passed": 119,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "command": "npm run test:all-tools",
+      "tests": 241,
+      "passed": 241,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "command": "npm run test:security:full",
+      "tests": 107,
+      "passed": 107,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "browsers": [
+    {
+      "name": "workspace",
+      "at": "2026-10-28T03:03:25.794Z",
+      "results": 10,
+      "file": "workspace.json"
+    },
+    {
+      "name": "shell",
+      "at": "2026-10-28T03:03:15.039Z",
+      "results": 8,
+      "file": "shell.json"
+    },
+    {
+      "name": "recovery",
+      "at": "2026-10-28T03:03:27.135Z",
+      "results": 13,
+      "file": "recovery.json"
+    },
+    {
+      "name": "refinement",
+      "at": "2026-10-28T03:06:14.151Z",
+      "results": 5,
+      "file": "refinement.json"
+    },
+    {
+      "name": "offline",
+      "at": "2026-10-28T03:07:13.527Z",
+      "results": 6,
+      "file": "offline.json"
+    },
+    {
+      "name": "classroom",
+      "at": "2026-10-28T03:07:13.516Z",
+      "results": 4,
+      "file": "classroom.json"
+    },
+    {
+      "name": "editorial",
+      "at": "2026-10-28T03:07:15.590Z",
+      "results": 2,
+      "file": "editorial.json"
+    }
+  ],
+  "academicComplete": false,
+  "cloud": {
+    "requestPartBytes": 180000,
+    "maxSnapshotBytes": 33554432,
+    "maxParts": 1024,
+    "publication": "Immutable parts, owner bound per request, hash verification, publication lease and root revision compare-and-set",
+    "verified": "1601 attempts through native forms;1500 queued attempts through native Service Worker with part failure and resume;1800 attempts through production handler tests",
+    "conflictRegression": "A small writer receives the complete multipart winner for stale revisions, concurrent creation and compare-and-set updates; database projections are applied in QA"
+  },
+  "limits": [
+    "225 authored drafts;0 approved;official outcome denominator unknown",
+    "Full Vietnamese textbook/advanced editions and human subject review not completed",
+    "32MB transport limit, no scheduled cleanup of retained cloud snapshots; operating-system retry timing is browser controlled",
+    "Backend QA uses explicit cookie identities and in-memory MongoDB transport; no live private classroom edits"
+  ],
+  "contrast": {
+    "themes": 16,
+    "checks": 760,
+    "failures": 0
+  },
+  "images": [
+    {
+      "file": "percent-after-hydration.png",
+      "bytes": 214699,
+      "sha256": "696b7bdc381f2bba1828737fe2819e9a2cbc57a255d881767b9a34d56cff371c"
+    },
+    {
+      "file": "home-mobile.jpg",
+      "bytes": 109044,
+      "sha256": "a7e062944d88bf984c98bd2dc20a1628656446fc2820e397cb8bc0de33fc3211"
+    }
+  ],
+  "delayedHydration": "Native controls,computed62/100model and keyboard focus survive real backend hydration;another lesson retains its own initial values"
+}

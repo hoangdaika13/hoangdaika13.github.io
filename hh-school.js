@@ -216,12 +216,13 @@
     const view = instance.view;
     const host = instance.host.querySelector("[data-school-workspace]");
     const scrollHost = instance.host.closest(".app-main"); const mainScroll = resetScroll ? 0 : scrollHost?.scrollTop || 0; const workspaceScroll = resetScroll ? 0 : host.scrollTop;
-    const active = instance.host.ownerDocument.activeElement; const focusName = active && instance.host.contains(active) ? active.getAttribute("name") : "";
+    const active = instance.host.ownerDocument.activeElement;
     const renderer = { today: todayView, paths: pathsView, subjects: subjectsView, practice: (s) => practiceView(s, false), assessments: (s) => practiceView(s, true), library: libraryView, progress: progressView, lesson: lessonView, teacher: teacherView, family: familyView, admin: adminView }[view] || todayView;
     const focusForm=active?.closest?.('form'), formAttribute=focusForm&&[...focusForm.attributes].find(a=>a.name.startsWith('data-'));
     const focusIndex=focusForm?[...focusForm.elements].indexOf(active):-1;
     const focusValue=host.contains(active)&&active.matches?.('input:not([type=file]),textarea,select')?{value:active.value,start:active.selectionStart,end:active.selectionEnd,id:active.id}:null;
     host.innerHTML = instance.workspace?.render(view) ?? renderer(state);
+    instance.workspace?.afterRender?.();
     instance.host.querySelectorAll("[data-school-view]").forEach((button) => button.toggleAttribute("aria-current", button.dataset.schoolView === view));
     (root.requestAnimationFrame || ((callback) => setTimeout(callback, 0)))(() => {
       if (!mounted || mounted !== instance) return;
@@ -229,7 +230,7 @@
       const matchingForm=formAttribute?[...host.querySelectorAll('form')].find(f=>f.getAttribute(formAttribute.name)===formAttribute.value):null;
       const field=matchingForm?.elements[focusIndex]||(focusValue?.id?[...host.querySelectorAll('[id]')].find(e=>e.id===focusValue.id):null);
       if(focusValue&&field&&!field.disabled){field.value=focusValue.value;field.focus({preventScroll:true});try{field.setSelectionRange(focusValue.start,focusValue.end);}catch{}}
-      else if(focusName&&active?.isConnected)active.focus?.({preventScroll:true});
+      else if(active?.isConnected&&instance.host.contains(active))active.focus?.({preventScroll:true});
     });
   }
 

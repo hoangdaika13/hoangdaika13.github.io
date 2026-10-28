@@ -1,0 +1,397 @@
+{
+  "at": "2026-10-28T03:07:13.516Z",
+  "results": [
+    {
+      "teacher": "DOM class creation and assignment with a real lesson ID",
+      "handlers": "Production classes/assignments handlers",
+      "enrollment": "Explicit QA database seed for the student, not a claimed invite integration test"
+    },
+    {
+      "student": "Original paragraphs survive draft reload; first submit becomes revision1; a newer device draft survives GET of the older server answer"
+    },
+    {
+      "feedback": "Teacher DOM score72/redo, student retains local revision, resubmits revision2, stale revision1 grade rejected409, teacher returns score91 visible after student reload",
+      "history": "Original paragraphs and prior score/feedback retained by the real handler"
+    },
+    {
+      "permissions": "An unrelated student cannot grade:403, stored score unchanged",
+      "responsive": "Teacher/student375px,DPR2,reduced motion and studentzoom200 with no page overflow"
+    }
+  ],
+  "errors": [],
+  "apiCalls": [
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "classes",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "classes",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "classes",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "classes",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "classes",
+      "method": "POST",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "POST",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "POST",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "PATCH",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "POST",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "PATCH",
+      "actor": "qa-teacher",
+      "status": 409
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "PATCH",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-outsider",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-outsider",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-outsider",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "PATCH",
+      "actor": "qa-outsider",
+      "status": 403
+    }
+  ],
+  "environment": "Headless Chromium native DOM/IndexedDB; explicit QA cookie identities and in-memory MongoDB transport, unchanged production education handlers"
+}

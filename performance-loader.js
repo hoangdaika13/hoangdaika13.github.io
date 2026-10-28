@@ -250,7 +250,7 @@
       scripts: [
         "hh-school-curriculum.js?v=4", "hh-school-offline.js?v=5", "hh-school-core.js?v=6",
         "hh-school-progress-codec.js?v=1", "hh-school-sync.js?v=5", "hh-school-assessments.js?v=1", "hh-school-content-manifest.js?v=2",
-        "hh-school-content.js?v=1", "hh-school-workspace.js?v=2", "hh-school.js?v=8"
+        "hh-school-content.js?v=1", "hh-school-workspace.js?v=3", "hh-school.js?v=9"
       ]
     },
     "focus-study-room": {

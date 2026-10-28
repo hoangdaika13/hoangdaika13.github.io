@@ -6,7 +6,7 @@ const {ObjectId}=require('mongodb');
 const {chromium}=require(process.env.HH_QA_PLAYWRIGHT||'playwright');
 const {createEducationMemoryDB}=require('../tests/helpers/hh-school-memory-db.js');
 const handlers=require('../utils/education-handler.js').__test;
-const repo=path.resolve(__dirname,'..'),out=path.resolve(repo,process.env.HH_QA_OUTPUT||'.study-local/hh-school-editorial-1066');
+const repo=path.resolve(__dirname,'..'),out=path.resolve(repo,process.env.HH_QA_OUTPUT||'.study-local/hh-school-editorial-1067');
 const assets=['hh-school-curriculum','hh-school-offline','hh-school-core','hh-school-progress-codec','hh-school-sync','hh-school-assessments','hh-school-content-manifest','hh-school-content','hh-school-workspace','hh-school'];
 const identities={editor:{id:'qa-editor',_id:'qa-editor',name:'QA editor',educationRole:'content-reviewer',roles:['content-reviewer']},teacher:{id:'qa-teacher',_id:'qa-teacher',name:'QA teacher',educationRole:'teacher',roles:['teacher']},student:{id:'qa-student',_id:'qa-student',name:'QA student',educationRole:'student',roles:['student']},outsider:{id:'qa-outsider',_id:'qa-outsider',name:'QA outsider',educationRole:'student',roles:['student']}};
 const db=createEducationMemoryDB(),results=[],errors=[],apiCalls=[];
@@ -20,7 +20,7 @@ const server=http.createServer(async(req,res)=>{
     const resource=name.split('/').at(-1),handler=handlers[resource],user=userFor(req);res.setHeader('Content-Type','application/json');
     if(!user)return res.writeHead(401).end(JSON.stringify({error:'Explicit QA identity required'}));
     if(!handler)return res.writeHead(503).end(JSON.stringify({error:'QA does not double this service: '+resource}));
-    let text='';for await(const chunk of req)text+=chunk;
+    const requestChunks=[];for await(const chunk of req)requestChunks.push(chunk);const text=Buffer.concat(requestChunks).toString('utf8');
     const body=text?JSON.parse(text):{},query=Object.fromEntries(url.searchParams);
     const response={status(code){res.statusCode=code;return response;},json(data){apiCalls.push({resource,method:req.method,actor:user.id,status:res.statusCode||200});res.end(JSON.stringify(data));return data;}};
     try{return await handler({method:req.method,query,headers:req.headers,url:req.url},response,db,{...user,_id:user.id},body);}catch(error){res.statusCode=error.statusCode||500;apiCalls.push({resource,method:req.method,actor:user.id,status:res.statusCode,error:error.message});return res.end(JSON.stringify({error:error.message,code:error.code}));}
