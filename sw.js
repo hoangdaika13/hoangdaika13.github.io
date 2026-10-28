@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1070";
+const CACHE = "hh-identity-portal-v1071";
+// Previous release: hh-identity-portal-v1070.
 // Previous release: hh-identity-portal-v1069.
 // Previous release: hh-identity-portal-v1068; ./performance-loader.js?v=729; ./script.js?v=296;
 // Worker dependencies must be part of its installed script graph.
@@ -826,11 +827,13 @@ const RUNTIME_ASSETS = [
   "./hh-school-search-worker.js?v=3",
   "./hh-school-code-worker.js?v=2",
   "./hh-school.js?v=11",
-  "./hh-vietnam-law.css?v=1",
-  "./hh-vietnam-law-core.js?v=1",
-  "./hh-vietnam-law-manifest.js?v=1",
+  "./hh-vietnam-law.css?v=2",
+  "./hh-vietnam-law-core.js?v=2",
+  "./hh-vietnam-law-manifest.js?v=2",
   "./hh-vietnam-law-data.js?v=1",
-  "./hh-vietnam-law.js?v=1",
+  "./hh-vietnam-law-pdf-transport.js?v=1",
+  "./hh-vietnam-law-pdf.js?v=1",
+  "./hh-vietnam-law.js?v=2",
   "./hh-university.css?v=1",
   "./hh-university-core.js?v=1",
   "./hh-university-manifest.js?v=1",
@@ -936,10 +939,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=731",
+  "./performance-loader.js?v=732",
   "./auth-platform.js?v=22",
   "./auth-neon-gateway.js?v=35",
-  "./script.js?v=298"
+  "./script.js?v=299"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

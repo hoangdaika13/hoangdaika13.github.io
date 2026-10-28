@@ -13,3 +13,4 @@ data/hh-university/**/*.json text eol=lf
 data/hh-university/*.json text eol=lf
 data/hh-vietnam-law/**/*.json text eol=lf
 data/hh-vietnam-law/*.json text eol=lf
+vendor/pdfjs-law-6.4.299/** -text -whitespace

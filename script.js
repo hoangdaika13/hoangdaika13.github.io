@@ -7188,6 +7188,8 @@ function initAppShell() {
   const hasLiveSameRouteWorkspace = (route) => {
     const routePath = routePathOnly(route);
     if (!routePath || routePath !== routePathOnly(renderedRoute) || routePath !== routePathOnly(activeRoute)) return false;
+    // PDF deep links may change file/page while keeping the same document path.
+    if ((routePath === "/vietnam-law" || routePath.startsWith("/vietnam-law/")) && route !== renderedRoute) return false;
 
     const layerOneHost = connectedWorkspaceHost("[data-hh-galaxy-layer-one-host]");
     if (layerOneHost?.querySelector?.(".hh-galaxy-app")) {
@@ -7748,7 +7750,7 @@ function initAppShell() {
       remember("study-together");
       remember("learn");
     } else if (routePath === "/vietnam-law" || routePath.startsWith("/vietnam-law/")) {
-      updatePageHeader("Pháp Luật Việt Nam", "Tra cứu văn bản, điều khoản và nguồn pháp luật chính thức.", route);
+      updatePageHeader("Pháp Luật Việt Nam", "Đọc PDF trong trang, tra điều khoản và đối chiếu nguồn pháp luật chính thức.", route);
       pageActions.innerHTML = "";
       workspace.innerHTML = '<div data-hh-vietnam-law-host></div>';
       if (window.HHVietnamLaw?.mount) window.HHVietnamLaw.mount(workspace.firstElementChild, { route, currentUser: readCurrentAuthUser() });

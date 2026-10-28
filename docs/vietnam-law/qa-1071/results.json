@@ -1,0 +1,359 @@
+{
+  "at": "2026-10-28T17:42:31.441Z",
+  "results": [
+    {
+      "navigation": "Independent legal category, eight functional destinations, lazy-loaded workspace",
+      "bootstrap": {
+        "documents": 224,
+        "withArticleText": 45,
+        "articleHeadings": 6030,
+        "completeNationalCorpus": false,
+        "currentStatusVerified": 0
+      }
+    },
+    {
+      "reader": "Search actual code, read Civil Code article16 clause1, original PDF page locator,689article headings"
+    },
+    {
+      "personalState": "Bookmark and note persist after unmount and real reload"
+    },
+    {
+      "relations": "Exact directional source groups and separately labelled observed-source versions;zero links never imply no amendments"
+    },
+    {
+      "drafts": "Search text,date fields and expanded filters survive asynchronous redraw"
+    },
+    {
+      "responsive": "375/768/1440,DPR2,200%zoom,visible forced-colors keyboard focus"
+    },
+    {
+      "ai": "Actual API handler enforces401,valid evidence/page/version citations and502fabricated-citation rejection;provider response is an explicit fixture"
+    },
+    {
+      "sync": "Authorized real sync handler persists latest metadata and source check time in explicit memory DB"
+    },
+    {
+      "fallback": "Official search outage returns labelled timestamped bootstrap subset"
+    },
+    {
+      "ime": "Vietnamese composition and note survive delayed status hydration"
+    },
+    {
+      "lookup": "Real extracted point/clause, missing article state, topic navigation and effective-status subset filters"
+    },
+    {
+      "mobile": "Library cards, filters and AI form remain reachable at375px"
+    },
+    {
+      "pdf": "Actual original PDF bytes,embedded canvas and selectable text,deep page4,next/jump/zoom/rotation/fit,multipart file selection and download"
+    },
+    {
+      "pdfProgress": "PDF DOM survives bookmark redraw,explicit deep link overrides resume,read-again card persists after reload,375px fits"
+    },
+    {
+      "readerTools": "Full689article table of contents,article689PDF locator in second file,and issuer/signer/date/source attributes"
+    },
+    {
+      "largePDF": "Publication12/2017/QH14exceeding server text extraction limit renders in embedded browser reader"
+    },
+    {
+      "pdfRecovery": "PDF source failure stays inside website,retry recovers,375pxat200%is contained"
+    },
+    {
+      "recovery": "Future-schema state remains byte-identical and can be downloaded for recovery"
+    },
+    {
+      "offline": "Real Service Worker and checksummed visited PDF-extract pack work after offline reload;live API never cached"
+    },
+    {
+      "cleanup": "University and K12 remain reachable;legal listeners/controllers/timers unmount"
+    },
+    {
+      "themes": 16,
+      "contrastChecks": 3401,
+      "pageErrors": 0,
+      "sourceReads": 11
+    }
+  ],
+  "errors": [],
+  "assets": [
+    {
+      "url": "/hh-vietnam-law.css?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-core.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-manifest.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-data.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-pdf-transport.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-pdf.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-vietnam-law/catalogue.json?v=2f1a019d4b09",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-vietnam-law/documents/18397.json?v=265623642bb0",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law.css?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-core.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-manifest.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-data.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-pdf-transport.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-pdf.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-vietnam-law/catalogue.json?v=2f1a019d4b09",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-vietnam-law/documents/18397.json?v=265623642bb0",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-vietnam-law/documents/41329.json?v=7bc24349c172",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law.css?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-core.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-manifest.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-data.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-pdf-transport.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-pdf.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-vietnam-law/catalogue.json?v=2f1a019d4b09",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-vietnam-law/documents/18397.json?v=265623642bb0",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-vietnam-law/documents/24289.json?v=6c3bfb523ff8",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law.css?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-core.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-manifest.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-data.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-pdf-transport.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-pdf.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-vietnam-law/catalogue.json?v=2f1a019d4b09",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-vietnam-law/documents/18397.json?v=265623642bb0",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law.css?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-core.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-manifest.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-data.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-pdf-transport.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law-pdf.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-vietnam-law.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-vietnam-law/catalogue.json?v=2f1a019d4b09",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-vietnam-law/documents/18397.json?v=265623642bb0",
+      "status": 200
+    }
+  ],
+  "pdfEvidence": [
+    {
+      "id": "18397",
+      "attachmentId": "12965",
+      "sourceUrl": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2015/11/18397/12965-1-912015qh1313017pdf",
+      "sha256": "e8a97fb2f060f944a7d87716176de06e9fbd1d8049006797fea8185f253b5a6e",
+      "bytes": 1324726,
+      "matchedPinnedHash": true
+    },
+    {
+      "id": "18397",
+      "attachmentId": "12968",
+      "sourceUrl": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2015/11/18397/12968-1-912015qh1313019pdf",
+      "sha256": "05e02a81f61ac6b110e5835a37acf6bc8ba5fd9d8e984cf9b6b023a9e960da5b",
+      "bytes": 863227,
+      "matchedPinnedHash": true
+    },
+    {
+      "id": "41329",
+      "attachmentId": "49226",
+      "sourceUrl": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2024/7/41329/49226-1-2024363-36431-2024-qh15.pdf",
+      "sha256": "2558044082ee768192a311aee548eb9fae4daada546013aa5181eb91c8842637",
+      "bytes": 1338272,
+      "matchedPinnedHash": true
+    },
+    {
+      "id": "41329",
+      "attachmentId": "49029",
+      "sourceUrl": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2024/7/41329/49029-1-2024365-36631-2024-qh15.pdf",
+      "sha256": "651797458d2399fd70cd5b4d3edb3845d223540fa34d82f826718c248aca619e",
+      "bytes": 1310044,
+      "matchedPinnedHash": true
+    },
+    {
+      "id": "41329",
+      "attachmentId": "49032",
+      "sourceUrl": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2024/7/41329/49032-1-2024367-36831-2024-qh15.pdf",
+      "sha256": "6f679f5043ac94fec88ec6f565131faf7aacc819290191069f80799b60d294d0",
+      "bytes": 905865,
+      "matchedPinnedHash": true
+    },
+    {
+      "sourceUrl": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2017/6/24289/18538-1-2017523-52412-2017-qh14.pdf",
+      "method": "HEAD",
+      "range": null,
+      "status": 200,
+      "bytes": 0
+    },
+    {
+      "sourceUrl": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2017/6/24289/18538-1-2017523-52412-2017-qh14.pdf",
+      "method": "GET",
+      "range": "bytes=0-262143",
+      "status": 206,
+      "bytes": 262144
+    },
+    {
+      "sourceUrl": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2017/6/24289/18538-1-2017523-52412-2017-qh14.pdf",
+      "method": "GET",
+      "range": "bytes=93061120-93282522",
+      "status": 206,
+      "bytes": 221403
+    },
+    {
+      "sourceUrl": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2017/6/24289/18538-1-2017523-52412-2017-qh14.pdf",
+      "method": "GET",
+      "range": "bytes=524288-786431",
+      "status": 206,
+      "bytes": 262144
+    },
+    {
+      "sourceUrl": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2017/6/24289/18538-1-2017523-52412-2017-qh14.pdf",
+      "method": "GET",
+      "range": "bytes=262144-524287",
+      "status": 206,
+      "bytes": 262144
+    },
+    {
+      "sourceUrl": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2017/6/24289/18538-1-2017523-52412-2017-qh14.pdf",
+      "method": "GET",
+      "range": "bytes=92798976-93061119",
+      "status": 206,
+      "bytes": 262144
+    }
+  ],
+  "environment": {
+    "browser": "Native Chromium",
+    "database": "Explicit in-memory DB;real handler",
+    "identity": "Explicit guest/member/admin fixtures;no production writes",
+    "ai": "Explicit valid/invalid provider fixtures;not a live model call"
+  }
+}

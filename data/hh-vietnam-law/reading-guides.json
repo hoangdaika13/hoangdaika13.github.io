@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "scope": "Bộ sưu tập giúp mở nhanh bản công bố gốc. Không khẳng định danh mục đầy đủ hoặc các điều khoản đang còn hiệu lực; cần đối chiếu văn bản sửa đổi và thời điểm áp dụng.",
+  "guides": [
+    {"field":"criminal","codes":["100/2015/QH13","12/2017/QH14","86/2025/QH15","101/2015/QH13","41/2019/QH14"]},
+    {"field":"civil","codes":["91/2015/QH13","92/2015/QH13","19/2023/QH15"]},
+    {"field":"land","codes":["31/2024/QH15","43/2024/QH15","27/2023/QH15","29/2023/QH15"]},
+    {"field":"business","codes":["59/2020/QH14","76/2025/QH15","61/2020/QH14"]},
+    {"field":"tax","codes":["48/2024/QH15","149/2025/QH15","67/2025/QH15","38/2019/QH14","89/2025/QH15"]},
+    {"field":"labour","codes":["45/2019/QH14","41/2024/QH15","74/2025/QH15"]},
+    {"field":"traffic","codes":["35/2024/QH15","36/2024/QH15"]},
+    {"field":"family","codes":["52/2014/QH13","91/2015/QH13"]},
+    {"field":"technology","codes":["20/2023/QH15","24/2018/QH14","86/2015/QH13","60/2024/QH15","91/2025/QH15"]},
+    {"field":"administrative","codes":["93/2015/QH13","02/2011/QH13","25/2018/QH14","36/2018/QH14","64/2025/QH15","26/2023/QH15"]},
+    {"field":"environment","codes":["72/2020/QH14"]},
+    {"field":"education","codes":["43/2019/QH14","08/2012/QH13","34/2018/QH14","73/2025/QH15"]}
+  ]
+}

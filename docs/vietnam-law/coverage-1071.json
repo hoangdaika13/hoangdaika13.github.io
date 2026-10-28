@@ -1,0 +1,4395 @@
+{
+  "release": 1071,
+  "contentVersion": "2026.10.29-vietnam-law-v2",
+  "checkedAt": "2026-10-28T09:03:02.703Z",
+  "coverage": {
+    "documents": 224,
+    "withArticleText": 45,
+    "articleHeadings": 6030,
+    "completeNationalCorpus": false,
+    "currentStatusVerified": 0
+  },
+  "verifiedFiles": 225,
+  "bytes": 27556716,
+  "textIdentityMatched": 45,
+  "relationRecords": 35,
+  "relationLinks": 162,
+  "sourceImportFailures": [
+    {
+      "id": "24289",
+      "error": "Tài liệu vượt giới hạn xử lý."
+    },
+    {
+      "code": "26/2008/QH12",
+      "error": "No exact source code match"
+    },
+    {
+      "code": "67/2006/QH11",
+      "error": "No exact source code match"
+    },
+    {
+      "code": "04/2007/QH12",
+      "error": "No exact source code match"
+    }
+  ],
+  "completeNationalCorpus": false,
+  "documents": [
+    {
+      "id": "470017",
+      "code": "58/VBHN-TT-BCT",
+      "title": "hợp nhất Thông tư ban hành Quy chuẩn kỹ thuật quốc gia về chất lượng amôniắc công nghiệp",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/58-vbhn-tt-bct-470017.htm",
+      "checkedAt": "2026-10-28T07:39:53.407Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "470018",
+      "code": "59/VBHN-TT-BCT",
+      "title": "hợp nhất Thông tư ban hành Quy chuẩn kỹ thuật quốc gia về chất lượng Poly Aluminium Choloride (PAC)",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/59-vbhn-tt-bct-470018.htm",
+      "checkedAt": "2026-10-28T07:39:53.593Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "470019",
+      "code": "60/VBHN-TT-BCT",
+      "title": "hợp nhất Thông tư ban hành Quy chuẩn kỹ thuật quốc gia về chất lượng natri hydroxit công nghiệp",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/60-vbhn-tt-bct-470019.htm",
+      "checkedAt": "2026-10-28T07:39:53.682Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "470020",
+      "code": "61/VBHN-TT-BCT",
+      "title": "hợp nhất Thông tư ban hành Quy chuẩn kỹ thuật quốc gia về giới hạn hàm lượng chì trong sơn",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/61-vbhn-tt-bct-470020.htm",
+      "checkedAt": "2026-10-28T07:39:53.793Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "470021",
+      "code": "62/VBHN-TT-BCT",
+      "title": "hợp nhất Thông tư ban hành Quy chuẩn kỹ thuật quốc gia về hàm lượng thủy ngân trong đèn huỳnh quang",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/62-vbhn-tt-bct-470021.htm",
+      "checkedAt": "2026-10-28T07:39:53.944Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "470022",
+      "code": "63/VBHN-TT-BCT",
+      "title": "hợp nhất Thông tư ban hành Quy chuẩn kỹ thuật quốc gia về mức giới hạn hàm lượng formaldehyt và các amin thơm chuyển hóa từ thuốc nhuộm azo trong sản phẩm dệt may",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/63-vbhn-tt-bct-470022.htm",
+      "checkedAt": "2026-10-28T07:39:54.082Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "470023",
+      "code": "64/VBHN-TT-BCT",
+      "title": "hợp nhất Thông tư ban hành Quy chuẩn kỹ thuật quốc gia về chất lượng tiền chất thuốc nổ sử dụng để sản xuất vật liệu nổ công nghiệp",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/64-vbhn-tt-bct-470023.htm",
+      "checkedAt": "2026-10-28T07:39:54.185Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "470024",
+      "code": "65/VBHN-TT-BCT",
+      "title": "hợp nhất Thông tư ban hành Quy chuẩn kỹ thuật quốc gia về Amôni nitrat dùng để sản xuất thuốc nổ nhũ tương",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/65-vbhn-tt-bct-470024.htm",
+      "checkedAt": "2026-10-28T07:39:54.349Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "470025",
+      "code": "66/VBHN-TT-BCT",
+      "title": "hợp nhất Thông tư ban hành Quy chuẩn kỹ thuật quốc gia về Amôni nitrat dùng để sản xuất thuốc nổ Anfo",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/66-vbhn-tt-bct-470025.htm",
+      "checkedAt": "2026-10-28T07:39:54.491Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "470058",
+      "code": "58/VBHN-BXD",
+      "title": "Nghị định Quy định về hoạt động vận tải đường bộ",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/58-vbhn-bxd-470058.htm",
+      "checkedAt": "2026-10-28T07:39:54.692Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469950",
+      "code": "268/2026/NĐ-CP",
+      "title": "về khuyến nông",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/268-2026-nd-cp-469950.htm",
+      "checkedAt": "2026-10-28T07:39:54.811Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469952",
+      "code": "1184/QĐ-TTg",
+      "title": "phê duyệt điều chỉnh, bổ sung Chiến lược phát triển thanh niên Việt Nam giai đoạn 2021 - 2030",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/1184-qd-ttg-469952.htm",
+      "checkedAt": "2026-10-28T07:39:54.967Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469977",
+      "code": "55/VBHN-BCT",
+      "title": "hợp nhất Nghị định Quy định chi tiết Luật thương mại về hoạt động xúc tiến thương mại",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/55-vbhn-bct-469977.htm",
+      "checkedAt": "2026-10-28T07:39:55.040Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469978",
+      "code": "56/VBHN-BCT",
+      "title": "hợp nhất Quyết định về việc ban hành Quy chế xây dựng, quản lý và thực hiện Chương trình cấp quốc gia về xúc tiến thương mại",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/56-vbhn-bct-469978.htm",
+      "checkedAt": "2026-10-28T07:39:55.205Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469979",
+      "code": "57/VBHN-BCT",
+      "title": "hợp nhất Nghị định Quy định chi tiết Luật quản lý ngoại thương về một số biện pháp phát triển ngoại thương",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/57-vbhn-bct-469979.htm",
+      "checkedAt": "2026-10-28T07:39:55.373Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469997",
+      "code": "54/VBHN-BCT",
+      "title": "Hợp nhất Thông tư Hướng dẫn thực hiện hoạt động xúc tiến thương mại phát triển ngoại thương thuộc chương trình cấp quốc giá về xức tiến thương mại",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/54-vbhn-bct-469997.htm",
+      "checkedAt": "2026-10-28T07:39:55.476Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469916",
+      "code": "29/2026/TT-NHNN",
+      "title": "sửa đổi, bổ sung một số điều của Thông tư số 39/2016/TT-NHNN quy định về hoạt động cho vay của tổ chức tín dụng, chi nhánh ngân hàng nước ngoài đối với khách hàng",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/29-2026-tt-nhnn-469916.htm",
+      "checkedAt": "2026-10-28T07:39:55.599Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469923",
+      "code": "262/2026/NĐ-CP",
+      "title": "Quy định về hoạt động báo chí của cơ quan báo chí nước ngoài, cơ quan đại diện nước ngoài, tổ chức nước ngoài tại Việt Nam",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/262-2026-nd-cp-469923.htm",
+      "checkedAt": "2026-10-28T07:39:55.699Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469925",
+      "code": "81/2026/TT-BTC",
+      "title": "Sửa đổi điểm c Số TT 3 mục I Biểu mức thu phí, lệ phí trong lĩnh vực xuất cảnh, nhập cảnh, quá cảnh, cư trú tại Việt Nam ban hành kèm theo Thông tư số 28/2026/TT-BTC ngày 27 tháng 3 năm 2026 của Bộ trưởng Bộ Tài chính quy định mức thu, chế dộ thu , nộp phí, lệ phí trong lĩnh vực xuất cảnh, nhập cảnh, quá cảnh, cư trú tại Việt Nam",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/81-2026-tt-btc-469925.htm",
+      "checkedAt": "2026-10-28T07:39:55.817Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469926",
+      "code": "95/2026/TT-BQP",
+      "title": "Quy định tiếp công dân trong Bộ Quốc phòng",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/95-2026-tt-bqp-469926.htm",
+      "checkedAt": "2026-10-28T07:39:55.925Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469927",
+      "code": "258/2026/NĐ-CP",
+      "title": "Quy định chi tiết một số điều về cơ chế, chính sách phát huy nguồn lực nhằm nâng cao hiệu quả hội nhập quốc tế theo Nghị quyết số 250/2025/QH15 của Quốc hội",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/258-2026-nd-cp-469927.htm",
+      "checkedAt": "2026-10-28T07:39:56.039Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469928",
+      "code": "34/2026/NQ-CP",
+      "title": "về việc kéo dài thời hạn áp dụng thuế nhập khẩu ưu đãi, thuế bảo vệ môi trường, thuế giá trị gia tăng đối với mặt hàng xăng, dầu, nguyên liệu sản xuất xăng, dầu và nhiên liệu bay",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/34-2026-nq-cp-469928.htm",
+      "checkedAt": "2026-10-28T07:39:56.141Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469929",
+      "code": "34/2026/TT-BCT",
+      "title": "Quy định về quản lý chất lượng sản phẩm, hàng hóa thuộc trách nhiệm quản lý nhà nước của Bộ Công thương",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/34-2026-tt-bct-469929.htm",
+      "checkedAt": "2026-10-28T07:39:56.235Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469948",
+      "code": "251/2026/NĐ-CP",
+      "title": "Quy định về thi hành án đối với pháp nhân thương mại",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/251-2026-nd-cp-469948.htm",
+      "checkedAt": "2026-10-28T07:39:56.349Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469949",
+      "code": "256/2026/NĐ-CP",
+      "title": "Quy định về phù hiệu, cấp hiệu, trang phục và biến hiệu của công chức thuế",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/256-2026-nd-cp-469949.htm",
+      "checkedAt": "2026-10-28T07:39:56.439Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469951",
+      "code": "33/2026/QĐ-TTg",
+      "title": "Ban hành Danh mục hệ thống trí tuệ nhân tạo có rủi ro cao",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/33-2026-qd-ttg-469951.htm",
+      "checkedAt": "2026-10-28T07:39:56.518Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469908",
+      "code": "246/2026/NĐ-CP",
+      "title": "Quy định xử phạt vi phạm hành chính trong lĩnh vực thủy sản",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/246-2026-nd-cp-469908.htm",
+      "checkedAt": "2026-10-28T07:39:56.628Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469911",
+      "code": "31/2026/QĐ-TTg",
+      "title": "Ban hành Danh mục hàng hóa nhập khẩu phải làm thủ tục hải quan tại cửa khẩu nhập",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/31-2026-qd-ttg-469911.htm",
+      "checkedAt": "2026-10-28T07:39:56.740Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469912",
+      "code": "32/2026/QĐ-TTg",
+      "title": "Ban hành Hệ thống ngành sản phẩm Việt Nam",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/32-2026-qd-ttg-469912.htm",
+      "checkedAt": "2026-10-28T07:39:56.869Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469915",
+      "code": "28/2026/TT-NHNN",
+      "title": "sửa đổi, bổ sung một số điều của Thông tư số 09/2019/TT-NHNN quy định về chế độ báo cáo định kỳ của Ngân hàng Nhà nước Việt Nam",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/28-2026-tt-nhnn-469915.htm",
+      "checkedAt": "2026-10-28T07:39:56.994Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469893",
+      "code": "168/NQ-CP",
+      "title": "Về cập nhật kịch bản tăng trưởng và giải pháp trọng tâm trong các quý còn lại để thực hiện mục tiêu tăng trưởng năm 2026 phấn đấu từ 10% trở lên gắn với giữ vững ổn định kinh tế vĩ mô",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/168-nq-cp-469893.htm",
+      "checkedAt": "2026-10-28T07:39:57.128Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469894",
+      "code": "169/NQ-CP",
+      "title": "Về mục tiêu tăng trưởng của các địa phương năm 2026 và giai đoạn 2026 - 2030 để thực hiện Kết luận số 18-KL/TW của Trung ương, Nghị quyết số 25/2026/QH16 của Quốc hội và Nghị quyết số 109/NQ-CP của Chính phủ",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/169-nq-cp-469894.htm",
+      "checkedAt": "2026-10-28T07:39:57.238Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469907",
+      "code": "245/2026/NĐ-CP",
+      "title": "Gia hạn thời hạn nộp thuế giá trị gia tăng, thuế thu nhập doanh nghiệp, thuế thu nhập cá nhân và tiền thuê đất trong năm 2026",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/245-2026-nd-cp-469907.htm",
+      "checkedAt": "2026-10-28T07:39:57.383Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469862",
+      "code": "237/2026/NĐ-CP",
+      "title": "Quy định chi tiết thi hành một số điều của Luật Báo chí",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/237-2026-nd-cp-469862.htm",
+      "checkedAt": "2026-10-28T07:39:57.489Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469871",
+      "code": "239/2026/NĐ-CP",
+      "title": "Sửa đổi, bổ sung một số điều của Nghị định số 81/2028/NĐ-CP ngày 22 tháng 5 năm 2018 của Chính phủ quy định chi tiết Luật Thương mại về hoạt động xúc tiến thương mại đã được sửa đổi, bổ sung theo Nghị định số 128/2024/NĐ-CP ngày 10 tháng 10 năm 2024 của Chính phủ",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/239-2026-nd-cp-469871.htm",
+      "checkedAt": "2026-10-28T07:39:57.583Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469873",
+      "code": "27/2026/TT-NHNN",
+      "title": "Sửa đổi, bổ sung một số điều của Thông tư số 51/2024/TT-NHNN quy định về kiểm toán độc lập đối với ngân hàng thương mại, tổ chức tín dụng phi ngân hàng, tổ chức tài chính vi mô, chi nhánh ngân hàng nước ngoài",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/27-2026-tt-nhnn-469873.htm",
+      "checkedAt": "2026-10-28T07:39:57.706Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469887",
+      "code": "242/2026/NĐ-CP",
+      "title": "Quy định chi tiết và biện pháp thi hành Luật Báo chí về quản lý hoạt động phát thanh, truyền hình và dịch vụ phát thanh, truyền hình",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/242-2026-nd-cp-469887.htm",
+      "checkedAt": "2026-10-28T07:39:57.838Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469889",
+      "code": "243/2026/NĐ-CP",
+      "title": "sửa đổi, bổ sung một số điều của Nghị định số 57/2025/NĐ-CP ngày 03 tháng 3 năm 2025 của Chính phủ quy định cơ chế mua bán điện trực tiếp giữa đơn vị phát điện năng lượng tái tạo và khách hàng sử dụng điện lớn và Nghị định số 58/2025/NĐ-CP ngày 03 tháng 3 năm 2025 của Chính phủ quy định chi tiết một số điều của Luật Điện lực về phát triển điện năng lượng tái tạo, điện năng lượng mới",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/243-2026-nd-cp-469889.htm",
+      "checkedAt": "2026-10-28T07:39:57.940Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469890",
+      "code": "244/2026/NĐ-CP",
+      "title": "Quy định chi tiết việc phát ngôn và cung cấp thông tin cho báo chí của các cơ quan hành chính nhà nước",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/244-2026-nd-cp-469890.htm",
+      "checkedAt": "2026-10-28T07:39:58.049Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469891",
+      "code": "166/NQ-CP",
+      "title": "Ban hành Chương trình hành động của Chính phủ thực hiện Kết luận số 26-KL/TW ngày 24 tháng 4 năm 2026 của Bộ Chính trị về phòng, chống sụt lún, sạt lở, ngập úng, hạn hán, xâm nhập mặn vùng đồng bằng sông Cửu Long giai đoạn 2026 - 2035",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/166-nq-cp-469891.htm",
+      "checkedAt": "2026-10-28T07:39:58.163Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "18397",
+      "code": "91/2015/QH13",
+      "title": "Bộ luật dân sự.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/91-2015-qh13-18397.htm",
+      "checkedAt": "2026-10-28T08:15:35.175Z",
+      "articles": 689,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "12965",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2015/11/18397/12965-1-912015qh1313017pdf",
+          "sha256": "e8a97fb2f060f944a7d87716176de06e9fbd1d8049006797fea8185f253b5a6e",
+          "totalPages": 94,
+          "parsedPages": 94,
+          "complete": true
+        },
+        {
+          "id": "12968",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2015/11/18397/12968-1-912015qh1313019pdf",
+          "sha256": "05e02a81f61ac6b110e5835a37acf6bc8ba5fd9d8e984cf9b6b023a9e960da5b",
+          "totalPages": 78,
+          "parsedPages": 78,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "6434",
+      "code": "65/2011/QH12",
+      "title": "sửa đổi, bổ sung một số điều của Bộ luật tố tụng dân sự.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/65-2011-qh12-6434.htm",
+      "checkedAt": "2026-10-28T07:39:59.357Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "3088",
+      "code": "53/2010/QH12",
+      "title": "Luật Thi hành án hình sự.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/53-2010-qh12-3088.htm",
+      "checkedAt": "2026-10-28T07:39:59.445Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "45533",
+      "code": "98/2025/QH15",
+      "title": "luật sửa đổi, bổ sung một số điều của 11 luật về quân sự, quốc phòng.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/98-2025-qh15-45533.htm",
+      "checkedAt": "2026-10-28T07:39:59.519Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "46181",
+      "code": "144/VBHN-VPQH",
+      "title": "hợp nhất Luật Phòng thủ dân sự.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/144-vbhn-vpqh-46181.htm",
+      "checkedAt": "2026-10-28T07:39:59.632Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "40482",
+      "code": "22/VBHN-VPQH",
+      "title": "hợp nhất Luật Tài nguyên, môi trường biển và hải đảo.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/22-vbhn-vpqh-40482.htm",
+      "checkedAt": "2026-10-28T07:39:59.856Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "46165",
+      "code": "135/VBHN-VPQH",
+      "title": "hợp nhất Bộ luật Hình sự.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/135-vbhn-vpqh-46165.htm",
+      "checkedAt": "2026-10-28T07:39:59.938Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "44432",
+      "code": "12/VBHN-VPQH",
+      "title": "hợp nhất Bộ Luật Tố tụng dân sự.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/12-vbhn-vpqh-44432.htm",
+      "checkedAt": "2026-10-28T07:40:00.126Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "31011",
+      "code": "20/VBHN-VPQH",
+      "title": "hợp nhất Bộ Luật Tố tụng dân sự.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/20-vbhn-vpqh-31011.htm",
+      "checkedAt": "2026-10-28T07:40:00.209Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "46013",
+      "code": "99/VBHN-VPQH",
+      "title": "hợp nhất Bộ luật Tố tụng dân sự.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/99-vbhn-vpqh-46013.htm",
+      "checkedAt": "2026-10-28T07:40:00.271Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "18442",
+      "code": "100/2015/QH13",
+      "title": "Bộ luật hình sự.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/100-2015-qh13-18442.htm",
+      "checkedAt": "2026-10-28T08:15:36.644Z",
+      "articles": 425,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "28629",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2015/11/18442/28629-1-incb-12631264-31-12-2015signedsignedpdf",
+          "sha256": "fb68b47e2f03ac144b13f54a2c7f27e2bdfd5a82beb4e2e83210718fb2ed7a3c",
+          "totalPages": 40,
+          "parsedPages": 40,
+          "complete": true
+        },
+        {
+          "id": "28630",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2015/11/18442/28630-1-incb-12651266-31-12-2015signedsignedpdf",
+          "sha256": "1333a11d7a7753da0661e9024d4468c6f4906f5181fc306eece9c5eaf6ac8b64",
+          "totalPages": 80,
+          "parsedPages": 80,
+          "complete": true
+        },
+        {
+          "id": "28631",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2015/11/18442/28631-1-incb-12671268-31-12-2015signedsignedpdf",
+          "sha256": "7fed155d2aaee30e6be697a7fd57ced9e893b486c0de92b638e5c0dbbb00cfe9",
+          "totalPages": 84,
+          "parsedPages": 84,
+          "complete": true
+        },
+        {
+          "id": "28632",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2015/11/18442/28632-2-incb-12691270-31-12-2015signedsignedsignedsignedsignedpdf",
+          "sha256": "e9a58316cc35195a4bc5a9da6a8a71ffcd8cc414eac853fd965f8252dd5357b9",
+          "totalPages": 69,
+          "parsedPages": 69,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "24289",
+      "code": "12/2017/QH14",
+      "title": "luật sửa đổi, bổ sung một số điều của Bộ luật Hình sự số 100/2015/QH13.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/12-2017-qh14-24289.htm",
+      "checkedAt": "2026-10-28T07:40:01.742Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "37504",
+      "code": "07/2022/QH15",
+      "title": "luật sửa đổi, bổ sung một số điều của Luật Sở hữu trí tuệ.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/07-2022-qh15-37504.htm",
+      "checkedAt": "2026-10-28T07:40:01.811Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "32398",
+      "code": "15/VBHN-VPQH",
+      "title": "hợp nhất Luật Điện ảnh.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/15-vbhn-vpqh-32398.htm",
+      "checkedAt": "2026-10-28T07:40:01.911Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "25590",
+      "code": "02/CT-TTg",
+      "title": "về việc triển khai thi hành Bộ luật Hình sự năm 2015.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/02-ct-ttg-25590.htm",
+      "checkedAt": "2026-10-28T07:40:02.079Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "24114",
+      "code": "41/2017/QH14",
+      "title": "về việc thi hành Bộ luật Hình sự số 100/2015/QH13 đã được sửa đổi, bổ sung một số điều theo Luật số 12/2017/QH14 và về hiệu lực thi hành của Bộ luật Tố tụng hình sự số 101/2015/QH13, Luật Tổ chức cơ quan điều tra hình sự số 99/2015/QH13, Luật Thi hành tạm giữ, tạm giam số 94/2015/QH13.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/41-2017-qh14-24114.htm",
+      "checkedAt": "2026-10-28T07:40:02.144Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "8475",
+      "code": "3198/VBHN-BVHTTDL",
+      "title": "hợp nhất Nghị định quy định chi tiết và hướng dẫn thi hành một số điều của Bộ luật Dân sự, Luật Sở hữu trí tuệ về quyển tác giả và quyền liên quan.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/3198-vbhn-bvhttdl-8475.htm",
+      "checkedAt": "2026-10-28T07:40:02.231Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "46090",
+      "code": "124/VBHN-VPQH",
+      "title": "hợp nhất Luật Báo chí.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/124-vbhn-vpqh-46090.htm",
+      "checkedAt": "2026-10-28T07:40:02.339Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "2771",
+      "code": "10/2012/QH13",
+      "title": "Bộ luật Lao động",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/10-2012-qh13-2771.htm",
+      "checkedAt": "2026-10-28T08:15:39.111Z",
+      "articles": 242,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "11278",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2012/6/2771/11278-1-2012475-476-102012qh13pdf",
+          "sha256": "86b16fbeba9dede5102161d790aa7f0f0317f8c2a5f1eed9ee6f7b41c8bd02eb",
+          "totalPages": 83,
+          "parsedPages": 83,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "27972",
+      "code": "5213/VBHN-BLĐTBXH",
+      "title": "hợp nhất Nghị định quy định chi tiết thi hành một số điều của Luật việc làm về đánh giá, cấp chứng chỉ kỹ năng nghề quốc gia.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/5213-vbhn-bldtbxh-27972.htm",
+      "checkedAt": "2026-10-28T07:40:02.847Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "1911",
+      "code": "36/2012/TT-BLĐTBXH",
+      "title": "ban hành bổ sung danh mục nghề, công việc nặng nhọc, độc hại, nguy hiểm và đặc biệt nặng nhọc, độc hại, nguy hiêm.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/36-2012-tt-bldtbxh-1911.htm",
+      "checkedAt": "2026-10-28T07:40:02.925Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "38771",
+      "code": "25/2022/TT-BLĐTBXH",
+      "title": "quy định về chế độ trang cấp phương tiện bảo vệ cá nhân trong lao động.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/25-2022-tt-bldtbxh-38771.htm",
+      "checkedAt": "2026-10-28T07:40:02.973Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "22238",
+      "code": "15/2016/TT-BLĐTBXH",
+      "title": "ban hành Danh mục nghề, công việc nặng nhọc, độc hại, nguy hiểm và đặc biệt nặng nhọc, độc hại, nguy hiểm.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/15-2016-tt-bldtbxh-22238.htm",
+      "checkedAt": "2026-10-28T07:40:03.059Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "15946",
+      "code": "27/2015/TT-BLĐTBXH",
+      "title": "hướng dẫn thu thập, lưu trữ, tổng hợp thông tin thị trường lao động.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/27-2015-tt-bldtbxh-15946.htm",
+      "checkedAt": "2026-10-28T07:40:03.115Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "42111",
+      "code": "2651/VBHN-BLĐTBXH",
+      "title": "hợp nhất Nghị định quy định quản lý lao động, tiền lương và tiền thưởng đối với người lao động làm việc trong công ty trách nhiệm hữu hạn một thành viên do Nhà nước nắm giữ 100% vốn điều lệ.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/2651-vbhn-bldtbxh-42111.htm",
+      "checkedAt": "2026-10-28T07:40:03.187Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "28839",
+      "code": "1308/VBHN-BLĐTBXH",
+      "title": "hợp nhất Thông tư quy định về Điều lệ trường cao đẳng.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/1308-vbhn-bldtbxh-28839.htm",
+      "checkedAt": "2026-10-28T07:40:03.281Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "41572",
+      "code": "1166/VBHN-BLĐTBXH",
+      "title": "hợp nhất Nghị định thực hiện thí điểm quản lý lao động, tiền lương, tiền thưởng đối với một số tập đoàn kinh tế, tổng công ty nhà nước.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/1166-vbhn-bldtbxh-41572.htm",
+      "checkedAt": "2026-10-28T07:40:03.390Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "27652",
+      "code": "4753/VBHN-BLĐTBXH",
+      "title": "hợp nhất Nghị định quy định chi tiết và hướng dẫn thi hành một số nội dung của Bộ luật lao động.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/4753-vbhn-bldtbxh-27652.htm",
+      "checkedAt": "2026-10-28T07:40:03.476Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "5391",
+      "code": "45/2013/QH13",
+      "title": "Luật Đất đai.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/45-2013-qh13-5391.htm",
+      "checkedAt": "2026-10-28T08:15:39.564Z",
+      "articles": 212,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "6773",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2013/11/5391/6773-1-201310111012-452013qh13pdf",
+          "sha256": "e026bb4bd23f8736b484d7afa8bc55489dae61151ad263817c9da25530afd3c3",
+          "totalPages": 118,
+          "parsedPages": 118,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "42485",
+      "code": "102/2024/NĐ-CP",
+      "title": "quy định chi tiết thi hành một số điều của Luật Đất đai.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/102-2024-nd-cp-42485.htm",
+      "checkedAt": "2026-10-28T07:40:04.464Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "1330",
+      "code": "30/VBHN-VPQH",
+      "title": "hợp nhất Luật đất đai",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/30-vbhn-vpqh-1330.htm",
+      "checkedAt": "2026-10-28T07:40:04.585Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469129",
+      "code": "44/VBHN-VPQH",
+      "title": "hợp nhất Luật Đất đai",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/44-vbhn-vpqh-469129.htm",
+      "checkedAt": "2026-10-28T07:40:04.686Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "46142",
+      "code": "133/VBHN-VPQH",
+      "title": "hợp nhất Luật Đất đai.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/133-vbhn-vpqh-46142.htm",
+      "checkedAt": "2026-10-28T07:40:04.758Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "44508",
+      "code": "45/VBHN-VPQH",
+      "title": "hợp nhất Luật Đất đai.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/45-vbhn-vpqh-44508.htm",
+      "checkedAt": "2026-10-28T07:40:04.827Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "41329",
+      "code": "31/2024/QH15",
+      "title": "Luật Đất đai",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/31-2024-qh15-41329.htm",
+      "checkedAt": "2026-10-28T08:15:40.558Z",
+      "articles": 260,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "49226",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2024/7/41329/49226-1-2024363-36431-2024-qh15.pdf",
+          "sha256": "2558044082ee768192a311aee548eb9fae4daada546013aa5181eb91c8842637",
+          "totalPages": 94,
+          "parsedPages": 94,
+          "complete": true
+        },
+        {
+          "id": "49029",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2024/7/41329/49029-1-2024365-36631-2024-qh15.pdf",
+          "sha256": "651797458d2399fd70cd5b4d3edb3845d223540fa34d82f826718c248aca619e",
+          "totalPages": 95,
+          "parsedPages": 95,
+          "complete": true
+        },
+        {
+          "id": "49032",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2024/7/41329/49032-1-2024367-36831-2024-qh15.pdf",
+          "sha256": "6f679f5043ac94fec88ec6f565131faf7aacc819290191069f80799b60d294d0",
+          "totalPages": 66,
+          "parsedPages": 66,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "42979",
+      "code": "26/VBHN-VPQH",
+      "title": "hợp nhất Luật Đất đai.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/26-vbhn-vpqh-42979.htm",
+      "checkedAt": "2026-10-28T07:40:04.968Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "28558",
+      "code": "21/VBHN-VPQH",
+      "title": "hợp nhất Luật Đất đai.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/21-vbhn-vpqh-28558.htm",
+      "checkedAt": "2026-10-28T07:40:05.033Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "7959",
+      "code": "43/2014/NĐ-CP",
+      "title": "quy định chi tiết thi hành một số điều của Luật Đất đai.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/43-2014-nd-cp-7959.htm",
+      "checkedAt": "2026-10-28T07:40:05.132Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "45505",
+      "code": "76/2025/QH15",
+      "title": "luật sửa đổi, bổ sung một số điều của Luật Doanh nghiệp.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/76-2025-qh15-45505.htm",
+      "checkedAt": "2026-10-28T08:15:42.699Z",
+      "articles": 3,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "57568",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2025/6/45505/57568-1-2025951-95276-2025-qh15.pdf",
+          "sha256": "e6a23496a95c480b2b4a11f1e01b0873c4b1164b0be623a233ddf915e554fd98",
+          "totalPages": 7,
+          "parsedPages": 7,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "31674",
+      "code": "59/2020/QH14",
+      "title": "luật Doanh nghiệp.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/59-2020-qh14-31674.htm",
+      "checkedAt": "2026-10-28T08:15:42.839Z",
+      "articles": 218,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "31830",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2020/6/31674/31830-1-2020713-71459-2020-qh14.pdf",
+          "sha256": "9a322254a903d24e55b83c11b38d6f7ea26efa9f467578f1b27eedaad4c88498",
+          "totalPages": 94,
+          "parsedPages": 94,
+          "complete": true
+        },
+        {
+          "id": "31833",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2020/6/31674/31833-1-2020715-71659-2020-qh14.pdf",
+          "sha256": "ed316e996f5c8cd1664e65df33c38d377339b451e016f364ee7b1d244adb7766",
+          "totalPages": 74,
+          "parsedPages": 74,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "15631",
+      "code": "68/2014/QH13",
+      "title": "Luật doanh nghiệp",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/68-2014-qh13-15631.htm",
+      "checkedAt": "2026-10-28T07:40:05.507Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "11468",
+      "code": "69/2014/QH13",
+      "title": "Luật quản lý, sử dụng vốn nhà nước đầu tư vào sản xuất, kinh doanh tại doanh nghiệp.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/69-2014-qh13-11468.htm",
+      "checkedAt": "2026-10-28T07:40:05.592Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "40834",
+      "code": "24/2023/QH15",
+      "title": "luật Viễn thông.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/24-2023-qh15-40834.htm",
+      "checkedAt": "2026-10-28T07:40:05.669Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "1866",
+      "code": "102/2010/NĐ-CP",
+      "title": "hướng dẫn chi tiết thi hành một số điều của Luật Doanh nghiệp.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/102-2010-nd-cp-1866.htm",
+      "checkedAt": "2026-10-28T07:40:05.743Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "38354",
+      "code": "07/VBHN-VPQH",
+      "title": "hợp nhất Luật Doanh nghiệp.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/07-vbhn-vpqh-38354.htm",
+      "checkedAt": "2026-10-28T07:40:05.849Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "7097",
+      "code": "06/VBHN-VPQH",
+      "title": "hợp nhất Luật doanh nghiệp.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/06-vbhn-vpqh-7097.htm",
+      "checkedAt": "2026-10-28T07:40:06.023Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "33620",
+      "code": "47/2021/NĐ-CP",
+      "title": "quy định chi tiết một số điều của Luật Doanh nghiệp.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/47-2021-nd-cp-33620.htm",
+      "checkedAt": "2026-10-28T07:40:06.106Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "45865",
+      "code": "67/VBHN-VPQH",
+      "title": "hợp nhất Luật Doanh nghiệp.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/67-vbhn-vpqh-45865.htm",
+      "checkedAt": "2026-10-28T07:40:06.177Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "468709",
+      "code": "149/2025/QH15",
+      "title": "Luật sửa đổi, bổ sung một số điều của Luật Thuế giá trị gia tăng",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/149-2025-qh15-468709.htm",
+      "checkedAt": "2026-10-28T08:15:44.088Z",
+      "articles": 2,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "61734",
+          "url": "https://congbaocdn.chinhphu.vn/180507251028987904/2026/1/26/149signed-1769416922782586908570.pdf",
+          "sha256": "47778195b5a6fbb25817db7bb95d8cd6a3ec2665cc49f79f111c8860627f203c",
+          "totalPages": 2,
+          "parsedPages": 2,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "600",
+      "code": "31/2013/QH13",
+      "title": "Luật sửa đổi, bổ sung một số điều của Luật thuế giá trị gia tăng.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/31-2013-qh13-600.htm",
+      "checkedAt": "2026-10-28T07:40:06.547Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "43576",
+      "code": "48/2024/QH15",
+      "title": "luật Thuế giá trị gia tăng.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/48-2024-qh15-43576.htm",
+      "checkedAt": "2026-10-28T08:15:44.278Z",
+      "articles": 18,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "53720",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2024/11/43576/53720-1-20241527-152848-2024-qh15.pdf",
+          "sha256": "8be4caa345b42bce86386831da0bf4a9ed2bebbc54b471535c758431a5277569",
+          "totalPages": 20,
+          "parsedPages": 20,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "601",
+      "code": "209/2013/NĐ-CP",
+      "title": "quy định chi tiết và hướng dẫn thi hành một số điều Luật thuế giá trị gia tăng.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/209-2013-nd-cp-601.htm",
+      "checkedAt": "2026-10-28T07:40:06.770Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "45440",
+      "code": "69/2025/TT-BTC",
+      "title": "quy định chi tiết một số điều của Luật Thuế giá trị gia tăng và hướng dẫn thực hiện Nghị định số 181/2025/NĐ-CP ngày 01 tháng 7 năm 2025 của Chính phủ quy định chi tiết thi hành một số điều của Luật Thuế giá trị gia tăng.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/69-2025-tt-btc-45440.htm",
+      "checkedAt": "2026-10-28T07:40:06.834Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "20531",
+      "code": "100/2016/NĐ-CP",
+      "title": "quy định chi tiết và hướng dẫn thi hành một số điều của Luật sửa đổi, bổ sung một số điều của Luật thuế giá trị gia tăng, Luật thuế tiêu thụ đặc biệt và Luật quản lý thuế.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/100-2016-nd-cp-20531.htm",
+      "checkedAt": "2026-10-28T07:40:06.922Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "6963",
+      "code": "05/VBHN-VPQH",
+      "title": "hợp nhất Luật thuế giá trị gia tăng.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/05-vbhn-vpqh-6963.htm",
+      "checkedAt": "2026-10-28T07:40:07.023Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "3037",
+      "code": "16/VBHN-VPQH",
+      "title": "hợp nhất Luật thuế giá trị gia tăng.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/16-vbhn-vpqh-3037.htm",
+      "checkedAt": "2026-10-28T07:40:07.120Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "19582",
+      "code": "01/VBHN-VPQH",
+      "title": "hợp nhất Luật thuế giá trị gia tăng.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/01-vbhn-vpqh-19582.htm",
+      "checkedAt": "2026-10-28T07:40:07.272Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469597",
+      "code": "114/VBHN-VPQH",
+      "title": "hợp nhất Luật Thuế Giá trị gia tăng",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/114-vbhn-vpqh-469597.htm",
+      "checkedAt": "2026-10-28T07:40:07.371Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "6127",
+      "code": "52/2014/QH13",
+      "title": "Luật hôn nhân và gia đình.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/52-2014-qh13-6127.htm",
+      "checkedAt": "2026-10-28T08:15:44.435Z",
+      "articles": 133,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "7343",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2014/6/6127/7343-1-2014681-682-522014qh13pdf",
+          "sha256": "4b878d5f7f9fe2df14ece0eb5476029b763e6c966cca79c6c39b0078498354f9",
+          "totalPages": 38,
+          "parsedPages": 38,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "2852",
+      "code": "22/2013/TT-BTP",
+      "title": "quy định chi tiết và hướng dẫn thi hành một số điều của Nghị định số 24/2013/NĐ-CP ngày 28 tháng 3 năm 2013 của Chính phủ quy định chi tiết thi hành một số điều của Luật Hôn nhân và gia đình về quan hệ hôn nhân và gia đình có yếu tố nước ngoài.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/22-2013-tt-btp-2852.htm",
+      "checkedAt": "2026-10-28T07:40:07.857Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "18918",
+      "code": "01/2016/TTLT-TANDTC-VKSNDTC-BTP",
+      "title": "hướng dẫn thi hành một số quy định của Luật hôn nhân và gia đình.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/01-2016-ttlt-tandtc-vksndtc-btp-18918.htm",
+      "checkedAt": "2026-10-28T07:40:07.945Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "41972",
+      "code": "01/2024/NQ-HĐTP",
+      "title": "hướng dẫn áp dụng một số quy định của pháp luật trong giải quyết vụ việc về hôn nhân và gia đình.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/01-2024-nq-hdtp-41972.htm",
+      "checkedAt": "2026-10-28T07:40:07.999Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "10730",
+      "code": "02a/2015/TT-BTP",
+      "title": "hướng dẫn thi hành một số điều của Nghị định số 126/2014/NĐ-CP ngày 31 tháng 12 năm 2014 của Chính phủ quy định chi tiết một số điều và biện pháp thi hành Luật hôn nhân và gia đình về quan hệ hôn nhân và gia đình có yếu tố nước ngoài.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/02a-2015-tt-btp-10730.htm",
+      "checkedAt": "2026-10-28T07:40:08.158Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "46059",
+      "code": "121/VBHN-VPQH",
+      "title": "hợp nhất Luật Hôn nhân và gia đình.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/121-vbhn-vpqh-46059.htm",
+      "checkedAt": "2026-10-28T07:40:08.335Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "10799",
+      "code": "8015/VBHN-BTP",
+      "title": "hợp nhất Nghị định về việc áp dụng Luật Hôn nhân và gia đình đối với các dân tộc thiểu số.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/8015-vbhn-btp-10799.htm",
+      "checkedAt": "2026-10-28T07:40:08.508Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "10800",
+      "code": "8016/VBHN-BTP",
+      "title": "hợp nhất Nghị định quy định chi tiết về đăng ký kết hôn theo Nghị quyết số 35/2000/QH10 của Quốc hội về việc thi hành Luật Hôn nhân và gia đình.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/8016-vbhn-btp-10800.htm",
+      "checkedAt": "2026-10-28T07:40:08.680Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "4232",
+      "code": "126/2014/NĐ-CP",
+      "title": "quy định chi tiết một số điều và biện pháp thi hành Luật Hôn nhân và gia đình.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/126-2014-nd-cp-4232.htm",
+      "checkedAt": "2026-10-28T07:40:08.727Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "42555",
+      "code": "36/2024/QH15",
+      "title": "luật Trật tự, an toàn giao thông đường bộ.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/36-2024-qh15-42555.htm",
+      "checkedAt": "2026-10-28T08:15:44.824Z",
+      "articles": 89,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "51486",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2024/6/42555/51486-1-2024977-97836-2024-qh15.pdf",
+          "sha256": "e83b092fd1e93a63d3082424bd63e7ad99afcf39ba3729f6d82ce19fe8b33690",
+          "totalPages": 21,
+          "parsedPages": 21,
+          "complete": true
+        },
+        {
+          "id": "51422",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2024/6/42555/51422-1-2024979-98036-2024-qh15.pdf",
+          "sha256": "55ba152f3abe925d9a75418c3e61bc0122824db41a0d2352053dbff2c6264f8c",
+          "totalPages": 61,
+          "parsedPages": 61,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "42568",
+      "code": "35/2024/QH15",
+      "title": "luật Đường bộ.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/35-2024-qh15-42568.htm",
+      "checkedAt": "2026-10-28T09:02:33.873Z",
+      "articles": 86,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "51444",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2024/6/42568/51444-1-2024983-98435-2024-qh15.pdf",
+          "sha256": "debf33ad3b4781c04c143b3b684aaace3e4ecc24110d87ca551ab1cd0221c9fc",
+          "totalPages": 69,
+          "parsedPages": 69,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "43411",
+      "code": "151/2024/NĐ-CP",
+      "title": "quy định chi tiết một số điều và biện pháp thi hành Luật Trật tự, an toàn giao thông đường bộ.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/151-2024-nd-cp-43411.htm",
+      "checkedAt": "2026-10-28T07:40:09.505Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "17078",
+      "code": "1586/QĐ-TTg",
+      "title": "phê duyệt Chiến lược quốc gia bảo đảm trật tự an toàn giao thông đường bộ đến năm 2020 và tầm nhìn đến năm 2030.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/1586-qd-ttg-17078.htm",
+      "checkedAt": "2026-10-28T07:40:09.533Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "43729",
+      "code": "165/2024/NĐ-CP",
+      "title": "quy định chi tiết, hướng dẫn thi hành một số điều của Luật Đường bộ và Điều 77 Luật Trật tự, an toàn giao thông đường bộ.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/165-2024-nd-cp-43729.htm",
+      "checkedAt": "2026-10-28T07:40:09.605Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "31823",
+      "code": "04/VBHN-BGTVT",
+      "title": "hợp nhất Thông tư hướng dẫn thực hiện một số điều của Nghị định số 11/2010/NĐ-CP ngày 24 tháng 02 năm 2010 của Chính phủ quy định về quản lý và bảo vệ kết cấu hạ tầng giao thông đường bộ.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/04-vbhn-bgtvt-31823.htm",
+      "checkedAt": "2026-10-28T07:40:09.667Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "40704",
+      "code": "12/VBHN-BGTVT",
+      "title": "hợp nhất Thông tư quy định về tốc độ và khoảng cách an toàn của xe cơ giới, xe máy chuyên dùng tham gia giao thông đường bộ.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/12-vbhn-bgtvt-40704.htm",
+      "checkedAt": "2026-10-28T07:40:09.830Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469134",
+      "code": "49/VBHN-VPQH",
+      "title": "hợp nhất Luật Đường bộ",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/49-vbhn-vpqh-469134.htm",
+      "checkedAt": "2026-10-28T07:40:09.938Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "37622",
+      "code": "33/VBHN-BGTVT",
+      "title": "hợp nhất Thông tư hướng dẫn thực hiện một số điều của Nghị định số 11/2010/NĐ-CP ngày 24 tháng 02 năm 2010 của Chính phủ quy định về quản lý và bảo vệ kết cấu hạ tầng giao thông đường bộ.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/33-vbhn-bgtvt-37622.htm",
+      "checkedAt": "2026-10-28T07:40:10.035Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "40665",
+      "code": "15/VBHN-BGTVT",
+      "title": "hợp nhất Thông tư quy định về đào tạo thẩm tra viên và quản lý chứng chỉ thẩm tra viên an toàn giao thông đường bộ.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/15-vbhn-bgtvt-40665.htm",
+      "checkedAt": "2026-10-28T07:40:10.148Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "18386",
+      "code": "86/2015/QH13",
+      "title": "Luật an toàn thông tin mạng.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/86-2015-qh13-18386.htm",
+      "checkedAt": "2026-10-28T08:15:45.435Z",
+      "articles": 54,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "12954",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2015/11/18386/12954-1-862015qh1312998pdf",
+          "sha256": "a0fc671d88d57a6cb2693fba7f45ef24af886b3734097d717de407cf0ec220d0",
+          "totalPages": 28,
+          "parsedPages": 28,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "25810",
+      "code": "10/VBHN-VPQH",
+      "title": "hợp nhất Luật Công nghệ thông tin.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/10-vbhn-vpqh-25810.htm",
+      "checkedAt": "2026-10-28T07:40:10.504Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "40485",
+      "code": "27/VBHN-VPQH",
+      "title": "hợp nhất Luật Công nghệ thông tin.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/27-vbhn-vpqh-40485.htm",
+      "checkedAt": "2026-10-28T07:40:10.595Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "45860",
+      "code": "65/VBHN-VPQH",
+      "title": "hợp nhất Luật Công nghệ thông tin.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/65-vbhn-vpqh-45860.htm",
+      "checkedAt": "2026-10-28T07:40:10.656Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "41385",
+      "code": "39/VBHN-VPQH",
+      "title": "hợp nhất Luật Công nghệ thông tin.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/39-vbhn-vpqh-41385.htm",
+      "checkedAt": "2026-10-28T07:40:10.743Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "16819",
+      "code": "10/2012/TTLT-BCA-BQP-BTP-BTTTT-VKSNDTC-TANDTC",
+      "title": "hướng dẫn áp dụng quy định của Bộ luật Hình sự về một số tội phạm trong lĩnh vực công nghệ thông tin và viễn thông.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/10-2012-ttlt-bca-bqp-btp-btttt-vksndtc-tandtc-16819.htm",
+      "checkedAt": "2026-10-28T07:40:10.834Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "28580",
+      "code": "29/VBHN-VPQH",
+      "title": "hợp nhất Luật An toàn thông tin mạng.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/29-vbhn-vpqh-28580.htm",
+      "checkedAt": "2026-10-28T07:40:10.925Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "8150",
+      "code": "03/2014/TT-BTTTT",
+      "title": "quy định Chuẩn kỹ năng sử dụng công nghệ thông tin.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/03-2014-tt-btttt-8150.htm",
+      "checkedAt": "2026-10-28T07:40:11.253Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "46454",
+      "code": "22/2025/TT-BKHCN",
+      "title": "quy định về thu thập, cập nhật, kết nối, chia sẻ, quản lý, khai thác, sử dụng dữ liệu trên Hệ thống thông tin quốc gia về khoa học, công nghệ và đổi mới sáng tạo.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/22-2025-tt-bkhcn-46454.htm",
+      "checkedAt": "2026-10-28T07:40:11.303Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "43898",
+      "code": "21/2024/TT-BTTTT",
+      "title": "ban hành “Quy chuẩn kỹ thuật quốc gia về thiết bị camera giám sát sử dụng giao thức Internet - Các yêu cầu an toàn thông tin cơ bản”.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/21-2024-tt-btttt-43898.htm",
+      "checkedAt": "2026-10-28T07:40:11.349Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "43563",
+      "code": "60/2024/QH15",
+      "title": "luật Dữ liệu.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/60-2024-qh15-43563.htm",
+      "checkedAt": "2026-10-28T08:15:45.713Z",
+      "articles": 46,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "53654",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2024/11/43563/53654-1-20241523-152460-2024-qh15.pdf",
+          "sha256": "d77fc7c76798697a4ee95c2e72d2c942d473f3a32947d752e51de398237af446",
+          "totalPages": 23,
+          "parsedPages": 23,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "45578",
+      "code": "91/2025/QH15",
+      "title": "luật Bảo vệ dữ liệu cá nhân.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/91-2025-qh15-45578.htm",
+      "checkedAt": "2026-10-28T09:02:35.083Z",
+      "articles": 39,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "57730",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2025/6/45578/57730-1-2025971-97291-2025-qh15.pdf",
+          "sha256": "226dd6da66a6eea348e04db0f8c496d884021b730298991c6f6683720a0dfa2e",
+          "totalPages": 25,
+          "parsedPages": 25,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "39848",
+      "code": "20/2023/QH15",
+      "title": "luật Giao dịch điện tử.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/20-2023-qh15-39848.htm",
+      "checkedAt": "2026-10-28T09:02:35.277Z",
+      "articles": 53,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "45939",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2023/6/39848/45939-1-2023867-86820-2023-qh15.pdf",
+          "sha256": "2458d01d6453cd11ab7aaddbae36e988110754bcb53a59eda729987a63882914",
+          "totalPages": 30,
+          "parsedPages": 30,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "26901",
+      "code": "27/2018/QH14",
+      "title": "luật Đo đạc và bản đồ.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/27-2018-qh14-26901.htm",
+      "checkedAt": "2026-10-28T07:40:11.821Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "469127",
+      "code": "42/VBHN-VPQH",
+      "title": "hợp nhất Luật Dữ liệu",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/42-vbhn-vpqh-469127.htm",
+      "checkedAt": "2026-10-28T07:40:11.935Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "45395",
+      "code": "165/2025/NĐ-CP",
+      "title": "quy định chi tiết một số điều và biện pháp thi hành Luật Dữ liệu.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/165-2025-nd-cp-45395.htm",
+      "checkedAt": "2026-10-28T07:40:12.029Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "46569",
+      "code": "2439/QĐ-TTg",
+      "title": "ban hành Khung kiến trúc dữ liệu quốc gia, Khung quản trị, quản lý dữ liệu quốc gia, Từ điển dữ liệu dùng chung (Phiên bản 1.0).",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/2439-qd-ttg-46569.htm",
+      "checkedAt": "2026-10-28T07:40:12.138Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "44500",
+      "code": "42/VBHN-VPQH",
+      "title": "hợp nhất Luật Giao dịch điện tử.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/42-vbhn-vpqh-44500.htm",
+      "checkedAt": "2026-10-28T07:40:12.323Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "22692",
+      "code": "02/2017/TT-BTTTT",
+      "title": "ban hành “Quy chuẩn kỹ thuật quốc gia về cấu trúc thông điệp dữ liệu công dân trao đổi với cơ sở dữ liệu quốc gia về dân cư”.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/02-2017-tt-btttt-22692.htm",
+      "checkedAt": "2026-10-28T07:40:12.369Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "45437",
+      "code": "194/2025/NĐ-CP",
+      "title": "quy định chi tiết một số điều của Luật Giao dịch điện tử về cơ sở dữ liệu quốc gia, kết nối và chia sẻ dữ liệu, dữ liệu mở phục vụ giao dịch điện tử của cơ quan nhà nước.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/194-2025-nd-cp-45437.htm",
+      "checkedAt": "2026-10-28T07:40:12.453Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "45564",
+      "code": "73/2025/QH15",
+      "title": "luật Nhà giáo.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/73-2025-qh15-45564.htm",
+      "checkedAt": "2026-10-28T08:15:45.871Z",
+      "articles": 42,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "57704",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2025/6/45564/57704-1-2025967-96873-2025-qh15.pdf",
+          "sha256": "29dbd1a1d63ebeea035eb65a2bb002dde3c18146ba94ab806fac7146684982e4",
+          "totalPages": 19,
+          "parsedPages": 19,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "29267",
+      "code": "43/2019/QH14",
+      "title": "luật Giáo dục.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/43-2019-qh14-29267.htm",
+      "checkedAt": "2026-10-28T08:15:45.980Z",
+      "articles": 115,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "27316",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2019/6/29267/27316-1-2019569-57043-2019-qh14.pdf",
+          "sha256": "709a72409b47c876255829456653e480b44e2c1cf1ec77464513af452de4578b",
+          "totalPages": 51,
+          "parsedPages": 51,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "468684",
+      "code": "123/2025/QH15",
+      "title": "Luật sửa đổi, bổ sung một số điều của Luật Giáo dục",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/123-2025-qh15-468684.htm",
+      "checkedAt": "2026-10-28T07:40:12.746Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "43598",
+      "code": "59/2024/QH15",
+      "title": "luật Tư pháp người chưa thành niên.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/59-2024-qh15-43598.htm",
+      "checkedAt": "2026-10-28T07:40:12.829Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "915",
+      "code": "15/2012/QH13",
+      "title": "luật xử lý vi phạm hành chính.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/15-2012-qh13-915.htm",
+      "checkedAt": "2026-10-28T07:40:12.924Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "1249",
+      "code": "23/VBHN-VPQH",
+      "title": "hợp nhất Luật giáo dục.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/23-vbhn-vpqh-1249.htm",
+      "checkedAt": "2026-10-28T07:40:13.033Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "2785",
+      "code": "02/VBHN-BGDĐT",
+      "title": "hợp nhất Thông tư ban hành Quy định về chế độ thỉnh giảng trong các cơ sở giáo dục.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/02-vbhn-bgddt-2785.htm",
+      "checkedAt": "2026-10-28T07:40:13.148Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "18895",
+      "code": "07/VBHN-VPQH",
+      "title": "hợp nhất Luật giáo dục.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/07-vbhn-vpqh-18895.htm",
+      "checkedAt": "2026-10-28T07:40:13.248Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "28891",
+      "code": "02/VBHN-BGDĐT",
+      "title": "hợp nhất Thông tư ban hành Quy chế thi trung học phổ thông quốc gia và xét công nhận tốt nghiệp trung học phổ thông.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/02-vbhn-bgddt-28891.htm",
+      "checkedAt": "2026-10-28T07:40:13.428Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "8360",
+      "code": "01/VBHN-BGDĐT",
+      "title": "hợp nhất Nghị định quy định chi tiết và hướng dẫn thi hành một số điều của Luật Giáo dục.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/01-vbhn-bgddt-8360.htm",
+      "checkedAt": "2026-10-28T07:40:13.605Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "42576",
+      "code": "41/2024/QH15",
+      "title": "luật Bảo hiểm xã hội.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/41-2024-qh15-42576.htm",
+      "checkedAt": "2026-10-28T08:15:46.384Z",
+      "articles": 141,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "51466",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2024/6/42576/51466-1-2024987-98841-2024-qh15.pdf",
+          "sha256": "d46db2fcf0a62e8d788f99612071c881bbba0e00ec1992691f615fd1832ce8e8",
+          "totalPages": 88,
+          "parsedPages": 88,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "15355",
+      "code": "58/2014/QH13",
+      "title": "Luật bảo hiểm xã hội.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/58-2014-qh13-15355.htm",
+      "checkedAt": "2026-10-28T07:40:14.729Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "30971",
+      "code": "19/VBHN-VPQH",
+      "title": "hợp nhất Luật Bảo hiểm xã hội.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/19-vbhn-vpqh-30971.htm",
+      "checkedAt": "2026-10-28T07:40:14.814Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "45848",
+      "code": "58/VBHN-VPQH",
+      "title": "hợp nhất Luật Bảo hiểm xã hội.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/58-vbhn-vpqh-45848.htm",
+      "checkedAt": "2026-10-28T07:40:14.892Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "28208",
+      "code": "50/VBHN-VPQH",
+      "title": "hợp nhất Luật Bảo hiểm xã hội.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/50-vbhn-vpqh-28208.htm",
+      "checkedAt": "2026-10-28T07:40:14.951Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "15054",
+      "code": "10/TLHN-BQP",
+      "title": "hợp nhất Thông tư liên tịch hướng dẫn thực hiện một số điều của Nghị định số 68/2007/NĐ-CP ngày 19/4/2007 của Chính phủ quy định chi tiết và hướng dẫn thi hành một số điều của Luật Bảo hiểm xã hội về bảo hiểm xã hội bắt buộc đối với quân nhân, công an nhân dân và người làm công tác cơ yếu hưởng lương như đối với quân nhân, công an nhân dân.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/10-tlhn-bqp-15054.htm",
+      "checkedAt": "2026-10-28T07:40:15.034Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "45240",
+      "code": "158/2025/NĐ-CP",
+      "title": "quy định chi tiết và hướng dẫn thi hành một số điều của Luật Bảo hiểm xã hội về bảo hiểm xã hội bắt buộc.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/158-2025-nd-cp-45240.htm",
+      "checkedAt": "2026-10-28T07:40:15.092Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "27601",
+      "code": "01/VBHN-BNV",
+      "title": "hợp nhất Nghị định về chính sách tinh giản biên chế.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/01-vbhn-bnv-27601.htm",
+      "checkedAt": "2026-10-28T07:40:15.249Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "46337",
+      "code": "88/2025/TT-BCA",
+      "title": "hướng dẫn thực hiện bảo hiểm xã hội bắt buộc đối với sĩ quan, hạ sĩ quan, chiến sĩ Công an nhân dân.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/88-2025-tt-bca-46337.htm",
+      "checkedAt": "2026-10-28T07:40:15.344Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "18101",
+      "code": "115/2015/NĐ-CP",
+      "title": "quy định chi tiết một số điều của Luật Bảo hiểm xã hội về bảo hiểm xã hội bắt buộc.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/115-2015-nd-cp-18101.htm",
+      "checkedAt": "2026-10-28T07:40:15.394Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "30232",
+      "code": "45/2019/QH14",
+      "title": "bộ luật Lao động.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/45-2019-qh14-30232.htm",
+      "checkedAt": "2026-10-28T08:15:47.201Z",
+      "articles": 220,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "29070",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2019/11/30232/29070-1-2019993-99445-2019-qh14.pdf",
+          "sha256": "3c865f3d92ba23604e316360b902297ddbc0d1c394d3c08a466029a9d43b5b6c",
+          "totalPages": 94,
+          "parsedPages": 94,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "45528",
+      "code": "86/2025/QH15",
+      "title": "luật sửa đổi, bổ sung một số điều của Bộ luật Hình sự.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/86-2025-qh15-45528.htm",
+      "checkedAt": "2026-10-28T08:15:47.859Z",
+      "articles": 16,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "57612",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2025/6/45528/57612-1-2025955-95686-2025-qh15.pdf",
+          "sha256": "b0f74b7fabe056f2b16232a82b5f53bde9e7b43e9141ee8ea03ea88b806137e3",
+          "totalPages": 52,
+          "parsedPages": 52,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "42578",
+      "code": "43/2024/QH15",
+      "title": "luật sửa đổi, bổ sung một số điều của Luật Đất đai số 31/2024/QH15, Luật Nhà ở số 27/2023/QH15, Luật kinh doanh bất động sản số 29/2023/QH15 và Luật Các tổ chức tín dụng số 32/2024/QH15.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/43-2024-qh15-42578.htm",
+      "checkedAt": "2026-10-28T08:15:48.103Z",
+      "articles": 5,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "51470",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2024/6/42578/51470-1-2024987-98843-2024-qh15.pdf",
+          "sha256": "859d1f08a3a9fd5555ffc4396226cb2c86a4c48c6f577331cdd476071d2e00f4",
+          "totalPages": 2,
+          "parsedPages": 2,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "18411",
+      "code": "92/2015/QH13",
+      "title": "Bộ luật tố tụng dân sự.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/92-2015-qh13-18411.htm",
+      "checkedAt": "2026-10-28T09:02:35.707Z",
+      "articles": 520,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "28624",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2015/11/18411/28624-1-incb-12511252-29-12-2015signedsignedsignedpdf",
+          "sha256": "bdae2e76f6aaf555adcc7f735ce958aec7b89f647f495b645e894ee7a42b6532",
+          "totalPages": 84,
+          "parsedPages": 84,
+          "complete": true
+        },
+        {
+          "id": "28625",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2015/11/18411/28625-1-incb-12531254-29-12-2015signedsignedpdf",
+          "sha256": "e6f8ee28023bbe15087098cc89df22fededcdd6a9f7a74978f98a87a1c9f5915",
+          "totalPages": 84,
+          "parsedPages": 84,
+          "complete": true
+        },
+        {
+          "id": "28627",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2015/11/18411/28627-2-incb-12551256-29-12-2015signedsignedsignedsignedsignedpdf",
+          "sha256": "eba0e306dbd5450b7a4b2b4591c36770b3e17d461b05d585432db2bdafaf3246",
+          "totalPages": 88,
+          "parsedPages": 88,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "13900",
+      "code": "92/2015/QH13",
+      "title": "về việc bãi nhiệm đại biểu Quốc hội Châu Thị Thu Nga, đại biểu Quốc hội khóa XIII thuộc đoàn đại biểu Quốc hội thành phố Hà Nội.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/92-2015-qh13-13900.htm",
+      "checkedAt": "2026-10-28T09:02:38.629Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "18457",
+      "code": "101/2015/QH13",
+      "title": "Bộ luật tố tụng hình sự.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/101-2015-qh13-18457.htm",
+      "checkedAt": "2026-10-28T09:02:38.751Z",
+      "articles": 501,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "28633",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2015/11/18457/28633-1-incb-12711272-31-12-2015signedsignedsignedpdf",
+          "sha256": "d247ff5172d937709b5d7b7b17852836d812b1c98ff1c3401176ade99f23ac8e",
+          "totalPages": 93,
+          "parsedPages": 93,
+          "complete": true
+        },
+        {
+          "id": "28634",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2015/11/18457/28634-1-incb-12731274-31-12-2015signedsignedpdf",
+          "sha256": "4d542a6ef93ce67621a824551c622a91bb1ee7eb45cfc5254df001ebeea9ecbf",
+          "totalPages": 92,
+          "parsedPages": 92,
+          "complete": true
+        },
+        {
+          "id": "28635",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2015/11/18457/28635-2-incb-12751276-31-12-2015signedsignedsignedsignedsignedpdf",
+          "sha256": "758efada98701c7e1d941f628dad97d51c7c6d7e8574757d693f70a572210f45",
+          "totalPages": 45,
+          "parsedPages": 45,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "18149",
+      "code": "101/2015/QH13",
+      "title": "về phân bổ ngân sách trung ương năm 2016.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/101-2015-qh13-18149.htm",
+      "checkedAt": "2026-10-28T09:02:41.636Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "19934",
+      "code": "144/2016/QH13",
+      "title": "về việc lùi hiệu lực thi hành của Bộ luật hình sự số 100/2015/QH13, Bộ luật tố tụng hình sự số 101/2015/QH13, Luật tổ chức cơ quan điều tra hình sự số 99/2015/QH13, Luật thi hành tạm giữ, tạm giam số 94/2015/QH13 và bổ sung Dự án Luật sửa đổi, bổ sung một số điều của Bộ luật hình sự số 100/2015/QH13 vào Chương trình xây dựng luật, pháp lệnh năm 2016.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/144-2016-qh13-19934.htm",
+      "checkedAt": "2026-10-28T09:02:41.774Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "15230",
+      "code": "93/2015/QH13",
+      "title": "về việc thực hiện chính sách hưởng bảo hiểm xã hội một lần đối với người lao động.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/93-2015-qh13-15230.htm",
+      "checkedAt": "2026-10-28T09:02:41.904Z",
+      "articles": 0,
+      "textComplete": true,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "10221",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2015/6/15230/10221-1-2015859-860-932015qh13pdf",
+          "sha256": "086a40bacaa6a87986e100a5a46540800b36b8b8cf3fda128cb2c33343ac94dd",
+          "totalPages": 2,
+          "parsedPages": 2,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "18405",
+      "code": "93/2015/QH13",
+      "title": "Luật tố tụng hành chính.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/93-2015-qh13-18405.htm",
+      "checkedAt": "2026-10-28T09:02:42.145Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "45589",
+      "code": "93/2025/QH15",
+      "title": "luật Khoa học, công nghệ và đổi mới sáng tạo.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/93-2025-qh15-45589.htm",
+      "checkedAt": "2026-10-28T09:02:42.238Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "29273",
+      "code": "41/2019/QH14",
+      "title": "luật Thi hành án hình sự.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/41-2019-qh14-29273.htm",
+      "checkedAt": "2026-10-28T09:02:42.318Z",
+      "articles": 207,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "27329",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2019/6/29273/27329-1-2019575-57641-2019-qh14.pdf",
+          "sha256": "eb8912297c74c22a4088402f98ce387699ee6b6df210eed34c339967c867b51a",
+          "totalPages": 94,
+          "parsedPages": 94,
+          "complete": true
+        },
+        {
+          "id": "27332",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2019/6/29273/27332-1-2019577-57841-2019-qh14.pdf",
+          "sha256": "f14829dd66ec11872aca2605b401d1e07bf8ac25d85b708172033d3fb038b42f",
+          "totalPages": 56,
+          "parsedPages": 56,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "25227",
+      "code": "49/2017/QH14",
+      "title": "Nghị quyết số về dự toán ngân sách nhà nước năm 2018.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/49-2017-qh14-25227.htm",
+      "checkedAt": "2026-10-28T09:02:43.561Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "25959",
+      "code": "10/2018/TT-BTC",
+      "title": "sửa đổi, bổ sung một số điều của Thông tư số 76/2014/TT-BTC ngày 16 tháng 6 năm 2014 Bộ Tài chính hướng dẫn một số điều của Nghị định số 45/2014/NĐ-CP ngày 15 tháng 5 năm 2014 của Chính phủ quy định về thu tiền sử dụng đất.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/10-2018-tt-btc-25959.htm",
+      "checkedAt": "2026-10-28T09:02:43.625Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "40856",
+      "code": "27/2023/QH15",
+      "title": "luật Nhà ở.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/27-2023-qh15-40856.htm",
+      "checkedAt": "2026-10-28T09:02:43.788Z",
+      "articles": 198,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "47839",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2023/11/40856/47839-1-202437-3827-2023-qh15.pdf",
+          "sha256": "c647b16e5570e74ade61f6fc23128f8d878a81d979753f95160579cb5a3fb907",
+          "totalPages": 94,
+          "parsedPages": 94,
+          "complete": true
+        },
+        {
+          "id": "47842",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2023/11/40856/47842-1-202439-4027-2023-qh15.pdf",
+          "sha256": "04e0f3730aa2e1f3fc9c5e7e0c40485a88e5fac18b3a00b9b89e923591f520eb",
+          "totalPages": 61,
+          "parsedPages": 61,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "44465",
+      "code": "23/VBHN-VPQH",
+      "title": "hợp nhất Luật Quản lý, sử dụng tài sản công.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/23-vbhn-vpqh-44465.htm",
+      "checkedAt": "2026-10-28T09:02:45.686Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "42928",
+      "code": "07/VBHN-VPQH",
+      "title": "hợp nhất Luật Đường sắt.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/07-vbhn-vpqh-42928.htm",
+      "checkedAt": "2026-10-28T09:02:45.819Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "40868",
+      "code": "29/2023/QH15",
+      "title": "luật Kinh doanh bất động sản.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/29-2023-qh15-40868.htm",
+      "checkedAt": "2026-10-28T09:02:45.884Z",
+      "articles": 83,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "47862",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2023/11/40868/47862-1-202443-4429-2023-qh15.pdf",
+          "sha256": "a4399dc8e26063d753ecdf96e5833cfb573ad9265c3e74ab86e3e6f51ce00063",
+          "totalPages": 69,
+          "parsedPages": 69,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "40850",
+      "code": "26/2023/QH15",
+      "title": "luật Căn cước.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/26-2023-qh15-40850.htm",
+      "checkedAt": "2026-10-28T09:02:46.747Z",
+      "articles": 46,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "47828",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2023/11/40850/47828-1-202435-3626-2023-qh15.pdf",
+          "sha256": "8dc5ff166e941a70379516d69e3f4798f5ec859735e2e18b8bad86e831401a13",
+          "totalPages": 30,
+          "parsedPages": 30,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "39855",
+      "code": "22/2023/QH15",
+      "title": "luật Đấu thầu.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/22-2023-qh15-39855.htm",
+      "checkedAt": "2026-10-28T09:02:47.269Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "40572",
+      "code": "105/2023/QH15",
+      "title": "về phân bổ ngân sách trung ương năm 2024.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/105-2023-qh15-40572.htm",
+      "checkedAt": "2026-10-28T09:02:47.379Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "39843",
+      "code": "19/2023/QH15",
+      "title": "luật Bảo vệ quyền lợi người tiêu dùng.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/19-2023-qh15-39843.htm",
+      "checkedAt": "2026-10-28T09:02:47.456Z",
+      "articles": 80,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "45917",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2023/6/39843/45917-1-2023865-86619-2023-qh15.pdf",
+          "sha256": "d9d8d76b585eaf81c5e59f51f2c309a7c1e3797ee2b165d4c2fd38d83ad50a19",
+          "totalPages": 54,
+          "parsedPages": 54,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "45610",
+      "code": "223/2025/QH15",
+      "title": "bổ sung dự toán thu ngân sách nhà nước năm 2023 và phê chuẩn quyết toán ngân sách nhà nước năm 2023.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/223-2025-qh15-45610.htm",
+      "checkedAt": "2026-10-28T09:02:47.987Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "40571",
+      "code": "104/2023/QH15",
+      "title": "về dự toán ngân sách nhà nước năm 2024.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/104-2023-qh15-40571.htm",
+      "checkedAt": "2026-10-28T09:02:48.117Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "43675",
+      "code": "1337/NQ-UBTVQH15",
+      "title": "về phân bổ dự toán kinh phí hoạt động của các Đoàn đại biểu Quốc hội năm 2025.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/1337-nq-ubtvqh15-43675.htm",
+      "checkedAt": "2026-10-28T09:02:48.191Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "37451",
+      "code": "50/2022/QH15",
+      "title": "Chương trình xây dựng luật, pháp lệnh năm 2023, điều chỉnh Chương trình xây dựng luật, pháp lệnh năm 2022.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/50-2022-qh15-37451.htm",
+      "checkedAt": "2026-10-28T09:02:48.330Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "26894",
+      "code": "24/2018/QH14",
+      "title": "luật An ninh mạng.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/24-2018-qh14-26894.htm",
+      "checkedAt": "2026-10-28T09:02:48.409Z",
+      "articles": 43,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "23075",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2018/6/26894/23075-1-2018775-77624-2018-qh14.pdf",
+          "sha256": "7ba6b742325359b442b4e5a7a905defba286eedb39210f59a1d8983d3d916a4a",
+          "totalPages": 32,
+          "parsedPages": 32,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "29866",
+      "code": "158/2019/TT-BQP",
+      "title": "ban hành Quy chuẩn QCVN 08:2019/BQP, Quy chuẩn kỹ thuật quốc gia về hủy nổ lựu đạn sát thương và đầu đạn nổ phá, nổ sát thương, nổ phá sát thương.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/158-2019-tt-bqp-29866.htm",
+      "checkedAt": "2026-10-28T09:02:49.143Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "24409",
+      "code": "184/2017/TT-BQP",
+      "title": "ban hành Quy chuẩn QCVN 09:2017/BQP, Quy chuẩn kỹ thuật quốc gia về an toàn lao động đối với pháo mặt đất.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/184-2017-tt-bqp-24409.htm",
+      "checkedAt": "2026-10-28T09:02:49.228Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "45642",
+      "code": "91/2025/UBTVQH15",
+      "title": "sửa đổi, bổ sung một số điều của Nghị quyết số 31/2023/UBTVQH15 ngày 14 tháng 02 năm 2023 của Ủy ban Thường vụ Quốc hội quy định, hướng dẫn một số điều khoản của Nội quy kỳ họp Quốc hội.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/91-2025-ubtvqh15-45642.htm",
+      "checkedAt": "2026-10-28T09:02:49.321Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "45414",
+      "code": "227/2025/QH15",
+      "title": "kỳ họp thứ 9, Quốc hội khóa XV.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/227-2025-qh15-45414.htm",
+      "checkedAt": "2026-10-28T09:02:49.454Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "44288",
+      "code": "193/2025/QH15",
+      "title": "về thí điểm một số cơ chế, chính sách đặc biệt tạo đột phá phát triển khoa học, công nghệ, đổi mới sáng tạo và chuyển đổi số quốc gia.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/193-2025-qh15-44288.htm",
+      "checkedAt": "2026-10-28T09:02:49.595Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "31682",
+      "code": "61/2020/QH14",
+      "title": "luật Đầu tư.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/61-2020-qh14-31682.htm",
+      "checkedAt": "2026-10-28T09:02:49.682Z",
+      "articles": 77,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "31846",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2020/6/31682/31846-1-2020717-71861-2020-qh14.pdf",
+          "sha256": "de8832b90e5e267c5e3277e94e90a5c2da0c0e13ab911f03c6f6ccb61207d2cc",
+          "totalPages": 94,
+          "parsedPages": 94,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "45389",
+      "code": "90/2025/QH15",
+      "title": "luật sửa đổi, bổ sung một số điều của Luật Đấu thầu, Luật Đầu tư theo phương thức đối tác công tư, Luật Hải quan, Luật Thuế giá trị gia tăng, Luật Thuế xuất khẩu, thuế nhập khẩu, Luật Đầu tư, Luật Đầu tư công, Luật Quản lý, sử dụng tài sản công.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/90-2025-qh15-45389.htm",
+      "checkedAt": "2026-10-28T09:02:50.544Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "46086",
+      "code": "126/VBHN-VPQH",
+      "title": "hợp nhất Luật Đấu thầu.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/126-vbhn-vpqh-46086.htm",
+      "checkedAt": "2026-10-28T09:02:50.642Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "38349",
+      "code": "06/VBHN-VPQH",
+      "title": "hợp nhất Luật Điện lực.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/06-vbhn-vpqh-38349.htm",
+      "checkedAt": "2026-10-28T09:02:50.856Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "29256",
+      "code": "38/2019/QH14",
+      "title": "luật Quản lý thuế.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/38-2019-qh14-29256.htm",
+      "checkedAt": "2026-10-28T09:02:50.965Z",
+      "articles": 152,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "27294",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2019/6/29256/27294-1-2019561-56238-2019-qh14.pdf",
+          "sha256": "6f25fd374e720685ade7ff35d375c8e1b04f0b0ff3af39e30d2dc1efcdef6f60",
+          "totalPages": 94,
+          "parsedPages": 94,
+          "complete": true
+        },
+        {
+          "id": "27297",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2019/6/29256/27297-1-2019563-56438-2019-qh14.pdf",
+          "sha256": "a0f00cda81f9e9815ffbb59062f1915853f87adbe8c1f8de496c057bfa57904d",
+          "totalPages": 10,
+          "parsedPages": 10,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "43561",
+      "code": "56/2024/QH15",
+      "title": "luật Sửa đổi, bổ sung một số điều của Luật Chứng khoán, Luật Kế toán, Luật Kiểm toán độc lập, Luật Ngân sách nhà nước, Luật Quản lý, sử dụng tài sản công, Luật Quản lý thuế, Luật Thuế thu nhập cá nhân, Luật Dự trữ quốc gia, Luật Xử lý vi phạm hành chính.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/56-2024-qh15-43561.htm",
+      "checkedAt": "2026-10-28T09:02:52.239Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "45557",
+      "code": "67/2025/QH15",
+      "title": "luật Thuế thu nhập doanh nghiệp.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/67-2025-qh15-45557.htm",
+      "checkedAt": "2026-10-28T09:02:52.364Z",
+      "articles": 20,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "57755",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2025/6/45557/57755-1-2025965-96667-2025-qh15.pdf",
+          "sha256": "2035cacf3a1dfa98f7f317e537768a25f0569e6d7169638133aaf35fd561d3d8",
+          "totalPages": 24,
+          "parsedPages": 24,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "45596",
+      "code": "69/2025/QH15",
+      "title": "luật Hóa chất.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/69-2025-qh15-45596.htm",
+      "checkedAt": "2026-10-28T09:02:53.274Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "32703",
+      "code": "72/2020/QH14",
+      "title": "luật Bảo vệ môi trường.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/72-2020-qh14-32703.htm",
+      "checkedAt": "2026-10-28T09:02:53.370Z",
+      "articles": 171,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "33751",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2020/11/32703/33751-1-20201185-118672-2020-qh14.pdf",
+          "sha256": "2254ce1fa475bcce0c565f18e25d7ad18dd2fe15a170ef907935498eb4969a70",
+          "totalPages": 94,
+          "parsedPages": 94,
+          "complete": true
+        },
+        {
+          "id": "33754",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2020/11/32703/33754-1-20201187-118872-2020-qh14.pdf",
+          "sha256": "a026d3175634d20300e794da652092b3fb83b7d9b8775b8ddc41101f65ef6b46",
+          "totalPages": 70,
+          "parsedPages": 70,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "46149",
+      "code": "134/VBHN-VPQH",
+      "title": "hợp nhất Luật Đầu tư.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/134-vbhn-vpqh-46149.htm",
+      "checkedAt": "2026-10-28T09:02:55.036Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "37059",
+      "code": "35/2022/TT-BQP",
+      "title": "sửa đổi, bổ sung một số điều của Thông tư số 116/2015/TT-BQP ngày 01 tháng 10 năm 2015 của Bộ trưởng Bộ Quốc phòng quy định tiêu chuẩn vật chất hậu cần đối với học viên cơ yếu.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/35-2022-tt-bqp-37059.htm",
+      "checkedAt": "2026-10-28T09:02:55.119Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "109",
+      "code": "08/2012/QH13",
+      "title": "giáo dục đại học.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/08-2012-qh13-109.htm",
+      "checkedAt": "2026-10-28T09:02:55.269Z",
+      "articles": 73,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "11304",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2012/6/109/11304-1-2012473-474-082012qh13pdf",
+          "sha256": "85ea5a040d383e5d7b44fa2e6c641b1b12f3466c8ac60d74f07a58e3f411065f",
+          "totalPages": 39,
+          "parsedPages": 39,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "4784",
+      "code": "08/2013/TT-BGTVT",
+      "title": "sửa đổi, bổ sung một số quy định của QCVN 17:2011/BGTVT - Quy chuẩn kỹ thuật quốc gia về quy phạm ngăn ngừa ô nhiễm do phương tiện thủy nội địa ban hành kèm theo Thông tư số 70/2011/TT-BGTVT ngày 30/12/2011 Mã số đăng ký: Sửa đổi lần 1:2013 QCVN 17:2011/BGTVT.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/08-2013-tt-bgtvt-4784.htm",
+      "checkedAt": "2026-10-28T09:02:55.587Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "22172",
+      "code": "08/2017/TT-BQP",
+      "title": "quy định hoạt động kiểm định kỹ thuật an toàn máy, thiết bị, vật tư có yêu cầu nghiêm ngặt về an toàn lao động trong Bộ Quốc phòng.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/08-2017-tt-bqp-22172.htm",
+      "checkedAt": "2026-10-28T09:02:55.668Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "27800",
+      "code": "34/2018/QH14",
+      "title": "luật sửa đổi, bổ sung một số điều của luật giáo dục đại học.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/34-2018-qh14-27800.htm",
+      "checkedAt": "2026-10-28T09:02:55.746Z",
+      "articles": 3,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "24714",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2018/11/27800/24714-1-20181135-113634-2018-qh14.pdf",
+          "sha256": "7d7920d72ec7e64c61a67090fa80e3861b818b7b71c17237f20d7768516cb421",
+          "totalPages": 36,
+          "parsedPages": 36,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "27932",
+      "code": "170/2018/TT-BQP",
+      "title": "hướng dẫn một số điều của Nghị định số 102/2018/NĐ-CP ngày 20 tháng 7 năm 2018 của Chính phủ quy định chế độ hỗ trợ và một số chế độ đãi ngộ khác đối với người Việt Nam có công với cách mạng, người tham gia kháng chiến, chiến tranh bảo vệ Tổ quốc và làm nhiệm vụ quốc tế đang định cư ở nước ngoài.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/170-2018-tt-bqp-27932.htm",
+      "checkedAt": "2026-10-28T09:02:56.497Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "27357",
+      "code": "143/2018/TT-BQP",
+      "title": "sửa đổi, bổ sung một số điều của Thông tư số 130/2014/TT-BQP ngày 24 tháng 9 năm 2014 của Bộ trưởng Bộ Quốc phòng hướng dẫn thực hiện một số điều của Nghị định số 162/2013/NĐ-CP ngày 12 tháng 11 năm 2013 của Chính phủ quy định về xử phạt vi phạm hành chính trên các vùng biển, đảo và thềm lục địa của nước Cộng hòa xã hội chủ nghĩa Việt Nam.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/143-2018-tt-bqp-27357.htm",
+      "checkedAt": "2026-10-28T09:02:56.624Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "27808",
+      "code": "36/2018/QH14",
+      "title": "luật Phòng, chống tham nhũng",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/36-2018-qh14-27808.htm",
+      "checkedAt": "2026-10-28T09:02:56.706Z",
+      "articles": 96,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "24729",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2018/11/27808/24729-1-20181137-113836-2018-qh14.pdf",
+          "sha256": "f42ce1fced7172521d79a4df458968c48add6cb0bd86fc8800c9c037f9923cb8",
+          "totalPages": 47,
+          "parsedPages": 47,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "28586",
+      "code": "36/VBHN-VPQH",
+      "title": "hợp nhất Luật Thủy lợi",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/36-vbhn-vpqh-28586.htm",
+      "checkedAt": "2026-10-28T09:02:57.361Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "27875",
+      "code": "166/2018/TT-BQP",
+      "title": "quy định bảo đảm xe phục vụ Lễ Quốc tang và Lễ tang cấp Nhà nước.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/166-2018-tt-bqp-27875.htm",
+      "checkedAt": "2026-10-28T09:02:57.440Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "1007",
+      "code": "02/2011/QH13",
+      "title": "Luật Khiếu nại.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/02-2011-qh13-1007.htm",
+      "checkedAt": "2026-10-28T09:02:57.574Z",
+      "articles": 70,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "9566",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2011/11/1007/9566-1-2012163-164-022011qh13pdf",
+          "sha256": "46e0249293e4ef5970697c53940db862a068443fe63800aa8a553c1c73f40c9b",
+          "totalPages": 27,
+          "parsedPages": 27,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "11986",
+      "code": "02/2011/QH13",
+      "title": "miễn nhiệm Tổng Kiểm toán Nhà nước.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/02-2011-qh13-11986.htm",
+      "checkedAt": "2026-10-28T09:02:57.926Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "26892",
+      "code": "25/2018/QH14",
+      "title": "luật Tố cáo.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/25-2018-qh14-26892.htm",
+      "checkedAt": "2026-10-28T09:02:58.017Z",
+      "articles": 67,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "23071",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2018/6/26892/23071-1-2018775-77625-2018-qh14.pdf",
+          "sha256": "3bfa98dda5119bfd4ad30687abcc1017a85838d7be8f9a218760fd37a1fec164",
+          "totalPages": 37,
+          "parsedPages": 37,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "28569",
+      "code": "25/VBHN-VPQH",
+      "title": "hợp nhất Bộ Luật Hàng hải Việt Nam.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/25-vbhn-vpqh-28569.htm",
+      "checkedAt": "2026-10-28T09:02:58.673Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "40862",
+      "code": "28/2023/QH15",
+      "title": "luật Tài nguyên nước.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/28-2023-qh15-40862.htm",
+      "checkedAt": "2026-10-28T09:02:58.872Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "24275",
+      "code": "15/2017/QH14",
+      "title": "luật Quản lý, sử dụng tài sản công.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/15-2017-qh14-24275.htm",
+      "checkedAt": "2026-10-28T09:02:58.994Z",
+      "articles": 133,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "18512",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2017/6/24275/18512-1-2017519-52015-2017-qh14.pdf",
+          "sha256": "f07597c57af6c9ad50ef8edb8930eaf98d4dfc4ec091656497e65e0ebfde622b",
+          "totalPages": 74,
+          "parsedPages": 74,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "468706",
+      "code": "146/2025/QH15",
+      "title": "Luật sửa đổi, bổ sung một số điều của 15 Luật trong lĩnh vực nông nghiệp và môi trường",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/146-2025-qh15-468706.htm",
+      "checkedAt": "2026-10-28T09:03:00.037Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "45572",
+      "code": "89/2025/QH15",
+      "title": "luật Ngân sách nhà nước.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/89-2025-qh15-45572.htm",
+      "checkedAt": "2026-10-28T09:03:00.141Z",
+      "articles": 79,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "57719",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2025/6/45572/57719-1-2025969-97089-2025-qh15.pdf",
+          "sha256": "5e25f2a9afc133c1b1ccd952e81d5b61ed7ec0b5749c3cb6b64856d2673ed54f",
+          "totalPages": 55,
+          "parsedPages": 55,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "44584",
+      "code": "64/2025/QH15",
+      "title": "ban hành văn bản quy phạm pháp luật.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/64-2025-qh15-44584.htm",
+      "checkedAt": "2026-10-28T09:03:00.484Z",
+      "articles": 72,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "55716",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2025/2/44584/55716-1-2025603-60464-2025-qh15.pdf",
+          "sha256": "d5a4089a09896e990854145e95e79a35b00b161dc915cc5eb195cb3ded1c96fa",
+          "totalPages": 52,
+          "parsedPages": 52,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "469067",
+      "code": "10/2026/QĐ-TTg",
+      "title": "Sửa đổi, bổ sung một số điều của Quyết định số 15/2025/QĐ-TTg ngày 14 tháng 6 năm 2025 của Thủ tướng Chính phủ quy định tiêu chuẩn, định mức sử dụng máy móc, thiết bị",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/10-2026-qd-ttg-469067.htm",
+      "checkedAt": "2026-10-28T09:03:01.072Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "38900",
+      "code": "15/2023/QH15",
+      "title": "luật Khám bệnh, Chữa bệnh.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/15-2023-qh15-38900.htm",
+      "checkedAt": "2026-10-28T09:03:01.179Z",
+      "articles": 121,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "43869",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2023/1/38900/43869-1-2023489-49015-2023-qh15.pdf",
+          "sha256": "2a36feec0fb142978fd07683d0653ea5c9129af52608dc5d3311ddd18319c61d",
+          "totalPages": 90,
+          "parsedPages": 90,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "45562",
+      "code": "74/2025/QH15",
+      "title": "luật Việc làm.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/74-2025-qh15-45562.htm",
+      "checkedAt": "2026-10-28T09:03:02.049Z",
+      "articles": 55,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "57700",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2025/6/45562/57700-1-2025967-96874-2025-qh15.pdf",
+          "sha256": "63cf9e29dc924956a1dcc6e28dab4ba9b518866241d0eaddca07f7e168761cc7",
+          "totalPages": 27,
+          "parsedPages": 27,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "43594",
+      "code": "55/2024/QH15",
+      "title": "luật Phòng cháy, chữa cháy và cứu nạn, cứu hộ.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/55-2024-qh15-43594.htm",
+      "checkedAt": "2026-10-28T09:03:02.230Z",
+      "articles": 55,
+      "textComplete": true,
+      "identityMatched": true,
+      "status": "unknown",
+      "files": [
+        {
+          "id": "53752",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2024/11/43594/53752-1-20241535-153655-2024-qh15.pdf",
+          "sha256": "1b1942dbf11e912a28ac2004d1f3cca3b6e7356796507dda7450ccf27a250462",
+          "totalPages": 43,
+          "parsedPages": 43,
+          "complete": true
+        }
+      ]
+    },
+    {
+      "id": "468695",
+      "code": "135/2025/QH15",
+      "title": "Luật Xây dựng",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/135-2025-qh15-468695.htm",
+      "checkedAt": "2026-10-28T09:03:02.574Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    },
+    {
+      "id": "43569",
+      "code": "57/2024/QH15",
+      "title": "luật sửa đổi, bổ sung một số điều của Luật Quy hoạch, Luật Đầu tư, Luật Đầu tư theo phương thức đối tác công tư và Luật Đấu thầu.",
+      "sourceUrl": "https://congbao.chinhphu.vn/van-ban/57-2024-qh15-43569.htm",
+      "checkedAt": "2026-10-28T09:03:02.697Z",
+      "articles": 0,
+      "textComplete": false,
+      "identityMatched": false,
+      "status": "unknown",
+      "files": []
+    }
+  ],
+  "files": [
+    {
+      "file": "data/hh-vietnam-law/catalogue.json",
+      "bytes": 177898,
+      "sha256": "2f1a019d4b0901494bd06233ec67ca992abb0fa04afa2386be896f6b80dab5dc"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/470017.json",
+      "bytes": 2306,
+      "sha256": "76e6298fb778574495f687232160b63ca2a34f68a7b01afc947ed2916ded603d"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/470018.json",
+      "bytes": 2321,
+      "sha256": "9cd42ace4581e2998dd97cf8ede1fc2e0bdd56b33994afedde0f5cfeadaf6f31"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/470019.json",
+      "bytes": 2318,
+      "sha256": "e296fb36475e1d3cce097e8b8833f7d0f68b6aed8ee862ad8f289ed187ef283b"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/470020.json",
+      "bytes": 2309,
+      "sha256": "d284e1898c49fa204d6b2906ae03e23a52fe361a7e57ed0e64742129282d1fd2"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/470021.json",
+      "bytes": 2339,
+      "sha256": "72b4cbc8ffed50d9d24edfed4828b9d6a40eaa3e6723798a278434abec604bb6"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/470022.json",
+      "bytes": 2579,
+      "sha256": "4ca0c65c7c66e3e18169dbf642505f2f326fc66702ca7458c372ac855c257234"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/470023.json",
+      "bytes": 2501,
+      "sha256": "d1fd4fb0aa047bb0c315bf6ea60ba2c73678006a05b76503c16e15d4a7f4796c"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/470024.json",
+      "bytes": 2375,
+      "sha256": "58b67bfffb1c399abf5c5e194e1c4fb265964a16d61883cfaec5a250a12ee49c"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/470025.json",
+      "bytes": 2351,
+      "sha256": "31b0c5db73a806eb3b3a5d5a4d5dc4b1694bb27eba4346cf5657ee85b517e6e3"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/470058.json",
+      "bytes": 2247,
+      "sha256": "64c64e3ddd45628c1259821d284956e0ebb00365d05fcf8880c2d900ae6d3f80"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469950.json",
+      "bytes": 2076,
+      "sha256": "484b7ec9e39bc7cc63e3d5c42987941ac9514c2353157f7efa33505875d0de85"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469952.json",
+      "bytes": 2311,
+      "sha256": "4134a1a6a276ae341bef5a8a9dcdbd614ded53ac78558b2936c739cb303595d5"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469977.json",
+      "bytes": 2309,
+      "sha256": "d885f48343bdec6a0d19273690ddf589c46a015f71a635e0d633a009b0bb92c0"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469978.json",
+      "bytes": 2453,
+      "sha256": "4f152511bb7092bbc4ddb666557b884cf30bb48097aaf1d7ffd8ec121828499a"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469979.json",
+      "bytes": 2387,
+      "sha256": "ec9191b8699d9dbd50b67dde0579d46cf174eb8f2b862853f6707a30132f4386"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469997.json",
+      "bytes": 2557,
+      "sha256": "d298f1d1866145f4372253fb2233cf04d66b7359802371d2aeb7d00c375a743f"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469916.json",
+      "bytes": 2608,
+      "sha256": "4e37f41dcdfbaee75ca67bda833200269c0c9070c18659ca2d5bc7415b7e385f"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469923.json",
+      "bytes": 2437,
+      "sha256": "9b28f20c9edf572aec7d991f00df83c948377282e7223bfb81d9b16cc61da397"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469925.json",
+      "bytes": 3045,
+      "sha256": "c331af9ef059b0b71a6a2d3c48453967db83f0c663d455fc4317036752ba5dcf"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469926.json",
+      "bytes": 2204,
+      "sha256": "f6551648f5d15bf99d514fcedaf25ed334acff95a9161d2edeea9b35ba8ac481"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469927.json",
+      "bytes": 2563,
+      "sha256": "e3860ba09b292c5220e2936287234a15c5a92e577bfc23412cfdb510c901e173"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469928.json",
+      "bytes": 2668,
+      "sha256": "7c370eca4790797a91c4959e018100ba39d5f399684f7df14c52d8de1064260a"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469929.json",
+      "bytes": 2377,
+      "sha256": "64b92d9283ca323d0c0d17552d1a29441614c62c9ab4b1908464efe44196ee99"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469948.json",
+      "bytes": 2227,
+      "sha256": "0365d7e1fcc7462740ce2230d0003c7e3dad511b0144c7ce797dd75831701ea3"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469949.json",
+      "bytes": 2323,
+      "sha256": "5d1486e2bd2b8519ad7475017973e36c96aec3a25851bf953c589dc3ac9b499b"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469951.json",
+      "bytes": 2270,
+      "sha256": "99de27fc832735272e24bfae1d67f97da887245c94ecee377f475089ddfaf537"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469908.json",
+      "bytes": 2250,
+      "sha256": "bf786b96168bc76f9f7b7c09115336a6008541173a22552484ae7dc652c56302"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469911.json",
+      "bytes": 2282,
+      "sha256": "f55d45f99853016c88b4cb21050a0decdaad918b3d42bb0fc6a1dd7b6d56e60c"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469912.json",
+      "bytes": 2214,
+      "sha256": "dde029ffdffb6dc7e33e97e9fa3bd37d7c8e06e775983a987c04192f5bb92a92"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469915.json",
+      "bytes": 2488,
+      "sha256": "4cd007c10aa88758585315a1ef9586034c969130e971749bffeadf6adda13fb2"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469893.json",
+      "bytes": 2681,
+      "sha256": "3cb7595f0e67114a0ac3de212141d54ce16fc090825bcb2905ce638ab4f484a6"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469894.json",
+      "bytes": 2729,
+      "sha256": "3d77f9504f74aeb7e0e580ce5ce3c40f4cbd0bc58d25909514fc5a38505a97c7"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469907.json",
+      "bytes": 2425,
+      "sha256": "f900760e3fe001f366951e782d5d92319388f494848dd134897fc0711db2e3d1"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469862.json",
+      "bytes": 2246,
+      "sha256": "a8c1685fa91abd829b9e765de621f2447ffbaf2f0d7f01f660e19349180bbde8"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469871.json",
+      "bytes": 2911,
+      "sha256": "f58670d3f37d0a75af680e150abb63a9b8e90b406cf1e230ed1b3af2c457b018"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469873.json",
+      "bytes": 2778,
+      "sha256": "78b320f0e2988dfb3f8d21d388b97cf3c3c4641596bef4c24b3a03e77cfdbc06"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469887.json",
+      "bytes": 2457,
+      "sha256": "657a8065e2b99b48a84e1db1dc33ac31b4ac426a3825ea70301339a67f79b484"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469889.json",
+      "bytes": 3256,
+      "sha256": "99baf0e7e342fd7ae0d6f62dc5b7706f63b9c3bfa6111c5d16577de4ae386c28"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469890.json",
+      "bytes": 2330,
+      "sha256": "5f37be6d3f5c2860755fc908a6855b0d772b489a124481a10c9beaf11301eb79"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469891.json",
+      "bytes": 2799,
+      "sha256": "15eb2fd5c00ef6f1d990ce862e5d30b042c0f167a2db7ea77c87bdd5ce90c293"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/18397.json",
+      "bytes": 1270109,
+      "sha256": "265623642bb05d7dcb134310b832d1cba0fee2f8893e597208f7f8d526dcd5ea"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/6434.json",
+      "bytes": 3443,
+      "sha256": "def006989e16ffe1c0d23f153c11b35669e4f9bf7f7055e04bed9a128324d174"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/3088.json",
+      "bytes": 2793,
+      "sha256": "931d8792c817c03741fcce3b4d9f9351aa60aa5a99c2565bba158d754b2ec8b2"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/45533.json",
+      "bytes": 2457,
+      "sha256": "0eb83b736a0b7c8b65d9d347a75087a8c7e30658462698c694fa4de7746e48e5"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/46181.json",
+      "bytes": 2300,
+      "sha256": "184748ba55ef9877f103547ab5c2c14ec54d149f5a4f149dc71a304a0d1a6b7b"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/40482.json",
+      "bytes": 2914,
+      "sha256": "c6da6487f6e29bf517953224bc6fed7b35a146ad2aab36a8bfcee898d93eac63"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/46165.json",
+      "bytes": 3397,
+      "sha256": "5f347d2d590ba81579c5a51bf9bb50da12ad1334a0ba060817026d10552e9222"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/44432.json",
+      "bytes": 3211,
+      "sha256": "ebc7c3cdc9b68620ad4b730f85536d53427884ae8e2d471032d93f363ab8cdec"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/31011.json",
+      "bytes": 3256,
+      "sha256": "3204edef369f37beb894cf78ecbcbadc18158a6b694650d0a5294a5332af1215"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/46013.json",
+      "bytes": 3272,
+      "sha256": "30d3402cb7c8e541384dfd45cceef590162dfbbbdf291b2d180309bf24050541"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/18442.json",
+      "bytes": 2259960,
+      "sha256": "343665588b688d2f60dfab59b25b2cafa3dbdb1f3822ba295b14a5fe8af1c7e9"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/24289.json",
+      "bytes": 2294,
+      "sha256": "6c3bfb523ff8bf71c93863e10ea25b920d3302345c90b09a03d709bed6f7d718"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/37504.json",
+      "bytes": 2884,
+      "sha256": "e336b79efab03817936396f117ae6300ea1f976839b1a65bebad6dc3216b4ab1"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/32398.json",
+      "bytes": 2795,
+      "sha256": "65f55e7e7a0b2265c692b8c68ce083f3715cde3523bae1d13d12478c56d3d06e"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/25590.json",
+      "bytes": 2864,
+      "sha256": "b64dee95aa0ae9d390044c06f7abf12e6fc06b7dfc52eac18c2f80ef3beba5aa"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/24114.json",
+      "bytes": 3483,
+      "sha256": "bfa01e4dc4e3e7ace254854e2995b8519544b88de7f58ab3c655a47924844d0b"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/8475.json",
+      "bytes": 2531,
+      "sha256": "417b94a290d4f0c640f753556a6c87bb53bfdb17652deff45279ef89ad36d2ff"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/46090.json",
+      "bytes": 2262,
+      "sha256": "b8943e483b3aeb2507ba6605283c534a9b8aa0720d314e1a22dd452c64f0ede0"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/2771.json",
+      "bytes": 569285,
+      "sha256": "d9ab69a6a34a69fd60d4a60aa29cdd5abce69c480408109e76a432af6ca6f246"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/27972.json",
+      "bytes": 3115,
+      "sha256": "482fa71ffe30ac60778d6c2a292d442a23f50c67f223663c3b388852313ba113"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/1911.json",
+      "bytes": 3152,
+      "sha256": "ca8b67ab3ca51714aaf4aec2c07ae05e876a5ed2cba5fa0628ee13348223d2c3"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/38771.json",
+      "bytes": 2741,
+      "sha256": "b8f2e23b59a20a74e902df64ace11fce50d514065516317c4636cc3ed711af96"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/22238.json",
+      "bytes": 3344,
+      "sha256": "be4656d9421c44a78941d244aa7441a3598d0220e33ad317e857ce94bcef022f"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/15946.json",
+      "bytes": 2780,
+      "sha256": "e11a50338a233a0fa4895e504032c23595c043bea991f2853677b471bc0daff6"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/42111.json",
+      "bytes": 3317,
+      "sha256": "898e837304840f5664b1a23ff49b1a3757651da0410d49b7c8dbfcfa1e8387cf"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/28839.json",
+      "bytes": 2962,
+      "sha256": "6c1c1c13508005dc456e127e80b26de2439b0ead3c5a2659bc73ba4a0fc84323"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/41572.json",
+      "bytes": 2829,
+      "sha256": "58932616bc07ccfb93e2e4b9673e7457f59bd68c46a128ceed796720ede32362"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/27652.json",
+      "bytes": 3113,
+      "sha256": "2917af224b04bb3db48e37b2a3a8218a7dd0f877057869428e9dd1ff05be89d5"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/5391.json",
+      "bytes": 1059650,
+      "sha256": "e1bc42fa80735073548d4dfb0084cf068a7330cf16d1964e08ad9d8274f28e67"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/42485.json",
+      "bytes": 3254,
+      "sha256": "aead98cc7f1023a084a26e41bc606b90891faed3b7b3520dbf3215635654815d"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/1330.json",
+      "bytes": 2845,
+      "sha256": "32d114f093d136bf85a13b16c3f877273c76a5f493458fa8ee5d02212e11ff89"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469129.json",
+      "bytes": 2859,
+      "sha256": "68d86cc41c95cf7d20a0081027504526a27f06843f15b3ff09a05c5bd92083f9"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/46142.json",
+      "bytes": 3252,
+      "sha256": "01d0b002401b95783b2335326f09e3b612fba5bff7e6e620d04250ac9792843c"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/44508.json",
+      "bytes": 3220,
+      "sha256": "9165adabd75cbe79c4fc26d30a2c51ee2027fc23f863a8b795c915b2ca12209e"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/41329.json",
+      "bytes": 1944734,
+      "sha256": "7bc24349c1726de77c5f528818d736ff154c1b939160186ab9b60d3b916dc888"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/42979.json",
+      "bytes": 3242,
+      "sha256": "3614977d0249c477526e80b6a0c6568f1be1c70b3c028ef6f11230a8dfec69b5"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/28558.json",
+      "bytes": 3031,
+      "sha256": "9a988125bb90b0ad6b87889ce4043086da1a2c56df76066ef7a79399f5834439"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/7959.json",
+      "bytes": 4318,
+      "sha256": "a136880c695fdaa358cd9ffe043a6484f345f534cd4c48a4668052ee8d6e7019"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/45505.json",
+      "bytes": 54617,
+      "sha256": "7911fc1022cb0bad33bb03c743b22b75f0a1ebcaa56a4b7bd99a2f9f051e7598"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/31674.json",
+      "bytes": 1179749,
+      "sha256": "2782d00de8b74f4db844ac8a5fd61cbffd6b8fcb57ce2f6b147beb0fd45aa2eb"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/15631.json",
+      "bytes": 3575,
+      "sha256": "2e8988fe7f284d6b3bbd93d70ada683b1749ab4c0f59919b7b89a4b409c3d0f5"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/11468.json",
+      "bytes": 2539,
+      "sha256": "bba7500d345c15d60f8d6fd4351813592db949d19d9fc2690be95bc391e88c7c"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/40834.json",
+      "bytes": 2126,
+      "sha256": "fe59cf76712f249bd5b0610307a7933480e4fe5a3efa2fd9d65c1a160ef52e88"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/1866.json",
+      "bytes": 3363,
+      "sha256": "b98dc926437d5f3148f11ee7b77aef29532a2cf7464ca933c5379bb29d1cd43f"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/38354.json",
+      "bytes": 3014,
+      "sha256": "2f9429e4935a8beec3f031ba68184a130af1d3d2fa77a6ef4221af10f51744d3"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/7097.json",
+      "bytes": 2647,
+      "sha256": "7f5da32c1ab71987a5f00fd06cbc3faaf6b6567f89d64e4d0524424afcf192a1"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/33620.json",
+      "bytes": 2863,
+      "sha256": "9aec4abcc681eb8d638e45e4511f1d7072c973b85d83c5158a6c72b971772cbb"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/45865.json",
+      "bytes": 2813,
+      "sha256": "e0c502fed3e8d1348cd0168314e80a4884902d03ff83c44bb89ae8d24b18699e"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/468709.json",
+      "bytes": 9322,
+      "sha256": "94794b36827306b63757abfcd136e0477b81bc3771abe568c728da435bf26b0a"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/600.json",
+      "bytes": 4152,
+      "sha256": "f640ecbbc2da53efeab4cdc5a65a2c90e781046cb61b71409d6d9454521717a8"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/43576.json",
+      "bytes": 168188,
+      "sha256": "02bf6b5d6683e2f20dc5c5e1a7baf46ac3547981ab994ef818c4c938ff9332c6"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/601.json",
+      "bytes": 7819,
+      "sha256": "c3842473d5e6ac8fc956f33321f9ba13a71e51373446f1503697b9f454e49925"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/45440.json",
+      "bytes": 3022,
+      "sha256": "125fbf551a9c4281ba7af8778ff305d598b45602fb7e36ed0079de525910dbe9"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/20531.json",
+      "bytes": 7365,
+      "sha256": "41b76855addf3febbc6ff9d438a29a13fc23fe430ed527e8347a3421e4e76cd8"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/6963.json",
+      "bytes": 2398,
+      "sha256": "bea1c15b3372e2b5b7e02ddaed01ac33363d44051ca974a3547df9c45c00dd90"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/3037.json",
+      "bytes": 2399,
+      "sha256": "f27656d20c0fde6e1fdbe99d18797b4c58c18991e54063bde0e5a47d61e1641b"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/19582.json",
+      "bytes": 2590,
+      "sha256": "e5897149f2a376e959fe41f663337565a43c9feed8ca56e25e8a02840ee545c8"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469597.json",
+      "bytes": 2716,
+      "sha256": "a20e830babab2715b0aeea0358ca81d795281b096b7354053b2775f113222a70"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/6127.json",
+      "bytes": 289616,
+      "sha256": "8fe4144d7e97f1ef1d382df04111ceca3c0287df9599d205473f59b671e4bdf8"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/2852.json",
+      "bytes": 3886,
+      "sha256": "5374825830f440c24095fba427b67b1ccb54742bbc07e65f556b5d5d5a4e9081"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/18918.json",
+      "bytes": 3668,
+      "sha256": "19cda3fe7d851cc9dd417ea137a4a6cb230a22677187a957d0fe43ceaef8c271"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/41972.json",
+      "bytes": 2389,
+      "sha256": "82226688eba5f70727035d872cb0abfdafd7d36dbea8fde9bc4120574f15a214"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/10730.json",
+      "bytes": 6137,
+      "sha256": "a1337447f5baeaf02d1a9969abca5cc0b989d215433561a2bcd9d46d6f52e3f8"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/46059.json",
+      "bytes": 2886,
+      "sha256": "ddf70791a9e9d489e72ebe034ba9c0b0997fc8b6dcc6f36b64a69d8a6d3ade11"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/10799.json",
+      "bytes": 3002,
+      "sha256": "b6935a181a21a8725cdbee24a19587f3c16cbcfa210bf85729ca965ca5529878"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/10800.json",
+      "bytes": 2785,
+      "sha256": "8d726e00e2aaca2791520389a6d383c449dd9f0fdad5385cf1561cc2ab7c53a3"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/4232.json",
+      "bytes": 4187,
+      "sha256": "933be440fcfe1a1472a97e1be61cf5ff12892072080a3c6c56947cb75fc8a590"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/42555.json",
+      "bytes": 605118,
+      "sha256": "74740095817df2063def2dadd1f5aa996cedad3b9a23e0e1d8fe836001f3a533"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/42568.json",
+      "bytes": 562684,
+      "sha256": "9c198120933cf341099a36d9c522a082085e09a6ec6fdb63231895d8b30a5a25"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/43411.json",
+      "bytes": 2977,
+      "sha256": "0b863da5cf4995913e353db5d7862de3b54569c532612ca527c1aa6e478d2c2e"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/17078.json",
+      "bytes": 3063,
+      "sha256": "5f761d8d3984f4ff4816562f26d2094bb5fad5bac11d529ea5f68a7835756083"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/43729.json",
+      "bytes": 3229,
+      "sha256": "f9b3d58ac3ee022318876109271033c9e1b53fbc5bbc8cf8679d92e8c4e0a5b1"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/31823.json",
+      "bytes": 2758,
+      "sha256": "4530f87b84114729f0b872f82b8ef7ad8ff17095a6c2351d01e65bed0ea49bd4"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/40704.json",
+      "bytes": 2474,
+      "sha256": "f65b5b33c644ecc5f06f95d454021a76f6df374e42c50b6507f72f2bbacf45f4"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469134.json",
+      "bytes": 2820,
+      "sha256": "e7b424c817eb7f1789002c7b87c62b22109e82316d5a78b8da7e5aae937fd6e5"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/37622.json",
+      "bytes": 2755,
+      "sha256": "f9eadc64d907e7a696730d52897cd2916d0b57171d42af9b8d4077ffd39f1a3c"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/40665.json",
+      "bytes": 2450,
+      "sha256": "301291267fec75e351657b0403d9c23bd4c005a377986aca53fb36f493152517"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/18386.json",
+      "bytes": 223706,
+      "sha256": "69183963caa650992b8218ce4d59a8c4e70a2eadd671aed7ed4f3303999feab0"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/25810.json",
+      "bytes": 2863,
+      "sha256": "975ee2b51ac9d77918a2e771cfb497418984f982322a44ec5a799a9b4647f6bb"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/40485.json",
+      "bytes": 2856,
+      "sha256": "751a5edd419dfefe0b16a8a0c8533761f9feed71c895e1164a2c78b32ddff316"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/45860.json",
+      "bytes": 2860,
+      "sha256": "2b2836993064baf40a176600aac8a8c6665d873908584a2afb66be6dcd92aa76"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/41385.json",
+      "bytes": 2870,
+      "sha256": "62d6e73cb4a72345c870f4957b014cadb8b84fd0bb1641e8c4dc3f4142f2bb16"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/16819.json",
+      "bytes": 3049,
+      "sha256": "f44a6b1ec8982f87afa6e0194cda838d69960817733674ac36e2b9a30f30248c"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/28580.json",
+      "bytes": 2310,
+      "sha256": "74ef763c23f15c76ed5e00137a8801073a8c3a9ec4a60262dc41d31768b4d960"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/8150.json",
+      "bytes": 15249,
+      "sha256": "ccb396bfa24e430b83e95567bd906f86e3bd997a44cd86a1f2e6db33a702ab43"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/46454.json",
+      "bytes": 2956,
+      "sha256": "f4586798c908918d016ea99e6380530d5f1e1a5d9c5cd68ee2cf3c626ab5e57a"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/43898.json",
+      "bytes": 2814,
+      "sha256": "202dc305c2aa5dc41ff5cc2b6084d40f27e2b2ca8b1d3a3206650245db98d1f0"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/43563.json",
+      "bytes": 169806,
+      "sha256": "5a056f4db591237cf34defd76eec96061c691caf4d3c3c6b286b6d6354e35941"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/45578.json",
+      "bytes": 194499,
+      "sha256": "e9c67971fb865ba7106b21cc6af7ada8a88ba77f7ec9a73398df5df35263004e"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/39848.json",
+      "bytes": 208457,
+      "sha256": "45920f47123c31f8a9598441c1e2b5f727fac7a4fa00d1a0765caef4f6cb0581"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/26901.json",
+      "bytes": 2806,
+      "sha256": "f98c975792c8649188620bf573f5082ea44152f5ce2eb9153463a44b7075c11f"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469127.json",
+      "bytes": 2829,
+      "sha256": "d59d0a588fd303c3a6bd026520ac6b38a7436e1e1059c367c17d44d03348e6a0"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/45395.json",
+      "bytes": 2941,
+      "sha256": "f4fd29d92197ddadd334c26208bd9c9ca5083afdc40a02da031c053d4cb8e5c6"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/46569.json",
+      "bytes": 3270,
+      "sha256": "ff267c1e90c22743560f09aaf6f6e707f53cfb79cb01b198eb98968aae1f5170"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/44500.json",
+      "bytes": 2271,
+      "sha256": "a1c79b4003d46b5dec491d9b7171627fb65f726d8ef4719e259ba80975c2fb9e"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/22692.json",
+      "bytes": 3784,
+      "sha256": "a6c603bca1ed2e0c1a6ab9e6dfed1fc2fa389abb7b3433ab00fd305393c436d8"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/45437.json",
+      "bytes": 2944,
+      "sha256": "c4794e8bfd435b3df647a27b59593431e1fc63d5f54280422bb6dc4a5b220e07"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/45564.json",
+      "bytes": 149936,
+      "sha256": "f80f29b4be2cbe9e5d2ce21b965209c1d70d613cfbbbaea48280c79880eedf46"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/29267.json",
+      "bytes": 361013,
+      "sha256": "e09758e9b4009e17ec1aa4cd2963ac3871a1cf937b8f7b5923b2aac33adebf80"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/468684.json",
+      "bytes": 2833,
+      "sha256": "cc369ae95cfa99dbe279fdd62d45a2f170e6af7bf7352baa47c92e5a6d9c923b"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/43598.json",
+      "bytes": 2992,
+      "sha256": "9e4bc20b84c03be16a50f4d90dfc0a6a08e30d4446a9f9afa1d6abca56965587"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/915.json",
+      "bytes": 3030,
+      "sha256": "534472d4477a8e2ac813d7ee390436cc1b940e1fd92541547e978cccf565bf8f"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/1249.json",
+      "bytes": 2801,
+      "sha256": "33f837c1133587d5353419d3eee43bf4092581bbfb25d8d30780df3e2abd001a"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/2785.json",
+      "bytes": 2954,
+      "sha256": "55c3a0a623dd29219281141025dcb4604adb760cd270d1b0856ff74e1877d830"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/18895.json",
+      "bytes": 2428,
+      "sha256": "5c8a55350a063eefd8bb6b3ba01029d8d8ae13a871f7f98bc47f806b29bde29b"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/28891.json",
+      "bytes": 3531,
+      "sha256": "28ef563d940868037959eaf391c1cc2e92533fd036e6057e9636cefd55debeaa"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/8360.json",
+      "bytes": 2991,
+      "sha256": "923a3800de3d8afa092daf417aac485e800f1d043d3e0979c18b59f55bce2845"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/42576.json",
+      "bytes": 668544,
+      "sha256": "ce899dd8973827c72440df98f09f6512fe7711bfbc766ca613dcdb262b8139a5"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/15355.json",
+      "bytes": 3452,
+      "sha256": "4c415491cd83fc8f4e0b40e0570f0412ee61784e4b861c0e65b48701444195f3"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/30971.json",
+      "bytes": 3077,
+      "sha256": "b30d77849f0fb220d81581c102939f30b48d01fa4ccb55257e283c47040e0d75"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/45848.json",
+      "bytes": 2889,
+      "sha256": "09e7d5113b5a3b5bb8cd6edaf2abe91dfc214f0bf0f6f49a6e1ac1f1e5bfe6dc"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/28208.json",
+      "bytes": 2875,
+      "sha256": "40411a24de9d731a7b6d00ae30457efdf549c90ab989feb706849d9ef675bc02"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/15054.json",
+      "bytes": 3676,
+      "sha256": "a8c7a534175f4cb6b8b30358d1934bce203227b2ab02c296f30c6952782185c9"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/45240.json",
+      "bytes": 2646,
+      "sha256": "a98ae27a87f2d47313ab7d0b4ce6cd4f0c80926481ad9a6f14a4f47a45e81a9d"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/27601.json",
+      "bytes": 2938,
+      "sha256": "89fb5646f272dc7eddc295f0f37bd91b7c4c3a96c413f438b929f4e4eade2029"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/46337.json",
+      "bytes": 3076,
+      "sha256": "9570349d986233e66ff84f99d16451a3c6fe3fb9727c24685ebce99cc6213f08"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/18101.json",
+      "bytes": 4958,
+      "sha256": "b99b791e4ef83d8c7908965d23597dd5afae440f0add2b578260d76719450803"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/30232.json",
+      "bytes": 666992,
+      "sha256": "667a269ec730cb097b85daff948a9fe2087e332cc97fb569feef742647326d61"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/45528.json",
+      "bytes": 435219,
+      "sha256": "50bd86c6889682346f053498ba5609ca47c5b5bf0a5c319ca9f81b1368a4785d"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/42578.json",
+      "bytes": 13462,
+      "sha256": "aab5ca07ab536241d5054b71be8a5624bac46f0b26ec5b7f5c8d7188cf9c124d"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/18411.json",
+      "bytes": 1872477,
+      "sha256": "cce314d860ddb9b8f6b1cb88633325ec9f2656cba451d67b24d8e48d4bacaff5"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/13900.json",
+      "bytes": 2762,
+      "sha256": "0d5479f91592f7ca1b90e318b7e8bbf858cc1560dac19a0074cf4eec1599c4c3"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/18457.json",
+      "bytes": 1810687,
+      "sha256": "321bc96b22889678b32cb30849be1016f2a1b94a3f305d116cde8b18c4bb1c1a"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/18149.json",
+      "bytes": 3005,
+      "sha256": "c8f2d8b9ed85fe88f5955868ff6c6945cd96bcb31406edb5d09211b05eae9502"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/19934.json",
+      "bytes": 4583,
+      "sha256": "284fa0f2a185eb9b4f3dd492b84ae1f1eb61205ad998d17b27678b93914f9841"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/15230.json",
+      "bytes": 3187,
+      "sha256": "9b4cd19fd5c00fc8af52da4540538e677b6bb7c5ae016724851c3d924574222a"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/18405.json",
+      "bytes": 2631,
+      "sha256": "8a0756bf76097aeba550510749cff547195f0cd60d066b7d896da84a53810b29"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/45589.json",
+      "bytes": 2330,
+      "sha256": "506b3cc3fb48b50a204ecea9df6c24d8c5cec6846aceaa12934d79fa94bdd461"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/29273.json",
+      "bytes": 1048128,
+      "sha256": "9dabb1d1d9e7cc8c3e45882b99f9a7c656d7fbce6372cedce8a9b67de74e350c"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/25227.json",
+      "bytes": 2233,
+      "sha256": "9a910d54c12b2ae84aee28380a9ea55760cf9103658794893f95a04e70f710f4"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/25959.json",
+      "bytes": 2748,
+      "sha256": "165cc10f9628a4f59134f4b84dda818e3833011eae17b1d8fdd1dcec8c75a292"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/40856.json",
+      "bytes": 1210553,
+      "sha256": "b48dfab7f2540e8f9c5fecefb666b299dcc23314d243c06131a03aedde35bd8e"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/44465.json",
+      "bytes": 2448,
+      "sha256": "9f98d4c8aae60f074bc9eba9082383b9aa0f06b7942a170d4bb435c9f325f682"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/42928.json",
+      "bytes": 2778,
+      "sha256": "f3c4aeaf28ee4806546cb4ba02a4e11450b8ae4faa1f3e21919f42d890a1b6c0"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/40868.json",
+      "bytes": 516257,
+      "sha256": "878c35bece590f6400b8b989c8575980ad2a08b328464825116dd946bd8ab6cb"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/40850.json",
+      "bytes": 218658,
+      "sha256": "9c2cea9ccbe917bd10187cd1bdc06a8caf44dc211802f10ab48306246867d7a8"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/39855.json",
+      "bytes": 2113,
+      "sha256": "b2eaccd09e31b0fe3108b85717246eb3cb1421f966d2d2d2339173c726d50ed7"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/40572.json",
+      "bytes": 2176,
+      "sha256": "fd2bf382255a13ae490a15cc9a6da7235d6f3ef188154399cdf3b17457220ce7"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/39843.json",
+      "bytes": 390270,
+      "sha256": "5268c34986e251ce194cded4288c005b4bc4e80910e7880c8b8b9064f31d56ce"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/45610.json",
+      "bytes": 2334,
+      "sha256": "c3cec213259972a26afa83fd3460d7d4aed0b7a40e252a050be8ecba67efbb86"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/40571.json",
+      "bytes": 2176,
+      "sha256": "95fc33df3948b554563998bd096257aa76d529d6b19109564a66b10e7009e6ec"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/43675.json",
+      "bytes": 2310,
+      "sha256": "95fa2199d7455471ca972a023cce20a57e04fbbda4802ec1ca78c3b481b7a58d"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/37451.json",
+      "bytes": 2359,
+      "sha256": "4f5bcf47766d2c8ecf66641efc5c2db5ba250927d9aca374ab5a6bf38f3bd017"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/26894.json",
+      "bytes": 233128,
+      "sha256": "a8b0a4b947b96d0942a648c48aea65cec0c5433787ce809d70d509b5521aebb1"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/29866.json",
+      "bytes": 2564,
+      "sha256": "04f2f3b44542da37d09bd23c7cdeb4eb6bf2ca044d5b2437ab716fa331c11b28"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/24409.json",
+      "bytes": 2372,
+      "sha256": "9c28c9cf0f0482423b5e45c60e3c8ac55bd4c763b20a73a7dbd32b8df9e8b9de"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/45642.json",
+      "bytes": 2705,
+      "sha256": "097220304658815fc2f86787852aab1e1c6a39a4297f4d29ed5b4d7d925d8b40"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/45414.json",
+      "bytes": 2142,
+      "sha256": "d88b8e42af8eed619b3aa57f9b2ea8489db59e35ec109483360151ef062bffb1"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/44288.json",
+      "bytes": 2514,
+      "sha256": "b5d3c3ec3bf3857b6f83d22a93c5076e78d94d68f219e9e7bea10cd71abae3d6"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/31682.json",
+      "bytes": 552503,
+      "sha256": "61fb18e66db792f255cd2739bac8d4e37258eed5684c9bf9b7783dca99d627e0"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/45389.json",
+      "bytes": 3348,
+      "sha256": "b5c7e01a88bceb02abbdaacde3896fad40d602933e99c67eeb0216a56a28ea0f"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/46086.json",
+      "bytes": 2735,
+      "sha256": "5c4185d32b4c8696c9faa5d607eb5812d637eb6aa37f59cf2cf6fae14bc170f1"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/38349.json",
+      "bytes": 2822,
+      "sha256": "fc2937a748b12fcb11ccff883bd1acc52dc94dff8ea0fcaa26e56eb399f5bedf"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/29256.json",
+      "bytes": 740832,
+      "sha256": "0de8c9f2a7b17691a04a755437b9deb75501920b7ee924f3d62aeeafbb6355f9"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/43561.json",
+      "bytes": 3397,
+      "sha256": "5e91ca3988dbadbe36ab5cfe1ecb411491a2c06a3eecfcb2eb6c4a6ea5ac35b6"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/45557.json",
+      "bytes": 180264,
+      "sha256": "72fefa73de7d7a307daec27811100872217e1099cfb8970ede348efba31e39f2"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/45596.json",
+      "bytes": 2105,
+      "sha256": "87db29b0b3730577a4217da44a714c7fa30f2d9f0bb66ff5ea8c2aff3a7e4934"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/32703.json",
+      "bytes": 1166612,
+      "sha256": "22a75f1aaa999f9f74ef5cfd4bdea9ce44add06e0e94a45284d16b56c913f423"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/46149.json",
+      "bytes": 3037,
+      "sha256": "0e612361520bb089e8f66d4bbbbc9c9d839e6da87536b86a4e3556215d2540e1"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/37059.json",
+      "bytes": 2670,
+      "sha256": "9122fd5fb2dab1fb61dd218bde6d5ea96767b75830a65da80dac7fda5713b9ba"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/109.json",
+      "bytes": 282732,
+      "sha256": "f6211bd02e0113c4dbb61b7c0cadebebfcb51798e48fe900ac2e28ab6deeef8f"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/4784.json",
+      "bytes": 3336,
+      "sha256": "4c6964bf89882082bd5fe7904d7f3fd7a3fa286b5bd75396bb5eccf629aa0be0"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/22172.json",
+      "bytes": 2887,
+      "sha256": "4c4f6dde4c91b73c7d00d48b98c75e3bf545fbcb7564f6e04b3e1b7f06e466a0"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/27800.json",
+      "bytes": 288369,
+      "sha256": "76990ddec7b7f57a1601b67bc7f603c89b1f02fd3f0dedda4108416856ac7e6f"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/27932.json",
+      "bytes": 3003,
+      "sha256": "285f3039f6fd70216e827d12e7af96333e15378bcbfe6635bf22718e33f487f9"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/27357.json",
+      "bytes": 3089,
+      "sha256": "7b3616285c87fb65879d83fcb5206a3c71f8db7ebc4606db8b31aa9d5f52ac43"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/27808.json",
+      "bytes": 316780,
+      "sha256": "4c5ee91817580e9324ac1b6eeb5e2ca3945d82223c32adee1c073353772e9335"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/28586.json",
+      "bytes": 2179,
+      "sha256": "5d5697b0c24aed7fba8153ec8dea293f734d87e910e8cf5f6e35876907724231"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/27875.json",
+      "bytes": 2262,
+      "sha256": "afafa09a6e35b7c5b6dd2fac4cd148998dc4973fb5ee93d2892f665905063fa7"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/1007.json",
+      "bytes": 207792,
+      "sha256": "49916201f521ed093f6ed6bd08631e5ce41553e44c75593a1b5d4058b690f4cb"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/11986.json",
+      "bytes": 2153,
+      "sha256": "a8ebab87ba4987d774c5caab9a2acf66c2144e9b7186c949c31d88c0375db452"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/26892.json",
+      "bytes": 261448,
+      "sha256": "76ce3fbd772b30c1fffcdaebaafcbe04f4e2dcc1390eec10a22e75703cb57ae3"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/28569.json",
+      "bytes": 2401,
+      "sha256": "150f3b23fddecf600928aed37238de281f36b4f9261b2409847c9063eb436a26"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/40862.json",
+      "bytes": 2768,
+      "sha256": "d385fb02dbad05bfb3c892d1305923aee547a39a141d8c0e0c983b26321c3cb6"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/24275.json",
+      "bytes": 529123,
+      "sha256": "569adc53f0b26fa9fcb20a937b4b72c8688d864583ab2f3bcd93d761fe63f619"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/468706.json",
+      "bytes": 2294,
+      "sha256": "f20368a9a1a18e23ab008ed38444f22e558de015a475c63a78f6fde40595f0e0"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/45572.json",
+      "bytes": 450131,
+      "sha256": "96d970d72a44a4be0da814d7e40beb136d25cde5660e3f67a42e69c60a41efc2"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/44584.json",
+      "bytes": 385252,
+      "sha256": "154e8d99505b334032c9955dbd74e7759cffa6137156313382118e405f9f0e64"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/469067.json",
+      "bytes": 2633,
+      "sha256": "0f6b2694cfdd7b7843e77ecec9a18841079861a9d9c82211aafab87b092a3b2c"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/38900.json",
+      "bytes": 589558,
+      "sha256": "ba4c433b8ca36e80675f10b31b0787dca72ed417ba06e200de57051ebe86d9c6"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/45562.json",
+      "bytes": 215545,
+      "sha256": "cb8f4e262516be6c86324e237848e76b27de1fe138ca0fb5ea2d12f2ba92f55c"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/43594.json",
+      "bytes": 322261,
+      "sha256": "a42333d76ffa2f41992de976e52d7fe78dd1f73b306fb9d583ff524cf86edcb8"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/468695.json",
+      "bytes": 2188,
+      "sha256": "10996fee01ff24eda282603a1d5688f9f5fa5684b4a76ffb224a4aece2204caf"
+    },
+    {
+      "file": "data/hh-vietnam-law/documents/43569.json",
+      "bytes": 2492,
+      "sha256": "8a5ebef0bd2b5364c22d742f3c326c2c1cd65876087c4dc88e7e2e92a2d53539"
+    }
+  ]
+}

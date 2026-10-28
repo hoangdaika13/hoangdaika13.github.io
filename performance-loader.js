@@ -254,8 +254,8 @@
       ]
     },
     "vietnam-law": {
-      styles: ["hh-vietnam-law.css?v=1"],
-      scripts: ["hh-vietnam-law-core.js?v=1", "hh-vietnam-law-manifest.js?v=1", "hh-vietnam-law-data.js?v=1", "hh-vietnam-law.js?v=1"]
+      styles: ["hh-vietnam-law.css?v=2"],
+      scripts: ["hh-vietnam-law-core.js?v=2", "hh-vietnam-law-manifest.js?v=2", "hh-vietnam-law-data.js?v=1", "hh-vietnam-law-pdf-transport.js?v=1", "hh-vietnam-law-pdf.js?v=1", "hh-vietnam-law.js?v=2"]
     },
     university: {
       styles: ["hh-university.css?v=1"],
