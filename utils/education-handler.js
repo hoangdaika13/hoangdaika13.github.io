@@ -62,6 +62,7 @@ function sanitizeState(input, user, profileId, options = {}) {
   if (String(input.ownerId || "") !== String(user._id) || String(input.learnerProfileId || "") !== String(profileId) || input.profile?.id && String(input.profile.id) !== String(profileId)) fail(403, "Trạng thái không khớp chủ tài khoản hoặc hồ sơ; dữ liệu chưa được ghi.", "EDUCATION_STATE_OWNER_MISMATCH");
   if (!Number.isInteger(input.schemaVersion) || input.schemaVersion < 1 || input.schemaVersion > 3 || input.studyWorkspace?.version > 1) fail(422, "Phiên bản dữ liệu chưa hỗ trợ; giữ bản gốc trên thiết bị.", "EDUCATION_STATE_VERSION_UNSUPPORTED");
   if (input.storageArchive?.required) fail(422, "Bản tóm tắt không thể thay thế lịch sử đầy đủ; chưa đồng bộ.", "EDUCATION_STATE_ARCHIVE_REQUIRED");
+  if (input.universityWorkspace) { try { require("../hh-school-university-core").normalize(input.universityWorkspace); } catch (error) { fail(422, error.message, error.code); } }
   const serialized = JSON.stringify(input);
   if (Buffer.byteLength(serialized, "utf8") > (options.chunked ? progressStore.MAX_BYTES : 280000)) fail(413, "Lịch sử đầy đủ vượt giới hạn đồng bộ 280 KB; dữ liệu trên thiết bị được giữ, chưa đồng bộ.", "EDUCATION_STATE_TOO_LARGE");
   const clone = JSON.parse(serialized);
@@ -163,14 +164,15 @@ async function classes(req, res, db, user, body) {
     const roleFilter = role === "platform-admin" ? {} : role === "school-admin" ? { $or: [{ adminIds: user._id }, { teacherId: user._id }] } : { teacherId: user._id };
     const filter = { ...roleFilter, status: "active" };
     const items = await collection.find(filter).sort({ updatedAt: -1 }).limit(100).toArray();
-    return res.status(200).json({ items: items.map((item) => ({ id: publicId(item), name: item.name, grade: item.grade, studentCount: item.studentCount || 0, inviteActive: Boolean(item.inviteCodeHash && item.inviteExpiresAt > new Date()), inviteExpiresAt: item.inviteExpiresAt || null, updatedAt: item.updatedAt })) });
+    return res.status(200).json({ items: items.map((item) => ({ id: publicId(item), name: item.name, grade: item.grade, educationLevel: item.educationLevel || "school", program: item.program || "", studentCount: item.studentCount || 0, inviteActive: Boolean(item.inviteCodeHash && item.inviteExpiresAt > new Date()), inviteExpiresAt: item.inviteExpiresAt || null, updatedAt: item.updatedAt })) });
   }
   if (req.method === "POST") {
-    const name = clean(body.name, 80); const grade = Math.max(1, Math.min(12, Number(body.grade) || 1)); if (!name) return res.status(400).json({ error: "Tên lớp là bắt buộc." });
+    if (body.educationLevel !== undefined && !["school", "university"].includes(body.educationLevel)) return res.status(400).json({ error: "Bậc học của lớp chưa được hỗ trợ." });
+    const name = clean(body.name, 80), educationLevel = body.educationLevel === "university" ? "university" : "school", program = clean(body.program, 100); const grade = educationLevel === "university" ? null : Math.max(1, Math.min(12, Number(body.grade) || 1)); if (!name) return res.status(400).json({ error: "Tên lớp là bắt buộc." });
     const inviteCode = invitationToken(9); const now = new Date(); const inviteExpiresAt = new Date(now.getTime() + 7 * 86400000);
-    const doc = { name, grade, teacherId: user._id, adminIds: [], studentCount: 0, inviteCodeHash: tokenHash(inviteCode), inviteExpiresAt, inviteVersion: 1, status: "active", createdAt: now, updatedAt: now, schemaVersion: 2 };
+    const doc = { name, grade, educationLevel, program, teacherId: user._id, adminIds: [], studentCount: 0, inviteCodeHash: tokenHash(inviteCode), inviteExpiresAt, inviteVersion: 1, status: "active", createdAt: now, updatedAt: now, schemaVersion: 2 };
     const result = await collection.insertOne(doc); await audit(db, user, "education:class:create", { classId: String(result.insertedId), grade });
-    return res.status(200).json({ ok: true, item: { id: String(result.insertedId), name, grade, inviteCode, inviteExpiresAt, studentCount: 0 } });
+    return res.status(200).json({ ok: true, item: { id: String(result.insertedId), name, grade, educationLevel, program, inviteCode, inviteExpiresAt, studentCount: 0 } });
   }
   if (req.method === "PATCH") {
     const doc = await teacherClass(db, user, body.classId, role); if (!doc || doc.status !== "active") return res.status(403).json({ error: "Bạn không được sửa lớp này." });
@@ -179,7 +181,7 @@ async function classes(req, res, db, user, body) {
     else if (action === "disable-invite") { update.inviteCodeHash = null; update.inviteExpiresAt = new Date(0); }
     else {
       if (body.name !== undefined) { update.name = clean(body.name, 80); if (!update.name) return res.status(400).json({ error: "Tên lớp không được để trống." }); }
-      if (body.grade !== undefined) { const grade = Number(body.grade); if (!Number.isInteger(grade) || grade < 1 || grade > 12) return res.status(400).json({ error: "Khối lớp phải là số nguyên từ 1 đến 12." }); update.grade = grade; }
+      if (body.grade !== undefined) { if (doc.educationLevel === "university") return res.status(400).json({ error: "Lớp đại học dùng chương trình riêng, không gán khối lớp phổ thông." }); const grade = Number(body.grade); if (!Number.isInteger(grade) || grade < 1 || grade > 12) return res.status(400).json({ error: "Khối lớp phải là số nguyên từ 1 đến 12." }); update.grade = grade; }
     }
     await collection.updateOne({ _id: doc._id }, { $set: update }); await audit(db, user, `education:class:${action || "update"}`, { classId: String(doc._id) });
     return res.status(200).json({ ok: true, inviteCode, inviteExpiresAt: update.inviteExpiresAt || doc.inviteExpiresAt });
@@ -405,5 +407,5 @@ async function handler(req, res) {
     return res.status(404).json({ error: "HH School API resource không tồn tại." });
   });
 }
-handler.__test = { roleOf, tokenHash, sanitizeState, canAccessLearner, progress, submissions, assignments, classes, admin };
+handler.__test = { roleOf, tokenHash, sanitizeState, canAccessLearner, progress, submissions, assignments, classes, enrollments, admin };
 module.exports = handler;

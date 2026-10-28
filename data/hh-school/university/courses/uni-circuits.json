@@ -1,0 +1,851 @@
+{
+  "schemaVersion": 1,
+  "version": "2026.10.28-university-v1",
+  "contentStatus": "draft",
+  "reviewEvidence": null,
+  "credits": null,
+  "officialComplete": false,
+  "authorship": "HH School — nội dung nguyên bản chờ thẩm định",
+  "id": "uni-circuits",
+  "title": "Mạch điện một chiều — nhập môn",
+  "titleEn": "Ideal DC Circuit Foundations",
+  "fieldId": "electrical",
+  "sourceIds": [
+    "mit-circuits"
+  ],
+  "scope": "Sáu chủ đề về mô hình DC lý tưởng với nguồn áp và điện trở. Chưa gồm đáp ứng quá độ, AC, linh kiện bán dẫn hoặc toàn bộ môn mạch. Hoạt động là mô phỏng, không hướng dẫn thao tác điện lưới.",
+  "estimatedHours": 12,
+  "prerequisites": [
+    "Phương trình bậc nhất",
+    "Đơn vị và tỉ lệ"
+  ],
+  "bridge": [],
+  "project": {
+    "title": "Thiết kế và kiểm tra mạch điện trở lý tưởng",
+    "task": "Nguồn lý tưởng 12 V cấp R1=100 Ω nối tiếp với nhánh R2=200 Ω song song R3=200 Ω. Tính điện trở tương đương, dòng nguồn, điện áp và công suất từng phần. Kiểm tra tổng công suất nguồn và tải, rồi thay R3 bằng 100 Ω để so sánh. Chỉ dùng tính toán hoặc mô phỏng.",
+    "rubric": [
+      "Vẽ hoặc mô tả đúng các nút và cách nối",
+      "Tính tương đương, dòng và áp đúng đơn vị",
+      "Kiểm tra cân bằng công suất và tính hợp lý",
+      "Nêu các giả định lý tưởng và phần chưa mô tả của linh kiện thật"
+    ]
+  },
+  "diagnostic": [
+    {
+      "type": "short",
+      "gradingMode": "numeric",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 0.000001
+      },
+      "prompt": "Giải 5I=10. Nhập I.",
+      "answer": 2,
+      "tolerance": 0.000001,
+      "explanation": "I=10/5=2.",
+      "id": "uni-circuits-entry-q0",
+      "familyId": "uni-circuits-entry-f0",
+      "lessonId": "uni-circuits-units",
+      "outcomeIds": [
+        "uni-circuits-o1"
+      ],
+      "gradeId": "university",
+      "subjectId": "uni-circuits",
+      "difficulty": 1,
+      "cognitiveLevel": "understand",
+      "points": 1,
+      "contentStatus": "draft"
+    },
+    {
+      "type": "short",
+      "gradingMode": "numeric",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 0.000001
+      },
+      "prompt": "1000 miliampe bằng bao nhiêu ampe?",
+      "answer": 1,
+      "tolerance": 0.000001,
+      "explanation": "1000 mA=1 A.",
+      "id": "uni-circuits-entry-q1",
+      "familyId": "uni-circuits-entry-f1",
+      "lessonId": "uni-circuits-ohm",
+      "outcomeIds": [
+        "uni-circuits-o2"
+      ],
+      "gradeId": "university",
+      "subjectId": "uni-circuits",
+      "difficulty": 1,
+      "cognitiveLevel": "understand",
+      "points": 1,
+      "contentStatus": "draft"
+    },
+    {
+      "type": "mcq",
+      "gradingMode": "selection",
+      "prompt": "Hai phần tử song song lý tưởng có chung đại lượng nào?",
+      "options": [
+        "Điện áp hai đầu",
+        "Điện trở luôn bằng nhau",
+        "Dòng điện luôn bằng nhau"
+      ],
+      "answer": "Điện áp hai đầu",
+      "explanation": "Chúng nối vào cùng hai nút.",
+      "id": "uni-circuits-entry-q2",
+      "familyId": "uni-circuits-entry-f2",
+      "lessonId": "uni-circuits-series",
+      "outcomeIds": [
+        "uni-circuits-o3"
+      ],
+      "gradeId": "university",
+      "subjectId": "uni-circuits",
+      "difficulty": 1,
+      "cognitiveLevel": "understand",
+      "points": 1,
+      "contentStatus": "draft"
+    }
+  ],
+  "lessons": [
+    {
+      "id": "uni-circuits-units",
+      "title": "Điện tích, dòng điện và điện áp",
+      "objective": "Phân biệt dòng, áp và quy ước dấu trong mô hình mạch.",
+      "theory": [
+        "Dòng điện là tốc độ chuyển điện tích qua một tiết diện; một ampe bằng một coulomb mỗi giây. Điện áp là chênh lệch điện thế giữa hai điểm và cần nêu thứ tự hoặc cực tính tham chiếu. Không nói “điện áp tại một điểm” mà bỏ quên điểm mốc khi mô hình yêu cầu một chênh lệch.",
+        "Chiều dòng quy ước và cực tính áp là cách đặt tham chiếu. Nếu nghiệm dòng âm, điều đó cho biết chiều thực theo mô hình ngược chiều tham chiếu đã chọn; chưa tự là lỗi tính toán. Quy đổi đơn vị trước khi thế vào công thức: miliampe khác ampe và kiloohm khác ohm. Luôn viết đơn vị để kiểm tra kết quả."
+      ],
+      "worked": {
+        "problem": "Điện tích 6 C đi qua tiết diện trong 3 s với tốc độ đều.",
+        "steps": [
+          "Dùng I=ΔQ/Δt.",
+          "I=6/3=2 C/s.",
+          "Đổi C/s thành A: dòng bằng 2 A.",
+          "Kết luận gắn với khoảng thời gian và giả định tốc độ đều."
+        ]
+      },
+      "activity": {
+        "task": "Đổi 250 mA sang A và 2 kΩ sang Ω.",
+        "expected": "250 mA=0,25 A; 2 kΩ=2000 Ω."
+      },
+      "misconception": {
+        "claim": "Dòng âm luôn nghĩa là mô hình hỏng.",
+        "correction": "Dấu âm có thể chỉ chiều ngược với tham chiếu; cần kiểm tra quy ước và phương trình."
+      },
+      "questions": [
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "10 C qua tiết diện trong 5 s đều nhau. Dòng theo A bằng bao nhiêu?",
+          "answer": 2,
+          "tolerance": 0.000001,
+          "explanation": "I=10/5=2 A.",
+          "id": "uni-circuits-units-q1",
+          "familyId": "uni-circuits-units-f0",
+          "lessonId": "uni-circuits-units",
+          "gradeId": "university",
+          "subjectId": "uni-circuits",
+          "outcomeIds": [
+            "uni-circuits-o1"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "500 mA bằng bao nhiêu A?",
+          "answer": 0.5,
+          "tolerance": 0.000001,
+          "explanation": "Chia giá trị mA cho 1000.",
+          "id": "uni-circuits-units-q2",
+          "familyId": "uni-circuits-units-f1",
+          "lessonId": "uni-circuits-units",
+          "gradeId": "university",
+          "subjectId": "uni-circuits",
+          "outcomeIds": [
+            "uni-circuits-o1"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Cần nêu gì để một giá trị điện áp có ý nghĩa rõ?",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Hai điểm hoặc mốc tham chiếu",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Cực tính/thứ tự và đơn vị",
+              "points": 1
+            }
+          ],
+          "explanation": "Điện áp là một chênh lệch có quy ước dấu.",
+          "id": "uni-circuits-units-q3",
+          "familyId": "uni-circuits-units-f2",
+          "lessonId": "uni-circuits-units",
+          "gradeId": "university",
+          "subjectId": "uni-circuits",
+          "outcomeIds": [
+            "uni-circuits-o1"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [],
+      "outcomeId": "uni-circuits-o1"
+    },
+    {
+      "id": "uni-circuits-ohm",
+      "title": "Định luật Ohm và miền áp dụng",
+      "objective": "Dùng V=IR cho điện trở lý tưởng và kiểm tra đơn vị.",
+      "theory": [
+        "Trong mô hình điện trở tuyến tính lý tưởng, điện áp và dòng theo quy ước thụ động liên hệ V=IR với R dương. Tăng áp hai lần làm dòng tăng hai lần nếu điện trở giữ nguyên. Đây là quan hệ mô hình của phần tử điện trở, không phải quy tắc áp dụng giống nhau cho mọi linh kiện.",
+        "Vật thật có thể thay đổi điện trở theo nhiệt độ hoặc điều kiện hoạt động; diode và nhiều phần tử khác không có quan hệ tuyến tính này. Mô hình vẫn hữu ích khi được dùng đúng phạm vi. Kết quả cần được kiểm tra bằng đơn vị: V/Ω cho A, và dòng quá lớn so với bối cảnh có thể báo hiệu nhầm đơn vị hoặc mô hình không phù hợp."
+      ],
+      "worked": {
+        "problem": "Điện trở 300 Ω chịu điện áp 6 V trong mô hình lý tưởng.",
+        "steps": [
+          "Viết I=V/R.",
+          "Thế 6/300=0,02 A.",
+          "Đổi thành 20 mA.",
+          "Kiểm tra nếu dùng nhầm 300 kΩ thì kết quả khác 1000 lần."
+        ]
+      },
+      "activity": {
+        "task": "Giữ nguồn 6 V, đổi điện trở từ 300 Ω lên 600 Ω. So sánh dòng.",
+        "expected": "Dòng giảm từ 0,02 A xuống 0,01 A theo mô hình điện trở không đổi theo nhiệt độ."
+      },
+      "misconception": {
+        "claim": "Mọi linh kiện đều có V/I là một hằng số ở mọi điều kiện.",
+        "correction": "Quan hệ tuyến tính chỉ đúng trong mô hình và miền áp dụng phù hợp."
+      },
+      "questions": [
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "V=10 V, R=200 Ω. Nhập dòng theo A.",
+          "answer": 0.05,
+          "tolerance": 0.000001,
+          "explanation": "I=10/200=0,05 A.",
+          "id": "uni-circuits-ohm-q1",
+          "familyId": "uni-circuits-ohm-f0",
+          "lessonId": "uni-circuits-ohm",
+          "gradeId": "university",
+          "subjectId": "uni-circuits",
+          "outcomeIds": [
+            "uni-circuits-o2"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "I=0,1 A qua R=50 Ω. Điện áp theo V bằng bao nhiêu?",
+          "answer": 5,
+          "tolerance": 0.000001,
+          "explanation": "V=IR=0,1×50=5 V.",
+          "id": "uni-circuits-ohm-q2",
+          "familyId": "uni-circuits-ohm-f1",
+          "lessonId": "uni-circuits-ohm",
+          "gradeId": "university",
+          "subjectId": "uni-circuits",
+          "outcomeIds": [
+            "uni-circuits-o2"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Nêu một lý do cần kiểm tra mô hình khi áp dụng V=IR cho linh kiện thật.",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Nêu tính phi tuyến hoặc biến đổi nhiệt độ",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Gắn với miền làm việc",
+              "points": 1
+            }
+          ],
+          "explanation": "Công thức không loại bỏ nhu cầu hiểu phần tử đang mô tả.",
+          "id": "uni-circuits-ohm-q3",
+          "familyId": "uni-circuits-ohm-f2",
+          "lessonId": "uni-circuits-ohm",
+          "gradeId": "university",
+          "subjectId": "uni-circuits",
+          "outcomeIds": [
+            "uni-circuits-o2"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [
+        "uni-circuits-units"
+      ],
+      "outcomeId": "uni-circuits-o2"
+    },
+    {
+      "id": "uni-circuits-series",
+      "title": "Mạch nối tiếp và chia áp",
+      "objective": "Tính điện trở tương đương và điện áp trên từng điện trở nối tiếp.",
+      "theory": [
+        "Các điện trở nối tiếp trong một nhánh không có chỗ rẽ giữa chúng mang cùng dòng điện. Tổng điện áp nhánh bằng tổng các sụt áp theo quy ước dấu nhất quán. Vì vậy điện trở tương đương của các điện trở dương nối tiếp bằng tổng các giá trị.",
+        "Chia áp cho R1 và R2 dùng V1=Vnguồn·R1/(R1+R2) khi đúng mô hình nhánh nối tiếp đó. Nếu mắc thêm một tải song song vào R2, cấu trúc mạch thay đổi; công thức dùng hai điện trở ban đầu không còn giữ nguyên. Nhận diện các nút và nhánh trước khi chọn phép gộp."
+      ],
+      "worked": {
+        "problem": "Nguồn 9 V cấp hai điện trở nối tiếp 100 Ω và 200 Ω.",
+        "steps": [
+          "Req=100+200=300 Ω.",
+          "Dòng nhánh=9/300=0,03 A.",
+          "Áp trên R1=0,03×100=3 V.",
+          "Áp trên R2=6 V; tổng 3+6=9 V."
+        ]
+      },
+      "activity": {
+        "task": "Vẽ thêm một nhánh vào điểm giữa và giải thích điều kiện nối tiếp đã thay đổi ra sao.",
+        "expected": "Có dòng rẽ nên hai phần tử cũ không nhất thiết mang cùng dòng; cần phân tích lại mạch."
+      },
+      "misconception": {
+        "claim": "Hai điện trở vẽ liền nhau luôn nối tiếp.",
+        "correction": "Phải kiểm tra nút giữa có nhánh rẽ mang dòng khác hay không."
+      },
+      "questions": [
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "Ba điện trở nối tiếp 10,20,30 Ω có điện trở tương đương bao nhiêu Ω?",
+          "answer": 60,
+          "tolerance": 0.000001,
+          "explanation": "Cộng ba điện trở dương.",
+          "id": "uni-circuits-series-q1",
+          "familyId": "uni-circuits-series-f0",
+          "lessonId": "uni-circuits-series",
+          "gradeId": "university",
+          "subjectId": "uni-circuits",
+          "outcomeIds": [
+            "uni-circuits-o3"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "Nguồn 12 V cấp nối tiếp R1=100 Ω, R2=300 Ω. Điện áp trên R1 bằng bao nhiêu V?",
+          "answer": 3,
+          "tolerance": 0.000001,
+          "explanation": "12×100/400=3 V.",
+          "id": "uni-circuits-series-q2",
+          "familyId": "uni-circuits-series-f1",
+          "lessonId": "uni-circuits-series",
+          "gradeId": "university",
+          "subjectId": "uni-circuits",
+          "outcomeIds": [
+            "uni-circuits-o3"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Vì sao mắc thêm tải có thể làm sai kết quả chia áp ban đầu?",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Nhận ra cấu trúc nhánh và dòng thay đổi",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Nêu cần tính điện trở tương đương mới",
+              "points": 1
+            }
+          ],
+          "explanation": "Mạch được chọn mới quyết định công thức chia áp phù hợp.",
+          "id": "uni-circuits-series-q3",
+          "familyId": "uni-circuits-series-f2",
+          "lessonId": "uni-circuits-series",
+          "gradeId": "university",
+          "subjectId": "uni-circuits",
+          "outcomeIds": [
+            "uni-circuits-o3"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [
+        "uni-circuits-ohm"
+      ],
+      "outcomeId": "uni-circuits-o3"
+    },
+    {
+      "id": "uni-circuits-parallel",
+      "title": "Mạch song song và chia dòng",
+      "objective": "Tính điện trở tương đương hai nhánh song song.",
+      "theory": [
+        "Các nhánh song song nối vào cùng hai nút nên có cùng điện áp theo cùng cực tính. Dòng nguồn bằng tổng dòng nhánh. Với hai điện trở dương, 1/Req=1/R1+1/R2, tương đương Req=R1R2/(R1+R2). Req nhỏ hơn từng điện trở thành phần, là một kiểm tra tính hợp lý hữu ích.",
+        "Dòng qua mỗi điện trở bằng áp nhánh chia điện trở. Nhánh có điện trở nhỏ hơn nhận dòng lớn hơn trong mô hình lý tưởng này; dòng không tự chia đều nếu hai điện trở khác nhau. Công thức có điều kiện R dương và hữu hạn; các trường hợp ngắn mạch cần được xử lý riêng trong mô hình."
+      ],
+      "worked": {
+        "problem": "Hai điện trở 100 Ω và 300 Ω song song ở 6 V.",
+        "steps": [
+          "Dòng nhánh lần lượt 6/100=0,06 A và 6/300=0,02 A.",
+          "Dòng tổng=0,08 A.",
+          "Req=6/0,08=75 Ω.",
+          "75 nhỏ hơn 100 và 300, phù hợp kiểm tra cấu trúc."
+        ]
+      },
+      "activity": {
+        "task": "So sánh Req của hai điện trở 200 Ω nối tiếp và song song.",
+        "expected": "Nối tiếp 400 Ω; song song 100 Ω. Hai cách mắc khác nhau tạo đặc tính khác nhau."
+      },
+      "misconception": {
+        "claim": "Dòng luôn chia đôi khi có hai nhánh.",
+        "correction": "Dòng bằng nhau chỉ trong điều kiện hai điện trở bằng nhau và cùng điện áp nhánh."
+      },
+      "questions": [
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "Hai điện trở 80 Ω bằng nhau song song có Req bao nhiêu Ω?",
+          "answer": 40,
+          "tolerance": 0.000001,
+          "explanation": "Hai điện trở bằng nhau song song cho một nửa giá trị.",
+          "id": "uni-circuits-parallel-q1",
+          "familyId": "uni-circuits-parallel-f0",
+          "lessonId": "uni-circuits-parallel",
+          "gradeId": "university",
+          "subjectId": "uni-circuits",
+          "outcomeIds": [
+            "uni-circuits-o4"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "Nhánh 500 Ω chịu 5 V có dòng theo A bằng bao nhiêu?",
+          "answer": 0.01,
+          "tolerance": 0.000001,
+          "explanation": "5/500=0,01 A.",
+          "id": "uni-circuits-parallel-q2",
+          "familyId": "uni-circuits-parallel-f1",
+          "lessonId": "uni-circuits-parallel",
+          "gradeId": "university",
+          "subjectId": "uni-circuits",
+          "outcomeIds": [
+            "uni-circuits-o4"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Một kết quả Req song song lớn hơn cả hai điện trở dương gợi ý điều gì?",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Nhận ra bất hợp lý của kết quả trong mô hình",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Kiểm tra phép nghịch đảo, cấu trúc hoặc đơn vị",
+              "points": 1
+            }
+          ],
+          "explanation": "Kiểm tra miền kết quả giúp phát hiện sai phép tính trước khi diễn giải.",
+          "id": "uni-circuits-parallel-q3",
+          "familyId": "uni-circuits-parallel-f2",
+          "lessonId": "uni-circuits-parallel",
+          "gradeId": "university",
+          "subjectId": "uni-circuits",
+          "outcomeIds": [
+            "uni-circuits-o4"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [
+        "uni-circuits-series"
+      ],
+      "outcomeId": "uni-circuits-o4"
+    },
+    {
+      "id": "uni-circuits-kirchhoff",
+      "title": "Nút, vòng và kiểm tra phương trình",
+      "objective": "Dùng bảo toàn dòng và tổng áp để kiểm tra mạch nhỏ.",
+      "theory": [
+        "Định luật dòng Kirchhoff trong mô hình mạch tập trung nói tổng dòng có dấu tại một nút bằng 0 khi mô hình không giữ điện tích tích lũy tại nút. Có thể chọn dòng vào dương, dòng ra âm và dùng nhất quán. Phương trình này liên hệ các nhánh, không đòi chúng có cùng điện trở.",
+        "Định luật điện áp Kirchhoff dùng tổng điện áp có dấu quanh một vòng bằng 0 trong mô hình phù hợp. Chọn hướng vòng và cực tính từng phần tử trước khi viết. Các phương trình bảo toàn kết hợp quan hệ phần tử như V=IR để giải mạch; một phương trình thừa không nhất thiết cung cấp thông tin độc lập mới."
+      ],
+      "worked": {
+        "problem": "Tại một nút có dòng vào 0,3 A, hai dòng ra là 0,1 A và Ix.",
+        "steps": [
+          "Chọn dòng vào dương.",
+          "Viết 0,3−0,1−Ix=0.",
+          "Suy ra Ix=0,2 A theo chiều ra đã chọn.",
+          "Kiểm tra tổng dòng ra 0,1+0,2 bằng dòng vào 0,3."
+        ]
+      },
+      "activity": {
+        "task": "Trong vòng nguồn 10 V và hai sụt áp 4 V, Vx, tìm Vx theo cùng chiều vòng.",
+        "expected": "10−4−Vx=0 nên Vx=6 V; mô tả rõ cực tính và hướng đi."
+      },
+      "misconception": {
+        "claim": "Có thể đổi dấu từng dòng tùy ý giữa các phương trình.",
+        "correction": "Được chọn quy ước ban đầu nhưng phải dùng nhất quán; nghiệm âm được diễn giải theo quy ước đó."
+      },
+      "questions": [
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "Dòng vào nút 0,5 A, một dòng ra 0,2 A. Dòng ra còn lại theo A bằng bao nhiêu?",
+          "answer": 0.3,
+          "tolerance": 0.000001,
+          "explanation": "0,5−0,2=0,3 A.",
+          "id": "uni-circuits-kirchhoff-q1",
+          "familyId": "uni-circuits-kirchhoff-f0",
+          "lessonId": "uni-circuits-kirchhoff",
+          "gradeId": "university",
+          "subjectId": "uni-circuits",
+          "outcomeIds": [
+            "uni-circuits-o5"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "Nguồn 15 V bằng tổng hai sụt áp 9 V và Vx. Nhập Vx theo V.",
+          "answer": 6,
+          "tolerance": 0.000001,
+          "explanation": "15−9=6 V.",
+          "id": "uni-circuits-kirchhoff-q2",
+          "familyId": "uni-circuits-kirchhoff-f1",
+          "lessonId": "uni-circuits-kirchhoff",
+          "gradeId": "university",
+          "subjectId": "uni-circuits",
+          "outcomeIds": [
+            "uni-circuits-o5"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Trước khi viết tổng áp vòng cần xác định những gì?",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Hướng đi vòng",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Cực tính/tham chiếu áp",
+              "points": 1
+            },
+            {
+              "id": "criterion-2",
+              "text": "Quan hệ phần tử phù hợp",
+              "points": 1
+            }
+          ],
+          "explanation": "Quy ước rõ giúp các dấu trong phương trình có thể kiểm tra được.",
+          "id": "uni-circuits-kirchhoff-q3",
+          "familyId": "uni-circuits-kirchhoff-f2",
+          "lessonId": "uni-circuits-kirchhoff",
+          "gradeId": "university",
+          "subjectId": "uni-circuits",
+          "outcomeIds": [
+            "uni-circuits-o5"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [
+        "uni-circuits-parallel"
+      ],
+      "outcomeId": "uni-circuits-o5"
+    },
+    {
+      "id": "uni-circuits-power",
+      "title": "Công suất, năng lượng và giới hạn thực hành",
+      "objective": "Tính công suất điện trở và kiểm tra cân bằng năng lượng lý tưởng.",
+      "theory": [
+        "Theo quy ước thụ động, công suất hấp thụ p=vi. Với điện trở tuyến tính dương, có thể dùng p=i²R hoặc p=v²/R, nên công suất hấp thụ không âm. Năng lượng trong thời gian công suất không đổi bằng P×t; watt là joule mỗi giây, khác với đơn vị năng lượng watt-giờ.",
+        "Trong mạch lý tưởng được giải nhất quán, tổng công suất nguồn cung cấp bằng tổng công suất tải hấp thụ. Linh kiện thật có công suất định mức, dung sai, nhiệt và điều kiện an toàn mà mô hình đơn giản chưa mô tả. Các hoạt động ở đây chỉ dùng tính toán hoặc mô phỏng; kết quả lý tưởng không phải hướng dẫn đấu điện hay đánh giá an toàn một mạch thật."
+      ],
+      "worked": {
+        "problem": "Điện trở 100 Ω có điện áp 5 V không đổi trong 20 s.",
+        "steps": [
+          "Dòng I=5/100=0,05 A.",
+          "P=VI=0,25 W.",
+          "Năng lượng E=0,25×20=5 J.",
+          "Giữ riêng kết quả lý tưởng và việc chọn linh kiện thật theo điều kiện thực tế."
+        ]
+      },
+      "activity": {
+        "task": "Tính công suất trên hai điện trở nối tiếp ở ví dụ 9 V: R1=100 Ω, R2=200 Ω, I=0,03 A.",
+        "expected": "P1=0,09 W; P2=0,18 W; tổng=0,27 W bằng nguồn 9×0,03."
+      },
+      "misconception": {
+        "claim": "Watt và watt-giờ là cùng một đại lượng.",
+        "correction": "Watt đo công suất; watt-giờ đo năng lượng bằng công suất nhân thời gian."
+      },
+      "questions": [
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "Điện trở 50 Ω có dòng 0,2 A. Công suất theo W bằng bao nhiêu?",
+          "answer": 2,
+          "tolerance": 0.000001,
+          "explanation": "I²R=0,04×50=2 W.",
+          "id": "uni-circuits-power-q1",
+          "familyId": "uni-circuits-power-f0",
+          "lessonId": "uni-circuits-power",
+          "gradeId": "university",
+          "subjectId": "uni-circuits",
+          "outcomeIds": [
+            "uni-circuits-o6"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "Công suất 3 W không đổi trong 10 s dùng bao nhiêu J?",
+          "answer": 30,
+          "tolerance": 0.000001,
+          "explanation": "E=P×t=30 J.",
+          "id": "uni-circuits-power-q2",
+          "familyId": "uni-circuits-power-f1",
+          "lessonId": "uni-circuits-power",
+          "gradeId": "university",
+          "subjectId": "uni-circuits",
+          "outcomeIds": [
+            "uni-circuits-o6"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Nêu hai yếu tố mô hình điện trở lý tưởng chưa mô tả khi chọn linh kiện thật.",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Công suất định mức, dung sai hoặc nhiệt",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Điều kiện an toàn và môi trường sử dụng",
+              "points": 1
+            }
+          ],
+          "explanation": "Tính toán lý tưởng cần được phân biệt với đánh giá kỹ thuật thực tế có giám sát.",
+          "id": "uni-circuits-power-q3",
+          "familyId": "uni-circuits-power-f2",
+          "lessonId": "uni-circuits-power",
+          "gradeId": "university",
+          "subjectId": "uni-circuits",
+          "outcomeIds": [
+            "uni-circuits-o6"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [
+        "uni-circuits-kirchhoff"
+      ],
+      "outcomeId": "uni-circuits-o6"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "uni-circuits-o1",
+      "text": "Phân biệt dòng, áp và quy ước dấu trong mô hình mạch."
+    },
+    {
+      "id": "uni-circuits-o2",
+      "text": "Dùng V=IR cho điện trở lý tưởng và kiểm tra đơn vị."
+    },
+    {
+      "id": "uni-circuits-o3",
+      "text": "Tính điện trở tương đương và điện áp trên từng điện trở nối tiếp."
+    },
+    {
+      "id": "uni-circuits-o4",
+      "text": "Tính điện trở tương đương hai nhánh song song."
+    },
+    {
+      "id": "uni-circuits-o5",
+      "text": "Dùng bảo toàn dòng và tổng áp để kiểm tra mạch nhỏ."
+    },
+    {
+      "id": "uni-circuits-o6",
+      "text": "Tính công suất điện trở và kiểm tra cân bằng năng lượng lý tưởng."
+    }
+  ],
+  "blueprint": {
+    "id": "uni-circuits-final",
+    "gradeId": "university",
+    "subjectId": "uni-circuits",
+    "title": "Tự kiểm tra: Mạch điện một chiều — nhập môn",
+    "contentVersion": "2026.10.28-university-v1",
+    "durationMinutes": 30,
+    "contentStatus": "draft",
+    "sections": [
+      {
+        "id": "unit-0",
+        "count": 2,
+        "outcomeIds": [
+          "uni-circuits-o1"
+        ]
+      },
+      {
+        "id": "unit-1",
+        "count": 2,
+        "outcomeIds": [
+          "uni-circuits-o2"
+        ]
+      },
+      {
+        "id": "unit-2",
+        "count": 2,
+        "outcomeIds": [
+          "uni-circuits-o3"
+        ]
+      },
+      {
+        "id": "unit-3",
+        "count": 2,
+        "outcomeIds": [
+          "uni-circuits-o4"
+        ]
+      },
+      {
+        "id": "unit-4",
+        "count": 2,
+        "outcomeIds": [
+          "uni-circuits-o5"
+        ]
+      },
+      {
+        "id": "unit-5",
+        "count": 2,
+        "outcomeIds": [
+          "uni-circuits-o6"
+        ]
+      }
+    ]
+  }
+}

@@ -5728,6 +5728,7 @@ function initAppShell() {
       items: [],
       pages: [
         { id: "today", title: "Hôm nay", route: "/learn/today" },
+        { id: "university", title: "Đại học — học phần & học liệu", route: "/learn/university" },
         { id: "paths", title: "Lộ trình lớp 1–12", route: "/learn/paths" },
         { id: "subjects", title: "Môn học", route: "/learn/subjects" },
         { id: "practice", title: "Luyện tập", route: "/learn/practice" },
@@ -7714,7 +7715,7 @@ function initAppShell() {
     } else if (route === "/learn" || (route.startsWith("/learn/") && window.HHSchool?.supports?.(parts[1]))) {
       const learningRouteView = route === "/learn" ? "today" : parts[1];
       const learningMeta = window.HHSchool?.views?.[window.HHSchool?.normalizeView?.(learningRouteView) || learningRouteView];
-      updatePageHeader(learningMeta?.title || "HH School", "Trường học số lớp 1–12 theo Chương trình GDPT 2018, học bằng nội dung nguyên bản và bằng chứng kỹ năng.", route);
+      updatePageHeader(learningMeta?.title || "HH School", "Học tập phổ thông và đại học: nội dung nguyên bản, chương trình có nguồn và tiến độ theo bài làm.", route);
       pageActions.innerHTML = `<button type="button" data-app-route="/learn/practice">Luyện tập</button><button class="app-primary-action" type="button" data-app-route="/learn/today">Hôm nay</button>`;
       workspace.innerHTML = '<div data-hh-school-shell></div>';
       if (window.HHSchool?.mount) window.HHSchool.mount(workspace.firstElementChild, {

@@ -1,0 +1,870 @@
+{
+  "schemaVersion": 1,
+  "version": "2026.10.28-university-v1",
+  "contentStatus": "draft",
+  "reviewEvidence": null,
+  "credits": null,
+  "officialComplete": false,
+  "authorship": "HH School — nội dung nguyên bản chờ thẩm định",
+  "id": "uni-research",
+  "title": "Phương pháp học và nghiên cứu",
+  "titleEn": "Academic Learning and Research Literacy",
+  "fieldId": "general",
+  "sourceIds": [
+    "mit-citing",
+    "otl"
+  ],
+  "scope": "Sáu chủ đề thực hành học thuật nguyên bản. Chưa là môn phương pháp nghiên cứu chuyên ngành hay chứng nhận nghiên cứu với con người.",
+  "estimatedHours": 10,
+  "prerequisites": [
+    "Đọc hiểu văn bản và lập luận cơ bản"
+  ],
+  "bridge": [],
+  "project": {
+    "title": "Đề cương nghiên cứu nhỏ có thể kiểm tra",
+    "task": "Chọn một câu hỏi học tập hoặc đời sống sinh viên không thu thập dữ liệu nhạy cảm. Viết câu hỏi, phạm vi, ba nguồn có thể xác minh, phương pháp dự kiến, tiêu chí đánh giá, giới hạn và kế hoạch bốn tuần. Dùng dữ liệu giả lập nếu chưa có quyền thu thập; ghi rõ đâu là dự kiến và đâu là kết quả thực.",
+    "rubric": [
+      "Câu hỏi cụ thể và phạm vi khả thi",
+      "Nguồn xác minh được và gắn đúng luận điểm",
+      "Thiết kế có tiêu chí, quyền tham gia và hạn chế",
+      "Phân biệt kế hoạch với kết quả, có lịch và tài liệu tham khảo"
+    ]
+  },
+  "diagnostic": [
+    {
+      "type": "mcq",
+      "gradingMode": "selection",
+      "prompt": "Nguồn nào giúp kiểm tra nội dung một quy định của trường?",
+      "options": [
+        "Văn bản chính thức đúng phiên bản",
+        "Bài đăng không ghi nguồn",
+        "Một câu trả lời không có đường dẫn"
+      ],
+      "answer": "Văn bản chính thức đúng phiên bản",
+      "explanation": "Cần tìm bản gốc và thời điểm áp dụng.",
+      "id": "uni-research-entry-q0",
+      "familyId": "uni-research-entry-f0",
+      "lessonId": "uni-research-learning",
+      "outcomeIds": [
+        "uni-research-o1"
+      ],
+      "gradeId": "university",
+      "subjectId": "uni-research",
+      "difficulty": 1,
+      "cognitiveLevel": "understand",
+      "points": 1,
+      "contentStatus": "draft"
+    },
+    {
+      "type": "mcq",
+      "gradingMode": "selection",
+      "prompt": "Đọc lại nhiều lần có tự chứng minh đã nhớ không?",
+      "options": [
+        "Không, cần tự truy hồi hoặc vận dụng",
+        "Có, cứ đọc là thành thạo"
+      ],
+      "answer": "Không, cần tự truy hồi hoặc vận dụng",
+      "explanation": "Tự kiểm tra bằng nhiệm vụ phù hợp giúp thấy phần còn thiếu.",
+      "id": "uni-research-entry-q1",
+      "familyId": "uni-research-entry-f1",
+      "lessonId": "uni-research-questions",
+      "outcomeIds": [
+        "uni-research-o2"
+      ],
+      "gradeId": "university",
+      "subjectId": "uni-research",
+      "difficulty": 1,
+      "cognitiveLevel": "understand",
+      "points": 1,
+      "contentStatus": "draft"
+    },
+    {
+      "type": "mcq",
+      "gradingMode": "selection",
+      "prompt": "Khi chưa thu dữ liệu, kết quả dự kiến nên được gọi là gì?",
+      "options": [
+        "Giả thuyết hoặc dự kiến",
+        "Kết quả thực nghiệm đã xác nhận",
+        "Số liệu chính thức"
+      ],
+      "answer": "Giả thuyết hoặc dự kiến",
+      "explanation": "Cần tách điều kỳ vọng với điều đã quan sát.",
+      "id": "uni-research-entry-q2",
+      "familyId": "uni-research-entry-f2",
+      "lessonId": "uni-research-sources",
+      "outcomeIds": [
+        "uni-research-o3"
+      ],
+      "gradeId": "university",
+      "subjectId": "uni-research",
+      "difficulty": 1,
+      "cognitiveLevel": "understand",
+      "points": 1,
+      "contentStatus": "draft"
+    }
+  ],
+  "lessons": [
+    {
+      "id": "uni-research-learning",
+      "title": "Học chủ động và tự kiểm tra",
+      "objective": "Thiết kế một buổi học có truy hồi, sửa lỗi và lịch ôn.",
+      "theory": [
+        "Cảm giác quen với một trang sách khác với khả năng tự giải thích khi đóng sách. Một buổi học nên có mục tiêu quan sát được: giải một kiểu bài, tóm tắt lập luận bằng lời của mình hoặc giải thích điều kiện áp dụng. Sau phần đọc, thử truy hồi trước khi mở lại tài liệu để nhìn thấy lỗ hổng.",
+        "Sửa lỗi cần xác định nguyên nhân: thiếu định nghĩa, chọn sai mô hình, tính sai hay đọc nhầm yêu cầu. Ghi lỗi kèm cách kiểm tra ở lần sau, rồi ôn cách quãng bằng nhiệm vụ tương tự nhưng khác dữ kiện. Lịch ôn là gợi ý điều chỉnh theo bằng chứng, không có một khoảng cách tối ưu cố định cho mọi người và mọi môn."
+      ],
+      "worked": {
+        "problem": "Có 30 phút để học một khái niệm mới.",
+        "steps": [
+          "Đặt mục tiêu: giải thích khái niệm và một giới hạn áp dụng.",
+          "Đọc và làm ví dụ trong 12 phút.",
+          "Đóng tài liệu, tự giải thích hoặc làm bài trong 10 phút.",
+          "Dùng 8 phút đối chiếu, ghi lỗi và lên lần tự kiểm tra tiếp."
+        ]
+      },
+      "activity": {
+        "task": "Viết một câu hỏi truy hồi cho bài vừa học, rồi trả lời trước khi mở tài liệu.",
+        "expected": "Câu hỏi yêu cầu giải thích hoặc áp dụng; ghi phần trả lời thiếu và cách sửa."
+      },
+      "misconception": {
+        "claim": "Lật thẻ hoặc bấm xong bài là bằng chứng đã thành thạo.",
+        "correction": "Cần nhiệm vụ tự làm phù hợp; hành vi xem nội dung chỉ chứng minh lượt xem."
+      },
+      "questions": [
+        {
+          "type": "mcq",
+          "gradingMode": "selection",
+          "prompt": "Hoạt động nào cho thấy rõ phần chưa hiểu hơn?",
+          "options": [
+            "Tự giải thích rồi đối chiếu",
+            "Chỉ nhìn đáp án",
+            "Bấm Next liên tục"
+          ],
+          "answer": "Tự giải thích rồi đối chiếu",
+          "explanation": "Truy hồi trước khi xem lại giúp bộc lộ thiếu sót.",
+          "id": "uni-research-learning-q1",
+          "familyId": "uni-research-learning-f0",
+          "lessonId": "uni-research-learning",
+          "gradeId": "university",
+          "subjectId": "uni-research",
+          "outcomeIds": [
+            "uni-research-o1"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "Buổi học 30 phút dành 12 phút đọc và 10 phút tự làm. Còn bao nhiêu phút chữa?",
+          "answer": 8,
+          "tolerance": 0.000001,
+          "explanation": "30−12−10=8.",
+          "id": "uni-research-learning-q2",
+          "familyId": "uni-research-learning-f1",
+          "lessonId": "uni-research-learning",
+          "gradeId": "university",
+          "subjectId": "uni-research",
+          "outcomeIds": [
+            "uni-research-o1"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Thiết kế lịch ôn cho một lỗi chọn sai công thức.",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Nêu nhiệm vụ tự làm",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Gắn điều kiện chọn công thức",
+              "points": 1
+            },
+            {
+              "id": "criterion-2",
+              "text": "Có lần kiểm tra lại",
+              "points": 1
+            }
+          ],
+          "explanation": "Lịch có giá trị khi kết nối với lỗi và nhiệm vụ cụ thể, không chỉ đặt thông báo.",
+          "id": "uni-research-learning-q3",
+          "familyId": "uni-research-learning-f2",
+          "lessonId": "uni-research-learning",
+          "gradeId": "university",
+          "subjectId": "uni-research",
+          "outcomeIds": [
+            "uni-research-o1"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [],
+      "outcomeId": "uni-research-o1"
+    },
+    {
+      "id": "uni-research-questions",
+      "title": "Câu hỏi nghiên cứu và phạm vi",
+      "objective": "Chuyển một đề tài rộng thành câu hỏi có thể khảo sát.",
+      "theory": [
+        "Một đề tài như “sinh viên và công nghệ” quá rộng để tự chỉ ra cần dữ liệu gì. Câu hỏi nghiên cứu nên nêu đối tượng, điều muốn mô tả hoặc so sánh, phạm vi thời gian và những khái niệm chính. Câu hỏi có thể là mô tả, giải thích hoặc đánh giá can thiệp; mỗi loại cần thiết kế và mức bằng chứng khác nhau.",
+        "Khái niệm cần được vận hành thành cách quan sát phù hợp. “Học tốt” có thể là điểm một bài đánh giá, mức hiểu khái niệm hoặc khả năng vận dụng sau một thời gian; chúng không hoàn toàn thay thế nhau. Chọn chỉ báo phải nêu giới hạn và tránh đặt kết luận mong muốn ngay trong cách hỏi."
+      ],
+      "worked": {
+        "problem": "Thu hẹp “điện thoại làm sinh viên học kém”.",
+        "steps": [
+          "Bỏ khẳng định nhân quả chưa được kiểm chứng.",
+          "Chọn nhóm và thời gian cụ thể.",
+          "Ví dụ hỏi mối liên hệ giữa thời gian tự báo dùng điện thoại và điểm bài tự luyện trong một tháng.",
+          "Ghi giới hạn tự báo, chỉ báo điểm và các yếu tố khác như thời gian ngủ."
+        ]
+      },
+      "activity": {
+        "task": "Viết lại một đề tài bạn quan tâm thành câu hỏi mô tả, rồi một câu hỏi nhân quả.",
+        "expected": "Hai câu cần khác mục tiêu suy luận; nêu thiết kế bổ sung cần cho câu nhân quả."
+      },
+      "misconception": {
+        "claim": "Câu hỏi càng bao trùm mọi người và mọi thời điểm càng tốt.",
+        "correction": "Phạm vi cần phù hợp nguồn lực, thiết kế và dữ liệu có thể thu thập."
+      },
+      "questions": [
+        {
+          "type": "mcq",
+          "gradingMode": "selection",
+          "prompt": "Câu nào có phạm vi rõ hơn?",
+          "options": [
+            "Thời gian đi học của mẫu sinh viên năm nhất trong tuần khảo sát là bao lâu?",
+            "Mọi sinh viên sống thế nào?",
+            "Công nghệ có tốt không?"
+          ],
+          "answer": "Thời gian đi học của mẫu sinh viên năm nhất trong tuần khảo sát là bao lâu?",
+          "explanation": "Đối tượng, chỉ báo và thời điểm được mô tả cụ thể hơn.",
+          "id": "uni-research-questions-q1",
+          "familyId": "uni-research-questions-f0",
+          "lessonId": "uni-research-questions",
+          "gradeId": "university",
+          "subjectId": "uni-research",
+          "outcomeIds": [
+            "uni-research-o2"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "mcq",
+          "gradingMode": "selection",
+          "prompt": "Điểm bài tự luyện là gì khi dùng để đo mức học?",
+          "options": [
+            "Một chỉ báo có giới hạn",
+            "Toàn bộ năng lực con người",
+            "Bằng chứng nhân quả tự động"
+          ],
+          "answer": "Một chỉ báo có giới hạn",
+          "explanation": "Chỉ báo cần được diễn giải theo cách đo và phạm vi.",
+          "id": "uni-research-questions-q2",
+          "familyId": "uni-research-questions-f1",
+          "lessonId": "uni-research-questions",
+          "gradeId": "university",
+          "subjectId": "uni-research",
+          "outcomeIds": [
+            "uni-research-o2"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Nêu đối tượng, thời gian và chỉ báo cho câu hỏi của dự án.",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Đối tượng xác định",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Khoảng thời gian",
+              "points": 1
+            },
+            {
+              "id": "criterion-2",
+              "text": "Chỉ báo và một giới hạn",
+              "points": 1
+            }
+          ],
+          "explanation": "Câu hỏi rõ giúp lựa chọn nguồn và thiết kế phù hợp.",
+          "id": "uni-research-questions-q3",
+          "familyId": "uni-research-questions-f2",
+          "lessonId": "uni-research-questions",
+          "gradeId": "university",
+          "subjectId": "uni-research",
+          "outcomeIds": [
+            "uni-research-o2"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [
+        "uni-research-learning"
+      ],
+      "outcomeId": "uni-research-o2"
+    },
+    {
+      "id": "uni-research-sources",
+      "title": "Tìm nguồn và kiểm tra phiên bản",
+      "objective": "Đánh giá nguồn theo xuất xứ, phạm vi và khả năng đối chiếu.",
+      "theory": [
+        "Nguồn gốc cần được kiểm tra theo câu hỏi: văn bản trường phù hợp để xác minh chương trình, bài nghiên cứu gốc để xem phương pháp và dữ liệu, giáo trình để học kiến thức nền. Một trang có nhiều lượt xem hoặc giao diện đẹp không tự là bằng chứng chất lượng. Truy ngược tới tác giả, đơn vị, ngày và tài liệu gốc.",
+        "Khi hai nguồn khác nhau, kiểm tra phiên bản, phạm vi địa lý, định nghĩa và phương pháp trước khi chọn một nguồn. Lưu URL, tiêu đề, tác giả, năm và ngày truy cập. Với repo, lưu commit và đường dẫn file để người khác tìm đúng bản; trang GitHub công khai không tự chứng minh tác giả thuộc trường hoặc nội dung đã được thẩm định."
+      ],
+      "worked": {
+        "problem": "Hai bảng môn cùng tên ngành nhưng khác số tín chỉ.",
+        "steps": [
+          "Kiểm tra trường và loại chương trình.",
+          "Đọc khóa tuyển sinh và quyết định áp dụng.",
+          "Tìm trang hoặc văn bản công bố chính thức.",
+          "Giữ hai phiên bản riêng nếu áp dụng cho hai khóa, không gộp tùy ý."
+        ]
+      },
+      "activity": {
+        "task": "Lập phiếu nguồn cho một học phần: đơn vị, phiên bản, URL, nội dung đã đọc và phần chưa kiểm tra.",
+        "expected": "Phiếu cho phép một người khác truy lại đúng tài liệu và thấy giới hạn đối chiếu."
+      },
+      "misconception": {
+        "claim": "Tên trường trong tên repo đủ để xác nhận repo chính thức.",
+        "correction": "Cần liên kết hoặc bằng chứng xác nhận từ website trường, môn học hoặc tác giả đã kiểm tra."
+      },
+      "questions": [
+        {
+          "type": "mcq",
+          "gradingMode": "selection",
+          "prompt": "Thông tin nào quan trọng để chọn đúng chương trình?",
+          "options": [
+            "Khóa và phiên bản áp dụng",
+            "Số lượt thích trang",
+            "Màu của file PDF"
+          ],
+          "answer": "Khóa và phiên bản áp dụng",
+          "explanation": "Một ngành có thể có nhiều chương trình theo thời gian.",
+          "id": "uni-research-sources-q1",
+          "familyId": "uni-research-sources-f0",
+          "lessonId": "uni-research-sources",
+          "gradeId": "university",
+          "subjectId": "uni-research",
+          "outcomeIds": [
+            "uni-research-o3"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "mcq",
+          "gradingMode": "selection",
+          "prompt": "Muốn trỏ đúng một phiên bản mã trên GitHub nên lưu gì?",
+          "options": [
+            "Commit SHA và đường dẫn file",
+            "Chỉ số sao repo",
+            "Chỉ ảnh chụp logo"
+          ],
+          "answer": "Commit SHA và đường dẫn file",
+          "explanation": "Nhánh có thể thay đổi; commit định danh nội dung tại một bản.",
+          "id": "uni-research-sources-q2",
+          "familyId": "uni-research-sources-f1",
+          "lessonId": "uni-research-sources",
+          "gradeId": "university",
+          "subjectId": "uni-research",
+          "outcomeIds": [
+            "uni-research-o3"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Nêu cách xử lý hai nguồn cho kết quả trái nhau.",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "So định nghĩa, phiên bản và phạm vi",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Đọc phương pháp hoặc bản gốc",
+              "points": 1
+            },
+            {
+              "id": "criterion-2",
+              "text": "Ghi bất định thay vì bịa kết luận",
+              "points": 1
+            }
+          ],
+          "explanation": "Khác biệt nguồn có thể phản ánh bối cảnh khác nhau hoặc chất lượng bằng chứng.",
+          "id": "uni-research-sources-q3",
+          "familyId": "uni-research-sources-f2",
+          "lessonId": "uni-research-sources",
+          "gradeId": "university",
+          "subjectId": "uni-research",
+          "outcomeIds": [
+            "uni-research-o3"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [
+        "uni-research-questions"
+      ],
+      "outcomeId": "uni-research-o3"
+    },
+    {
+      "id": "uni-research-design",
+      "title": "Thiết kế và bảo vệ người tham gia",
+      "objective": "Lựa chọn cách thu dữ liệu phù hợp và tối thiểu hóa thông tin cá nhân.",
+      "theory": [
+        "Thiết kế nghiên cứu cần nối câu hỏi với cách chọn mẫu, công cụ đo và phương pháp phân tích. Một khảo sát, phỏng vấn hoặc thí nghiệm có ưu điểm và hạn chế riêng. Mô tả quy trình đủ rõ để người khác hiểu dữ liệu được tạo ra thế nào; ghi các thay đổi phát sinh so với kế hoạch ban đầu.",
+        "Chỉ thu dữ liệu cần cho mục tiêu đã nêu. Thông tin nhận dạng, dữ liệu nhạy cảm và quyền tham gia cần được xử lý theo quy định áp dụng và hướng dẫn của cơ sở đào tạo. Một dự án tự học có thể dùng dữ liệu giả lập hoặc công khai phù hợp thay cho thu dữ liệu cá nhân. Dữ liệu giả lập phải được ghi nhãn, không trình bày như quan sát thật."
+      ],
+      "worked": {
+        "problem": "Bài tập chỉ cần phân tích thời gian di chuyển.",
+        "steps": [
+          "Xác định thời gian và nhóm phương tiện là các trường có thể cần.",
+          "Cân nhắc có thực sự cần tên, số điện thoại hoặc địa chỉ nhà không.",
+          "Dùng dữ liệu giả lập nếu chưa có quy trình và quyền thu thập.",
+          "Ghi rõ cách bảo quản, ai được truy cập và thời gian giữ nếu có dữ liệu thật."
+        ]
+      },
+      "activity": {
+        "task": "Thiết kế bảng dữ liệu tối thiểu cho dự án mà không thu tên hoặc địa chỉ.",
+        "expected": "Chỉ giữ trường phục vụ câu hỏi; nêu giả lập hay thật và điều kiện sử dụng."
+      },
+      "misconception": {
+        "claim": "Dữ liệu không có tên luôn hoàn toàn vô danh.",
+        "correction": "Tổ hợp thông tin vẫn có thể nhận dạng người; cần xét rủi ro tái nhận dạng và phạm vi chia sẻ."
+      },
+      "questions": [
+        {
+          "type": "mcq",
+          "gradingMode": "selection",
+          "prompt": "Nếu chưa có quyền thu dữ liệu cá nhân cho bài tập, phương án phù hợp là gì?",
+          "options": [
+            "Dùng dữ liệu giả lập và ghi rõ",
+            "Tự lấy danh sách riêng của lớp",
+            "Bịa rằng đã khảo sát thật"
+          ],
+          "answer": "Dùng dữ liệu giả lập và ghi rõ",
+          "explanation": "Phân tích có thể được luyện trên dữ liệu được mô tả trung thực.",
+          "id": "uni-research-design-q1",
+          "familyId": "uni-research-design-f0",
+          "lessonId": "uni-research-design",
+          "gradeId": "university",
+          "subjectId": "uni-research",
+          "outcomeIds": [
+            "uni-research-o4"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "mcq",
+          "gradingMode": "selection",
+          "prompt": "Nguyên tắc tối thiểu hóa dữ liệu hướng tới điều gì?",
+          "options": [
+            "Chỉ thu trường cần cho mục tiêu",
+            "Thu mọi thông tin để dùng sau",
+            "Công bố danh tính cùng mọi bảng"
+          ],
+          "answer": "Chỉ thu trường cần cho mục tiêu",
+          "explanation": "Giảm thu thập và chia sẻ không cần thiết.",
+          "id": "uni-research-design-q2",
+          "familyId": "uni-research-design-f1",
+          "lessonId": "uni-research-design",
+          "gradeId": "university",
+          "subjectId": "uni-research",
+          "outcomeIds": [
+            "uni-research-o4"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Viết mô tả dữ liệu giả lập cho báo cáo dự án.",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Nêu dữ liệu được tạo để minh họa",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Nêu cách tạo và giới hạn",
+              "points": 1
+            },
+            {
+              "id": "criterion-2",
+              "text": "Không gọi là quan sát thật",
+              "points": 1
+            }
+          ],
+          "explanation": "Minh bạch nguồn dữ liệu là điều kiện để người đọc đánh giá đúng kết quả.",
+          "id": "uni-research-design-q3",
+          "familyId": "uni-research-design-f2",
+          "lessonId": "uni-research-design",
+          "gradeId": "university",
+          "subjectId": "uni-research",
+          "outcomeIds": [
+            "uni-research-o4"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [
+        "uni-research-sources"
+      ],
+      "outcomeId": "uni-research-o4"
+    },
+    {
+      "id": "uni-research-arguments",
+      "title": "Lập luận, trích dẫn và quyền học liệu",
+      "objective": "Gắn luận điểm với bằng chứng và nhận diện giới hạn sử dụng tài liệu.",
+      "theory": [
+        "Một lập luận học thuật cần phân biệt luận điểm, bằng chứng và suy luận nối hai phần đó. Một nguồn có thể hỗ trợ dữ kiện nhưng chưa hỗ trợ kết luận nhân quả hoặc kết luận cho bối cảnh khác. Gắn trích dẫn đúng câu hoặc đoạn được hỗ trợ và ghi rõ phần phân tích của người viết.",
+        "Diễn đạt lại không chỉ là đổi vài từ của một đoạn gốc. Cần hiểu, viết theo cấu trúc lập luận của mình và vẫn ghi nguồn cho ý tưởng đã dùng. Tái phân phối hình, sách hoặc bản dịch còn phụ thuộc quyền sử dụng cụ thể; việc đọc miễn phí không tự cho phép mọi cách sao chép. Kiểm tra giấy phép và dùng liên kết bản gốc khi chưa đủ căn cứ cho việc tích hợp."
+      ],
+      "worked": {
+        "problem": "Muốn đưa một hình có điều kiện hạn chế vào bài tự học công khai.",
+        "steps": [
+          "Tìm tác giả, nguồn hình và điều kiện áp dụng riêng.",
+          "Kiểm tra cách dùng dự kiến có phù hợp không.",
+          "Nếu chưa xác minh được, dẫn liên kết thay vì tự sao chép và công bố.",
+          "Nếu được phép dùng, ghi công, giấy phép và những sửa đổi theo điều kiện."
+        ]
+      },
+      "activity": {
+        "task": "Viết một đoạn gồm luận điểm, nguồn hỗ trợ và một giới hạn của nguồn.",
+        "expected": "Người đọc phân biệt được dữ kiện trích từ nguồn và kết luận của người viết."
+      },
+      "misconception": {
+        "claim": "Có trích tên tác giả là tự động được quyền sao chép mọi tài liệu.",
+        "correction": "Ghi công và quyền sử dụng là hai vấn đề liên quan nhưng khác nhau; cần đáp ứng điều kiện cụ thể."
+      },
+      "questions": [
+        {
+          "type": "mcq",
+          "gradingMode": "selection",
+          "prompt": "Một câu trích dẫn nên hỗ trợ phần nào?",
+          "options": [
+            "Luận điểm hoặc dữ kiện đặt gần nó",
+            "Mọi khẳng định trong toàn website",
+            "Chỉ màu sắc của trang"
+          ],
+          "answer": "Luận điểm hoặc dữ kiện đặt gần nó",
+          "explanation": "Người đọc cần truy được bằng chứng tương ứng.",
+          "id": "uni-research-arguments-q1",
+          "familyId": "uni-research-arguments-f0",
+          "lessonId": "uni-research-arguments",
+          "gradeId": "university",
+          "subjectId": "uni-research",
+          "outcomeIds": [
+            "uni-research-o5"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "mcq",
+          "gradingMode": "selection",
+          "prompt": "Chưa rõ quyền dịch và công bố một tài liệu, nên làm gì trong thư viện?",
+          "options": [
+            "Lưu mô tả và liên kết nguồn chính thức",
+            "Tự coi là tài sản tự do",
+            "Xóa tên tác giả rồi đăng lại"
+          ],
+          "answer": "Lưu mô tả và liên kết nguồn chính thức",
+          "explanation": "Có thể giúp người học tiếp cận mà không tự suy đoán quyền tái sử dụng.",
+          "id": "uni-research-arguments-q2",
+          "familyId": "uni-research-arguments-f1",
+          "lessonId": "uni-research-arguments",
+          "gradeId": "university",
+          "subjectId": "uni-research",
+          "outcomeIds": [
+            "uni-research-o5"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Vì sao đổi vài từ nhưng giữ nguyên cấu trúc đoạn gốc chưa phải biên soạn nguyên bản tốt?",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Nhận ra sự phụ thuộc gần vào diễn đạt gốc",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Nêu nhu cầu hiểu, lập luận riêng và ghi nguồn",
+              "points": 1
+            }
+          ],
+          "explanation": "Biên soạn cần đóng góp và cách diễn đạt thực chất, cùng nguồn rõ ràng.",
+          "id": "uni-research-arguments-q3",
+          "familyId": "uni-research-arguments-f2",
+          "lessonId": "uni-research-arguments",
+          "gradeId": "university",
+          "subjectId": "uni-research",
+          "outcomeIds": [
+            "uni-research-o5"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [
+        "uni-research-design"
+      ],
+      "outcomeId": "uni-research-o5"
+    },
+    {
+      "id": "uni-research-reporting",
+      "title": "Báo cáo, giới hạn và kế hoạch nghiên cứu",
+      "objective": "Viết báo cáo phân biệt kết quả, suy luận và phần cần kiểm tra tiếp.",
+      "theory": [
+        "Một báo cáo nên giúp người đọc theo dõi câu hỏi, phương pháp, dữ liệu, kết quả và cách diễn giải. Kết quả ghi điều tính hoặc quan sát được; thảo luận xem kết quả trả lời câu hỏi tới đâu và có những giải thích thay thế nào. Giới hạn được gắn với nguồn sai lệch cụ thể và tác động có thể có.",
+        "Kế hoạch làm việc cần các đầu ra kiểm tra được thay vì chỉ ghi “nghiên cứu thêm”. Có thể chia thành xác định câu hỏi, đọc nguồn, thiết kế, phân tích và viết; tùy dự án mà sắp xếp khác. Khi thay đổi câu hỏi hoặc phương pháp sau khi xem dữ liệu, ghi rõ thay đổi. Không thay một kế hoạch chưa thực hiện thành báo cáo đã hoàn thành."
+      ],
+      "worked": {
+        "problem": "Lập kế hoạch bốn tuần cho một dự án dùng dữ liệu giả lập.",
+        "steps": [
+          "Tuần 1: câu hỏi, phạm vi và danh mục nguồn đã kiểm tra.",
+          "Tuần 2: thiết kế và tạo dữ liệu giả lập có mô tả.",
+          "Tuần 3: phân tích, tự kiểm tra phép tính và thử trường hợp biên.",
+          "Tuần 4: báo cáo, đối chiếu rubric và ghi giới hạn."
+        ]
+      },
+      "activity": {
+        "task": "Viết một đoạn kết quả và một đoạn giới hạn cho dự án cá nhân.",
+        "expected": "Kết quả dùng dữ liệu thực có; giới hạn nêu điều chưa biết và ảnh hưởng tới kết luận."
+      },
+      "misconception": {
+        "claim": "Ghi thật nhiều hạn chế chung chung thay cho đánh giá thiết kế là đủ.",
+        "correction": "Giới hạn hữu ích cần gắn với quy trình, dữ liệu và loại kết luận cụ thể."
+      },
+      "questions": [
+        {
+          "type": "mcq",
+          "gradingMode": "selection",
+          "prompt": "Thông tin “dự kiến khảo sát 50 người” thuộc phần nào khi chưa làm?",
+          "options": [
+            "Kế hoạch",
+            "Kết quả đã quan sát",
+            "Bằng chứng đã xác nhận"
+          ],
+          "answer": "Kế hoạch",
+          "explanation": "Thì tương lai và trạng thái thực hiện phải được giữ đúng.",
+          "id": "uni-research-reporting-q1",
+          "familyId": "uni-research-reporting-f0",
+          "lessonId": "uni-research-reporting",
+          "gradeId": "university",
+          "subjectId": "uni-research",
+          "outcomeIds": [
+            "uni-research-o6"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "Kế hoạch 4 tuần, mỗi tuần dự kiến 3 giờ. Tổng thời gian dự kiến là bao nhiêu giờ?",
+          "answer": 12,
+          "tolerance": 0.000001,
+          "explanation": "4×3=12; đây là dự kiến, không tự xác nhận thời gian đã học.",
+          "id": "uni-research-reporting-q2",
+          "familyId": "uni-research-reporting-f1",
+          "lessonId": "uni-research-reporting",
+          "gradeId": "university",
+          "subjectId": "uni-research",
+          "outcomeIds": [
+            "uni-research-o6"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Tóm tắt dự án bằng ba câu: đã làm, rút ra có điều kiện, còn thiếu.",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Nêu việc có bằng chứng",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Kết luận đúng phạm vi",
+              "points": 1
+            },
+            {
+              "id": "criterion-2",
+              "text": "Bước tiếp theo cụ thể",
+              "points": 1
+            }
+          ],
+          "explanation": "Ba phần giúp người đọc thấy mức độ hoàn thiện thực tế.",
+          "id": "uni-research-reporting-q3",
+          "familyId": "uni-research-reporting-f2",
+          "lessonId": "uni-research-reporting",
+          "gradeId": "university",
+          "subjectId": "uni-research",
+          "outcomeIds": [
+            "uni-research-o6"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [
+        "uni-research-arguments"
+      ],
+      "outcomeId": "uni-research-o6"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "uni-research-o1",
+      "text": "Thiết kế một buổi học có truy hồi, sửa lỗi và lịch ôn."
+    },
+    {
+      "id": "uni-research-o2",
+      "text": "Chuyển một đề tài rộng thành câu hỏi có thể khảo sát."
+    },
+    {
+      "id": "uni-research-o3",
+      "text": "Đánh giá nguồn theo xuất xứ, phạm vi và khả năng đối chiếu."
+    },
+    {
+      "id": "uni-research-o4",
+      "text": "Lựa chọn cách thu dữ liệu phù hợp và tối thiểu hóa thông tin cá nhân."
+    },
+    {
+      "id": "uni-research-o5",
+      "text": "Gắn luận điểm với bằng chứng và nhận diện giới hạn sử dụng tài liệu."
+    },
+    {
+      "id": "uni-research-o6",
+      "text": "Viết báo cáo phân biệt kết quả, suy luận và phần cần kiểm tra tiếp."
+    }
+  ],
+  "blueprint": {
+    "id": "uni-research-final",
+    "gradeId": "university",
+    "subjectId": "uni-research",
+    "title": "Tự kiểm tra: Phương pháp học và nghiên cứu",
+    "contentVersion": "2026.10.28-university-v1",
+    "durationMinutes": 30,
+    "contentStatus": "draft",
+    "sections": [
+      {
+        "id": "unit-0",
+        "count": 2,
+        "outcomeIds": [
+          "uni-research-o1"
+        ]
+      },
+      {
+        "id": "unit-1",
+        "count": 2,
+        "outcomeIds": [
+          "uni-research-o2"
+        ]
+      },
+      {
+        "id": "unit-2",
+        "count": 2,
+        "outcomeIds": [
+          "uni-research-o3"
+        ]
+      },
+      {
+        "id": "unit-3",
+        "count": 2,
+        "outcomeIds": [
+          "uni-research-o4"
+        ]
+      },
+      {
+        "id": "unit-4",
+        "count": 2,
+        "outcomeIds": [
+          "uni-research-o5"
+        ]
+      },
+      {
+        "id": "unit-5",
+        "count": 2,
+        "outcomeIds": [
+          "uni-research-o6"
+        ]
+      }
+    ]
+  }
+}

@@ -24,3 +24,6 @@ ref*-qa.*
 ref*-resaved.*
 ref-*.png
 .study-local/
+
+# University source refreshes require editorial review before publication.
+data/hh-school/university/sources.candidate.json

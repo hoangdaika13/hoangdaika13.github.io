@@ -1,0 +1,392 @@
+{
+  "at": "2026-10-28T04:30:05.667Z",
+  "results": [
+    {
+      "programme": "Native selectors choose UIT/DataScience/cohort2024;MA003 metadata retains3credits;school grade remains1"
+    },
+    {
+      "study": "All6sequences open;native note/lab/practice draft survive reload;wrong answer creates real review and flashcard without mastery"
+    },
+    {
+      "assessment": "Real12question frozen session answers/pause/resume/reload/confirm/review;mock expiry uses explicit31minute clock fixture and remains submitted after reload"
+    },
+    {
+      "library": "Native search selects pinned MITMath repo;bookmark and real6lesson study plan persist"
+    },
+    {
+      "responsive": "375px/DPR2/zoom200:no horizontal page overflow;reader and native controls remain usable"
+    },
+    {
+      "classroom": "Native university class/create/invite/join/assign/draft/submit/72redo/revision2/91 workflow through production handlers;university class has grade:null"
+    },
+    {
+      "offline": "Actual Service Worker and IndexedDB retain previously opened university pack,notes and school grade through offline reload;native sync publishes both contexts"
+    },
+    {
+      "recovery": "A future university version stays byte-identical in localStorage,enters protected view and exports a real recovery download"
+    }
+  ],
+  "errors": [],
+  "apiCalls": [
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "classes",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "classes",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "classes",
+      "method": "POST",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "classes",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "POST",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "classes",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "enrollments",
+      "method": "POST",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "POST",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "classes",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "PATCH",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "classes",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "POST",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "classes",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "PATCH",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "classes",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-teacher",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "assignments",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "submissions",
+      "method": "GET",
+      "actor": "qa-student",
+      "status": 200
+    },
+    {
+      "resource": "progress",
+      "method": "PUT",
+      "actor": "qa-student",
+      "status": 200
+    }
+  ]
+}

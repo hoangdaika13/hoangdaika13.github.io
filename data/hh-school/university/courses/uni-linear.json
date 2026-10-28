@@ -1,0 +1,853 @@
+{
+  "schemaVersion": 1,
+  "version": "2026.10.28-university-v1",
+  "contentStatus": "draft",
+  "reviewEvidence": null,
+  "credits": null,
+  "officialComplete": false,
+  "authorship": "HH School — nội dung nguyên bản chờ thẩm định",
+  "id": "uni-linear",
+  "title": "Đại số tuyến tính — nền tảng",
+  "titleEn": "Linear Algebra Foundations",
+  "fieldId": "math",
+  "sourceIds": [
+    "mit-linear",
+    "mitmath"
+  ],
+  "scope": "Chuỗi nguyên bản gồm sáu chủ đề nền. Chưa bao phủ toàn bộ MIT 18.06, chưa gồm QR, SVD, dạng toàn phương hoặc toàn bộ ứng dụng.",
+  "estimatedHours": 12,
+  "prerequisites": [
+    "Phép tính với phân số và số thực",
+    "Giải phương trình bậc nhất"
+  ],
+  "bridge": [
+    {
+      "grade": 7,
+      "lessonId": "g7-math-inverse-proportion",
+      "label": "Ôn tỉ lệ và biến số ở phổ thông"
+    }
+  ],
+  "project": {
+    "title": "Phối trộn hai nguyên liệu bằng mô hình tuyến tính",
+    "task": "Một gói A có 2 đơn vị chất X và 1 đơn vị chất Y; gói B có 1 đơn vị X và 3 đơn vị Y. Cần tổng 11 đơn vị X và 13 đơn vị Y. Lập Ax=b, giải, kiểm tra điều kiện số gói không âm và đánh giá việc làm tròn. Sau đó tăng nhu cầu X lên 12, giữ Y bằng 13 và so sánh nghiệm.",
+    "rubric": [
+      "Đặt biến và đơn vị cho hai loại gói",
+      "Lập đúng ma trận, giải và thế ngược kiểm tra",
+      "Nêu tính khả thi và hạn chế nếu số gói phải nguyên",
+      "So sánh hai tình huống bằng lập luận, có ghi phép tính"
+    ]
+  },
+  "diagnostic": [
+    {
+      "type": "short",
+      "gradingMode": "numeric",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 0.000001
+      },
+      "prompt": "Giải 2x + 3 = 11. Nhập x.",
+      "answer": 4,
+      "tolerance": 0.000001,
+      "explanation": "Trừ 3 rồi chia 2.",
+      "id": "uni-linear-entry-q0",
+      "familyId": "uni-linear-entry-f0",
+      "lessonId": "uni-linear-vectors",
+      "outcomeIds": [
+        "uni-linear-o1"
+      ],
+      "gradeId": "university",
+      "subjectId": "uni-linear",
+      "difficulty": 1,
+      "cognitiveLevel": "understand",
+      "points": 1,
+      "contentStatus": "draft"
+    },
+    {
+      "type": "short",
+      "gradingMode": "numeric",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 0.000001
+      },
+      "prompt": "Tính 1/2 + 1/4, nhập số hoặc phân số.",
+      "answer": 0.75,
+      "tolerance": 0.000001,
+      "explanation": "Đổi về cùng mẫu 4.",
+      "id": "uni-linear-entry-q1",
+      "familyId": "uni-linear-entry-f1",
+      "lessonId": "uni-linear-systems",
+      "outcomeIds": [
+        "uni-linear-o2"
+      ],
+      "gradeId": "university",
+      "subjectId": "uni-linear",
+      "difficulty": 1,
+      "cognitiveLevel": "understand",
+      "points": 1,
+      "contentStatus": "draft"
+    },
+    {
+      "type": "mcq",
+      "gradingMode": "selection",
+      "prompt": "Hai phương trình x+y=2 và 2x+2y=4 mô tả bao nhiêu nghiệm?",
+      "options": [
+        "Không có",
+        "Một",
+        "Vô số"
+      ],
+      "answer": "Vô số",
+      "explanation": "Phương trình sau là hai lần phương trình trước.",
+      "id": "uni-linear-entry-q2",
+      "familyId": "uni-linear-entry-f2",
+      "lessonId": "uni-linear-matrices",
+      "outcomeIds": [
+        "uni-linear-o3"
+      ],
+      "gradeId": "university",
+      "subjectId": "uni-linear",
+      "difficulty": 1,
+      "cognitiveLevel": "understand",
+      "points": 1,
+      "contentStatus": "draft"
+    }
+  ],
+  "lessons": [
+    {
+      "id": "uni-linear-vectors",
+      "title": "Vector và tổ hợp tuyến tính",
+      "objective": "Biểu diễn một bài toán phối hợp bằng vector và kiểm tra số chiều.",
+      "theory": [
+        "Một vector là một bộ số có thứ tự trong một không gian đã chọn. Vector (2, 5) khác (5, 2): mỗi vị trí phải có tên và đơn vị nhất quán. Nếu vector mô tả số bút và số vở trong một gói, mọi vector đem cộng phải dùng cùng thứ tự đó. Phép cộng thực hiện theo từng thành phần; nhân vô hướng k làm mọi thành phần nhân với k.",
+        "Tổ hợp tuyến tính a·u + b·v biểu diễn tổng đóng góp của hai nguồn. Hệ số có thể là số thực trong toán học; một tình huống hàng hóa có thể yêu cầu chúng nguyên và không âm. Đó là điều kiện của mô hình, không phải điều tự động có từ phép cộng vector. Khi gặp vector khác số chiều, dừng lại kiểm tra định nghĩa thay vì thêm số 0 một cách tùy ý."
+      ],
+      "worked": {
+        "problem": "Gói A có (2 bút, 1 vở), gói B có (1 bút, 3 vở). Ba gói A và hai gói B chứa gì?",
+        "steps": [
+          "Viết 3(2,1)+2(1,3).",
+          "Tính từng đóng góp: (6,3) và (2,6).",
+          "Cộng được (8,9), tức 8 bút và 9 vở.",
+          "Kiểm tra cùng thứ tự và đơn vị trước khi kết luận."
+        ]
+      },
+      "activity": {
+        "task": "Vẽ hai mũi tên trên giấy: u=(1,2), v=(3,0). Tính u+v và 2u−v, rồi giải thích ý nghĩa dấu âm.",
+        "expected": "u+v=(4,2); 2u−v=(−1,4). Dấu âm là hướng đối hoặc lượng trừ theo mô hình."
+      },
+      "misconception": {
+        "claim": "Vector chỉ là một danh sách có thể đổi vị trí tùy ý.",
+        "correction": "Vị trí xác định tọa độ hoặc loại đại lượng; đổi vị trí có thể đổi ý nghĩa và kết quả."
+      },
+      "questions": [
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "Với u=(2,−1), v=(1,4), tọa độ thứ hai của 3u+v bằng bao nhiêu?",
+          "answer": 1,
+          "tolerance": 0.000001,
+          "explanation": "3(−1)+4=1.",
+          "id": "uni-linear-vectors-q1",
+          "familyId": "uni-linear-vectors-f0",
+          "lessonId": "uni-linear-vectors",
+          "gradeId": "university",
+          "subjectId": "uni-linear",
+          "outcomeIds": [
+            "uni-linear-o1"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "mcq",
+          "gradingMode": "selection",
+          "prompt": "Phép cộng nào được định nghĩa trực tiếp?",
+          "options": [
+            "(1,2)+(3,4)",
+            "(1,2)+(3,4,5)",
+            "(1)+(2,3)"
+          ],
+          "answer": "(1,2)+(3,4)",
+          "explanation": "Hai vector phải cùng không gian và cùng số chiều.",
+          "id": "uni-linear-vectors-q2",
+          "familyId": "uni-linear-vectors-f1",
+          "lessonId": "uni-linear-vectors",
+          "gradeId": "university",
+          "subjectId": "uni-linear",
+          "outcomeIds": [
+            "uni-linear-o1"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Một vector chứa tiền và một vector chứa số người. Vì sao chưa thể cộng chúng chỉ vì cùng hai thành phần?",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Chỉ ra đơn vị hoặc ý nghĩa khác nhau",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Nêu điều kiện cùng cách định nghĩa tọa độ",
+              "points": 1
+            }
+          ],
+          "explanation": "Số chiều phù hợp là điều kiện cần; cách diễn giải các tọa độ cũng phải phù hợp.",
+          "id": "uni-linear-vectors-q3",
+          "familyId": "uni-linear-vectors-f2",
+          "lessonId": "uni-linear-vectors",
+          "gradeId": "university",
+          "subjectId": "uni-linear",
+          "outcomeIds": [
+            "uni-linear-o1"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [],
+      "outcomeId": "uni-linear-o1"
+    },
+    {
+      "id": "uni-linear-systems",
+      "title": "Khử Gauss và kiểm tra nghiệm",
+      "objective": "Giải hệ hai ẩn bằng phép biến đổi tương đương và kiểm tra nghiệm.",
+      "theory": [
+        "Hệ phương trình tuyến tính yêu cầu mọi phương trình cùng đúng cho một bộ ẩn. Các phép biến đổi hàng bảo toàn tập nghiệm gồm đổi hai hàng, nhân một hàng với số khác 0 và cộng một bội của hàng khác. Chọn một phần tử trụ khác 0, khử các hệ số bên dưới rồi thế ngược. Nếu phần tử dự định làm trụ bằng 0, thử đổi hàng trước khi chia.",
+        "Một hàng [0,0|c] với c khác 0 là mâu thuẫn; một hàng [0,0|0] không tạo thêm điều kiện. Vì thế thuật toán không luôn cho đúng một nghiệm. Sau khi tính, thế nghiệm vào tất cả phương trình gốc và kiểm tra các điều kiện thực tế như lượng không âm. Việc một biểu thức khử trông hợp lý chưa thay cho bước kiểm tra."
+      ],
+      "worked": {
+        "problem": "Giải x+2y=8 và 3x+y=9.",
+        "steps": [
+          "Lấy hàng hai trừ 3 lần hàng một: −5y=−15.",
+          "Suy ra y=3.",
+          "Thế vào hàng một: x=8−6=2.",
+          "Kiểm tra: 2+2·3=8; 3·2+3=9."
+        ]
+      },
+      "activity": {
+        "task": "Giải 2x+y=7 và x−y=2 bằng khử, rồi thế ngược.",
+        "expected": "Cộng hai phương trình được 3x=9 nên x=3 và y=1."
+      },
+      "misconception": {
+        "claim": "Có thể chia cả hàng cho 0 nếu hệ số đó đang cần khử.",
+        "correction": "Không được chia cho 0. Đổi hàng hoặc phân tích hàng phụ thuộc/mâu thuẫn."
+      },
+      "questions": [
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "Giải x+y=7, x−y=1. Nhập y.",
+          "answer": 3,
+          "tolerance": 0.000001,
+          "explanation": "Cộng hai phương trình được x=4; y=3.",
+          "id": "uni-linear-systems-q1",
+          "familyId": "uni-linear-systems-f0",
+          "lessonId": "uni-linear-systems",
+          "gradeId": "university",
+          "subjectId": "uni-linear",
+          "outcomeIds": [
+            "uni-linear-o2"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "mcq",
+          "gradingMode": "selection",
+          "prompt": "Hàng 0x+0y=5 cho biết gì?",
+          "options": [
+            "Vô số nghiệm",
+            "Hệ vô nghiệm",
+            "y=5"
+          ],
+          "answer": "Hệ vô nghiệm",
+          "explanation": "Vế trái luôn bằng 0 nên không thể bằng 5.",
+          "id": "uni-linear-systems-q2",
+          "familyId": "uni-linear-systems-f1",
+          "lessonId": "uni-linear-systems",
+          "gradeId": "university",
+          "subjectId": "uni-linear",
+          "outcomeIds": [
+            "uni-linear-o2"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Hãy mô tả hai bước kiểm tra nghiệm khi ẩn là số sản phẩm.",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Thế vào hệ gốc",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Kiểm tra nguyên, không âm hoặc giới hạn sản xuất",
+              "points": 1
+            }
+          ],
+          "explanation": "Một nghiệm đại số có thể không thỏa miền khả thi thực tế.",
+          "id": "uni-linear-systems-q3",
+          "familyId": "uni-linear-systems-f2",
+          "lessonId": "uni-linear-systems",
+          "gradeId": "university",
+          "subjectId": "uni-linear",
+          "outcomeIds": [
+            "uni-linear-o2"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [
+        "uni-linear-vectors"
+      ],
+      "outcomeId": "uni-linear-o2"
+    },
+    {
+      "id": "uni-linear-matrices",
+      "title": "Ma trận và thứ tự nhân",
+      "objective": "Tính tích ma trận nhỏ và phân biệt AB với BA.",
+      "theory": [
+        "Ma trận m×n có m hàng và n cột. Tích AB được định nghĩa khi số cột của A bằng số hàng của B; phần tử hàng i cột j là tích vô hướng của hàng i của A với cột j của B. Kết quả có số hàng của A và số cột của B. Quy tắc kích thước giúp phát hiện lỗi trước khi tính.",
+        "Có thể xem ma trận như một phép biến đổi tuyến tính. Trong ABx, B tác động lên x trước, rồi A tác động lên kết quả. Đổi thứ tự có thể đổi tác dụng, và đôi khi BA còn không được định nghĩa. Ma trận đơn vị I giữ nguyên vector; nhân với I không giống nhân với một ma trận toàn số 1."
+      ],
+      "worked": {
+        "problem": "Tính A(2,1) với A có hai hàng (1,2) và (0,3).",
+        "steps": [
+          "Kiểm tra A là 2×2, vector là 2×1.",
+          "Hàng một: 1·2+2·1=4.",
+          "Hàng hai: 0·2+3·1=3.",
+          "Vector kết quả là (4,3)."
+        ]
+      },
+      "activity": {
+        "task": "Lấy A=diag(2,1), B=[[1,1],[0,1]]. Tính AB và BA.",
+        "expected": "AB=[[2,2],[0,1]]; BA=[[2,1],[0,1]], nên hai tích khác nhau."
+      },
+      "misconception": {
+        "claim": "Nhân ma trận có tính giao hoán như nhân số thực.",
+        "correction": "Thông thường AB khác BA. Cần theo đúng kích thước và thứ tự tác động."
+      },
+      "questions": [
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "A=[[2,0],[1,3]]. Tọa độ thứ hai của A(4,2) bằng bao nhiêu?",
+          "answer": 10,
+          "tolerance": 0.000001,
+          "explanation": "1·4+3·2=10.",
+          "id": "uni-linear-matrices-q1",
+          "familyId": "uni-linear-matrices-f0",
+          "lessonId": "uni-linear-matrices",
+          "gradeId": "university",
+          "subjectId": "uni-linear",
+          "outcomeIds": [
+            "uni-linear-o3"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "mcq",
+          "gradingMode": "selection",
+          "prompt": "A là 2×3, B là 3×4. AB có kích thước nào?",
+          "options": [
+            "2×4",
+            "3×3",
+            "4×2"
+          ],
+          "answer": "2×4",
+          "explanation": "Hai kích thước trong bằng 3; giữ hai kích thước ngoài.",
+          "id": "uni-linear-matrices-q2",
+          "familyId": "uni-linear-matrices-f1",
+          "lessonId": "uni-linear-matrices",
+          "gradeId": "university",
+          "subjectId": "uni-linear",
+          "outcomeIds": [
+            "uni-linear-o3"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Vì sao phải mô tả thứ tự hai thao tác biến đổi trước khi chọn AB hay BA?",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Nêu ma trận bên phải tác động trước",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Giải thích hai thao tác có thể không giao hoán",
+              "points": 1
+            }
+          ],
+          "explanation": "Thứ tự đại số phải phản ánh thứ tự tác động của mô hình.",
+          "id": "uni-linear-matrices-q3",
+          "familyId": "uni-linear-matrices-f2",
+          "lessonId": "uni-linear-matrices",
+          "gradeId": "university",
+          "subjectId": "uni-linear",
+          "outcomeIds": [
+            "uni-linear-o3"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [
+        "uni-linear-systems"
+      ],
+      "outcomeId": "uni-linear-o3"
+    },
+    {
+      "id": "uni-linear-basis",
+      "title": "Độc lập tuyến tính, cơ sở và số chiều",
+      "objective": "Nhận ra phụ thuộc tuyến tính và kiểm tra cơ sở trong R².",
+      "theory": [
+        "Một họ vector độc lập tuyến tính khi tổ hợp bằng vector 0 chỉ có các hệ số đều bằng 0. Nếu một vector là tổ hợp của những vector còn lại thì họ phụ thuộc. Ví dụ (1,2) và (2,4) nằm trên cùng một đường qua gốc nên không thể tạo mọi vector trong mặt phẳng.",
+        "Một cơ sở vừa sinh ra toàn bộ không gian đang xét, vừa độc lập tuyến tính. Số vector trong cơ sở là số chiều. Hai vector không cùng phương tạo cơ sở của R². Nhưng hai vector độc lập trong R³ chỉ sinh ra một mặt phẳng; luôn phải nêu không gian đích trước khi kết luận là cơ sở. Tọa độ của một vector phụ thuộc vào cơ sở đã chọn."
+      ],
+      "worked": {
+        "problem": "Kiểm tra u=(1,1), v=(1,−1) có là cơ sở R² không; biểu diễn (4,2).",
+        "steps": [
+          "Giải a+b=4 và a−b=2.",
+          "Suy ra a=3, b=1, nên (4,2)=3u+v.",
+          "Với vector (p,q) bất kỳ, a=(p+q)/2, b=(p−q)/2.",
+          "Nghiệm hệ số là duy nhất, nên hai vector vừa sinh R² vừa độc lập."
+        ]
+      },
+      "activity": {
+        "task": "Giải thích vì sao (1,0,0) và (0,1,0) chưa là cơ sở R³.",
+        "expected": "Không sinh được vector (0,0,1); chúng chỉ sinh mặt phẳng có tọa độ thứ ba bằng 0."
+      },
+      "misconception": {
+        "claim": "Có hai vector bất kỳ thì có cơ sở R².",
+        "correction": "Hai vector còn phải độc lập; vector 0 hoặc hai vector cùng phương không tạo cơ sở R²."
+      },
+      "questions": [
+        {
+          "type": "mcq",
+          "gradingMode": "selection",
+          "prompt": "Cặp nào độc lập trong R²?",
+          "options": [
+            "(1,0) và (0,1)",
+            "(1,2) và (2,4)",
+            "(0,0) và (1,1)"
+          ],
+          "answer": "(1,0) và (0,1)",
+          "explanation": "Hai vector trục không cùng phương và sinh toàn mặt phẳng.",
+          "id": "uni-linear-basis-q1",
+          "familyId": "uni-linear-basis-f0",
+          "lessonId": "uni-linear-basis",
+          "gradeId": "university",
+          "subjectId": "uni-linear",
+          "outcomeIds": [
+            "uni-linear-o4"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "Không gian R³ có số chiều bằng bao nhiêu?",
+          "answer": 3,
+          "tolerance": 0.000001,
+          "explanation": "Một cơ sở gồm ba vector trục độc lập.",
+          "id": "uni-linear-basis-q2",
+          "familyId": "uni-linear-basis-f1",
+          "lessonId": "uni-linear-basis",
+          "gradeId": "university",
+          "subjectId": "uni-linear",
+          "outcomeIds": [
+            "uni-linear-o4"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Phân biệt độc lập tuyến tính và sinh không gian bằng một ví dụ trong R³.",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Cho hai vector trục độc lập",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Nêu vector trục thứ ba chưa được sinh",
+              "points": 1
+            }
+          ],
+          "explanation": "Độc lập không tự bảo đảm đủ vector để sinh không gian đang xét.",
+          "id": "uni-linear-basis-q3",
+          "familyId": "uni-linear-basis-f2",
+          "lessonId": "uni-linear-basis",
+          "gradeId": "university",
+          "subjectId": "uni-linear",
+          "outcomeIds": [
+            "uni-linear-o4"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [
+        "uni-linear-matrices"
+      ],
+      "outcomeId": "uni-linear-o4"
+    },
+    {
+      "id": "uni-linear-determinants",
+      "title": "Định thức và khả nghịch trong hai chiều",
+      "objective": "Tính định thức 2×2 và dùng để kiểm tra nghiệm duy nhất.",
+      "theory": [
+        "Với A=[[a,b],[c,d]], định thức là ad−bc. Trong hai chiều, trị tuyệt đối của định thức biểu diễn hệ số thay đổi diện tích; dấu mô tả hướng. Khi định thức bằng 0, phép biến đổi làm mất ít nhất một hướng nên không có nghịch đảo trên toàn R².",
+        "Định thức khác 0 bảo đảm Ax=b có nghiệm duy nhất với mọi b trong R². Định thức bằng 0 chỉ bác bỏ tính duy nhất cho mọi vế phải; một hệ cụ thể có thể vô nghiệm hoặc vô số nghiệm. Trong tính toán số, định thức rất nhỏ chưa đủ để đánh giá độ ổn định: còn phải xét thang đo và điều kiện của ma trận."
+      ],
+      "worked": {
+        "problem": "A=[[3,1],[2,2]] có khả nghịch không?",
+        "steps": [
+          "Tính 3·2−1·2=4.",
+          "Vì định thức khác 0, A khả nghịch.",
+          "Công thức A⁻¹=(1/4)[[2,−1],[−2,3]].",
+          "Nhân A với biểu thức này để kiểm tra nhận I."
+        ]
+      },
+      "activity": {
+        "task": "Xét A=[[1,2],[2,4]] với b=(3,6) rồi b=(3,7). So sánh tập nghiệm.",
+        "expected": "Cùng định thức 0; vế phải thứ nhất tương thích nên vô số nghiệm, vế phải thứ hai gây mâu thuẫn nên vô nghiệm."
+      },
+      "misconception": {
+        "claim": "Định thức bằng 0 nghĩa là hệ luôn vô nghiệm.",
+        "correction": "Cần kiểm tra vế phải; hệ suy biến có thể vô số nghiệm hoặc vô nghiệm."
+      },
+      "questions": [
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "Tính định thức [[2,3],[1,4]].",
+          "answer": 5,
+          "tolerance": 0.000001,
+          "explanation": "2·4−3·1=5.",
+          "id": "uni-linear-determinants-q1",
+          "familyId": "uni-linear-determinants-f0",
+          "lessonId": "uni-linear-determinants",
+          "gradeId": "university",
+          "subjectId": "uni-linear",
+          "outcomeIds": [
+            "uni-linear-o5"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "mcq",
+          "gradingMode": "selection",
+          "prompt": "det(A) khác 0 cho phép kết luận nào?",
+          "options": [
+            "A có nghịch đảo",
+            "A là ma trận đơn vị",
+            "Mọi phần tử của A dương"
+          ],
+          "answer": "A có nghịch đảo",
+          "explanation": "Khả nghịch không yêu cầu từng phần tử dương hay A bằng I.",
+          "id": "uni-linear-determinants-q2",
+          "familyId": "uni-linear-determinants-f1",
+          "lessonId": "uni-linear-determinants",
+          "gradeId": "university",
+          "subjectId": "uni-linear",
+          "outcomeIds": [
+            "uni-linear-o5"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Nêu hai kết quả khác nhau có thể xảy ra khi det(A)=0 đối với Ax=b.",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Vô nghiệm khi vế phải không thuộc không gian cột",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Vô số nghiệm khi tương thích và có ẩn tự do",
+              "points": 1
+            }
+          ],
+          "explanation": "Phải kết hợp ma trận hệ số với vế phải để phân loại nghiệm.",
+          "id": "uni-linear-determinants-q3",
+          "familyId": "uni-linear-determinants-f2",
+          "lessonId": "uni-linear-determinants",
+          "gradeId": "university",
+          "subjectId": "uni-linear",
+          "outcomeIds": [
+            "uni-linear-o5"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [
+        "uni-linear-basis"
+      ],
+      "outcomeId": "uni-linear-o5"
+    },
+    {
+      "id": "uni-linear-applications",
+      "title": "Vector riêng và bình phương tối thiểu",
+      "objective": "Kiểm tra một vector riêng và giải bài khớp hằng số đơn giản.",
+      "theory": [
+        "Vector v khác 0 là vector riêng của A nếu Av=λv. Phép biến đổi có thể co, kéo hoặc đảo hướng trên đường của v nhưng không xoay sang đường khác. Vector 0 bị loại vì A0=λ0 đúng cho mọi λ và không xác định được một hướng. Một ma trận thực không nhất thiết có đủ vector riêng thực độc lập.",
+        "Khi số phương trình nhiều hơn số ẩn, dữ liệu có thể không có nghiệm khớp chính xác. Bình phương tối thiểu chọn x làm nhỏ tổng bình phương phần dư ||Ax−b||². Với mô hình hằng số dự đoán ba số đo, nghiệm là trung bình. Đây là một tiêu chí tối ưu đã chọn; vẫn cần kiểm tra đơn vị, ngoại lệ và sự phù hợp của mô hình trước khi diễn giải."
+      ],
+      "worked": {
+        "problem": "A=diag(3,2). Kiểm tra v=(1,0); tìm hằng số khớp ba số đo 2,4,6.",
+        "steps": [
+          "Av=(3,0)=3v nên v là vector riêng với λ=3.",
+          "Đặt dự đoán hằng số k cho ba số đo.",
+          "Tổng sai số bình phương là (k−2)²+(k−4)²+(k−6)².",
+          "Giá trị nhỏ nhất ở k=4; phần dư là 2,0,−2 theo dự đoán trừ đo."
+        ]
+      },
+      "activity": {
+        "task": "So sánh tổng bình phương sai số ở k=3 và k=4 cho bộ 2,4,6.",
+        "expected": "Ở 3: 1+1+9=11; ở 4: 4+0+4=8. Tính tốt hơn theo tiêu chí này không đồng nghĩa mô hình phù hợp mọi dữ liệu."
+      },
+      "misconception": {
+        "claim": "Vector 0 là vector riêng ứng với mọi trị riêng.",
+        "correction": "Định nghĩa yêu cầu vector riêng khác 0; nếu không, điều kiện không cung cấp thông tin về hướng."
+      },
+      "questions": [
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "A=diag(5,2), v=(0,1). Trị riêng tương ứng là bao nhiêu?",
+          "answer": 2,
+          "tolerance": 0.000001,
+          "explanation": "Av=(0,2)=2v.",
+          "id": "uni-linear-applications-q1",
+          "familyId": "uni-linear-applications-f0",
+          "lessonId": "uni-linear-applications",
+          "gradeId": "university",
+          "subjectId": "uni-linear",
+          "outcomeIds": [
+            "uni-linear-o6"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "Hằng số bình phương tối thiểu cho số đo 3,6,9 là bao nhiêu?",
+          "answer": 6,
+          "tolerance": 0.000001,
+          "explanation": "Trung bình bằng 18/3=6.",
+          "id": "uni-linear-applications-q2",
+          "familyId": "uni-linear-applications-f1",
+          "lessonId": "uni-linear-applications",
+          "gradeId": "university",
+          "subjectId": "uni-linear",
+          "outcomeIds": [
+            "uni-linear-o6"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Vì sao nghiệm khớp dữ liệu tốt nhất vẫn cần kiểm tra mô hình?",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Phân biệt tối ưu theo tiêu chí và mô hình đúng",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Nêu ngoại lệ, miền áp dụng hoặc sai số đo",
+              "points": 1
+            }
+          ],
+          "explanation": "Tối ưu chỉ so sánh các lựa chọn trong mô hình đã giả định.",
+          "id": "uni-linear-applications-q3",
+          "familyId": "uni-linear-applications-f2",
+          "lessonId": "uni-linear-applications",
+          "gradeId": "university",
+          "subjectId": "uni-linear",
+          "outcomeIds": [
+            "uni-linear-o6"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [
+        "uni-linear-determinants"
+      ],
+      "outcomeId": "uni-linear-o6"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "uni-linear-o1",
+      "text": "Biểu diễn một bài toán phối hợp bằng vector và kiểm tra số chiều."
+    },
+    {
+      "id": "uni-linear-o2",
+      "text": "Giải hệ hai ẩn bằng phép biến đổi tương đương và kiểm tra nghiệm."
+    },
+    {
+      "id": "uni-linear-o3",
+      "text": "Tính tích ma trận nhỏ và phân biệt AB với BA."
+    },
+    {
+      "id": "uni-linear-o4",
+      "text": "Nhận ra phụ thuộc tuyến tính và kiểm tra cơ sở trong R²."
+    },
+    {
+      "id": "uni-linear-o5",
+      "text": "Tính định thức 2×2 và dùng để kiểm tra nghiệm duy nhất."
+    },
+    {
+      "id": "uni-linear-o6",
+      "text": "Kiểm tra một vector riêng và giải bài khớp hằng số đơn giản."
+    }
+  ],
+  "blueprint": {
+    "id": "uni-linear-final",
+    "gradeId": "university",
+    "subjectId": "uni-linear",
+    "title": "Tự kiểm tra: Đại số tuyến tính — nền tảng",
+    "contentVersion": "2026.10.28-university-v1",
+    "durationMinutes": 30,
+    "contentStatus": "draft",
+    "sections": [
+      {
+        "id": "unit-0",
+        "count": 2,
+        "outcomeIds": [
+          "uni-linear-o1"
+        ]
+      },
+      {
+        "id": "unit-1",
+        "count": 2,
+        "outcomeIds": [
+          "uni-linear-o2"
+        ]
+      },
+      {
+        "id": "unit-2",
+        "count": 2,
+        "outcomeIds": [
+          "uni-linear-o3"
+        ]
+      },
+      {
+        "id": "unit-3",
+        "count": 2,
+        "outcomeIds": [
+          "uni-linear-o4"
+        ]
+      },
+      {
+        "id": "unit-4",
+        "count": 2,
+        "outcomeIds": [
+          "uni-linear-o5"
+        ]
+      },
+      {
+        "id": "unit-5",
+        "count": 2,
+        "outcomeIds": [
+          "uni-linear-o6"
+        ]
+      }
+    ]
+  }
+}

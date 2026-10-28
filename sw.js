@@ -1,6 +1,7 @@
-const CACHE = "hh-identity-portal-v1067";
+const CACHE = "hh-identity-portal-v1068";
 // Worker dependencies must be part of its installed script graph.
 if (typeof self.importScripts === "function") self.importScripts("./hh-school-progress-codec.js?v=1");
+// Previous release: hh-identity-portal-v1067; ./performance-loader.js?v=728;
 // Previous release: hh-identity-portal-v1066; ./performance-loader.js?v=727;
 // Previous release: hh-identity-portal-v1065; ./performance-loader.js?v=726;
 // Previous release: hh-identity-portal-v1064; ./performance-loader.js?v=725;
@@ -806,18 +807,23 @@ const RUNTIME_ASSETS = [
   "./utility-lab-tools.js?v=14",
   "./feature-engines.js?v=2",
   "./hh-school-curriculum.js?v=4",
-  "./hh-school-workspace.css?v=2",
+  "./hh-school-workspace.css?v=3",
   "./hh-school-assessments.js?v=1",
   "./hh-school-content-manifest.js?v=2",
   "./hh-school-content.js?v=1",
-  "./hh-school-workspace.js?v=3",
-  "./hh-school-core.js?v=6",
+  "./hh-school-workspace.js?v=4",
+  "./hh-school-university.css?v=1",
+  "./hh-school-university-manifest.js?v=1",
+  "./hh-school-university-content.js?v=1",
+  "./hh-school-university.js?v=1",
+  "./hh-school-university-core.js?v=1",
+  "./hh-school-core.js?v=7",
   "./hh-school-offline.js?v=5",
   "./hh-school-progress-codec.js?v=1",
   "./hh-school-sync.js?v=5",
   "./hh-school-search-worker.js?v=3",
   "./hh-school-code-worker.js?v=2",
-  "./hh-school.js?v=9",
+  "./hh-school.js?v=10",
   "./study-together.css?v=7",
   "./study-classroom.css?v=1",
   "./study-campus.css?v=1",
@@ -918,10 +924,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=728",
+  "./performance-loader.js?v=729",
   "./auth-platform.js?v=22",
   "./auth-neon-gateway.js?v=35",
-  "./script.js?v=295"
+  "./script.js?v=296"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

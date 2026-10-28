@@ -1,7 +1,7 @@
 'use strict';
 // Real full application shell and HH School renderer. Backend replies are explicit QA doubles.
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict'),{execFileSync}=require('node:child_process');
-const {chromium}=require(process.env.HH_QA_PLAYWRIGHT||'playwright');const repo=path.resolve(__dirname,'..'),output=path.resolve(repo,process.env.HH_QA_OUTPUT||'.study-local/hh-school-shell-1067');
+const {chromium}=require(process.env.HH_QA_PLAYWRIGHT||'playwright');const repo=path.resolve(__dirname,'..'),output=path.resolve(repo,process.env.HH_QA_OUTPUT||'.study-local/hh-school-shell-1068');
 const head=file=>execFileSync('git',['show','HEAD:'+file],{cwd:repo,maxBuffer:10*1048576});
 const csp=JSON.parse(head('vercel.json')).headers.flatMap(h=>h.headers).find(h=>h.key==='Content-Security-Policy').value;
 const errors=[],blocked=[],results=[],requests=[];let browser;
@@ -23,7 +23,10 @@ async function measure(page,label){return page.evaluate(label=>{
   while(node&&backgrounds.length===0){const cs=getComputedStyle(node),bg=cs.backgroundColor,b=bg.match(/[\d.]+/g)||[];if(b.length===3||b.length===4&&Number(b[3])===1)backgrounds=[rgb(bg)];const colors=cs.backgroundImage.match(/rgb[a]?\([^)]*\)/g);if(colors)backgrounds=colors.filter(c=>{const n=c.match(/[\d.]+/g);return n.length===3||Number(n[3])===1;}).map(rgb);node=node.parentElement;}
   if(!backgrounds.length)backgrounds=[[255,255,255]];const contrast=Math.min(...backgrounds.map(bg=>ratio(foreground,bg))),required=parseFloat(style.fontSize)>=24||parseFloat(style.fontSize)>=18.66&&Number(style.fontWeight)>=700?3:4.5;checks.push({role,text:el.textContent.trim().slice(0,70),contrast,required});
  }
- return{label,theme:document.body.dataset.appTheme,checks,overflow:document.documentElement.scrollWidth>innerWidth+1};
+ const intersects=(first,second)=>{const a=document.querySelector(first)?.getBoundingClientRect(),b=document.querySelector(second)?.getBoundingClientRect();return Boolean(a&&b&&a.width&&b.width&&Math.min(a.right,b.right)-Math.max(a.left,b.left)>1&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>1);};
+ const headerOverlap=intersects('.hhs-brand','.hhs-search'),noticeOverlap=intersects('.hsu-notice details','.hsu-notice>button');
+ if(headerOverlap||noticeOverlap)throw Error('School controls overlap at '+label);
+ return{label,theme:document.body.dataset.appTheme,checks,headerOverlap,noticeOverlap,overflow:document.documentElement.scrollWidth>innerWidth+1};
 },label);}
 async function run(){fs.mkdirSync(output,{recursive:true});await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port;let page;
 try{

@@ -1,0 +1,524 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-10-28T04:13:01.764Z",
+  "rows": [
+    {
+      "url": "https://cs50.harvard.edu/x/syllabus/",
+      "finalUrl": "https://cs50.harvard.edu/x/syllabus/",
+      "http": 200,
+      "sha256": "027afa9fde0fec1ad669e3e62fc9f849e1f5c4792661cff4645c18c6cfa207c3",
+      "checkedAt": "2026-10-28T04:12:44.005Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://daotao.ueh.edu.vn/",
+      "finalUrl": "https://daotao.ueh.edu.vn/",
+      "http": 200,
+      "sha256": "faf0241a9fa4777ddb80f815ad8864fc930257707f9f0af42a17c37133fdb9e4",
+      "checkedAt": "2026-10-28T04:12:45.822Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://data8.org/",
+      "finalUrl": "https://data8.org/",
+      "http": 200,
+      "sha256": "a56d26c8eaf459df6883ad2e1ab1b7be675f49e942b66834d49f2030f672dccb",
+      "checkedAt": "2026-10-28T04:12:44.589Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://fullstackopen.com/en/part0/general_info/",
+      "finalUrl": "https://fullstackopen.com/en/part0/general_info/",
+      "http": 200,
+      "sha256": "b95ce4457787b5f34b5084a8b37f52029c32755f6f74d979eee4e2ae26a250e1",
+      "checkedAt": "2026-10-28T04:12:44.521Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://github.com/cs50/python-cs50",
+      "finalUrl": "https://github.com/cs50/python-cs50",
+      "http": 200,
+      "sha256": "2bc550f5368865c6a470f2e785e54d0ff91de3ec7fbc6e1f49fa6af771750ac3",
+      "checkedAt": "2026-10-28T04:12:56.490Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://github.com/data-8/materials-fa26",
+      "finalUrl": "https://github.com/data-8/materials-fa26",
+      "http": 200,
+      "sha256": "7f9024d10ddf08c62c042f0277c72c64f6bac23b2186159c55080f3a0a67ca85",
+      "checkedAt": "2026-10-28T04:12:57.223Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://github.com/data-8/textbook",
+      "finalUrl": "https://github.com/data-8/textbook",
+      "http": 200,
+      "sha256": "8d5a30add6bd7fb255b0d73ec2b79c04487c8e1bb247c74b97cd66e5a726629d",
+      "checkedAt": "2026-10-28T04:12:56.424Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://github.com/fullstack-hy2020/fullstack-hy2020.github.io",
+      "finalUrl": "https://github.com/fullstack-hy2020/fullstack-hy2020.github.io",
+      "http": 200,
+      "sha256": "8e49776362876f40d7656310e177a8b1d2bd614848c49211a3d965941bacc334",
+      "checkedAt": "2026-10-28T04:12:57.120Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://github.com/mitmath/1806",
+      "finalUrl": "https://github.com/mitmath/1806",
+      "http": 200,
+      "sha256": "407ae7e1ddd386c63e61a0b083a44f8921fd6fd1e70438d233d5954a6bda9137",
+      "checkedAt": "2026-10-28T04:12:56.441Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://libguides.mit.edu/citing",
+      "finalUrl": "https://libguides.mit.edu/citing",
+      "http": 200,
+      "sha256": "04f38ad5a02e746a3779d7a8543b78ecb1182d179842b4d75e15765614845d84",
+      "checkedAt": "2026-10-28T04:12:45.128Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://ocw.mit.edu/courses/14-01-principles-of-microeconomics-fall-2023/pages/syllabus/",
+      "finalUrl": "https://ocw.mit.edu/courses/14-01-principles-of-microeconomics-fall-2023/pages/syllabus/",
+      "http": 200,
+      "sha256": "b31b493851aedae4f61983915dcd211332d354b3480c66798687841a7ea3cf1b",
+      "checkedAt": "2026-10-28T04:12:43.204Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/pages/syllabus/",
+      "finalUrl": "https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/pages/syllabus/",
+      "http": 200,
+      "sha256": "e575992453e9a849ebb44f6da717621c3fd3134fe983e8e6b3816bbdf983a08b",
+      "checkedAt": "2026-10-28T04:12:43.204Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://ocw.mit.edu/courses/6-002-circuits-and-electronics-spring-2007/",
+      "finalUrl": "https://ocw.mit.edu/courses/6-002-circuits-and-electronics-spring-2007/",
+      "http": 200,
+      "sha256": "dd36ff8f9f075cce9f679be8850efd830d6cdbb0e78168cbaf2722cdfb7cfeee",
+      "checkedAt": "2026-10-28T04:12:43.202Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://ocw.tudelft.nl/",
+      "http": null,
+      "error": "fetch failed",
+      "checkedAt": "2026-10-28T04:12:55.581Z"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks",
+      "finalUrl": "https://open.umn.edu/opentextbooks",
+      "http": 200,
+      "sha256": "a9bd61563f75c94a0a797bce3a998e2c970d4be9b7ece01e4a1e683dad8177f3",
+      "checkedAt": "2026-10-28T04:12:45.351Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/a-first-course-in-linear-algebra",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/a-first-course-in-linear-algebra",
+      "http": 200,
+      "sha256": "73bb70a470a5e6b9bfa5fd40020ab85e786e6ec2b04fd063e88ed1646b3c17a4",
+      "checkedAt": "2026-10-28T04:12:57.213Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/basics-of-fluid-mechanics",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/basics-of-fluid-mechanics",
+      "http": 200,
+      "sha256": "674376e64fe2749c390d354e9fec42a8be8773e300e7512a544302409a827ecc",
+      "checkedAt": "2026-10-28T04:12:58.698Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/book-of-proof",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/book-of-proof",
+      "http": 200,
+      "sha256": "540514c156676277cd39c8c17e3874725b80aaf43270777df0256b373fda5485",
+      "checkedAt": "2026-10-28T04:12:57.183Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/building-maintenance-construction-tools-and-maintenance-tasks",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/building-maintenance-construction-tools-and-maintenance-tasks",
+      "http": 200,
+      "sha256": "19fd5dd7cb581c85ca6839e6ffde8e4cda5a5698c2a86807a8d04a41c9bf6e7d",
+      "checkedAt": "2026-10-28T04:12:59.355Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/business-communication-for-success",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/business-communication-for-success",
+      "http": 200,
+      "sha256": "bd9049a30fdcc7a32f6a6d9034d42442b9bede00778642728d32915e75c9b0f2",
+      "checkedAt": "2026-10-28T04:12:59.723Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/business-ethics-and-social-responsibility",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/business-ethics-and-social-responsibility",
+      "http": 200,
+      "sha256": "46aaad8429c6ec45b79b72ddf9f0ef8cb3d6e0432f5b019b0c85d5fbcd649c44",
+      "checkedAt": "2026-10-28T04:13:01.743Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/calculus",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/calculus",
+      "http": 200,
+      "sha256": "241e7018b8fad5fc536960c7f425591151f0fe20045470f8cb93c8f9804d8524",
+      "checkedAt": "2026-10-28T04:12:57.544Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/clinical-procedures-for-safer-patient-care",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/clinical-procedures-for-safer-patient-care",
+      "http": 200,
+      "sha256": "3343c7c96ea9586a226faf85aaf08df59c3b77178e2e199f0f595497a96d6aee",
+      "checkedAt": "2026-10-28T04:13:00.294Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/college-success",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/college-success",
+      "http": 200,
+      "sha256": "54c303c444f476c6757ed974d94b0ba4e74ce4ba6605ab71d5db00b896c00083",
+      "checkedAt": "2026-10-28T04:12:58.281Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/creative-clinical-teaching-in-the-health-professions",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/creative-clinical-teaching-in-the-health-professions",
+      "http": 200,
+      "sha256": "b034b21c57cf3d1303b36240ec7967d31bafd8805573def6d1b2df07ea7d92d5",
+      "checkedAt": "2026-10-28T04:13:00.307Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/criminal-law",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/criminal-law",
+      "http": 200,
+      "sha256": "11abe17cb1525acfbc6f359f6dddc2d7767d03ebbe972728f49eadfcae58b46a",
+      "checkedAt": "2026-10-28T04:12:59.340Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/educational-psychology",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/educational-psychology",
+      "http": 200,
+      "sha256": "9217a0efed3e9fa579bd139b9db50973f7bc633e0a59915ef23cf85e9bab0662",
+      "checkedAt": "2026-10-28T04:13:00.342Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/electromagnetics-vol-1",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/electromagnetics-vol-1",
+      "http": 200,
+      "sha256": "f2e09899d7ea4c41b4f6c53194a18512b8f131a3d07ae9ab9e4378500571591c",
+      "checkedAt": "2026-10-28T04:12:58.280Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/electromagnetics-vol-2",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/electromagnetics-vol-2",
+      "http": 200,
+      "sha256": "0ec3c47760f63a18a3dffcd5dfb0a3537773a255e25a0adc015791831dacf7a8",
+      "checkedAt": "2026-10-28T04:12:58.652Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/emarketing-the-essential-guide-to-marketing-in-a-digital-world",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/emarketing-the-essential-guide-to-marketing-in-a-digital-world",
+      "http": 200,
+      "sha256": "ef2d5e2fa879b25f0cb3b44ecdcac8d687ee6ef11dd6f4bafa8eb2b90139365c",
+      "checkedAt": "2026-10-28T04:12:59.641Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/exploring-perspectives-a-concise-guide-to-analysis",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/exploring-perspectives-a-concise-guide-to-analysis",
+      "http": 200,
+      "sha256": "a3a49bb4bce6c55ad0870475827c8ea3d2405f4ee509d499e0b7d86d1ad6882f",
+      "checkedAt": "2026-10-28T04:13:00.296Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/fundamentals-of-compressible-flow-mechanics",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/fundamentals-of-compressible-flow-mechanics",
+      "http": 200,
+      "sha256": "6a3e31f8d0b2cfa93f1d74f4e0e1b512388c63f0b88eb2df29113d1ff1c0ca27",
+      "checkedAt": "2026-10-28T04:12:58.694Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/fundamentals-of-infrastructure-management",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/fundamentals-of-infrastructure-management",
+      "http": 200,
+      "sha256": "4b32025d4d2fdc5798c01ffb97441e684fa33fcb3b8163976e3f4569efa2c597",
+      "checkedAt": "2026-10-28T04:12:59.331Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/genetics-agriculture-and-biotechnology-2021",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/genetics-agriculture-and-biotechnology-2021",
+      "http": 200,
+      "sha256": "dc37608b01a3f8f5a827fd7b0922c3edea17f915070197827422b21b59a1963f",
+      "checkedAt": "2026-10-28T04:13:00.919Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/information-systems-a-manager-s-guide-to-harnessing-technology",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/information-systems-a-manager-s-guide-to-harnessing-technology",
+      "http": 200,
+      "sha256": "100bb6c26ac012d2cb1f0378a4d021b2a8e9eb983ca3c7b7331845dab3e060b0",
+      "checkedAt": "2026-10-28T04:12:58.966Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/intermediate-financial-accounting-volume-2",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/intermediate-financial-accounting-volume-2",
+      "http": 200,
+      "sha256": "932d3bcae49ed51491ad091db29a1033f3c15bf618328eff42e2d8a4a00745c1",
+      "checkedAt": "2026-10-28T04:12:59.635Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/international-trade-theory-and-policy",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/international-trade-theory-and-policy",
+      "http": 200,
+      "sha256": "4ddea5fdbc2c93d4abc003c28aa69d338598fa513ffe30578db3688fbc55a57b",
+      "checkedAt": "2026-10-28T04:12:59.995Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/introduction-to-basic-legal-citation",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/introduction-to-basic-legal-citation",
+      "http": 200,
+      "sha256": "10aadacd3074bb57d23ddd54a86d528ae406734d80bd411545e58793ed37ebcc",
+      "checkedAt": "2026-10-28T04:12:59.718Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/introduction-to-tourism-and-hospitality-in-bc",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/introduction-to-tourism-and-hospitality-in-bc",
+      "http": 200,
+      "sha256": "07f018dacd7ed6a2a1fb7914204458f8f638996d649421aa5bf0d39d283eab58",
+      "checkedAt": "2026-10-28T04:13:01.364Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/introductory-chemistry",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/introductory-chemistry",
+      "http": 200,
+      "sha256": "7a0eeca94583a25cac91d488170688e33659b2c59d5bb2dca25d4f0a6a351db3",
+      "checkedAt": "2026-10-28T04:12:57.482Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/liberte",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/liberte",
+      "http": 200,
+      "sha256": "c95bfa25bdab54c78e410090864cf11604e27e3b2a0dfc801ad72c426571198d",
+      "checkedAt": "2026-10-28T04:13:00.638Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/light-and-matter",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/light-and-matter",
+      "http": 200,
+      "sha256": "1f72bd08c19ed953de617d589039e3b32ff526ed8e0253d5a8c4e6cd032a4ce2",
+      "checkedAt": "2026-10-28T04:12:57.945Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/manufacturing-processes-4-5",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/manufacturing-processes-4-5",
+      "http": 200,
+      "sha256": "8654c7fe8a782c3357d4292559b76786282e990fe429fc5c9a403d2086f2c884",
+      "checkedAt": "2026-10-28T04:12:59.015Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/methods-of-teaching-agriculture-third-edition",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/methods-of-teaching-agriculture-third-edition",
+      "http": 200,
+      "sha256": "f97c406cea29d42ea9b7d0ac394482eaa5226082bce7f094bd647289287ef28f",
+      "checkedAt": "2026-10-28T04:13:00.928Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/microeconomics-theory-through-applications",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/microeconomics-theory-through-applications",
+      "http": 200,
+      "sha256": "17f9d725ef886a561ea92fa00edddb18a81622138dea040040e3f1f8eb8c4528",
+      "checkedAt": "2026-10-28T04:12:59.983Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/microwave-and-rf-design-amplifiers-and-oscillators",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/microwave-and-rf-design-amplifiers-and-oscillators",
+      "http": 200,
+      "sha256": "56d564edfc2fc7db60652fec38d1a559dc7b0c6a574c427704138e8248a65529",
+      "checkedAt": "2026-10-28T04:12:58.579Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/music-and-the-child",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/music-and-the-child",
+      "http": 200,
+      "sha256": "23f901568d066a34688cdf95c2fa43cbef84ff501b0028793ce6c740fc8d480b",
+      "checkedAt": "2026-10-28T04:13:01.211Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/nursing-care-at-the-end-of-life-what-every-clinician-should-know",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/nursing-care-at-the-end-of-life-what-every-clinician-should-know",
+      "http": 200,
+      "sha256": "29126cf77a64aee1bb8f2ad5737d5316edb7300fe08bc51bd3d30f20daa42b0d",
+      "checkedAt": "2026-10-28T04:13:00.007Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/preadvanced-japanese",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/preadvanced-japanese",
+      "http": 200,
+      "sha256": "179a2a63d6404520dc7cabad8c3020484d168aefc05947351cdd776595a09cdc",
+      "checkedAt": "2026-10-28T04:13:00.614Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/principles-of-economics",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/principles-of-economics",
+      "http": 200,
+      "sha256": "9a9a91cb7bd4e0b1b5bc047758e4930bd8c954777b236ac48052d2d27ae768a7",
+      "checkedAt": "2026-10-28T04:13:00.001Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/programming-languages-application-and-interpretation",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/programming-languages-application-and-interpretation",
+      "http": 200,
+      "sha256": "ce5a94c597f6f1153bc7a2ae1aa3af1ee17c0a2731eaeaf54fe7afdc345f1be0",
+      "checkedAt": "2026-10-28T04:12:59.033Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/recorridos",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/recorridos",
+      "http": 200,
+      "sha256": "a0565ec582b951fb58caa118fa2c8b97941f1f24c53e086addf4430b3df8a0c2",
+      "checkedAt": "2026-10-28T04:13:00.641Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/six-steps-to-job-search-success",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/six-steps-to-job-search-success",
+      "http": 200,
+      "sha256": "cc3fb5ac2685a597c2c8da607268c5b64e2058deec9db4750169a9e5085766d2",
+      "checkedAt": "2026-10-28T04:12:58.228Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/the-art-and-science-of-teaching-agriculture-four-keys-to-dynamic-learning",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/the-art-and-science-of-teaching-agriculture-four-keys-to-dynamic-learning",
+      "http": 200,
+      "sha256": "7828671a140847b62a08538e00fa98c7737bdf5be90ea0c83c1770837b8b75f5",
+      "checkedAt": "2026-10-28T04:13:00.913Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/the-basics-of-general-organic-and-biological-chemistry",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/the-basics-of-general-organic-and-biological-chemistry",
+      "http": 200,
+      "sha256": "1b1652e62cb3ac05f815a2920ecdad63fcb95c58c8fe85f822f78af020201d52",
+      "checkedAt": "2026-10-28T04:12:57.923Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/the-information-literacy-user-s-guide-an-open-online-textbook",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/the-information-literacy-user-s-guide-an-open-online-textbook",
+      "http": 200,
+      "sha256": "353f1312f536aa2ff79b952d397658c63efd99e313309fa1cde5bd95a71079e9",
+      "checkedAt": "2026-10-28T04:13:00.642Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/the-legal-and-ethical-environment-of-business",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/the-legal-and-ethical-environment-of-business",
+      "http": 200,
+      "sha256": "d74f24a4a28f00f98f2a9ebb75505cbc34d65ab83aec94677e95061f3929358e",
+      "checkedAt": "2026-10-28T04:12:59.361Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/the-marketing-map-navigating-the-principles-of-marketing-for-tourism-hospitality-and-services",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/the-marketing-map-navigating-the-principles-of-marketing-for-tourism-hospitality-and-services",
+      "http": 200,
+      "sha256": "fca361f6fffd48ca401684f4859e3c4c3924d50669f889e376134fb570dea592",
+      "checkedAt": "2026-10-28T04:13:01.276Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/theatrical-worlds",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/theatrical-worlds",
+      "http": 200,
+      "sha256": "580e3dadfce815f5f6c164ba028fa8c9a01383309a5b3bb46f8e43707972d965",
+      "checkedAt": "2026-10-28T04:13:00.904Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/think-python-how-to-think-like-a-computer-scientist",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/think-python-how-to-think-like-a-computer-scientist",
+      "http": 200,
+      "sha256": "26ef33537c37c468738334c81ebec867104ffb2bdc58b6df8afb634b7c79bd68",
+      "checkedAt": "2026-10-28T04:12:59.009Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/understanding-basic-music-theory-2013",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/understanding-basic-music-theory-2013",
+      "http": 200,
+      "sha256": "cdf4ee0810adae5732650fde26aff8a6f6aad4f9ad9ced77a756394486adaccb",
+      "checkedAt": "2026-10-28T04:13:01.231Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://open.umn.edu/opentextbooks/textbooks/writing-for-success",
+      "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/writing-for-success",
+      "http": 200,
+      "sha256": "0c92f0ea2d53431d5f41ea403112117812ccac94b1f70edcd923c93f919dd92e",
+      "checkedAt": "2026-10-28T04:12:58.288Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://openstax.org/subjects",
+      "finalUrl": "https://openstax.org/subjects",
+      "http": 200,
+      "sha256": "122a7b58174184305f56c8c5c86c995abd6060bc1920fae9a3cec195c07fcf18",
+      "checkedAt": "2026-10-28T04:12:56.409Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://oyc.yale.edu/",
+      "finalUrl": "https://oyc.yale.edu/",
+      "http": 200,
+      "sha256": "c1969a3de8edd2e526f2d6ec42d39d89863899bf9be8f336c59d7a1e9bda0006",
+      "checkedAt": "2026-10-28T04:12:46.021Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    },
+    {
+      "url": "https://soict.hust.edu.vn/",
+      "finalUrl": "https://soict.hust.edu.vn/",
+      "http": 200,
+      "sha256": "4705d55b50eba5f3d8ddc47ddeda24f0383674a4a81dda3a2e30b06590c55cc6",
+      "checkedAt": "2026-10-28T04:12:45.766Z",
+      "scope": "HTTP reachability only;no academic or reuse approval"
+    }
+  ]
+}

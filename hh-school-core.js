@@ -2,6 +2,7 @@
   "use strict";
 
   const SCHEMA_VERSION = 3;
+  const universityCore = typeof module === "object" && module.exports ? require("./hh-school-university-core") : root.HHSchoolUniversityCore;
   const BASE_KEY = "hh.school.v2";
   const DAY = 86_400_000;
   const ROLES = Object.freeze(["student", "parent", "teacher", "content-reviewer", "school-admin", "platform-admin"]);
@@ -85,7 +86,7 @@
       schemaVersion: SCHEMA_VERSION, ownerId, learnerProfileId: profile.id,
       createdAt: nowIso(now), updatedAt: nowIso(now), revision: 0, lastSyncedAt: null, syncStatus: "local-only", syncConflict: null,
       role: roleFor(context.currentUser), profile, activeView: "today", activeSubjectId: "math", activeLessonId: `g${profile.grade || 1}-math-core-01`,
-      studyWorkspace: normalizeWorkspace(), progress: {}, mastery: {}, attempts: [], reviews: [], mistakes: [], assignments: [], classes: [], familyProfiles: [profile], activity: { learningDays: [], streak: 0, lastActiveDay: "", updatedAt: null },
+      studyWorkspace: normalizeWorkspace(), universityWorkspace: universityCore?.normalize(), progress: {}, mastery: {}, attempts: [], reviews: [], mistakes: [], assignments: [], classes: [], familyProfiles: [profile], activity: { learningDays: [], streak: 0, lastActiveDay: "", updatedAt: null },
       schedules: [], aiSessions: [], notifications: [], submissions: [], contentDrafts: [], reviewQueue: [], auditLogs: [], preferences: {
         highContrast: false, dyslexia: false, largeText: profile.grade <= 2, reducedMotion: false, dailyMinutes: profile.grade <= 5 ? 20 : 35
       }
@@ -96,6 +97,8 @@
     const fallback = defaultState(context);
     if (input?.schemaVersion !== undefined && (!Number.isInteger(input.schemaVersion) || input.schemaVersion < 1 || input.schemaVersion > SCHEMA_VERSION) || input?.studyWorkspace?.version !== undefined && input.studyWorkspace.version !== 1) throw Object.assign(new Error("Dữ liệu thuộc phiên bản HH School mới hơn; bản gốc được giữ để phục hồi."), { code: "STATE_VERSION_UNSUPPORTED" });
     if (input?.studyWorkspace) normalizeWorkspace(input.studyWorkspace);
+    if (input?.universityWorkspace && !universityCore) throw Object.assign(new Error("Cần tải lại ứng dụng để đọc kho học đại học; giữ dữ liệu gốc."), { code: "STATE_VERSION_UNSUPPORTED" });
+    const universityWorkspace = universityCore?.normalize(input?.universityWorkspace);
     if (input && (["progress", "mastery"].some(key => input[key] !== undefined && (!input[key] || typeof input[key] !== "object" || Array.isArray(input[key]))) || ["attempts", "mistakes", "reviews"].some(key => input[key] !== undefined && !Array.isArray(input[key])))) throw Object.assign(new Error("Cấu trúc lịch sử học tập chưa hợp lệ; bản gốc được bảo toàn."), { code: "STATE_ARCHIVE_CORRUPT" });
     const state = input && typeof input === "object" ? clone(input) : {};
     const ownerId = ownerIdFor(context.currentUser) || fallback.ownerId;
@@ -122,6 +125,7 @@
       schedules: bounded(state.schedules, 200), aiSessions: bounded(state.aiSessions, 100), notifications: bounded(state.notifications, 200), submissions: Array.isArray(state.submissions) ? state.submissions : [],
       contentDrafts: bounded(state.contentDrafts, 500), reviewQueue: bounded(state.reviewQueue, 500), auditLogs: bounded(state.auditLogs, 1000),
       studyWorkspace: normalizeWorkspace(state.studyWorkspace),
+      universityWorkspace,
       activity: {
         learningDays: [...new Set(bounded(activity.learningDays, 366).filter((day) => /^\d{4}-\d{2}-\d{2}$/.test(String(day))))],
         streak: clamp(activity.streak, 0, 100000), lastActiveDay: /^\d{4}-\d{2}-\d{2}$/.test(String(activity.lastActiveDay || "")) ? activity.lastActiveDay : "", updatedAt: clean(activity.updatedAt, 40) || null
@@ -156,6 +160,7 @@
       const compact = clone(snapshot);
       compact.attempts = snapshot.attempts.slice(-100); compact.mistakes = snapshot.mistakes.slice(-100); compact.submissions = snapshot.submissions.slice(-100);
       compact.studyWorkspace = { ...snapshot.studyWorkspace, notes: {}, examSessions: {} };
+      if (snapshot.universityWorkspace) compact.universityWorkspace = { ...universityCore.normalize(), context: snapshot.universityWorkspace.context, navigation: snapshot.universityWorkspace.navigation, preview: snapshot.universityWorkspace.preview };
       compact.storageArchive = { version: 1, required: true, revision: snapshot.revision, counts: { attempts: snapshot.attempts.length, mistakes: snapshot.mistakes.length, progress: Object.keys(snapshot.progress).length, mastery: Object.keys(snapshot.mastery).length } };
       if (JSON.stringify(compact).length > 750000) { compact.progress = Object.fromEntries(Object.entries(snapshot.progress).slice(-200)); compact.mastery = Object.fromEntries(Object.entries(snapshot.mastery).slice(-200)); compact.reviews = snapshot.reviews.slice(-100); }
       if (JSON.stringify(compact).length > 750000) {
@@ -370,7 +375,7 @@
       if (prefer) mergedSubmissions.set(key, item);
     }
     const studyWorkspace = { ...secondary.studyWorkspace, ...primary.studyWorkspace, notes: timedMap(server.studyWorkspace.notes, local.studyWorkspace.notes), practiceDrafts: timedMap(server.studyWorkspace.practiceDrafts||{}, local.studyWorkspace.practiceDrafts||{}), examSessions: timedMap(server.studyWorkspace.examSessions, local.studyWorkspace.examSessions, true) };
-    return normalizeState({ ...secondary, ...primary, profile: primary.profile, studyWorkspace, progress: newerProgress, mastery, attempts: unique(server.attempts, local.attempts), reviews: unique(server.reviews, local.reviews, "skillId"), mistakes: unique(server.mistakes, local.mistakes, "questionId"), assignments: unique(server.assignments, local.assignments), submissions: [...mergedSubmissions.values()], schedules: unique(server.schedules, local.schedules), syncConflict: null, serverRevision: Math.max(Number(local.serverRevision || 0), Number(server.serverRevision || 0)), updatedAt: nowIso() }, context);
+    return normalizeState({ ...secondary, ...primary, profile: primary.profile, studyWorkspace, universityWorkspace: universityCore?.merge(local.universityWorkspace, server.universityWorkspace), progress: newerProgress, mastery, attempts: unique(server.attempts, local.attempts), reviews: unique(server.reviews, local.reviews, "skillId"), mistakes: unique(server.mistakes, local.mistakes, "questionId"), assignments: unique(server.assignments, local.assignments), submissions: [...mergedSubmissions.values()], schedules: unique(server.schedules, local.schedules), syncConflict: null, serverRevision: Math.max(Number(local.serverRevision || 0), Number(server.serverRevision || 0)), updatedAt: nowIso() }, context);
   }
 
   const api = Object.freeze({ SCHEMA_VERSION, BASE_KEY, ROLES, MASTERY_STATES, clean, cleanMultiline, safeId, ownerIdFor, roleFor, storageKey, learnerProfile, localDayKey, nextActivity, defaultState, normalizeState, normalizeWorkspace, sameLearningContent, createStore, gradeQuestion, nextMastery, recordAttempt, recordLessonStep, lessonEvidence, dailyPlan, mergeStates, can });

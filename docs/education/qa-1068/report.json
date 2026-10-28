@@ -1,0 +1,302 @@
+{
+  "schemaVersion": 1,
+  "release": 1068,
+  "checkedAt": "2026-10-28T04:43:08.607Z",
+  "baseCommit": "2747eefddb526595b436771811dd20ec8793e2db",
+  "branch": "main",
+  "versions": {
+    "cache": 1068,
+    "loader": 729,
+    "script": 296,
+    "schoolHost": 10,
+    "schoolCore": 7,
+    "schoolWorkspace": 4,
+    "university": 1,
+    "schoolSchema": 3,
+    "studyWorkspace": 1,
+    "universityWorkspace": 1
+  },
+  "tests": {
+    "total": 478,
+    "suites": [
+      {
+        "suite": "learning",
+        "tests": 130,
+        "passed": 130,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "all-tools",
+        "tests": 241,
+        "passed": 241,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "security",
+        "tests": 107,
+        "passed": 107,
+        "failed": 0,
+        "skipped": 0
+      }
+    ]
+  },
+  "syntax": {
+    "checked": 33,
+    "files": [
+      "hh-school-core.js",
+      "hh-school-workspace.js",
+      "hh-school.js",
+      "performance-loader.js",
+      "script.js",
+      "scripts/qa-hh-school-classroom.js",
+      "scripts/qa-hh-school-editorial.js",
+      "scripts/qa-hh-school-offline.js",
+      "scripts/qa-hh-school-recovery.js",
+      "scripts/qa-hh-school-refinement.js",
+      "scripts/qa-hh-school-shell.js",
+      "scripts/qa-hh-school-workspace.js",
+      "sw.js",
+      "tests/helpers/hh-school-memory-db.js",
+      "tests/hh-school-integration.test.js",
+      "utils/education-handler.js",
+      "data/hh-school/university/authored-circuits.js",
+      "data/hh-school/university/authored-economics.js",
+      "data/hh-school/university/authored-linear.js",
+      "data/hh-school/university/authored-programming.js",
+      "data/hh-school/university/authored-research.js",
+      "data/hh-school/university/authored-statistics.js",
+      "data/hh-school/university/authoring.js",
+      "hh-school-university-content.js",
+      "hh-school-university-core.js",
+      "hh-school-university-manifest.js",
+      "hh-school-university.js",
+      "scripts/build-hh-school-university.js",
+      "scripts/import-hh-school-university.js",
+      "scripts/qa-hh-school-university-shell.js",
+      "scripts/qa-hh-school-university.js",
+      "scripts/report-hh-school-university.js",
+      "tests/hh-school-university.test.js"
+    ]
+  },
+  "browsers": [
+    {
+      "suite": "workspace",
+      "at": "2026-10-28T04:19:30.660Z",
+      "cases": 10,
+      "errors": 0,
+      "report": "workspace.json"
+    },
+    {
+      "suite": "shell",
+      "at": "2026-10-28T04:41:11.895Z",
+      "cases": 8,
+      "errors": 0,
+      "report": "shell.json"
+    },
+    {
+      "suite": "recovery",
+      "at": "2026-10-28T04:22:30.187Z",
+      "cases": 13,
+      "errors": 0,
+      "report": "recovery.json"
+    },
+    {
+      "suite": "refinement",
+      "at": "2026-10-28T04:22:39.216Z",
+      "cases": 5,
+      "errors": 0,
+      "report": "refinement.json"
+    },
+    {
+      "suite": "offline",
+      "at": "2026-10-28T04:19:34.515Z",
+      "cases": 6,
+      "errors": 0,
+      "report": "offline.json"
+    },
+    {
+      "suite": "classroom",
+      "at": "2026-10-28T04:22:34.009Z",
+      "cases": 4,
+      "errors": 0,
+      "report": "classroom.json"
+    },
+    {
+      "suite": "editorial",
+      "at": "2026-10-28T04:22:35.948Z",
+      "cases": 2,
+      "errors": 0,
+      "report": "editorial.json"
+    },
+    {
+      "suite": "university",
+      "at": "2026-10-28T04:30:05.667Z",
+      "cases": 8,
+      "errors": 0,
+      "report": "university.json"
+    },
+    {
+      "suite": "university-shell",
+      "at": "2026-10-28T04:42:56.839Z",
+      "cases": 1,
+      "errors": 0,
+      "report": "university-shell.json"
+    }
+  ],
+  "contrasts": [
+    {
+      "suite": "shell",
+      "checks": 760,
+      "failures": 0,
+      "states": 36
+    },
+    {
+      "suite": "university-shell",
+      "checks": 880,
+      "failures": 0,
+      "states": 36
+    }
+  ],
+  "content": [
+    {
+      "file": "data/hh-school/university/catalogue.json",
+      "bytes": 188052,
+      "sha256": "8a4e68c9656d95c22ae6f0de8581ef7a0712cd8226c7701b1dbe9a9814528587"
+    },
+    {
+      "file": "data/hh-school/university/courses/uni-linear.json",
+      "bytes": 33725,
+      "sha256": "00445f57942bec353d6cb32a77560219ca346409cdad37aa563c6f2153bcdc03"
+    },
+    {
+      "file": "data/hh-school/university/courses/uni-statistics.json",
+      "bytes": 35983,
+      "sha256": "19647cc15eecc05336d671c9df7dac8f4756e26504bdcb0916183c55791ce097"
+    },
+    {
+      "file": "data/hh-school/university/courses/uni-programming.json",
+      "bytes": 35052,
+      "sha256": "caeec84763067c17a748636dd295c018db68f5b39676b44e66d8c912dde2e666"
+    },
+    {
+      "file": "data/hh-school/university/courses/uni-economics.json",
+      "bytes": 35611,
+      "sha256": "5f0d7faf1f5b1ad3ae97f7c661bc4142ced0b7830aa3f2f888b1a465205f228d"
+    },
+    {
+      "file": "data/hh-school/university/courses/uni-research.json",
+      "bytes": 37896,
+      "sha256": "bee263ac78b59a96dd88e55ec4ab6b1ac55a514d097613d9660d58648d174676"
+    },
+    {
+      "file": "data/hh-school/university/courses/uni-circuits.json",
+      "bytes": 33095,
+      "sha256": "192fda792849e7cd1b678356b9301499373731750b7bb61398c5b564d3412d52"
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "university-home-desktop.png",
+      "bytes": 1282639,
+      "sha256": "bba6cb509db525175afb3e28ab5689bc8395101c8042bde867f01f3c7b5bbc16",
+      "reviewed": true
+    },
+    {
+      "file": "university-home-mobile.png",
+      "bytes": 283552,
+      "sha256": "27993827bc1b5d8bef7b36d1a1289b4bd6a94b6f7e822a473ee3b83e22e9b4d5",
+      "reviewed": true
+    },
+    {
+      "file": "university-lesson-light.png",
+      "bytes": 1071887,
+      "sha256": "b390a9ebc2ebcc9c54e3b085dc5edbf600a73e56812285770b9d4294f0691819",
+      "reviewed": true
+    },
+    {
+      "file": "university-lesson-mobile.png",
+      "bytes": 269806,
+      "sha256": "1da2d1027e842da7c9c32eb21dba284760b6ae6ed5be92c4ff52c266850147ef",
+      "reviewed": true
+    },
+    {
+      "file": "university-lesson-zoom200.png",
+      "bytes": 170443,
+      "sha256": "5afefc26885e257a5420f7182397cead92600d3986707eecbc51129cd178890a",
+      "reviewed": true
+    },
+    {
+      "file": "university-header-zoom200.png",
+      "bytes": 275797,
+      "sha256": "b9bc9e856f48938f94dd989ef0abba4133b8cc44a68e5816f46a6b7c985cbf7c",
+      "reviewed": true
+    },
+    {
+      "file": "university-programme.png",
+      "bytes": 190353,
+      "sha256": "534bda8c0071ca27075268da26dc4e1979c85b6d3159a9325de9cd91edebb482",
+      "reviewed": true
+    },
+    {
+      "file": "university-exam-results.png",
+      "bytes": 219895,
+      "sha256": "31b7043b6f34f5af72ee4f5adc6ef965270d7d1aa3f9390093a4c47503aa624e",
+      "reviewed": true
+    },
+    {
+      "file": "university-library.png",
+      "bytes": 178609,
+      "sha256": "595ed462e26f762f3121e23959ed192e390addbcb5cb2d4eacf9be5591cb3040",
+      "reviewed": true
+    },
+    {
+      "file": "university-project-feedback.png",
+      "bytes": 235301,
+      "sha256": "aced5d7382afcc1d344db659fa7be5ef85fad029f2219c8b2b9d13eadb07755e",
+      "reviewed": true
+    },
+    {
+      "file": "k12-percent-after-hydration.png",
+      "bytes": 214699,
+      "sha256": "696b7bdc381f2bba1828737fe2819e9a2cbc57a255d881767b9a34d56cff371c",
+      "reviewed": true
+    }
+  ],
+  "coverage": {
+    "fieldGroups": 16,
+    "programmes": 2,
+    "programCourseRows": 176,
+    "authoredCourses": 6,
+    "lessons": 36,
+    "questions": 126,
+    "approvedCourses": 0,
+    "officialOutcomeCount": null,
+    "officialComplete": false
+  },
+  "environment": {
+    "browser": "Native Chromium via Playwright",
+    "dpr": 2,
+    "widths": [
+      375,
+      768,
+      1440
+    ],
+    "zoom": "200%",
+    "themes": 16,
+    "backend": "QA cookie identities and in-memory MongoDB only; production body parser, rate limiter, access checks and education handlers called; full-shell availability errors explicitly stubbed",
+    "offline": "Actual Service Worker cache1068 and IndexedDB; no external textbooks cached",
+    "mockDeadline": "31-minute clock advance fixture explicitly tests 30-minute expiry; not a claim of 31 minutes wall-clock play"
+  },
+  "limitations": [
+    "Six original foundation sequences; all are drafts and require academic review.",
+    "Two UIT tables have176 unique programme course rows; official outcome and graduation denominators are unknown.",
+    "No claim of complete university curriculum or recognized equivalent credits.",
+    "External bibliography and links only; no third-party course content redistributed.",
+    "64/65 resource URLs return HTTP200; TU Delft Node fetch failed.",
+    "No full32MiB low-end-device benchmark or cloud snapshot garbage collection.",
+    "Local/browser QA does not exercise private production accounts.",
+    "Deployment must be checked separately after push."
+  ]
+}

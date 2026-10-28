@@ -1,0 +1,19 @@
+{
+  "at": "2026-10-28T04:42:56.839Z",
+  "results": [
+    {
+      "shell": "Native guest reaches university and lesson in full platform shell",
+      "themes": 16,
+      "contrastChecks": 880,
+      "sizes": [
+        375,
+        768,
+        1440
+      ],
+      "zoom": "200%",
+      "dpr": 2,
+      "forcedColorsFocus": true
+    }
+  ],
+  "errors": []
+}

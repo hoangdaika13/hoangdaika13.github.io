@@ -1,0 +1,4889 @@
+{
+  "audit": [
+    {
+      "label": "cosmic-subjects",
+      "theme": "cosmic",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Môn học và chương trình",
+          "contrast": 17.99761449554375,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Toán",
+          "contrast": 17.297852128019077,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 17.297852128019077,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Gộp hai nhóm và phép cộng trong phạm vi 10",
+          "contrast": 17.297852128019077,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Tìm số còn thiếu bằng sơ đồ phần–toàn thể",
+          "contrast": 17.297852128019077,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Đếm đúng nhóm không quá 10 vật, ghép số với số lượng và giải thích vì ",
+          "contrast": 11.19678064316015,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn phép cộng bằng gộp hai nhóm trong phạm vi 10, đếm thêm đúng ",
+          "contrast": 11.19678064316015,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tìm phần còn thiếu khi biết toàn thể không quá 10 và một phần; giải th",
+          "contrast": 11.19678064316015,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "VTiếng Việt2 bài · chương trình",
+          "contrast": 17.297852128019077,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "∑Toán3 bài · chương trình",
+          "contrast": 17.99761449554375,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♡Đạo đức1 bài · chương trình",
+          "contrast": 17.297852128019077,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◎Tự nhiên và Xã hội2 bài · chương trình",
+          "contrast": 17.297852128019077,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◉Giáo dục thể chất1 bài · chương trình",
+          "contrast": 17.297852128019077,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♫Âm nhạc1 bài · chương trình",
+          "contrast": 17.297852128019077,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✎Mĩ thuật1 bài · chương trình",
+          "contrast": 17.297852128019077,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "☆Hoạt động trải nghiệm1 bài · chương trình",
+          "contrast": 17.297852128019077,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "⌂Nội dung giáo dục địa phương0 bài · chương trình",
+          "contrast": 17.297852128019077,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "ANgoại ngữ 11 bài · tự chọn",
+          "contrast": 17.297852128019077,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✦Tiếng dân tộc thiểu số0 bài · tự chọn",
+          "contrast": 17.297852128019077,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 13.291453222724135,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 15.997681816260982,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 13.291453222724135,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 15.997681816260982,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 13.291453222724135,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 15.997681816260982,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "midnight-subjects",
+      "theme": "midnight",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Môn học và chương trình",
+          "contrast": 18.144213748366138,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Toán",
+          "contrast": 17.45747609071829,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 17.45747609071829,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Gộp hai nhóm và phép cộng trong phạm vi 10",
+          "contrast": 17.45747609071829,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Tìm số còn thiếu bằng sơ đồ phần–toàn thể",
+          "contrast": 17.45747609071829,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Đếm đúng nhóm không quá 10 vật, ghép số với số lượng và giải thích vì ",
+          "contrast": 11.530437394349018,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn phép cộng bằng gộp hai nhóm trong phạm vi 10, đếm thêm đúng ",
+          "contrast": 11.530437394349018,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tìm phần còn thiếu khi biết toàn thể không quá 10 và một phần; giải th",
+          "contrast": 11.530437394349018,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "VTiếng Việt2 bài · chương trình",
+          "contrast": 17.45747609071829,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "∑Toán3 bài · chương trình",
+          "contrast": 18.144213748366138,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♡Đạo đức1 bài · chương trình",
+          "contrast": 17.45747609071829,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◎Tự nhiên và Xã hội2 bài · chương trình",
+          "contrast": 17.45747609071829,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◉Giáo dục thể chất1 bài · chương trình",
+          "contrast": 17.45747609071829,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♫Âm nhạc1 bài · chương trình",
+          "contrast": 17.45747609071829,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✎Mĩ thuật1 bài · chương trình",
+          "contrast": 17.45747609071829,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "☆Hoạt động trải nghiệm1 bài · chương trình",
+          "contrast": 17.45747609071829,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "⌂Nội dung giáo dục địa phương0 bài · chương trình",
+          "contrast": 17.45747609071829,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "ANgoại ngữ 11 bài · tự chọn",
+          "contrast": 17.45747609071829,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✦Tiếng dân tộc thiểu số0 bài · tự chọn",
+          "contrast": 17.45747609071829,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 6.7131294739510485,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 16.0723599571223,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 6.7131294739510485,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 16.0723599571223,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 6.7131294739510485,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 16.0723599571223,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "basic-light-subjects",
+      "theme": "basic-light",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Môn học và chương trình",
+          "contrast": 13.764920411532065,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Toán",
+          "contrast": 14.755068102467318,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 14.755068102467318,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Gộp hai nhóm và phép cộng trong phạm vi 10",
+          "contrast": 14.755068102467318,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Tìm số còn thiếu bằng sơ đồ phần–toàn thể",
+          "contrast": 14.755068102467318,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Đếm đúng nhóm không quá 10 vật, ghép số với số lượng và giải thích vì ",
+          "contrast": 6.456092605221279,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn phép cộng bằng gộp hai nhóm trong phạm vi 10, đếm thêm đúng ",
+          "contrast": 6.456092605221279,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tìm phần còn thiếu khi biết toàn thể không quá 10 và một phần; giải th",
+          "contrast": 6.456092605221279,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "VTiếng Việt2 bài · chương trình",
+          "contrast": 14.755068102467318,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "∑Toán3 bài · chương trình",
+          "contrast": 13.764920411532065,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♡Đạo đức1 bài · chương trình",
+          "contrast": 14.755068102467318,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◎Tự nhiên và Xã hội2 bài · chương trình",
+          "contrast": 14.755068102467318,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◉Giáo dục thể chất1 bài · chương trình",
+          "contrast": 14.755068102467318,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♫Âm nhạc1 bài · chương trình",
+          "contrast": 14.755068102467318,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✎Mĩ thuật1 bài · chương trình",
+          "contrast": 14.755068102467318,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "☆Hoạt động trải nghiệm1 bài · chương trình",
+          "contrast": 14.755068102467318,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "⌂Nội dung giáo dục địa phương0 bài · chương trình",
+          "contrast": 14.755068102467318,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "ANgoại ngữ 11 bài · tự chọn",
+          "contrast": 14.755068102467318,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✦Tiếng dân tộc thiểu số0 bài · tự chọn",
+          "contrast": 14.755068102467318,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 5.168555560022562,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 13.264739977672141,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 5.168555560022562,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 13.264739977672141,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 5.168555560022562,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 13.264739977672141,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "basic-dark-subjects",
+      "theme": "basic-dark",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Môn học và chương trình",
+          "contrast": 16.73941327978109,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Toán",
+          "contrast": 15.038036797612593,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 15.038036797612593,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Gộp hai nhóm và phép cộng trong phạm vi 10",
+          "contrast": 15.038036797612593,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Tìm số còn thiếu bằng sơ đồ phần–toàn thể",
+          "contrast": 15.038036797612593,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Đếm đúng nhóm không quá 10 vật, ghép số với số lượng và giải thích vì ",
+          "contrast": 9.710653113827313,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn phép cộng bằng gộp hai nhóm trong phạm vi 10, đếm thêm đúng ",
+          "contrast": 9.710653113827313,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tìm phần còn thiếu khi biết toàn thể không quá 10 và một phần; giải th",
+          "contrast": 9.710653113827313,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "VTiếng Việt2 bài · chương trình",
+          "contrast": 15.038036797612593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "∑Toán3 bài · chương trình",
+          "contrast": 16.73941327978109,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♡Đạo đức1 bài · chương trình",
+          "contrast": 15.038036797612593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◎Tự nhiên và Xã hội2 bài · chương trình",
+          "contrast": 15.038036797612593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◉Giáo dục thể chất1 bài · chương trình",
+          "contrast": 15.038036797612593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♫Âm nhạc1 bài · chương trình",
+          "contrast": 15.038036797612593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✎Mĩ thuật1 bài · chương trình",
+          "contrast": 15.038036797612593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "☆Hoạt động trải nghiệm1 bài · chương trình",
+          "contrast": 15.038036797612593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "⌂Nội dung giáo dục địa phương0 bài · chương trình",
+          "contrast": 15.038036797612593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "ANgoại ngữ 11 bài · tự chọn",
+          "contrast": 15.038036797612593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✦Tiếng dân tộc thiểu số0 bài · tự chọn",
+          "contrast": 15.038036797612593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 7.524770668954799,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 13.503814913205968,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 7.524770668954799,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 13.503814913205968,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 7.524770668954799,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 13.503814913205968,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "slate-subjects",
+      "theme": "slate",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Môn học và chương trình",
+          "contrast": 16.955105845628285,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Toán",
+          "contrast": 14.029874741046042,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 14.029874741046042,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Gộp hai nhóm và phép cộng trong phạm vi 10",
+          "contrast": 14.029874741046042,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Tìm số còn thiếu bằng sơ đồ phần–toàn thể",
+          "contrast": 14.029874741046042,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Đếm đúng nhóm không quá 10 vật, ghép số với số lượng và giải thích vì ",
+          "contrast": 9.886910884283136,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn phép cộng bằng gộp hai nhóm trong phạm vi 10, đếm thêm đúng ",
+          "contrast": 9.886910884283136,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tìm phần còn thiếu khi biết toàn thể không quá 10 và một phần; giải th",
+          "contrast": 9.886910884283136,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "VTiếng Việt2 bài · chương trình",
+          "contrast": 14.029874741046042,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "∑Toán3 bài · chương trình",
+          "contrast": 16.955105845628285,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♡Đạo đức1 bài · chương trình",
+          "contrast": 14.029874741046042,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◎Tự nhiên và Xã hội2 bài · chương trình",
+          "contrast": 14.029874741046042,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◉Giáo dục thể chất1 bài · chương trình",
+          "contrast": 14.029874741046042,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♫Âm nhạc1 bài · chương trình",
+          "contrast": 14.029874741046042,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✎Mĩ thuật1 bài · chương trình",
+          "contrast": 14.029874741046042,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "☆Hoạt động trải nghiệm1 bài · chương trình",
+          "contrast": 14.029874741046042,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "⌂Nội dung giáo dục địa phương0 bài · chương trình",
+          "contrast": 14.029874741046042,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "ANgoại ngữ 11 bài · tự chọn",
+          "contrast": 14.029874741046042,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✦Tiếng dân tộc thiểu số0 bài · tự chọn",
+          "contrast": 14.029874741046042,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 11.474457874482079,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 11.855115843111005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 11.474457874482079,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 11.855115843111005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 11.474457874482079,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 11.855115843111005,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "warm-subjects",
+      "theme": "warm",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Môn học và chương trình",
+          "contrast": 11.896647790662866,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Toán",
+          "contrast": 13.163674589564193,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 13.163674589564193,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Gộp hai nhóm và phép cộng trong phạm vi 10",
+          "contrast": 13.163674589564193,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Tìm số còn thiếu bằng sơ đồ phần–toàn thể",
+          "contrast": 13.163674589564193,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Đếm đúng nhóm không quá 10 vật, ghép số với số lượng và giải thích vì ",
+          "contrast": 6.632171148321886,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn phép cộng bằng gộp hai nhóm trong phạm vi 10, đếm thêm đúng ",
+          "contrast": 6.632171148321886,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tìm phần còn thiếu khi biết toàn thể không quá 10 và một phần; giải th",
+          "contrast": 6.632171148321886,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "VTiếng Việt2 bài · chương trình",
+          "contrast": 13.163674589564193,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "∑Toán3 bài · chương trình",
+          "contrast": 11.896647790662866,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♡Đạo đức1 bài · chương trình",
+          "contrast": 13.163674589564193,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◎Tự nhiên và Xã hội2 bài · chương trình",
+          "contrast": 13.163674589564193,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◉Giáo dục thể chất1 bài · chương trình",
+          "contrast": 13.163674589564193,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♫Âm nhạc1 bài · chương trình",
+          "contrast": 13.163674589564193,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✎Mĩ thuật1 bài · chương trình",
+          "contrast": 13.163674589564193,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "☆Hoạt động trải nghiệm1 bài · chương trình",
+          "contrast": 13.163674589564193,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "⌂Nội dung giáo dục địa phương0 bài · chương trình",
+          "contrast": 13.163674589564193,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "ANgoại ngữ 11 bài · tự chọn",
+          "contrast": 13.163674589564193,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✦Tiếng dân tộc thiểu số0 bài · tự chọn",
+          "contrast": 13.163674589564193,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 5.352080935497952,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 10.993314483935535,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 5.352080935497952,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 10.993314483935535,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 5.352080935497952,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 10.993314483935535,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "dark-subjects",
+      "theme": "dark",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Môn học và chương trình",
+          "contrast": 17.829607862114806,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Toán",
+          "contrast": 16.576653517643695,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 16.576653517643695,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Gộp hai nhóm và phép cộng trong phạm vi 10",
+          "contrast": 16.576653517643695,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Tìm số còn thiếu bằng sơ đồ phần–toàn thể",
+          "contrast": 16.576653517643695,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Đếm đúng nhóm không quá 10 vật, ghép số với số lượng và giải thích vì ",
+          "contrast": 9.761013215828953,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn phép cộng bằng gộp hai nhóm trong phạm vi 10, đếm thêm đúng ",
+          "contrast": 9.761013215828953,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tìm phần còn thiếu khi biết toàn thể không quá 10 và một phần; giải th",
+          "contrast": 9.761013215828953,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "VTiếng Việt2 bài · chương trình",
+          "contrast": 16.576653517643695,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "∑Toán3 bài · chương trình",
+          "contrast": 17.829607862114806,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♡Đạo đức1 bài · chương trình",
+          "contrast": 16.576653517643695,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◎Tự nhiên và Xã hội2 bài · chương trình",
+          "contrast": 16.576653517643695,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◉Giáo dục thể chất1 bài · chương trình",
+          "contrast": 16.576653517643695,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♫Âm nhạc1 bài · chương trình",
+          "contrast": 16.576653517643695,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✎Mĩ thuật1 bài · chương trình",
+          "contrast": 16.576653517643695,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "☆Hoạt động trải nghiệm1 bài · chương trình",
+          "contrast": 16.576653517643695,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "⌂Nội dung giáo dục địa phương0 bài · chương trình",
+          "contrast": 16.576653517643695,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "ANgoại ngữ 11 bài · tự chọn",
+          "contrast": 16.576653517643695,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✦Tiếng dân tộc thiểu số0 bài · tự chọn",
+          "contrast": 16.576653517643695,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 5.931204930842422,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 15.440144933501038,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 5.931204930842422,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 15.440144933501038,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 5.931204930842422,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 15.440144933501038,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "light-subjects",
+      "theme": "light",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Môn học và chương trình",
+          "contrast": 14.655092941714658,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Toán",
+          "contrast": 16.268480224545662,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 16.268480224545662,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Gộp hai nhóm và phép cộng trong phạm vi 10",
+          "contrast": 16.268480224545662,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Tìm số còn thiếu bằng sơ đồ phần–toàn thể",
+          "contrast": 16.268480224545662,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Đếm đúng nhóm không quá 10 vật, ghép số với số lượng và giải thích vì ",
+          "contrast": 6.815660492981811,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn phép cộng bằng gộp hai nhóm trong phạm vi 10, đếm thêm đúng ",
+          "contrast": 6.815660492981811,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tìm phần còn thiếu khi biết toàn thể không quá 10 và một phần; giải th",
+          "contrast": 6.815660492981811,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "VTiếng Việt2 bài · chương trình",
+          "contrast": 16.268480224545662,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "∑Toán3 bài · chương trình",
+          "contrast": 14.655092941714658,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♡Đạo đức1 bài · chương trình",
+          "contrast": 16.268480224545662,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◎Tự nhiên và Xã hội2 bài · chương trình",
+          "contrast": 16.268480224545662,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◉Giáo dục thể chất1 bài · chương trình",
+          "contrast": 16.268480224545662,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♫Âm nhạc1 bài · chương trình",
+          "contrast": 16.268480224545662,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✎Mĩ thuật1 bài · chương trình",
+          "contrast": 16.268480224545662,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "☆Hoạt động trải nghiệm1 bài · chương trình",
+          "contrast": 16.268480224545662,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "⌂Nội dung giáo dục địa phương0 bài · chương trình",
+          "contrast": 16.268480224545662,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "ANgoại ngữ 11 bài · tự chọn",
+          "contrast": 16.268480224545662,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✦Tiếng dân tộc thiểu số0 bài · tự chọn",
+          "contrast": 16.268480224545662,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 4.65354127915403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 14.453552651179258,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 4.65354127915403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 14.453552651179258,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 4.65354127915403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 14.453552651179258,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "cyberpunk-subjects",
+      "theme": "cyberpunk",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Môn học và chương trình",
+          "contrast": 17.842040936978268,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Toán",
+          "contrast": 18.14823512868477,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 18.14823512868477,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Gộp hai nhóm và phép cộng trong phạm vi 10",
+          "contrast": 18.14823512868477,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Tìm số còn thiếu bằng sơ đồ phần–toàn thể",
+          "contrast": 18.14823512868477,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Đếm đúng nhóm không quá 10 vật, ghép số với số lượng và giải thích vì ",
+          "contrast": 10.663670332056755,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn phép cộng bằng gộp hai nhóm trong phạm vi 10, đếm thêm đúng ",
+          "contrast": 10.663670332056755,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tìm phần còn thiếu khi biết toàn thể không quá 10 và một phần; giải th",
+          "contrast": 10.663670332056755,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "VTiếng Việt2 bài · chương trình",
+          "contrast": 18.14823512868477,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "∑Toán3 bài · chương trình",
+          "contrast": 17.842040936978268,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♡Đạo đức1 bài · chương trình",
+          "contrast": 18.14823512868477,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◎Tự nhiên và Xã hội2 bài · chương trình",
+          "contrast": 18.14823512868477,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◉Giáo dục thể chất1 bài · chương trình",
+          "contrast": 18.14823512868477,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♫Âm nhạc1 bài · chương trình",
+          "contrast": 18.14823512868477,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✎Mĩ thuật1 bài · chương trình",
+          "contrast": 18.14823512868477,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "☆Hoạt động trải nghiệm1 bài · chương trình",
+          "contrast": 18.14823512868477,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "⌂Nội dung giáo dục địa phương0 bài · chương trình",
+          "contrast": 18.14823512868477,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "ANgoại ngữ 11 bài · tự chọn",
+          "contrast": 18.14823512868477,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✦Tiếng dân tộc thiểu số0 bài · tự chọn",
+          "contrast": 18.14823512868477,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 14.235675402530337,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 17.187791523766776,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 14.235675402530337,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 17.187791523766776,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 14.235675402530337,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 17.187791523766776,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "ocean-subjects",
+      "theme": "ocean",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Môn học và chương trình",
+          "contrast": 15.512866525228993,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Toán",
+          "contrast": 16.205566489199175,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 16.205566489199175,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Gộp hai nhóm và phép cộng trong phạm vi 10",
+          "contrast": 16.205566489199175,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Tìm số còn thiếu bằng sơ đồ phần–toàn thể",
+          "contrast": 16.205566489199175,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Đếm đúng nhóm không quá 10 vật, ghép số với số lượng và giải thích vì ",
+          "contrast": 10.544465183500424,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn phép cộng bằng gộp hai nhóm trong phạm vi 10, đếm thêm đúng ",
+          "contrast": 10.544465183500424,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tìm phần còn thiếu khi biết toàn thể không quá 10 và một phần; giải th",
+          "contrast": 10.544465183500424,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "VTiếng Việt2 bài · chương trình",
+          "contrast": 16.205566489199175,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "∑Toán3 bài · chương trình",
+          "contrast": 15.512866525228993,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♡Đạo đức1 bài · chương trình",
+          "contrast": 16.205566489199175,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◎Tự nhiên và Xã hội2 bài · chương trình",
+          "contrast": 16.205566489199175,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◉Giáo dục thể chất1 bài · chương trình",
+          "contrast": 16.205566489199175,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♫Âm nhạc1 bài · chương trình",
+          "contrast": 16.205566489199175,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✎Mĩ thuật1 bài · chương trình",
+          "contrast": 16.205566489199175,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "☆Hoạt động trải nghiệm1 bài · chương trình",
+          "contrast": 16.205566489199175,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "⌂Nội dung giáo dục địa phương0 bài · chương trình",
+          "contrast": 16.205566489199175,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "ANgoại ngữ 11 bài · tự chọn",
+          "contrast": 16.205566489199175,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✦Tiếng dân tộc thiểu số0 bài · tự chọn",
+          "contrast": 16.205566489199175,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 13.188219607653345,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 14.309960838068445,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 13.188219607653345,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 14.309960838068445,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 13.188219607653345,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 14.309960838068445,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "aurora-subjects",
+      "theme": "aurora",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Môn học và chương trình",
+          "contrast": 17.493081098916235,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Toán",
+          "contrast": 16.936230844324374,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Gộp hai nhóm và phép cộng trong phạm vi 10",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Tìm số còn thiếu bằng sơ đồ phần–toàn thể",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Đếm đúng nhóm không quá 10 vật, ghép số với số lượng và giải thích vì ",
+          "contrast": 10.299986256163518,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn phép cộng bằng gộp hai nhóm trong phạm vi 10, đếm thêm đúng ",
+          "contrast": 10.299986256163518,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tìm phần còn thiếu khi biết toàn thể không quá 10 và một phần; giải th",
+          "contrast": 10.299986256163518,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "VTiếng Việt2 bài · chương trình",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "∑Toán3 bài · chương trình",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♡Đạo đức1 bài · chương trình",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◎Tự nhiên và Xã hội2 bài · chương trình",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◉Giáo dục thể chất1 bài · chương trình",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♫Âm nhạc1 bài · chương trình",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✎Mĩ thuật1 bài · chương trình",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "☆Hoạt động trải nghiệm1 bài · chương trình",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "⌂Nội dung giáo dục địa phương0 bài · chương trình",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "ANgoại ngữ 11 bài · tự chọn",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✦Tiếng dân tộc thiểu số0 bài · tự chọn",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 13.670137430012923,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 13.670137430012923,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 13.670137430012923,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "emerald-subjects",
+      "theme": "emerald",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Môn học và chương trình",
+          "contrast": 15.934633954144356,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Toán",
+          "contrast": 16.29937609170048,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 16.29937609170048,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Gộp hai nhóm và phép cộng trong phạm vi 10",
+          "contrast": 16.29937609170048,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Tìm số còn thiếu bằng sơ đồ phần–toàn thể",
+          "contrast": 16.29937609170048,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Đếm đúng nhóm không quá 10 vật, ghép số với số lượng và giải thích vì ",
+          "contrast": 10.714465465281542,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn phép cộng bằng gộp hai nhóm trong phạm vi 10, đếm thêm đúng ",
+          "contrast": 10.714465465281542,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tìm phần còn thiếu khi biết toàn thể không quá 10 và một phần; giải th",
+          "contrast": 10.714465465281542,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "VTiếng Việt2 bài · chương trình",
+          "contrast": 16.29937609170048,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "∑Toán3 bài · chương trình",
+          "contrast": 15.934633954144356,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♡Đạo đức1 bài · chương trình",
+          "contrast": 16.29937609170048,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◎Tự nhiên và Xã hội2 bài · chương trình",
+          "contrast": 16.29937609170048,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◉Giáo dục thể chất1 bài · chương trình",
+          "contrast": 16.29937609170048,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♫Âm nhạc1 bài · chương trình",
+          "contrast": 16.29937609170048,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✎Mĩ thuật1 bài · chương trình",
+          "contrast": 16.29937609170048,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "☆Hoạt động trải nghiệm1 bài · chương trình",
+          "contrast": 16.29937609170048,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "⌂Nội dung giáo dục địa phương0 bài · chương trình",
+          "contrast": 16.29937609170048,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "ANgoại ngữ 11 bài · tự chọn",
+          "contrast": 16.29937609170048,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✦Tiếng dân tộc thiểu số0 bài · tự chọn",
+          "contrast": 16.29937609170048,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 13.468946666329595,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 13.746978634754486,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 13.468946666329595,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 13.746978634754486,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 13.468946666329595,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 13.746978634754486,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "purple-subjects",
+      "theme": "purple",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Môn học và chương trình",
+          "contrast": 17.292615524875593,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Toán",
+          "contrast": 17.142828695909998,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 17.142828695909998,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Gộp hai nhóm và phép cộng trong phạm vi 10",
+          "contrast": 17.142828695909998,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Tìm số còn thiếu bằng sơ đồ phần–toàn thể",
+          "contrast": 17.142828695909998,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Đếm đúng nhóm không quá 10 vật, ghép số với số lượng và giải thích vì ",
+          "contrast": 10.544400477412323,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn phép cộng bằng gộp hai nhóm trong phạm vi 10, đếm thêm đúng ",
+          "contrast": 10.544400477412323,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tìm phần còn thiếu khi biết toàn thể không quá 10 và một phần; giải th",
+          "contrast": 10.544400477412323,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "VTiếng Việt2 bài · chương trình",
+          "contrast": 17.142828695909998,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "∑Toán3 bài · chương trình",
+          "contrast": 17.292615524875593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♡Đạo đức1 bài · chương trình",
+          "contrast": 17.142828695909998,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◎Tự nhiên và Xã hội2 bài · chương trình",
+          "contrast": 17.142828695909998,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◉Giáo dục thể chất1 bài · chương trình",
+          "contrast": 17.142828695909998,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♫Âm nhạc1 bài · chương trình",
+          "contrast": 17.142828695909998,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✎Mĩ thuật1 bài · chương trình",
+          "contrast": 17.142828695909998,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "☆Hoạt động trải nghiệm1 bài · chương trình",
+          "contrast": 17.142828695909998,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "⌂Nội dung giáo dục địa phương0 bài · chương trình",
+          "contrast": 17.142828695909998,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "ANgoại ngữ 11 bài · tự chọn",
+          "contrast": 17.142828695909998,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✦Tiếng dân tộc thiểu số0 bài · tự chọn",
+          "contrast": 17.142828695909998,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 7.704812741521142,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 15.79540676664403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 7.704812741521142,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 15.79540676664403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 7.704812741521142,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 15.79540676664403,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "sunset-subjects",
+      "theme": "sunset",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Môn học và chương trình",
+          "contrast": 16.92068735109923,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Toán",
+          "contrast": 16.539265863874387,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 16.539265863874387,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Gộp hai nhóm và phép cộng trong phạm vi 10",
+          "contrast": 16.539265863874387,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Tìm số còn thiếu bằng sơ đồ phần–toàn thể",
+          "contrast": 16.539265863874387,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Đếm đúng nhóm không quá 10 vật, ghép số với số lượng và giải thích vì ",
+          "contrast": 10.521936933678568,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn phép cộng bằng gộp hai nhóm trong phạm vi 10, đếm thêm đúng ",
+          "contrast": 10.521936933678568,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tìm phần còn thiếu khi biết toàn thể không quá 10 và một phần; giải th",
+          "contrast": 10.521936933678568,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "VTiếng Việt2 bài · chương trình",
+          "contrast": 16.539265863874387,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "∑Toán3 bài · chương trình",
+          "contrast": 16.92068735109923,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♡Đạo đức1 bài · chương trình",
+          "contrast": 16.539265863874387,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◎Tự nhiên và Xã hội2 bài · chương trình",
+          "contrast": 16.539265863874387,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◉Giáo dục thể chất1 bài · chương trình",
+          "contrast": 16.539265863874387,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♫Âm nhạc1 bài · chương trình",
+          "contrast": 16.539265863874387,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✎Mĩ thuật1 bài · chương trình",
+          "contrast": 16.539265863874387,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "☆Hoạt động trải nghiệm1 bài · chương trình",
+          "contrast": 16.539265863874387,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "⌂Nội dung giáo dục địa phương0 bài · chương trình",
+          "contrast": 16.539265863874387,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "ANgoại ngữ 11 bài · tự chọn",
+          "contrast": 16.539265863874387,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✦Tiếng dân tộc thiểu số0 bài · tự chọn",
+          "contrast": 16.539265863874387,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 11.547280271739794,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 14.462204446065785,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 11.547280271739794,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 14.462204446065785,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 11.547280271739794,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 14.462204446065785,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "neon-subjects",
+      "theme": "neon",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Môn học và chương trình",
+          "contrast": 19.282507415964005,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Toán",
+          "contrast": 19.467464209393505,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 19.467464209393505,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Gộp hai nhóm và phép cộng trong phạm vi 10",
+          "contrast": 19.467464209393505,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Tìm số còn thiếu bằng sơ đồ phần–toàn thể",
+          "contrast": 19.467464209393505,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Đếm đúng nhóm không quá 10 vật, ghép số với số lượng và giải thích vì ",
+          "contrast": 12.72838556220244,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn phép cộng bằng gộp hai nhóm trong phạm vi 10, đếm thêm đúng ",
+          "contrast": 12.72838556220244,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tìm phần còn thiếu khi biết toàn thể không quá 10 và một phần; giải th",
+          "contrast": 12.72838556220244,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "VTiếng Việt2 bài · chương trình",
+          "contrast": 19.467464209393505,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "∑Toán3 bài · chương trình",
+          "contrast": 19.282507415964005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♡Đạo đức1 bài · chương trình",
+          "contrast": 19.467464209393505,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◎Tự nhiên và Xã hội2 bài · chương trình",
+          "contrast": 19.467464209393505,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◉Giáo dục thể chất1 bài · chương trình",
+          "contrast": 19.467464209393505,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♫Âm nhạc1 bài · chương trình",
+          "contrast": 19.467464209393505,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✎Mĩ thuật1 bài · chương trình",
+          "contrast": 19.467464209393505,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "☆Hoạt động trải nghiệm1 bài · chương trình",
+          "contrast": 19.467464209393505,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "⌂Nội dung giáo dục địa phương0 bài · chương trình",
+          "contrast": 19.467464209393505,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "ANgoại ngữ 11 bài · tự chọn",
+          "contrast": 19.467464209393505,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✦Tiếng dân tộc thiểu số0 bài · tự chọn",
+          "contrast": 19.467464209393505,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 14.355653231538524,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 18.33682930240713,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 14.355653231538524,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 18.33682930240713,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 14.355653231538524,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 18.33682930240713,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "glass-subjects",
+      "theme": "glass",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Môn học và chương trình",
+          "contrast": 17.229647330306733,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Toán",
+          "contrast": 17.229647330306733,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Gộp hai nhóm và phép cộng trong phạm vi 10",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "title",
+          "text": "Tìm số còn thiếu bằng sơ đồ phần–toàn thể",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Đếm đúng nhóm không quá 10 vật, ghép số với số lượng và giải thích vì ",
+          "contrast": 11.390993351406275,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn phép cộng bằng gộp hai nhóm trong phạm vi 10, đếm thêm đúng ",
+          "contrast": 11.390993351406275,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tìm phần còn thiếu khi biết toàn thể không quá 10 và một phần; giải th",
+          "contrast": 11.390993351406275,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "VTiếng Việt2 bài · chương trình",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "∑Toán3 bài · chương trình",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♡Đạo đức1 bài · chương trình",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◎Tự nhiên và Xã hội2 bài · chương trình",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "◉Giáo dục thể chất1 bài · chương trình",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "♫Âm nhạc1 bài · chương trình",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✎Mĩ thuật1 bài · chương trình",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "☆Hoạt động trải nghiệm1 bài · chương trình",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "⌂Nội dung giáo dục địa phương0 bài · chương trình",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "ANgoại ngữ 11 bài · tự chọn",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "✦Tiếng dân tộc thiểu số0 bài · tự chọn",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 12.877175428813615,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 19.874136977936082,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 12.877175428813615,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 19.874136977936082,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bài",
+          "contrast": 12.877175428813615,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 19.874136977936082,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "cosmic-lesson",
+      "theme": "cosmic",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 17.297852128019077,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Kiến thức cốt lõi",
+          "contrast": 17.297852128019077,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Một số cho biết có bao nhiêu vật. Khi đếm, chạm vào từng vật đúng một ",
+          "contrast": 17.297852128019077,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Kí hiệu 0 dùng cho nhóm không có vật nào. Có thể ghép mỗi vật với một ",
+          "contrast": 17.297852128019077,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Môn học",
+          "contrast": 15.997681816260982,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 15.997681816260982,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1Khởi động",
+          "contrast": 17.297852128019077,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2Mục tiêu và kiến thức nền",
+          "contrast": 17.297852128019077,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3Kiến thức cốt lõi",
+          "contrast": 12.994063848207828,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4Ví dụ giải từng bước",
+          "contrast": 17.297852128019077,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5Quan sát và thực hành",
+          "contrast": 17.297852128019077,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6Luyện có hướng dẫn",
+          "contrast": 17.297852128019077,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "7Vận dụng",
+          "contrast": 17.297852128019077,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "8Tự làm độc lập",
+          "contrast": 17.297852128019077,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "9Tóm tắt và sửa hiểu nhầm",
+          "contrast": 17.297852128019077,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "10Ôn lại và học tiếp",
+          "contrast": 17.297852128019077,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Quay lại",
+          "contrast": 15.997681816260982,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bước tiếp →",
+          "contrast": 13.291453222724135,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "midnight-lesson",
+      "theme": "midnight",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 17.45747609071829,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Kiến thức cốt lõi",
+          "contrast": 17.45747609071829,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Một số cho biết có bao nhiêu vật. Khi đếm, chạm vào từng vật đúng một ",
+          "contrast": 17.45747609071829,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Kí hiệu 0 dùng cho nhóm không có vật nào. Có thể ghép mỗi vật với một ",
+          "contrast": 17.45747609071829,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Môn học",
+          "contrast": 16.0723599571223,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 16.0723599571223,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1Khởi động",
+          "contrast": 17.45747609071829,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2Mục tiêu và kiến thức nền",
+          "contrast": 17.45747609071829,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3Kiến thức cốt lõi",
+          "contrast": 12.383547892868508,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4Ví dụ giải từng bước",
+          "contrast": 17.45747609071829,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5Quan sát và thực hành",
+          "contrast": 17.45747609071829,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6Luyện có hướng dẫn",
+          "contrast": 17.45747609071829,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "7Vận dụng",
+          "contrast": 17.45747609071829,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "8Tự làm độc lập",
+          "contrast": 17.45747609071829,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "9Tóm tắt và sửa hiểu nhầm",
+          "contrast": 17.45747609071829,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "10Ôn lại và học tiếp",
+          "contrast": 17.45747609071829,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Quay lại",
+          "contrast": 16.0723599571223,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bước tiếp →",
+          "contrast": 6.7131294739510485,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "basic-light-lesson",
+      "theme": "basic-light",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 14.755068102467318,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Kiến thức cốt lõi",
+          "contrast": 14.755068102467318,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Một số cho biết có bao nhiêu vật. Khi đếm, chạm vào từng vật đúng một ",
+          "contrast": 14.755068102467318,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Kí hiệu 0 dùng cho nhóm không có vật nào. Có thể ghép mỗi vật với một ",
+          "contrast": 14.755068102467318,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Môn học",
+          "contrast": 13.264739977672141,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 13.264739977672141,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1Khởi động",
+          "contrast": 14.755068102467318,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2Mục tiêu và kiến thức nền",
+          "contrast": 14.755068102467318,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3Kiến thức cốt lõi",
+          "contrast": 11.317051006497476,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4Ví dụ giải từng bước",
+          "contrast": 14.755068102467318,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5Quan sát và thực hành",
+          "contrast": 14.755068102467318,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6Luyện có hướng dẫn",
+          "contrast": 14.755068102467318,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "7Vận dụng",
+          "contrast": 14.755068102467318,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "8Tự làm độc lập",
+          "contrast": 14.755068102467318,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "9Tóm tắt và sửa hiểu nhầm",
+          "contrast": 14.755068102467318,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "10Ôn lại và học tiếp",
+          "contrast": 14.755068102467318,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Quay lại",
+          "contrast": 13.264739977672141,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bước tiếp →",
+          "contrast": 5.168555560022562,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "basic-dark-lesson",
+      "theme": "basic-dark",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 15.038036797612593,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Kiến thức cốt lõi",
+          "contrast": 15.038036797612593,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Một số cho biết có bao nhiêu vật. Khi đếm, chạm vào từng vật đúng một ",
+          "contrast": 15.038036797612593,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Kí hiệu 0 dùng cho nhóm không có vật nào. Có thể ghép mỗi vật với một ",
+          "contrast": 15.038036797612593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Môn học",
+          "contrast": 13.503814913205968,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 13.503814913205968,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1Khởi động",
+          "contrast": 15.038036797612593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2Mục tiêu và kiến thức nền",
+          "contrast": 15.038036797612593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3Kiến thức cốt lõi",
+          "contrast": 10.173840503340038,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4Ví dụ giải từng bước",
+          "contrast": 15.038036797612593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5Quan sát và thực hành",
+          "contrast": 15.038036797612593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6Luyện có hướng dẫn",
+          "contrast": 15.038036797612593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "7Vận dụng",
+          "contrast": 15.038036797612593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "8Tự làm độc lập",
+          "contrast": 15.038036797612593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "9Tóm tắt và sửa hiểu nhầm",
+          "contrast": 15.038036797612593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "10Ôn lại và học tiếp",
+          "contrast": 15.038036797612593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Quay lại",
+          "contrast": 13.503814913205968,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bước tiếp →",
+          "contrast": 7.524770668954799,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "slate-lesson",
+      "theme": "slate",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 14.029874741046042,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Kiến thức cốt lõi",
+          "contrast": 14.029874741046042,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Một số cho biết có bao nhiêu vật. Khi đếm, chạm vào từng vật đúng một ",
+          "contrast": 14.029874741046042,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Kí hiệu 0 dùng cho nhóm không có vật nào. Có thể ghép mỗi vật với một ",
+          "contrast": 14.029874741046042,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Môn học",
+          "contrast": 11.855115843111005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 11.855115843111005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1Khởi động",
+          "contrast": 14.029874741046042,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2Mục tiêu và kiến thức nền",
+          "contrast": 14.029874741046042,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3Kiến thức cốt lõi",
+          "contrast": 8.216650713627327,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4Ví dụ giải từng bước",
+          "contrast": 14.029874741046042,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5Quan sát và thực hành",
+          "contrast": 14.029874741046042,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6Luyện có hướng dẫn",
+          "contrast": 14.029874741046042,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "7Vận dụng",
+          "contrast": 14.029874741046042,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "8Tự làm độc lập",
+          "contrast": 14.029874741046042,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "9Tóm tắt và sửa hiểu nhầm",
+          "contrast": 14.029874741046042,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "10Ôn lại và học tiếp",
+          "contrast": 14.029874741046042,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Quay lại",
+          "contrast": 11.855115843111005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bước tiếp →",
+          "contrast": 11.474457874482079,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "warm-lesson",
+      "theme": "warm",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 13.163674589564193,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Kiến thức cốt lõi",
+          "contrast": 13.163674589564193,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Một số cho biết có bao nhiêu vật. Khi đếm, chạm vào từng vật đúng một ",
+          "contrast": 13.163674589564193,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Kí hiệu 0 dùng cho nhóm không có vật nào. Có thể ghép mỗi vật với một ",
+          "contrast": 13.163674589564193,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Môn học",
+          "contrast": 10.993314483935535,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 10.993314483935535,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1Khởi động",
+          "contrast": 13.163674589564193,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2Mục tiêu và kiến thức nền",
+          "contrast": 13.163674589564193,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3Kiến thức cốt lõi",
+          "contrast": 8.797764219890658,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4Ví dụ giải từng bước",
+          "contrast": 13.163674589564193,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5Quan sát và thực hành",
+          "contrast": 13.163674589564193,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6Luyện có hướng dẫn",
+          "contrast": 13.163674589564193,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "7Vận dụng",
+          "contrast": 13.163674589564193,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "8Tự làm độc lập",
+          "contrast": 13.163674589564193,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "9Tóm tắt và sửa hiểu nhầm",
+          "contrast": 13.163674589564193,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "10Ôn lại và học tiếp",
+          "contrast": 13.163674589564193,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Quay lại",
+          "contrast": 10.993314483935535,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bước tiếp →",
+          "contrast": 5.352080935497952,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "dark-lesson",
+      "theme": "dark",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 16.576653517643695,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Kiến thức cốt lõi",
+          "contrast": 16.576653517643695,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Một số cho biết có bao nhiêu vật. Khi đếm, chạm vào từng vật đúng một ",
+          "contrast": 16.576653517643695,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Kí hiệu 0 dùng cho nhóm không có vật nào. Có thể ghép mỗi vật với một ",
+          "contrast": 16.576653517643695,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Môn học",
+          "contrast": 15.440144933501038,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 15.440144933501038,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1Khởi động",
+          "contrast": 16.576653517643695,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2Mục tiêu và kiến thức nền",
+          "contrast": 16.576653517643695,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3Kiến thức cốt lõi",
+          "contrast": 12.11331488713398,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4Ví dụ giải từng bước",
+          "contrast": 16.576653517643695,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5Quan sát và thực hành",
+          "contrast": 16.576653517643695,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6Luyện có hướng dẫn",
+          "contrast": 16.576653517643695,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "7Vận dụng",
+          "contrast": 16.576653517643695,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "8Tự làm độc lập",
+          "contrast": 16.576653517643695,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "9Tóm tắt và sửa hiểu nhầm",
+          "contrast": 16.576653517643695,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "10Ôn lại và học tiếp",
+          "contrast": 16.576653517643695,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Quay lại",
+          "contrast": 15.440144933501038,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bước tiếp →",
+          "contrast": 5.931204930842422,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "light-lesson",
+      "theme": "light",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 16.268480224545662,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Kiến thức cốt lõi",
+          "contrast": 16.268480224545662,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Một số cho biết có bao nhiêu vật. Khi đếm, chạm vào từng vật đúng một ",
+          "contrast": 16.268480224545662,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Kí hiệu 0 dùng cho nhóm không có vật nào. Có thể ghép mỗi vật với một ",
+          "contrast": 16.268480224545662,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Môn học",
+          "contrast": 14.453552651179258,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 14.453552651179258,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1Khởi động",
+          "contrast": 16.268480224545662,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2Mục tiêu và kiến thức nền",
+          "contrast": 16.268480224545662,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3Kiến thức cốt lõi",
+          "contrast": 12.514194502121702,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4Ví dụ giải từng bước",
+          "contrast": 16.268480224545662,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5Quan sát và thực hành",
+          "contrast": 16.268480224545662,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6Luyện có hướng dẫn",
+          "contrast": 16.268480224545662,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "7Vận dụng",
+          "contrast": 16.268480224545662,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "8Tự làm độc lập",
+          "contrast": 16.268480224545662,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "9Tóm tắt và sửa hiểu nhầm",
+          "contrast": 16.268480224545662,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "10Ôn lại và học tiếp",
+          "contrast": 16.268480224545662,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Quay lại",
+          "contrast": 14.453552651179258,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bước tiếp →",
+          "contrast": 4.65354127915403,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "cyberpunk-lesson",
+      "theme": "cyberpunk",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 18.14823512868477,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Kiến thức cốt lõi",
+          "contrast": 18.14823512868477,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Một số cho biết có bao nhiêu vật. Khi đếm, chạm vào từng vật đúng một ",
+          "contrast": 18.14823512868477,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Kí hiệu 0 dùng cho nhóm không có vật nào. Có thể ghép mỗi vật với một ",
+          "contrast": 18.14823512868477,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Môn học",
+          "contrast": 17.187791523766776,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 17.187791523766776,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1Khởi động",
+          "contrast": 18.14823512868477,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2Mục tiêu và kiến thức nền",
+          "contrast": 18.14823512868477,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3Kiến thức cốt lõi",
+          "contrast": 14.313509847702873,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4Ví dụ giải từng bước",
+          "contrast": 18.14823512868477,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5Quan sát và thực hành",
+          "contrast": 18.14823512868477,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6Luyện có hướng dẫn",
+          "contrast": 18.14823512868477,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "7Vận dụng",
+          "contrast": 18.14823512868477,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "8Tự làm độc lập",
+          "contrast": 18.14823512868477,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "9Tóm tắt và sửa hiểu nhầm",
+          "contrast": 18.14823512868477,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "10Ôn lại và học tiếp",
+          "contrast": 18.14823512868477,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Quay lại",
+          "contrast": 17.187791523766776,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bước tiếp →",
+          "contrast": 14.235675402530337,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "ocean-lesson",
+      "theme": "ocean",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 16.205566489199175,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Kiến thức cốt lõi",
+          "contrast": 16.205566489199175,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Một số cho biết có bao nhiêu vật. Khi đếm, chạm vào từng vật đúng một ",
+          "contrast": 16.205566489199175,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Kí hiệu 0 dùng cho nhóm không có vật nào. Có thể ghép mỗi vật với một ",
+          "contrast": 16.205566489199175,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Môn học",
+          "contrast": 14.309960838068445,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 14.309960838068445,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1Khởi động",
+          "contrast": 16.205566489199175,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2Mục tiêu và kiến thức nền",
+          "contrast": 16.205566489199175,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3Kiến thức cốt lõi",
+          "contrast": 10.173912042235271,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4Ví dụ giải từng bước",
+          "contrast": 16.205566489199175,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5Quan sát và thực hành",
+          "contrast": 16.205566489199175,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6Luyện có hướng dẫn",
+          "contrast": 16.205566489199175,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "7Vận dụng",
+          "contrast": 16.205566489199175,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "8Tự làm độc lập",
+          "contrast": 16.205566489199175,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "9Tóm tắt và sửa hiểu nhầm",
+          "contrast": 16.205566489199175,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "10Ôn lại và học tiếp",
+          "contrast": 16.205566489199175,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Quay lại",
+          "contrast": 14.309960838068445,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bước tiếp →",
+          "contrast": 13.188219607653345,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "aurora-lesson",
+      "theme": "aurora",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 16.936230844324374,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Kiến thức cốt lõi",
+          "contrast": 16.936230844324374,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Một số cho biết có bao nhiêu vật. Khi đếm, chạm vào từng vật đúng một ",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Kí hiệu 0 dùng cho nhóm không có vật nào. Có thể ghép mỗi vật với một ",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Môn học",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1Khởi động",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2Mục tiêu và kiến thức nền",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3Kiến thức cốt lõi",
+          "contrast": 11.149958847680903,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4Ví dụ giải từng bước",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5Quan sát và thực hành",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6Luyện có hướng dẫn",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "7Vận dụng",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "8Tự làm độc lập",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "9Tóm tắt và sửa hiểu nhầm",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "10Ôn lại và học tiếp",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Quay lại",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bước tiếp →",
+          "contrast": 13.670137430012923,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "emerald-lesson",
+      "theme": "emerald",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 16.29937609170048,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Kiến thức cốt lõi",
+          "contrast": 16.29937609170048,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Một số cho biết có bao nhiêu vật. Khi đếm, chạm vào từng vật đúng một ",
+          "contrast": 16.29937609170048,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Kí hiệu 0 dùng cho nhóm không có vật nào. Có thể ghép mỗi vật với một ",
+          "contrast": 16.29937609170048,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Môn học",
+          "contrast": 13.746978634754486,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 13.746978634754486,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1Khởi động",
+          "contrast": 16.29937609170048,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2Mục tiêu và kiến thức nền",
+          "contrast": 16.29937609170048,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3Kiến thức cốt lõi",
+          "contrast": 8.87077027038683,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4Ví dụ giải từng bước",
+          "contrast": 16.29937609170048,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5Quan sát và thực hành",
+          "contrast": 16.29937609170048,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6Luyện có hướng dẫn",
+          "contrast": 16.29937609170048,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "7Vận dụng",
+          "contrast": 16.29937609170048,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "8Tự làm độc lập",
+          "contrast": 16.29937609170048,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "9Tóm tắt và sửa hiểu nhầm",
+          "contrast": 16.29937609170048,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "10Ôn lại và học tiếp",
+          "contrast": 16.29937609170048,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Quay lại",
+          "contrast": 13.746978634754486,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bước tiếp →",
+          "contrast": 13.468946666329595,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "purple-lesson",
+      "theme": "purple",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 17.142828695909998,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Kiến thức cốt lõi",
+          "contrast": 17.142828695909998,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Một số cho biết có bao nhiêu vật. Khi đếm, chạm vào từng vật đúng một ",
+          "contrast": 17.142828695909998,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Kí hiệu 0 dùng cho nhóm không có vật nào. Có thể ghép mỗi vật với một ",
+          "contrast": 17.142828695909998,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Môn học",
+          "contrast": 15.79540676664403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 15.79540676664403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1Khởi động",
+          "contrast": 17.142828695909998,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2Mục tiêu và kiến thức nền",
+          "contrast": 17.142828695909998,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3Kiến thức cốt lõi",
+          "contrast": 12.009439973509126,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4Ví dụ giải từng bước",
+          "contrast": 17.142828695909998,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5Quan sát và thực hành",
+          "contrast": 17.142828695909998,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6Luyện có hướng dẫn",
+          "contrast": 17.142828695909998,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "7Vận dụng",
+          "contrast": 17.142828695909998,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "8Tự làm độc lập",
+          "contrast": 17.142828695909998,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "9Tóm tắt và sửa hiểu nhầm",
+          "contrast": 17.142828695909998,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "10Ôn lại và học tiếp",
+          "contrast": 17.142828695909998,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Quay lại",
+          "contrast": 15.79540676664403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bước tiếp →",
+          "contrast": 7.704812741521142,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "sunset-lesson",
+      "theme": "sunset",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 16.539265863874387,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Kiến thức cốt lõi",
+          "contrast": 16.539265863874387,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Một số cho biết có bao nhiêu vật. Khi đếm, chạm vào từng vật đúng một ",
+          "contrast": 16.539265863874387,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Kí hiệu 0 dùng cho nhóm không có vật nào. Có thể ghép mỗi vật với một ",
+          "contrast": 16.539265863874387,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Môn học",
+          "contrast": 14.462204446065785,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 14.462204446065785,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1Khởi động",
+          "contrast": 16.539265863874387,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2Mục tiêu và kiến thức nền",
+          "contrast": 16.539265863874387,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3Kiến thức cốt lõi",
+          "contrast": 10.13623374789329,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4Ví dụ giải từng bước",
+          "contrast": 16.539265863874387,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5Quan sát và thực hành",
+          "contrast": 16.539265863874387,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6Luyện có hướng dẫn",
+          "contrast": 16.539265863874387,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "7Vận dụng",
+          "contrast": 16.539265863874387,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "8Tự làm độc lập",
+          "contrast": 16.539265863874387,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "9Tóm tắt và sửa hiểu nhầm",
+          "contrast": 16.539265863874387,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "10Ôn lại và học tiếp",
+          "contrast": 16.539265863874387,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Quay lại",
+          "contrast": 14.462204446065785,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bước tiếp →",
+          "contrast": 11.547280271739794,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "neon-lesson",
+      "theme": "neon",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 19.467464209393505,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Kiến thức cốt lõi",
+          "contrast": 19.467464209393505,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Một số cho biết có bao nhiêu vật. Khi đếm, chạm vào từng vật đúng một ",
+          "contrast": 19.467464209393505,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Kí hiệu 0 dùng cho nhóm không có vật nào. Có thể ghép mỗi vật với một ",
+          "contrast": 19.467464209393505,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Môn học",
+          "contrast": 18.33682930240713,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 18.33682930240713,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1Khởi động",
+          "contrast": 19.467464209393505,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2Mục tiêu và kiến thức nền",
+          "contrast": 19.467464209393505,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3Kiến thức cốt lõi",
+          "contrast": 14.366703316838944,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4Ví dụ giải từng bước",
+          "contrast": 19.467464209393505,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5Quan sát và thực hành",
+          "contrast": 19.467464209393505,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6Luyện có hướng dẫn",
+          "contrast": 19.467464209393505,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "7Vận dụng",
+          "contrast": 19.467464209393505,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "8Tự làm độc lập",
+          "contrast": 19.467464209393505,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "9Tóm tắt và sửa hiểu nhầm",
+          "contrast": 19.467464209393505,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "10Ôn lại và học tiếp",
+          "contrast": 19.467464209393505,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Quay lại",
+          "contrast": 18.33682930240713,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bước tiếp →",
+          "contrast": 14.355653231538524,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "glass-lesson",
+      "theme": "glass",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 17.229647330306733,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Kiến thức cốt lõi",
+          "contrast": 17.229647330306733,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Một số cho biết có bao nhiêu vật. Khi đếm, chạm vào từng vật đúng một ",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Kí hiệu 0 dùng cho nhóm không có vật nào. Có thể ghép mỗi vật với một ",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Môn học",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1Khởi động",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2Mục tiêu và kiến thức nền",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3Kiến thức cốt lõi",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4Ví dụ giải từng bước",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5Quan sát và thực hành",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6Luyện có hướng dẫn",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "7Vận dụng",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "8Tự làm độc lập",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "9Tóm tắt và sửa hiểu nhầm",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "10Ôn lại và học tiếp",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Quay lại",
+          "contrast": 19.874136977936082,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bước tiếp →",
+          "contrast": 12.877175428813615,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "lesson-1440",
+      "theme": "aurora",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 16.936230844324374,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Kiến thức cốt lõi",
+          "contrast": 16.936230844324374,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Một số cho biết có bao nhiêu vật. Khi đếm, chạm vào từng vật đúng một ",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Kí hiệu 0 dùng cho nhóm không có vật nào. Có thể ghép mỗi vật với một ",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Môn học",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1Khởi động",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2Mục tiêu và kiến thức nền",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3Kiến thức cốt lõi",
+          "contrast": 11.149958847680903,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4Ví dụ giải từng bước",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5Quan sát và thực hành",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6Luyện có hướng dẫn",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "7Vận dụng",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "8Tự làm độc lập",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "9Tóm tắt và sửa hiểu nhầm",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "10Ôn lại và học tiếp",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Quay lại",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bước tiếp →",
+          "contrast": 13.670137430012923,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "lesson-768",
+      "theme": "aurora",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 16.936230844324374,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Kiến thức cốt lõi",
+          "contrast": 16.936230844324374,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Một số cho biết có bao nhiêu vật. Khi đếm, chạm vào từng vật đúng một ",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Kí hiệu 0 dùng cho nhóm không có vật nào. Có thể ghép mỗi vật với một ",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Môn học",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1Khởi động",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2Mục tiêu và kiến thức nền",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3Kiến thức cốt lõi",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4Ví dụ giải từng bước",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5Quan sát và thực hành",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6Luyện có hướng dẫn",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "7Vận dụng",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "8Tự làm độc lập",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "9Tóm tắt và sửa hiểu nhầm",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "10Ôn lại và học tiếp",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Quay lại",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bước tiếp →",
+          "contrast": 13.670137430012923,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "lesson-375",
+      "theme": "aurora",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 16.936230844324374,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Kiến thức cốt lõi",
+          "contrast": 16.936230844324374,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Một số cho biết có bao nhiêu vật. Khi đếm, chạm vào từng vật đúng một ",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Kí hiệu 0 dùng cho nhóm không có vật nào. Có thể ghép mỗi vật với một ",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Môn học",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1Khởi động",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2Mục tiêu và kiến thức nền",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3Kiến thức cốt lõi",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4Ví dụ giải từng bước",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5Quan sát và thực hành",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6Luyện có hướng dẫn",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "7Vận dụng",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "8Tự làm độc lập",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "9Tóm tắt và sửa hiểu nhầm",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "10Ôn lại và học tiếp",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Quay lại",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bước tiếp →",
+          "contrast": 13.670137430012923,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "lesson-zoom200",
+      "theme": "aurora",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Đếm và ghép số lượng trong phạm vi 10",
+          "contrast": 16.936230844324374,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Kiến thức cốt lõi",
+          "contrast": 16.936230844324374,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Một số cho biết có bao nhiêu vật. Khi đếm, chạm vào từng vật đúng một ",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Kí hiệu 0 dùng cho nhóm không có vật nào. Có thể ghép mỗi vật với một ",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Môn học",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu bài",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1Khởi động",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2Mục tiêu và kiến thức nền",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3Kiến thức cốt lõi",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4Ví dụ giải từng bước",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5Quan sát và thực hành",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6Luyện có hướng dẫn",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "7Vận dụng",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "8Tự làm độc lập",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "9Tóm tắt và sửa hiểu nhầm",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "10Ôn lại và học tiếp",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "← Quay lại",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bước tiếp →",
+          "contrast": 13.670137430012923,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    }
+  ],
+  "failures": []
+}

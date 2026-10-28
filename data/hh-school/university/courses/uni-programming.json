@@ -1,0 +1,861 @@
+{
+  "schemaVersion": 1,
+  "version": "2026.10.28-university-v1",
+  "contentStatus": "draft",
+  "reviewEvidence": null,
+  "credits": null,
+  "officialComplete": false,
+  "authorship": "HH School — nội dung nguyên bản chờ thẩm định",
+  "id": "uni-programming",
+  "title": "Tư duy lập trình — nền tảng",
+  "titleEn": "Programming and Algorithmic Thinking",
+  "fieldId": "computing",
+  "sourceIds": [
+    "harvard-cs50",
+    "cs50-github",
+    "helsinki-fullstack"
+  ],
+  "scope": "Sáu chủ đề tư duy lập trình với mã giả và kiểm tra bằng tay. Không thay toàn bộ CS50, học phần lập trình C/C++ hay Full Stack Open; không chạy mã từ repo bên ngoài.",
+  "estimatedHours": 12,
+  "prerequisites": [
+    "Số học cơ bản",
+    "Đọc bảng và điều kiện đúng/sai"
+  ],
+  "bridge": [],
+  "project": {
+    "title": "Thiết kế bộ thống kê chi tiêu bằng mã giả",
+    "task": "Nhận danh sách khoản chi không âm, bỏ qua dòng trống nhưng báo rõ dòng dữ liệu sai. Xuất tổng, trung bình và khoản lớn nhất; xử lý danh sách rỗng. Viết mã giả, bảng theo dõi một ví dụ và ít nhất năm ca kiểm thử có kết quả mong đợi.",
+    "rubric": [
+      "Mô tả đầu vào, đầu ra và miền hợp lệ",
+      "Xử lý rỗng, sai kiểu và giới hạn",
+      "Thuật toán đúng, có bảng theo dõi",
+      "Ca kiểm thử phân biệt biên và trường hợp thông thường"
+    ]
+  },
+  "diagnostic": [
+    {
+      "type": "short",
+      "gradingMode": "numeric",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 0.000001
+      },
+      "prompt": "Tính 3 + 2×4.",
+      "answer": 11,
+      "tolerance": 0.000001,
+      "explanation": "Nhân trước cộng sau.",
+      "id": "uni-programming-entry-q0",
+      "familyId": "uni-programming-entry-f0",
+      "lessonId": "uni-programming-contracts",
+      "outcomeIds": [
+        "uni-programming-o1"
+      ],
+      "gradeId": "university",
+      "subjectId": "uni-programming",
+      "difficulty": 1,
+      "cognitiveLevel": "understand",
+      "points": 1,
+      "contentStatus": "draft"
+    },
+    {
+      "type": "mcq",
+      "gradingMode": "selection",
+      "prompt": "Điều kiện 7>3 là gì?",
+      "options": [
+        "Đúng",
+        "Sai"
+      ],
+      "answer": "Đúng",
+      "explanation": "7 lớn hơn 3.",
+      "id": "uni-programming-entry-q1",
+      "familyId": "uni-programming-entry-f1",
+      "lessonId": "uni-programming-conditions",
+      "outcomeIds": [
+        "uni-programming-o2"
+      ],
+      "gradeId": "university",
+      "subjectId": "uni-programming",
+      "difficulty": 1,
+      "cognitiveLevel": "understand",
+      "points": 1,
+      "contentStatus": "draft"
+    },
+    {
+      "type": "short",
+      "gradingMode": "numeric",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 0.000001
+      },
+      "prompt": "Danh sách [4,8,2] có bao nhiêu phần tử?",
+      "answer": 3,
+      "tolerance": 0.000001,
+      "explanation": "Có ba giá trị theo thứ tự.",
+      "id": "uni-programming-entry-q2",
+      "familyId": "uni-programming-entry-f2",
+      "lessonId": "uni-programming-loops",
+      "outcomeIds": [
+        "uni-programming-o3"
+      ],
+      "gradeId": "university",
+      "subjectId": "uni-programming",
+      "difficulty": 1,
+      "cognitiveLevel": "understand",
+      "points": 1,
+      "contentStatus": "draft"
+    }
+  ],
+  "lessons": [
+    {
+      "id": "uni-programming-contracts",
+      "title": "Đầu vào, đầu ra và đặc tả",
+      "objective": "Viết hợp đồng đầu vào–đầu ra trước khi chọn thuật toán.",
+      "theory": [
+        "Một chương trình giải một bài toán đã được đặc tả. Đầu vào cần nêu kiểu dữ liệu, đơn vị, miền giá trị và cách báo lỗi. Đầu ra cần nêu ý nghĩa, định dạng và các trường hợp đặc biệt. “Tính trung bình” chưa đủ rõ nếu chưa biết danh sách rỗng xử lý ra sao hoặc chuỗi chữ có được chấp nhận không.",
+        "Tách yêu cầu khỏi cách cài đặt giúp kiểm tra chương trình độc lập với ngôn ngữ. Một phép gán thay đổi giá trị đang lưu; nó không phải khẳng định đẳng thức toán học đúng mãi mãi. Khi dùng số máy tính, còn phải quan tâm phạm vi biểu diễn và sai số; một công thức đúng trên số thực chưa bảo đảm mọi cài đặt hữu hạn đều đúng."
+      ],
+      "worked": {
+        "problem": "Đặc tả hàm chia tiền hóa đơn cho n người.",
+        "steps": [
+          "Đầu vào: tổng tiền không âm và số người nguyên dương.",
+          "Đầu ra: phần tiền mỗi người và quy tắc làm tròn đã chọn.",
+          "Nếu n=0 hoặc tổng tiền sai kiểu, trả lỗi rõ ràng.",
+          "Nếu chia tiền nguyên đồng, giải thích phần dư được phân bổ thế nào."
+        ]
+      },
+      "activity": {
+        "task": "Viết đặc tả cho chức năng tìm số lớn nhất trong danh sách.",
+        "expected": "Nêu kiểu số, danh sách rỗng và cách xử lý giá trị không hợp lệ; đầu ra có thể là giá trị hoặc vị trí tùy yêu cầu."
+      },
+      "misconception": {
+        "claim": "Chương trình ra một con số là đủ để nói đúng.",
+        "correction": "Đúng phải xét theo yêu cầu, đầu vào và mọi trường hợp trong miền đã nêu."
+      },
+      "questions": [
+        {
+          "type": "mcq",
+          "gradingMode": "selection",
+          "prompt": "Đặc tả tốt cần xử lý trường hợp nào của phép chia tổng cho n?",
+          "options": [
+            "n=0",
+            "Chỉ n=10",
+            "Chỉ tổng là số đẹp"
+          ],
+          "answer": "n=0",
+          "explanation": "Số người bằng 0 làm phép chia không hợp lệ.",
+          "id": "uni-programming-contracts-q1",
+          "familyId": "uni-programming-contracts-f0",
+          "lessonId": "uni-programming-contracts",
+          "gradeId": "university",
+          "subjectId": "uni-programming",
+          "outcomeIds": [
+            "uni-programming-o1"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "Trong mã giả x←4; x←x+3, giá trị cuối của x là bao nhiêu?",
+          "answer": 7,
+          "tolerance": 0.000001,
+          "explanation": "Phép gán sau dùng giá trị cũ 4 rồi lưu 7.",
+          "id": "uni-programming-contracts-q2",
+          "familyId": "uni-programming-contracts-f1",
+          "lessonId": "uni-programming-contracts",
+          "gradeId": "university",
+          "subjectId": "uni-programming",
+          "outcomeIds": [
+            "uni-programming-o1"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Nêu ba điều cần có trong đặc tả tính trung bình.",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Kiểu và miền đầu vào",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Danh sách rỗng",
+              "points": 1
+            },
+            {
+              "id": "criterion-2",
+              "text": "Đầu ra và quy tắc làm tròn",
+              "points": 1
+            }
+          ],
+          "explanation": "Đặc tả là cơ sở để quyết định chương trình có đúng hay không.",
+          "id": "uni-programming-contracts-q3",
+          "familyId": "uni-programming-contracts-f2",
+          "lessonId": "uni-programming-contracts",
+          "gradeId": "university",
+          "subjectId": "uni-programming",
+          "outcomeIds": [
+            "uni-programming-o1"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [],
+      "outcomeId": "uni-programming-o1"
+    },
+    {
+      "id": "uni-programming-conditions",
+      "title": "Điều kiện và phân nhánh",
+      "objective": "Theo dõi nhánh điều kiện và kiểm tra giá trị biên.",
+      "theory": [
+        "Một cấu trúc nếu–ngược lại chọn nhánh dựa trên một điều kiện. Thứ tự kiểm tra có ý nghĩa khi các điều kiện chồng lấn. Với thang xếp loại, kiểm tra ngưỡng cao trước hoặc dùng các khoảng loại trừ nhau để mỗi đầu vào hợp lệ đi đúng một nhánh.",
+        "Kiểm tra giá trị đúng bằng ngưỡng thường phát hiện nhầm > với ≥. Các toán tử và/hoặc cũng cần diễn giải chính xác: để số nằm trong đoạn [0,10], cả x≥0 và x≤10 đều phải đúng. Điều kiện x≥0 hoặc x≤10 gần như luôn đúng với số thực và không bảo vệ miền đầu vào."
+      ],
+      "worked": {
+        "problem": "Xếp đạt khi điểm từ 5 đến 10, không đạt khi từ 0 đến dưới 5.",
+        "steps": [
+          "Kiểm tra trước điểm có thuộc [0,10] hay không.",
+          "Nếu ngoài miền, báo dữ liệu sai.",
+          "Nếu điểm≥5 thì đạt; ngược lại không đạt.",
+          "Thử 0, 4,99, 5, 10 và 10,01 để kiểm tra biên."
+        ]
+      },
+      "activity": {
+        "task": "Viết điều kiện cho tuổi trong đoạn 18 đến 60, gồm hai đầu.",
+        "expected": "tuổi≥18 VÀ tuổi≤60; cần thêm kiểm tra tuổi có kiểu và giá trị hợp lệ."
+      },
+      "misconception": {
+        "claim": "Chỉ cần thử một số ở giữa khoảng.",
+        "correction": "Cần thử ngay dưới, đúng bằng và ngay trên ngưỡng, cùng dữ liệu ngoài miền."
+      },
+      "questions": [
+        {
+          "type": "mcq",
+          "gradingMode": "selection",
+          "prompt": "Điều kiện kiểm tra 0≤x≤10 là gì?",
+          "options": [
+            "x≥0 VÀ x≤10",
+            "x≥0 HOẶC x≤10",
+            "x<0 VÀ x>10"
+          ],
+          "answer": "x≥0 VÀ x≤10",
+          "explanation": "Cả hai giới hạn phải đồng thời đúng.",
+          "id": "uni-programming-conditions-q1",
+          "familyId": "uni-programming-conditions-f0",
+          "lessonId": "uni-programming-conditions",
+          "gradeId": "university",
+          "subjectId": "uni-programming",
+          "outcomeIds": [
+            "uni-programming-o2"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "mcq",
+          "gradingMode": "selection",
+          "prompt": "Nếu quy tắc đạt là điểm≥5, điểm 5 được xếp thế nào?",
+          "options": [
+            "Đạt",
+            "Không đạt"
+          ],
+          "answer": "Đạt",
+          "explanation": "Dấu ≥ bao gồm giá trị bằng ngưỡng.",
+          "id": "uni-programming-conditions-q2",
+          "familyId": "uni-programming-conditions-f1",
+          "lessonId": "uni-programming-conditions",
+          "gradeId": "university",
+          "subjectId": "uni-programming",
+          "outcomeIds": [
+            "uni-programming-o2"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Đề xuất ba ca kiểm thử quanh ngưỡng 5.",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Có giá trị dưới 5",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Có đúng 5",
+              "points": 1
+            },
+            {
+              "id": "criterion-2",
+              "text": "Có giá trị trên 5",
+              "points": 1
+            }
+          ],
+          "explanation": "Các ca quanh biên kiểm tra trực tiếp toán tử so sánh và khoảng áp dụng.",
+          "id": "uni-programming-conditions-q3",
+          "familyId": "uni-programming-conditions-f2",
+          "lessonId": "uni-programming-conditions",
+          "gradeId": "university",
+          "subjectId": "uni-programming",
+          "outcomeIds": [
+            "uni-programming-o2"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [
+        "uni-programming-contracts"
+      ],
+      "outcomeId": "uni-programming-o2"
+    },
+    {
+      "id": "uni-programming-loops",
+      "title": "Vòng lặp và bất biến",
+      "objective": "Theo dõi vòng lặp tích lũy và giải thích điều kiện dừng.",
+      "theory": [
+        "Vòng lặp thực hiện một công việc lặp lại khi điều kiện còn đúng hoặc cho từng phần tử trong một tập. Cần xác định trạng thái khởi tạo, thao tác mỗi lượt và cách tiến tới điều kiện dừng. Nhầm vị trí cập nhật có thể làm bỏ sót phần tử hoặc chạy không dừng.",
+        "Bất biến là một mệnh đề đúng trước và sau mỗi lượt phù hợp của vòng lặp. Khi tính tổng k phần tử đầu, có thể dùng bất biến “total bằng tổng các phần tử đã duyệt”. Khởi tạo total=0 đúng khi chưa duyệt phần tử nào; mỗi lượt cộng đúng phần tử tiếp theo giữ bất biến; khi duyệt hết, kết quả là tổng cần tìm."
+      ],
+      "worked": {
+        "problem": "Theo dõi tính tổng [2,5,1].",
+        "steps": [
+          "Khởi tạo total=0.",
+          "Duyệt 2: total=2.",
+          "Duyệt 5: total=7.",
+          "Duyệt 1: total=8; đã duyệt hết nên dừng."
+        ]
+      },
+      "activity": {
+        "task": "Lập bảng total sau từng lượt cho [3,0,4,2].",
+        "expected": "Các giá trị lần lượt là 3,3,7,9. Phần tử 0 vẫn được duyệt dù tổng không đổi."
+      },
+      "misconception": {
+        "claim": "Vòng lặp tính tổng luôn cần khởi tạo tổng bằng 1.",
+        "correction": "Phép cộng dùng phần tử trung hòa 0. Khởi tạo sai làm mọi kết quả bị lệch."
+      },
+      "questions": [
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "Vòng lặp cộng các số từ 1 đến 4, gồm hai đầu, cho tổng bao nhiêu?",
+          "answer": 10,
+          "tolerance": 0.000001,
+          "explanation": "1+2+3+4=10.",
+          "id": "uni-programming-loops-q1",
+          "familyId": "uni-programming-loops-f0",
+          "lessonId": "uni-programming-loops",
+          "gradeId": "university",
+          "subjectId": "uni-programming",
+          "outcomeIds": [
+            "uni-programming-o3"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "Duyệt đúng một lần danh sách có 7 phần tử cần bao nhiêu lượt xử lý phần tử?",
+          "answer": 7,
+          "tolerance": 0.000001,
+          "explanation": "Mỗi phần tử một lượt.",
+          "id": "uni-programming-loops-q2",
+          "familyId": "uni-programming-loops-f1",
+          "lessonId": "uni-programming-loops",
+          "gradeId": "university",
+          "subjectId": "uni-programming",
+          "outcomeIds": [
+            "uni-programming-o3"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Nêu một bất biến và một điều kiện dừng của vòng lặp tính tổng.",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Tổng bằng tổng phần đã duyệt",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Chỉ số hoặc tập phần tử còn lại tiến tới hết",
+              "points": 1
+            }
+          ],
+          "explanation": "Bất biến hỗ trợ chứng minh kết quả; tiến triển tới điều kiện dừng hỗ trợ kết thúc.",
+          "id": "uni-programming-loops-q3",
+          "familyId": "uni-programming-loops-f2",
+          "lessonId": "uni-programming-loops",
+          "gradeId": "university",
+          "subjectId": "uni-programming",
+          "outcomeIds": [
+            "uni-programming-o3"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [
+        "uni-programming-conditions"
+      ],
+      "outcomeId": "uni-programming-o3"
+    },
+    {
+      "id": "uni-programming-functions",
+      "title": "Hàm, tham số và phân rã",
+      "objective": "Tách một nhiệm vụ thành các hàm có trách nhiệm rõ ràng.",
+      "theory": [
+        "Hàm nhận tham số và tạo kết quả hoặc thực hiện tác động đã mô tả. Phân rã một chương trình thành đọc dữ liệu, kiểm tra, tính và trình bày giúp thử từng phần. Hàm tính toán thuần nhận cùng đầu vào thì cho cùng đầu ra và không tự sửa trạng thái ngoài; điều này làm kiểm thử dễ hơn.",
+        "Phạm vi biến quyết định nơi một tên được sử dụng. Một biến cục bộ không nên bị hiểu như trạng thái chung cho toàn chương trình. Khi một hàm vừa đọc bàn phím, sửa dữ liệu toàn cục và xuất màn hình, việc tái sử dụng hoặc kiểm thử có thể khó hơn. Tách tác động bên ngoài khỏi phần tính toán khi phù hợp."
+      ],
+      "worked": {
+        "problem": "Tách chức năng tính giá sau giảm.",
+        "steps": [
+          "Hàm kiểm tra: giá≥0 và tỷ lệ giảm trong [0,1].",
+          "Hàm tính: kết quả=giá×(1−tỷ lệ).",
+          "Hàm trình bày: định dạng tiền theo quy tắc làm tròn.",
+          "Thử hàm tính riêng với giá 200, giảm 0,15 để nhận 170."
+        ]
+      },
+      "activity": {
+        "task": "Viết tên, tham số và kết quả cho ba hàm của bộ thống kê chi tiêu.",
+        "expected": "Ví dụ validateRows(rows), summarize(values), formatReport(summary); nêu rõ dữ liệu hợp lệ và lỗi."
+      },
+      "misconception": {
+        "claim": "Một hàm dài làm mọi việc luôn dễ kiểm thử hơn.",
+        "correction": "Trách nhiệm nhỏ và hợp đồng rõ giúp tạo ca kiểm thử độc lập; phân rã cần phục vụ bài toán."
+      },
+      "questions": [
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "Hàm discount(p,r)=p×(1−r). Với p=80 và r=0,25, kết quả bằng bao nhiêu?",
+          "answer": 60,
+          "tolerance": 0.000001,
+          "explanation": "80×0,75=60; dấu phẩy 0,25 là số thập phân của tỷ lệ.",
+          "id": "uni-programming-functions-q1",
+          "familyId": "uni-programming-functions-f0",
+          "lessonId": "uni-programming-functions",
+          "gradeId": "university",
+          "subjectId": "uni-programming",
+          "outcomeIds": [
+            "uni-programming-o4"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "mcq",
+          "gradingMode": "selection",
+          "prompt": "Hàm nào thuận tiện để kiểm thử tính toán độc lập?",
+          "options": [
+            "Nhận danh sách số và trả tổng",
+            "Vừa hỏi bàn phím vừa xóa file",
+            "Phụ thuộc thời gian hệ thống không được truyền vào"
+          ],
+          "answer": "Nhận danh sách số và trả tổng",
+          "explanation": "Đầu vào và đầu ra rõ, ít tác động ngoài.",
+          "id": "uni-programming-functions-q2",
+          "familyId": "uni-programming-functions-f1",
+          "lessonId": "uni-programming-functions",
+          "gradeId": "university",
+          "subjectId": "uni-programming",
+          "outcomeIds": [
+            "uni-programming-o4"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Vì sao nên tách định dạng báo cáo khỏi tính tổng?",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Kiểm tra phép tính không phụ thuộc giao diện",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Có thể dùng lại cùng kết quả cho nhiều định dạng",
+              "points": 1
+            }
+          ],
+          "explanation": "Tách trách nhiệm làm rõ nguồn lỗi và giảm phụ thuộc không cần thiết.",
+          "id": "uni-programming-functions-q3",
+          "familyId": "uni-programming-functions-f2",
+          "lessonId": "uni-programming-functions",
+          "gradeId": "university",
+          "subjectId": "uni-programming",
+          "outcomeIds": [
+            "uni-programming-o4"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [
+        "uni-programming-loops"
+      ],
+      "outcomeId": "uni-programming-o4"
+    },
+    {
+      "id": "uni-programming-search",
+      "title": "Danh sách, tìm kiếm và chi phí",
+      "objective": "So sánh tìm tuyến tính với tìm trên dữ liệu đã sắp xếp.",
+      "theory": [
+        "Tìm kiếm tuyến tính kiểm tra lần lượt từng phần tử, nên hoạt động trên danh sách chưa sắp xếp. Nếu không tìm thấy, phải có kết quả rõ ràng như vị trí không tồn tại thay vì nhầm với phần tử đầu tiên. Dữ liệu trùng cũng cần quy tắc: tìm vị trí đầu, cuối hay tất cả.",
+        "Tìm kiếm nhị phân chia đôi khoảng đang xét nhưng đòi hỏi dữ liệu đã sắp xếp theo cùng tiêu chí so sánh. Cần duy trì giới hạn trái, phải và cập nhật để khoảng thật sự nhỏ lại. Chi phí thường được mô tả theo số phần tử n; O(n) và O(log n) là kiểu tăng trưởng, không trực tiếp là thời gian tính bằng giây trên mọi máy."
+      ],
+      "worked": {
+        "problem": "Tìm 9 trong [4,9,2] bằng tuyến tính.",
+        "steps": [
+          "So sánh với 4: chưa khớp.",
+          "So sánh với 9: khớp ở vị trí thứ hai.",
+          "Dừng nếu yêu cầu là tìm lần đầu.",
+          "Có 2 lần so sánh giá trị trong ví dụ này."
+        ]
+      },
+      "activity": {
+        "task": "Tìm 6 trong [1,3,6,8,10] bằng cách xét phần tử giữa.",
+        "expected": "Phần tử giữa đã là 6; mô tả rõ chỉ số hoặc vị trí đang dùng, không lẫn bắt đầu từ 0 và 1."
+      },
+      "misconception": {
+        "claim": "Tìm kiếm nhị phân dùng đúng trên danh sách bất kỳ.",
+        "correction": "Cần dữ liệu đã sắp xếp theo tiêu chí thích hợp; nếu không, có thể bỏ qua phần tử cần tìm."
+      },
+      "questions": [
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "Tìm tuyến tính một giá trị không tồn tại trong danh sách 8 phần tử cần tối đa bao nhiêu lần so sánh giá trị?",
+          "answer": 8,
+          "tolerance": 0.000001,
+          "explanation": "Phải xét đủ 8 phần tử để kết luận không có.",
+          "id": "uni-programming-search-q1",
+          "familyId": "uni-programming-search-f0",
+          "lessonId": "uni-programming-search",
+          "gradeId": "university",
+          "subjectId": "uni-programming",
+          "outcomeIds": [
+            "uni-programming-o5"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "mcq",
+          "gradingMode": "selection",
+          "prompt": "Điều kiện quan trọng của tìm kiếm nhị phân là gì?",
+          "options": [
+            "Danh sách được sắp xếp",
+            "Mọi số đều dương",
+            "Danh sách chỉ có số nguyên"
+          ],
+          "answer": "Danh sách được sắp xếp",
+          "explanation": "Thứ tự cho phép loại bỏ một nửa khoảng.",
+          "id": "uni-programming-search-q2",
+          "familyId": "uni-programming-search-f1",
+          "lessonId": "uni-programming-search",
+          "gradeId": "university",
+          "subjectId": "uni-programming",
+          "outcomeIds": [
+            "uni-programming-o5"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Vì sao O(n) không nói chương trình luôn chạy n giây?",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Phân biệt số thao tác và thời gian thực",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Nêu phụ thuộc máy, cài đặt hoặc kích thước thao tác",
+              "points": 1
+            }
+          ],
+          "explanation": "Ký hiệu mô tả tăng trưởng chi phí theo mô hình, không ấn định thời gian tuyệt đối.",
+          "id": "uni-programming-search-q3",
+          "familyId": "uni-programming-search-f2",
+          "lessonId": "uni-programming-search",
+          "gradeId": "university",
+          "subjectId": "uni-programming",
+          "outcomeIds": [
+            "uni-programming-o5"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [
+        "uni-programming-functions"
+      ],
+      "outcomeId": "uni-programming-o5"
+    },
+    {
+      "id": "uni-programming-testing",
+      "title": "Kiểm thử, biên và sửa lỗi",
+      "objective": "Thiết kế ca kiểm thử có kết quả mong đợi và mô tả lỗi tái hiện được.",
+      "theory": [
+        "Một ca kiểm thử gồm đầu vào, điều kiện chạy và kết quả mong đợi được xác định từ đặc tả. Chỉ chạy chương trình rồi thấy không báo lỗi chưa chứng minh tính đúng. Chọn ca thông thường, biên, rỗng, trùng lặp và dữ liệu sai để kiểm tra các nhánh quan trọng.",
+        "Khi phát hiện lỗi, rút gọn đầu vào nhưng giữ hành vi sai để có ví dụ tái hiện nhỏ. Phân biệt lỗi cú pháp, lỗi lúc chạy và lỗi logic. Sau khi sửa, chạy lại ca gây lỗi và những ca liên quan. Bộ kiểm thử tốt giúp phát hiện hồi quy; nó vẫn không tự chứng minh mọi đầu vào chưa thử đều đúng."
+      ],
+      "worked": {
+        "problem": "Hàm lớn nhất khởi tạo best=0 rồi duyệt danh sách.",
+        "steps": [
+          "Chọn dữ liệu toàn âm, ví dụ [−4,−2].",
+          "Kết quả đúng phải là −2 nhưng hàm sai có thể trả 0.",
+          "Khởi tạo từ phần tử đầu sau khi xử lý danh sách rỗng.",
+          "Thêm ca toàn âm vào bộ kiểm thử để ngăn lỗi quay lại."
+        ]
+      },
+      "activity": {
+        "task": "Viết năm ca cho dự án chi tiêu: bình thường, một phần tử, rỗng, số 0 và dòng không phải số.",
+        "expected": "Mỗi ca có kết quả hoặc thông báo lỗi mong đợi theo đặc tả, không chỉ ghi đầu vào."
+      },
+      "misconception": {
+        "claim": "Nhiều ca giống nhau luôn tốt hơn vài ca phân biệt được các nhánh.",
+        "correction": "Độ đa dạng hành vi và biên quan trọng hơn số lượng lặp cơ học."
+      },
+      "questions": [
+        {
+          "type": "mcq",
+          "gradingMode": "selection",
+          "prompt": "Ca nào phát hiện lỗi khởi tạo best=0 khi tìm số lớn nhất?",
+          "options": [
+            "[−5,−2]",
+            "[1,5]",
+            "[0,3]"
+          ],
+          "answer": "[−5,−2]",
+          "explanation": "Giá trị 0 không thuộc danh sách toàn âm nhưng có thể bị trả nhầm.",
+          "id": "uni-programming-testing-q1",
+          "familyId": "uni-programming-testing-f0",
+          "lessonId": "uni-programming-testing",
+          "gradeId": "university",
+          "subjectId": "uni-programming",
+          "outcomeIds": [
+            "uni-programming-o6"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "Danh sách [0,0,6] có trung bình bằng bao nhiêu?",
+          "answer": 2,
+          "tolerance": 0.000001,
+          "explanation": "Tổng 6 chia 3; số 0 vẫn được tính vào số phần tử.",
+          "id": "uni-programming-testing-q2",
+          "familyId": "uni-programming-testing-f1",
+          "lessonId": "uni-programming-testing",
+          "gradeId": "university",
+          "subjectId": "uni-programming",
+          "outcomeIds": [
+            "uni-programming-o6"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Viết báo cáo lỗi tối thiểu cho hàm lớn nhất trên danh sách âm.",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Đầu vào tái hiện",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Kết quả thực tế và mong đợi",
+              "points": 1
+            },
+            {
+              "id": "criterion-2",
+              "text": "Điều kiện hoặc phiên bản chạy",
+              "points": 1
+            }
+          ],
+          "explanation": "Một báo cáo tái hiện được giúp xác định và kiểm tra bản sửa.",
+          "id": "uni-programming-testing-q3",
+          "familyId": "uni-programming-testing-f2",
+          "lessonId": "uni-programming-testing",
+          "gradeId": "university",
+          "subjectId": "uni-programming",
+          "outcomeIds": [
+            "uni-programming-o6"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [
+        "uni-programming-search"
+      ],
+      "outcomeId": "uni-programming-o6"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "uni-programming-o1",
+      "text": "Viết hợp đồng đầu vào–đầu ra trước khi chọn thuật toán."
+    },
+    {
+      "id": "uni-programming-o2",
+      "text": "Theo dõi nhánh điều kiện và kiểm tra giá trị biên."
+    },
+    {
+      "id": "uni-programming-o3",
+      "text": "Theo dõi vòng lặp tích lũy và giải thích điều kiện dừng."
+    },
+    {
+      "id": "uni-programming-o4",
+      "text": "Tách một nhiệm vụ thành các hàm có trách nhiệm rõ ràng."
+    },
+    {
+      "id": "uni-programming-o5",
+      "text": "So sánh tìm tuyến tính với tìm trên dữ liệu đã sắp xếp."
+    },
+    {
+      "id": "uni-programming-o6",
+      "text": "Thiết kế ca kiểm thử có kết quả mong đợi và mô tả lỗi tái hiện được."
+    }
+  ],
+  "blueprint": {
+    "id": "uni-programming-final",
+    "gradeId": "university",
+    "subjectId": "uni-programming",
+    "title": "Tự kiểm tra: Tư duy lập trình — nền tảng",
+    "contentVersion": "2026.10.28-university-v1",
+    "durationMinutes": 30,
+    "contentStatus": "draft",
+    "sections": [
+      {
+        "id": "unit-0",
+        "count": 2,
+        "outcomeIds": [
+          "uni-programming-o1"
+        ]
+      },
+      {
+        "id": "unit-1",
+        "count": 2,
+        "outcomeIds": [
+          "uni-programming-o2"
+        ]
+      },
+      {
+        "id": "unit-2",
+        "count": 2,
+        "outcomeIds": [
+          "uni-programming-o3"
+        ]
+      },
+      {
+        "id": "unit-3",
+        "count": 2,
+        "outcomeIds": [
+          "uni-programming-o4"
+        ]
+      },
+      {
+        "id": "unit-4",
+        "count": 2,
+        "outcomeIds": [
+          "uni-programming-o5"
+        ]
+      },
+      {
+        "id": "unit-5",
+        "count": 2,
+        "outcomeIds": [
+          "uni-programming-o6"
+        ]
+      }
+    ]
+  }
+}

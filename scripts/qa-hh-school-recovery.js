@@ -4,8 +4,8 @@
 // doubles. Corrupt/future saves are attack fixtures, never completed learning.
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.HH_QA_PLAYWRIGHT||'playwright');
-const repo=path.resolve(__dirname,'..'),out=path.resolve(repo,process.env.HH_QA_OUTPUT||'.study-local/hh-school-recovery-1067');
-const assets=['hh-school-curriculum','hh-school-offline','hh-school-core','hh-school-progress-codec','hh-school-sync','hh-school-assessments','hh-school-content-manifest','hh-school-content','hh-school-workspace','hh-school'];
+const repo=path.resolve(__dirname,'..'),out=path.resolve(repo,process.env.HH_QA_OUTPUT||'.study-local/hh-school-recovery-1068');
+const assets=['hh-school-curriculum','hh-school-offline','hh-school-university-core','hh-school-core','hh-school-progress-codec','hh-school-sync','hh-school-assessments','hh-school-content-manifest','hh-school-content','hh-school-workspace','hh-school'];
 const csp=JSON.parse(fs.readFileSync(path.join(repo,'vercel.json'),'utf8')).headers.flatMap(row=>row.headers).find(row=>row.key==='Content-Security-Policy').value;
 const results=[],errors=[];let browser,origin,page;
 const server=http.createServer((req,res)=>{

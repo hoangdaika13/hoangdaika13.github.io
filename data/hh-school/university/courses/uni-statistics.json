@@ -1,0 +1,844 @@
+{
+  "schemaVersion": 1,
+  "version": "2026.10.28-university-v1",
+  "contentStatus": "draft",
+  "reviewEvidence": null,
+  "credits": null,
+  "officialComplete": false,
+  "authorship": "HH School — nội dung nguyên bản chờ thẩm định",
+  "id": "uni-statistics",
+  "title": "Xác suất và thống kê — nền tảng",
+  "titleEn": "Probability and Statistical Reasoning",
+  "fieldId": "math",
+  "sourceIds": [
+    "berkeley-data8"
+  ],
+  "scope": "Sáu chủ đề để đọc và kiểm tra lập luận dữ liệu. Chưa là toàn bộ Data 8 hoặc học phần xác suất thống kê của một trường.",
+  "estimatedHours": 12,
+  "prerequisites": [
+    "Phân số, phần trăm và căn bậc hai"
+  ],
+  "bridge": [],
+  "project": {
+    "title": "Khảo sát thời gian đi học có kiểm soát sai lệch",
+    "task": "Thiết kế cách lấy mẫu thời gian đi học của sinh viên. Dùng bộ dữ liệu giả lập do bạn ghi nhãn: 12,18,18,22,30,80 phút. Báo cáo trung bình, trung vị, ảnh hưởng của 80 và những nhóm chưa được đại diện. Nêu câu hỏi mà bộ dữ liệu này chưa trả lời được.",
+    "rubric": [
+      "Phân biệt tổng thể, mẫu và đơn vị quan sát",
+      "Tính và giải thích hai số tóm tắt",
+      "Phân tích ngoại lệ mà không tự ý xóa dữ liệu",
+      "Nêu hạn chế chọn mẫu, riêng tư và kết luận có điều kiện"
+    ]
+  },
+  "diagnostic": [
+    {
+      "type": "short",
+      "gradingMode": "numeric",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 0.000001
+      },
+      "prompt": "25% của 80 bằng bao nhiêu?",
+      "answer": 20,
+      "tolerance": 0.000001,
+      "explanation": "80×0,25=20.",
+      "id": "uni-statistics-entry-q0",
+      "familyId": "uni-statistics-entry-f0",
+      "lessonId": "uni-statistics-sampling",
+      "outcomeIds": [
+        "uni-statistics-o1"
+      ],
+      "gradeId": "university",
+      "subjectId": "uni-statistics",
+      "difficulty": 1,
+      "cognitiveLevel": "understand",
+      "points": 1,
+      "contentStatus": "draft"
+    },
+    {
+      "type": "short",
+      "gradingMode": "numeric",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 0.000001
+      },
+      "prompt": "Trung bình của 2,4,6 bằng bao nhiêu?",
+      "answer": 4,
+      "tolerance": 0.000001,
+      "explanation": "Tổng 12 chia 3.",
+      "id": "uni-statistics-entry-q1",
+      "familyId": "uni-statistics-entry-f1",
+      "lessonId": "uni-statistics-summaries",
+      "outcomeIds": [
+        "uni-statistics-o2"
+      ],
+      "gradeId": "university",
+      "subjectId": "uni-statistics",
+      "difficulty": 1,
+      "cognitiveLevel": "understand",
+      "points": 1,
+      "contentStatus": "draft"
+    },
+    {
+      "type": "mcq",
+      "gradingMode": "selection",
+      "prompt": "Gieo đồng xu cân bằng một lần: xác suất mặt ngửa?",
+      "options": [
+        "0",
+        "0,5",
+        "1"
+      ],
+      "answer": "0,5",
+      "explanation": "Hai kết quả có xác suất bằng nhau trong giả định cân bằng.",
+      "id": "uni-statistics-entry-q2",
+      "familyId": "uni-statistics-entry-f2",
+      "lessonId": "uni-statistics-probability",
+      "outcomeIds": [
+        "uni-statistics-o3"
+      ],
+      "gradeId": "university",
+      "subjectId": "uni-statistics",
+      "difficulty": 1,
+      "cognitiveLevel": "understand",
+      "points": 1,
+      "contentStatus": "draft"
+    }
+  ],
+  "lessons": [
+    {
+      "id": "uni-statistics-sampling",
+      "title": "Tổng thể, mẫu và sai lệch chọn mẫu",
+      "objective": "Phân biệt đơn vị quan sát, tổng thể mục tiêu và mẫu thu được.",
+      "theory": [
+        "Tổng thể mục tiêu là nhóm mà câu hỏi nghiên cứu muốn mô tả; mẫu là những đơn vị thực sự được quan sát. Đơn vị có thể là người, lượt di chuyển hoặc giao dịch. Một người có nhiều giao dịch không tự tạo nhiều người độc lập. Cần mô tả rõ đơn vị trước khi lập bảng.",
+        "Mẫu ngẫu nhiên giúp phân tích sai số lấy mẫu nhưng không tự sửa việc thiếu nhóm trong khung chọn mẫu hoặc không phản hồi. Khảo sát tự nguyện trên một nhóm chat thường lệch về người có mặt và sẵn sàng trả lời. Tăng kích thước mẫu lệch có thể làm ước lượng sai trở nên có vẻ chính xác hơn. Luôn ghi cách chọn, thời điểm, số phản hồi và phạm vi kết luận."
+      ],
+      "worked": {
+        "problem": "Muốn biết thời gian đi học của toàn trường nhưng chỉ hỏi 100 người ở ký túc xá.",
+        "steps": [
+          "Tổng thể mục tiêu: sinh viên toàn trường.",
+          "Mẫu thực tế: người ở ký túc xá được hỏi và trả lời.",
+          "Nhóm ở xa hoặc đi học bằng phương tiện khác có thể bị thiếu.",
+          "Kết luận về toàn trường cần thiết kế mẫu tốt hơn, không chỉ thêm người trong cùng ký túc xá."
+        ]
+      },
+      "activity": {
+        "task": "Viết khung chọn mẫu cho sinh viên năm nhất và năm cuối, học sáng và tối.",
+        "expected": "Nêu danh sách có quyền truy cập hợp lệ, cách chọn trong từng nhóm, cách xử lý không phản hồi và bảo vệ thông tin cá nhân."
+      },
+      "misconception": {
+        "claim": "Mẫu rất lớn luôn đại diện.",
+        "correction": "Độ lớn không loại bỏ sai lệch chọn mẫu hoặc sai lệch đo lường."
+      },
+      "questions": [
+        {
+          "type": "mcq",
+          "gradingMode": "selection",
+          "prompt": "Để mô tả toàn trường, mẫu nào cần xem xét sai lệch rõ nhất?",
+          "options": [
+            "Chỉ người tự nguyện trong một câu lạc bộ",
+            "Lấy ngẫu nhiên từ danh sách toàn trường",
+            "Lấy ngẫu nhiên theo năm học"
+          ],
+          "answer": "Chỉ người tự nguyện trong một câu lạc bộ",
+          "explanation": "Câu lạc bộ và tự nguyện đều có thể tạo khác biệt với tổng thể.",
+          "id": "uni-statistics-sampling-q1",
+          "familyId": "uni-statistics-sampling-f0",
+          "lessonId": "uni-statistics-sampling",
+          "gradeId": "university",
+          "subjectId": "uni-statistics",
+          "outcomeIds": [
+            "uni-statistics-o1"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "Có 60 người trả lời trên 100 người được mời. Tỷ lệ phản hồi theo phần trăm là bao nhiêu?",
+          "answer": 60,
+          "tolerance": 0.000001,
+          "explanation": "60/100×100=60%.",
+          "id": "uni-statistics-sampling-q2",
+          "familyId": "uni-statistics-sampling-f1",
+          "lessonId": "uni-statistics-sampling",
+          "gradeId": "university",
+          "subjectId": "uni-statistics",
+          "outcomeIds": [
+            "uni-statistics-o1"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Tại sao 1000 phản hồi từ cùng nhóm chat chưa đủ bảo đảm đại diện?",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Nhận ra nhóm không phủ tổng thể",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Nêu tự chọn hoặc không phản hồi",
+              "points": 1
+            }
+          ],
+          "explanation": "Cần xét cơ chế tạo mẫu, không chỉ số lượng dòng dữ liệu.",
+          "id": "uni-statistics-sampling-q3",
+          "familyId": "uni-statistics-sampling-f2",
+          "lessonId": "uni-statistics-sampling",
+          "gradeId": "university",
+          "subjectId": "uni-statistics",
+          "outcomeIds": [
+            "uni-statistics-o1"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [],
+      "outcomeId": "uni-statistics-o1"
+    },
+    {
+      "id": "uni-statistics-summaries",
+      "title": "Trung bình, trung vị và độ phân tán",
+      "objective": "Chọn số tóm tắt phù hợp và tính phương sai mẫu nhỏ.",
+      "theory": [
+        "Trung bình bằng tổng chia số quan sát; trung vị là giá trị giữa sau khi sắp xếp, hoặc trung bình hai giá trị giữa khi có số phần tử chẵn. Trung bình nhạy với giá trị rất lớn hoặc nhỏ. Trung vị ổn định hơn trước ngoại lệ nhưng không cho biết toàn bộ hình dạng phân phối.",
+        "Độ lệch chuẩn đo độ phân tán trong cùng đơn vị với dữ liệu. Phương sai mẫu thường chia tổng bình phương độ lệch cho n−1 khi dùng để ước lượng phương sai tổng thể trong mô hình lấy mẫu phù hợp; phương sai của toàn bộ bộ số được mô tả có thể chia n. Cần nói rõ đang tính đại lượng nào. Một số tóm tắt phải đi cùng cỡ mẫu và bối cảnh."
+      ],
+      "worked": {
+        "problem": "Dữ liệu 2,4,6. Tính trung bình và phương sai mẫu.",
+        "steps": [
+          "Trung bình=(2+4+6)/3=4.",
+          "Độ lệch: −2,0,2. Tổng bình phương=8.",
+          "Phương sai mẫu=8/(3−1)=4.",
+          "Độ lệch chuẩn mẫu=2, cùng đơn vị với dữ liệu gốc."
+        ]
+      },
+      "activity": {
+        "task": "Thêm giá trị 28 vào bộ 2,4,6. So sánh trung bình và trung vị.",
+        "expected": "Trung bình thành 10, trung vị thành 5. Giá trị lớn tác động mạnh tới trung bình."
+      },
+      "misconception": {
+        "claim": "Phương sai và độ lệch chuẩn có cùng đơn vị.",
+        "correction": "Phương sai có đơn vị bình phương; độ lệch chuẩn trở về đơn vị ban đầu."
+      },
+      "questions": [
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "Trung vị của 1,2,3,20 bằng bao nhiêu?",
+          "answer": 2.5,
+          "tolerance": 0.000001,
+          "explanation": "Sau sắp xếp, trung vị=(2+3)/2.",
+          "id": "uni-statistics-summaries-q1",
+          "familyId": "uni-statistics-summaries-f0",
+          "lessonId": "uni-statistics-summaries",
+          "gradeId": "university",
+          "subjectId": "uni-statistics",
+          "outcomeIds": [
+            "uni-statistics-o2"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "Phương sai mẫu của 1,3,5 là bao nhiêu?",
+          "answer": 4,
+          "tolerance": 0.000001,
+          "explanation": "Trung bình 3; tổng bình phương độ lệch 8; chia n−1=2.",
+          "id": "uni-statistics-summaries-q2",
+          "familyId": "uni-statistics-summaries-f1",
+          "lessonId": "uni-statistics-summaries",
+          "gradeId": "university",
+          "subjectId": "uni-statistics",
+          "outcomeIds": [
+            "uni-statistics-o2"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Một báo cáo chỉ ghi lương trung bình. Bạn muốn bổ sung gì?",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Trung vị hoặc phân vị",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Cỡ mẫu, phân tán và nhóm được khảo sát",
+              "points": 1
+            }
+          ],
+          "explanation": "Những thông tin này giúp tránh hiểu trung bình như thu nhập điển hình của mọi người.",
+          "id": "uni-statistics-summaries-q3",
+          "familyId": "uni-statistics-summaries-f2",
+          "lessonId": "uni-statistics-summaries",
+          "gradeId": "university",
+          "subjectId": "uni-statistics",
+          "outcomeIds": [
+            "uni-statistics-o2"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [
+        "uni-statistics-sampling"
+      ],
+      "outcomeId": "uni-statistics-o2"
+    },
+    {
+      "id": "uni-statistics-probability",
+      "title": "Biến cố, bù và xác suất có điều kiện",
+      "objective": "Tính xác suất theo không gian mẫu và phân biệt P(A|B) với P(B|A).",
+      "theory": [
+        "Biến cố là một tập kết quả trong không gian mẫu đã xác định. Với các kết quả đồng khả năng, xác suất bằng số kết quả thuận lợi chia tổng số kết quả. Quy tắc này không áp dụng bằng cách đếm nếu các kết quả không đồng khả năng. Xác suất của biến cố bù bằng 1−P(A).",
+        "P(A|B) chỉ xét phần không gian mà B xảy ra: P(A∩B)/P(B), khi P(B)>0. Đổi thứ tự điều kiện có thể đổi mẫu số và kết quả. Hai biến cố độc lập khi biết biến cố này không đổi xác suất biến cố kia; độc lập không đồng nghĩa loại trừ nhau. Hai biến cố loại trừ có xác suất dương thường không độc lập."
+      ],
+      "worked": {
+        "problem": "Trong 40 người có 10 người đi xe buýt; 6 trong số đó dùng vé tháng. Chọn một người đi xe buýt, xác suất dùng vé tháng?",
+        "steps": [
+          "Điều kiện đã biết là người được chọn đi xe buýt.",
+          "Không gian điều kiện có 10 người, không còn là 40.",
+          "Có 6 người thỏa cả hai điều kiện.",
+          "P(vé tháng|xe buýt)=6/10=0,6."
+        ]
+      },
+      "activity": {
+        "task": "Tự tạo bảng 2×2 và tính hai xác suất điều kiện ngược nhau.",
+        "expected": "Ghi rõ tổng hàng hoặc tổng cột làm mẫu số; hai giá trị có thể khác nhau."
+      },
+      "misconception": {
+        "claim": "P(A|B) luôn bằng P(B|A).",
+        "correction": "Hai xác suất dùng hai điều kiện và mẫu số khác nhau; cần tính riêng."
+      },
+      "questions": [
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "Một xúc xắc cân bằng có sáu mặt. Xác suất số chẵn là bao nhiêu? Nhập số hoặc phân số.",
+          "answer": 0.5,
+          "tolerance": 0.000001,
+          "explanation": "Có 3 mặt chẵn trong 6 mặt đồng khả năng.",
+          "id": "uni-statistics-probability-q1",
+          "familyId": "uni-statistics-probability-f0",
+          "lessonId": "uni-statistics-probability",
+          "gradeId": "university",
+          "subjectId": "uni-statistics",
+          "outcomeIds": [
+            "uni-statistics-o3"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "P(A)=0,3. P(không A) bằng bao nhiêu?",
+          "answer": 0.7,
+          "tolerance": 0.000001,
+          "explanation": "1−0,3=0,7.",
+          "id": "uni-statistics-probability-q2",
+          "familyId": "uni-statistics-probability-f1",
+          "lessonId": "uni-statistics-probability",
+          "gradeId": "university",
+          "subjectId": "uni-statistics",
+          "outcomeIds": [
+            "uni-statistics-o3"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "mcq",
+          "gradingMode": "selection",
+          "prompt": "Điều kiện để dùng P(A|B)=P(A∩B)/P(B) là gì?",
+          "options": [
+            "P(B)>0",
+            "P(A)=0",
+            "A và B phải độc lập"
+          ],
+          "answer": "P(B)>0",
+          "explanation": "Công thức cần mẫu số dương, không bắt buộc độc lập.",
+          "id": "uni-statistics-probability-q3",
+          "familyId": "uni-statistics-probability-f2",
+          "lessonId": "uni-statistics-probability",
+          "gradeId": "university",
+          "subjectId": "uni-statistics",
+          "outcomeIds": [
+            "uni-statistics-o3"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [
+        "uni-statistics-summaries"
+      ],
+      "outcomeId": "uni-statistics-o3"
+    },
+    {
+      "id": "uni-statistics-uncertainty",
+      "title": "Biến động mẫu và khoảng ước lượng",
+      "objective": "Giải thích sai số chuẩn và giới hạn của một khoảng tin cậy.",
+      "theory": [
+        "Hai mẫu ngẫu nhiên từ cùng một tổng thể thường cho trung bình khác nhau. Sai số chuẩn mô tả biến động của một ước lượng qua các mẫu, khác với độ lệch chuẩn mô tả phân tán của từng quan sát. Trong mô hình các quan sát độc lập, cùng phân phối với phương sai hữu hạn, sai số chuẩn của trung bình được ước lượng bằng s/√n.",
+        "Một khoảng tin cậy 95% là sản phẩm của một quy trình có tỷ lệ bao phủ mục tiêu 95% dưới các giả định của mô hình. Nó không nói 95% cá nhân nằm trong khoảng đó. Công thức trung bình ±1,96·SE là xấp xỉ cần điều kiện phù hợp; mẫu nhỏ hoặc lệch mạnh có thể cần phương pháp khác. Sai lệch lấy mẫu và sai số đo không tự được tính hết vào khoảng này."
+      ],
+      "worked": {
+        "problem": "Trung bình mẫu 50, s=10, n=100. Tính SE và khoảng xấp xỉ theo hệ số 1,96.",
+        "steps": [
+          "SE=10/√100=1.",
+          "Biên xấp xỉ=1,96×1=1,96.",
+          "Khoảng=(48,04;51,96).",
+          "Ghi giả định độc lập, mẫu phù hợp và tính chất xấp xỉ; đây không là khoảng chứa 95% cá nhân."
+        ]
+      },
+      "activity": {
+        "task": "Nếu giữ s=10 và tăng n từ 100 lên 400, SE thay đổi thế nào?",
+        "expected": "SE từ 1 xuống 0,5: tăng cỡ mẫu bốn lần làm SE giảm một nửa trong mô hình này."
+      },
+      "misconception": {
+        "claim": "Khoảng tin cậy 95% chứa 95% số người.",
+        "correction": "Khoảng đang ước lượng tham số tổng thể, không mô tả phân bố từng người."
+      },
+      "questions": [
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "s=12, n=36. SE của trung bình xấp xỉ bao nhiêu?",
+          "answer": 2,
+          "tolerance": 0.000001,
+          "explanation": "12/√36=2.",
+          "id": "uni-statistics-uncertainty-q1",
+          "familyId": "uni-statistics-uncertainty-f0",
+          "lessonId": "uni-statistics-uncertainty",
+          "gradeId": "university",
+          "subjectId": "uni-statistics",
+          "outcomeIds": [
+            "uni-statistics-o4"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "mcq",
+          "gradingMode": "selection",
+          "prompt": "Để SE giảm một nửa khi s giữ nguyên, cỡ mẫu cần tăng mấy lần?",
+          "options": [
+            "2",
+            "4",
+            "8"
+          ],
+          "answer": "4",
+          "explanation": "SE tỷ lệ nghịch căn bậc hai của n.",
+          "id": "uni-statistics-uncertainty-q2",
+          "familyId": "uni-statistics-uncertainty-f1",
+          "lessonId": "uni-statistics-uncertainty",
+          "gradeId": "university",
+          "subjectId": "uni-statistics",
+          "outcomeIds": [
+            "uni-statistics-o4"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Nêu một sai lệch mà khoảng tin cậy hẹp vẫn không khắc phục.",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Ví dụ chọn mẫu lệch hoặc công cụ đo sai",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Giải thích vấn đề thuộc cơ chế dữ liệu",
+              "points": 1
+            }
+          ],
+          "explanation": "Độ chính xác trong mô hình không bảo đảm dữ liệu không sai lệch.",
+          "id": "uni-statistics-uncertainty-q3",
+          "familyId": "uni-statistics-uncertainty-f2",
+          "lessonId": "uni-statistics-uncertainty",
+          "gradeId": "university",
+          "subjectId": "uni-statistics",
+          "outcomeIds": [
+            "uni-statistics-o4"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [
+        "uni-statistics-probability"
+      ],
+      "outcomeId": "uni-statistics-o4"
+    },
+    {
+      "id": "uni-statistics-testing",
+      "title": "Kiểm định và ý nghĩa thực tế",
+      "objective": "Diễn giải p-value theo giả thuyết và tránh nhầm với xác suất giả thuyết đúng.",
+      "theory": [
+        "Kiểm định bắt đầu bằng giả thuyết không, đại lượng thống kê và quy tắc tính kết quả cực đoan trong mô hình giả thuyết không. P-value là xác suất nhận dữ liệu ít nhất cực đoan như đã quan sát dưới mô hình đó. Nó không trực tiếp là xác suất giả thuyết không đúng hoặc xác suất nghiên cứu sẽ lặp lại thành công.",
+        "Một ngưỡng như 0,05 là quy tắc quyết định đã chọn, không phải ranh giới tự nhiên giữa chân lý và sai lầm. Báo cáo nên kèm kích thước hiệu ứng, độ bất định, cách thiết kế và số phép thử. Thử nhiều giả thuyết rồi chỉ công bố kết quả nhỏ nhất làm tăng nguy cơ kết luận sai. Không bác bỏ giả thuyết không cũng không chứng minh hai nhóm hoàn toàn giống nhau."
+      ],
+      "worked": {
+        "problem": "Một thí nghiệm cho p=0,03, chênh lệch trung bình 0,2 điểm trên thang 100.",
+        "steps": [
+          "Mô tả p theo mô hình giả thuyết không và quy tắc cực đoan.",
+          "Nếu ngưỡng định trước là 0,05, kết quả vượt tiêu chí bác bỏ của quy trình.",
+          "Chênh lệch 0,2 điểm có thể nhỏ về thực tế.",
+          "Xem khoảng ước lượng, chất lượng thiết kế và số phép thử trước khi đề xuất hành động."
+        ]
+      },
+      "activity": {
+        "task": "Viết lại câu “p=0,03 nên chắc 97% giả thuyết của tôi đúng”.",
+        "expected": "Mô tả xác suất dữ liệu dưới giả thuyết không; không đảo điều kiện thành xác suất giả thuyết đúng."
+      },
+      "misconception": {
+        "claim": "p nhỏ chứng minh hiệu ứng lớn và quan trọng.",
+        "correction": "Ý nghĩa thống kê và ý nghĩa thực tế khác nhau; cỡ mẫu lớn có thể phát hiện hiệu ứng rất nhỏ."
+      },
+      "questions": [
+        {
+          "type": "mcq",
+          "gradingMode": "selection",
+          "prompt": "P-value được tính trong điều kiện nào?",
+          "options": [
+            "Mô hình giả thuyết không",
+            "Giả thuyết nghiên cứu chắc chắn đúng",
+            "Mọi nghiên cứu đều không sai lệch"
+          ],
+          "answer": "Mô hình giả thuyết không",
+          "explanation": "Đây là xác suất có điều kiện dưới mô hình kiểm định.",
+          "id": "uni-statistics-testing-q1",
+          "familyId": "uni-statistics-testing-f0",
+          "lessonId": "uni-statistics-testing",
+          "gradeId": "university",
+          "subjectId": "uni-statistics",
+          "outcomeIds": [
+            "uni-statistics-o5"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "short",
+          "gradingMode": "numeric",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 0.000001
+          },
+          "prompt": "Dưới giả định các phép thử độc lập, 20 phép thử mức 0,05 có số dương tính giả kỳ vọng bao nhiêu khi giả thuyết không là đúng ở cả 20 phép thử?",
+          "answer": 1,
+          "tolerance": 0.000001,
+          "explanation": "Kỳ vọng bằng 20×0,05=1; không có nghĩa luôn xảy ra đúng một lần.",
+          "id": "uni-statistics-testing-q2",
+          "familyId": "uni-statistics-testing-f1",
+          "lessonId": "uni-statistics-testing",
+          "gradeId": "university",
+          "subjectId": "uni-statistics",
+          "outcomeIds": [
+            "uni-statistics-o5"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Một hiệu ứng có p nhỏ nhưng chênh lệch rất ít cần báo cáo thêm gì?",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Kích thước hiệu ứng và khoảng ước lượng",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Bối cảnh ra quyết định và thiết kế",
+              "points": 1
+            }
+          ],
+          "explanation": "Một con số p không đủ để kết luận mức hữu ích thực tế.",
+          "id": "uni-statistics-testing-q3",
+          "familyId": "uni-statistics-testing-f2",
+          "lessonId": "uni-statistics-testing",
+          "gradeId": "university",
+          "subjectId": "uni-statistics",
+          "outcomeIds": [
+            "uni-statistics-o5"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [
+        "uni-statistics-uncertainty"
+      ],
+      "outcomeId": "uni-statistics-o5"
+    },
+    {
+      "id": "uni-statistics-causality",
+      "title": "Tương quan, nhân quả và kết luận có giới hạn",
+      "objective": "Nhận ra biến gây nhiễu và viết kết luận đúng phạm vi dữ liệu.",
+      "theory": [
+        "Tương quan mô tả hai biến thay đổi cùng nhau trong dữ liệu; nhân quả hỏi điều gì xảy ra khi can thiệp thay đổi một biến. Biến thứ ba có thể ảnh hưởng cả hai, tạo tương quan dù không có tác động trực tiếp. Chiều tác động ngược cũng là một khả năng phải xét.",
+        "Phân nhóm ngẫu nhiên trong một thí nghiệm phù hợp giúp cân bằng các nguyên nhân khác theo cơ chế thiết kế, nhưng vẫn cần xét không tuân thủ, mất theo dõi và khả năng áp dụng ra ngoài nhóm nghiên cứu. Dữ liệu quan sát cần giả định và phương pháp nhận dạng nhân quả rõ ràng. Một kết luận tốt nêu được quan sát gì, chưa biết gì và dữ liệu bổ sung nào sẽ giúp phân biệt các giải thích."
+      ],
+      "worked": {
+        "problem": "Sinh viên học nhóm thường có điểm cao hơn. Có thể kết luận học nhóm gây tăng điểm không?",
+        "steps": [
+          "Ghi nhận đây là mối liên hệ quan sát.",
+          "Xét động lực học tập, thời gian tự học và nền tảng đầu vào.",
+          "Xét khả năng người đã học tốt dễ tham gia nhóm.",
+          "Đề xuất thiết kế hoặc dữ liệu theo dõi tốt hơn, giữ kết luận hiện tại ở mức tương quan."
+        ]
+      },
+      "activity": {
+        "task": "Viết ba câu cho dự án: kết quả quan sát, hạn chế, bước kiểm tra tiếp.",
+        "expected": "Ba câu phân biệt dữ liệu thực có với cơ chế giả thuyết và nghiên cứu cần làm thêm."
+      },
+      "misconception": {
+        "claim": "Một hệ số tương quan lớn đủ chứng minh nhân quả.",
+        "correction": "Cần thiết kế và lập luận loại trừ giải thích thay thế; hệ số không tự làm việc đó."
+      },
+      "questions": [
+        {
+          "type": "mcq",
+          "gradingMode": "selection",
+          "prompt": "Nhiệt độ làm tăng cả doanh số kem và số người bơi. Nhiệt độ là gì trong mối liên hệ hai biến này?",
+          "options": [
+            "Biến gây nhiễu có thể có",
+            "Bằng chứng kem gây bơi",
+            "Sai số làm tròn"
+          ],
+          "answer": "Biến gây nhiễu có thể có",
+          "explanation": "Một biến thứ ba có thể tác động cả hai.",
+          "id": "uni-statistics-causality-q1",
+          "familyId": "uni-statistics-causality-f0",
+          "lessonId": "uni-statistics-causality",
+          "gradeId": "university",
+          "subjectId": "uni-statistics",
+          "outcomeIds": [
+            "uni-statistics-o6"
+          ],
+          "cognitiveLevel": "understand",
+          "difficulty": 1,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "mcq",
+          "gradingMode": "selection",
+          "prompt": "Kết luận phù hợp từ một khảo sát tự nguyện là gì?",
+          "options": [
+            "Mô tả mẫu và nêu hạn chế suy rộng",
+            "Tuyên bố tác động nhân quả chắc chắn",
+            "Áp dụng cho mọi quốc gia"
+          ],
+          "answer": "Mô tả mẫu và nêu hạn chế suy rộng",
+          "explanation": "Mẫu và thiết kế giới hạn loại kết luận được hỗ trợ.",
+          "id": "uni-statistics-causality-q2",
+          "familyId": "uni-statistics-causality-f1",
+          "lessonId": "uni-statistics-causality",
+          "gradeId": "university",
+          "subjectId": "uni-statistics",
+          "outcomeIds": [
+            "uni-statistics-o6"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 2,
+          "points": 1,
+          "contentStatus": "draft"
+        },
+        {
+          "type": "essay",
+          "gradingMode": "rubric",
+          "prompt": "Đề xuất cách cải thiện khảo sát thời gian đi học mà vẫn bảo vệ riêng tư.",
+          "rubric": [
+            {
+              "id": "criterion-0",
+              "text": "Lấy mẫu đa nhóm phù hợp",
+              "points": 1
+            },
+            {
+              "id": "criterion-1",
+              "text": "Tối thiểu hóa dữ liệu cá nhân",
+              "points": 1
+            },
+            {
+              "id": "criterion-2",
+              "text": "Nêu mục đích và quyền tham gia",
+              "points": 1
+            }
+          ],
+          "explanation": "Thiết kế tốt cân bằng độ tin cậy với quyền của người tham gia.",
+          "id": "uni-statistics-causality-q3",
+          "familyId": "uni-statistics-causality-f2",
+          "lessonId": "uni-statistics-causality",
+          "gradeId": "university",
+          "subjectId": "uni-statistics",
+          "outcomeIds": [
+            "uni-statistics-o6"
+          ],
+          "cognitiveLevel": "apply",
+          "difficulty": 3,
+          "points": 1,
+          "contentStatus": "draft"
+        }
+      ],
+      "prerequisites": [
+        "uni-statistics-testing"
+      ],
+      "outcomeId": "uni-statistics-o6"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "uni-statistics-o1",
+      "text": "Phân biệt đơn vị quan sát, tổng thể mục tiêu và mẫu thu được."
+    },
+    {
+      "id": "uni-statistics-o2",
+      "text": "Chọn số tóm tắt phù hợp và tính phương sai mẫu nhỏ."
+    },
+    {
+      "id": "uni-statistics-o3",
+      "text": "Tính xác suất theo không gian mẫu và phân biệt P(A|B) với P(B|A)."
+    },
+    {
+      "id": "uni-statistics-o4",
+      "text": "Giải thích sai số chuẩn và giới hạn của một khoảng tin cậy."
+    },
+    {
+      "id": "uni-statistics-o5",
+      "text": "Diễn giải p-value theo giả thuyết và tránh nhầm với xác suất giả thuyết đúng."
+    },
+    {
+      "id": "uni-statistics-o6",
+      "text": "Nhận ra biến gây nhiễu và viết kết luận đúng phạm vi dữ liệu."
+    }
+  ],
+  "blueprint": {
+    "id": "uni-statistics-final",
+    "gradeId": "university",
+    "subjectId": "uni-statistics",
+    "title": "Tự kiểm tra: Xác suất và thống kê — nền tảng",
+    "contentVersion": "2026.10.28-university-v1",
+    "durationMinutes": 30,
+    "contentStatus": "draft",
+    "sections": [
+      {
+        "id": "unit-0",
+        "count": 2,
+        "outcomeIds": [
+          "uni-statistics-o1"
+        ]
+      },
+      {
+        "id": "unit-1",
+        "count": 2,
+        "outcomeIds": [
+          "uni-statistics-o2"
+        ]
+      },
+      {
+        "id": "unit-2",
+        "count": 2,
+        "outcomeIds": [
+          "uni-statistics-o3"
+        ]
+      },
+      {
+        "id": "unit-3",
+        "count": 2,
+        "outcomeIds": [
+          "uni-statistics-o4"
+        ]
+      },
+      {
+        "id": "unit-4",
+        "count": 2,
+        "outcomeIds": [
+          "uni-statistics-o5"
+        ]
+      },
+      {
+        "id": "unit-5",
+        "count": 2,
+        "outcomeIds": [
+          "uni-statistics-o6"
+        ]
+      }
+    ]
+  }
+}

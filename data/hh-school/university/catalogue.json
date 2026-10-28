@@ -1,0 +1,5074 @@
+{
+  "schemaVersion": 1,
+  "version": "2026.10.28-university-v1",
+  "fields": [
+    {
+      "id": "general",
+      "name": "Đại cương & kỹ năng học thuật"
+    },
+    {
+      "id": "math",
+      "name": "Toán & thống kê"
+    },
+    {
+      "id": "science",
+      "name": "Khoa học tự nhiên"
+    },
+    {
+      "id": "computing",
+      "name": "Máy tính & công nghệ thông tin"
+    },
+    {
+      "id": "electrical",
+      "name": "Điện, điện tử & tự động hóa"
+    },
+    {
+      "id": "mechanical",
+      "name": "Cơ khí & công nghiệp"
+    },
+    {
+      "id": "civil",
+      "name": "Xây dựng, kiến trúc & giao thông"
+    },
+    {
+      "id": "business",
+      "name": "Kinh tế & kinh doanh"
+    },
+    {
+      "id": "law",
+      "name": "Luật & quản lý công"
+    },
+    {
+      "id": "social",
+      "name": "Xã hội & nhân văn"
+    },
+    {
+      "id": "education",
+      "name": "Giáo dục & sư phạm"
+    },
+    {
+      "id": "health",
+      "name": "Sức khỏe"
+    },
+    {
+      "id": "agriculture",
+      "name": "Nông, lâm & ngư nghiệp"
+    },
+    {
+      "id": "languages",
+      "name": "Ngoại ngữ & dịch thuật"
+    },
+    {
+      "id": "arts",
+      "name": "Truyền thông & nghệ thuật"
+    },
+    {
+      "id": "services",
+      "name": "Du lịch, dịch vụ & thể thao"
+    }
+  ],
+  "institutions": [
+    {
+      "id": "hh",
+      "name": "HH School — lộ trình tự học",
+      "kind": "authored"
+    },
+    {
+      "id": "uit",
+      "name": "ĐH Công nghệ Thông tin — ĐHQG-HCM",
+      "kind": "institution",
+      "url": "https://daa.uit.edu.vn/cqui/ctdt-khoa-2025"
+    }
+  ],
+  "programs": [
+    {
+      "id": "self-study",
+      "institutionId": "hh",
+      "title": "Tự chọn học phần nền tảng",
+      "cohort": "Tự học",
+      "version": "2026.10.28",
+      "status": "authored-draft",
+      "officialComplete": false,
+      "courses": [
+        {
+          "id": "uni-linear",
+          "code": "HH",
+          "title": "Đại số tuyến tính — nền tảng",
+          "credits": null,
+          "year": null,
+          "term": null,
+          "suggestedCourseIds": [
+            "uni-linear"
+          ],
+          "status": "authored-draft"
+        },
+        {
+          "id": "uni-statistics",
+          "code": "HH",
+          "title": "Xác suất và thống kê — nền tảng",
+          "credits": null,
+          "year": null,
+          "term": null,
+          "suggestedCourseIds": [
+            "uni-statistics"
+          ],
+          "status": "authored-draft"
+        },
+        {
+          "id": "uni-programming",
+          "code": "HH",
+          "title": "Tư duy lập trình — nền tảng",
+          "credits": null,
+          "year": null,
+          "term": null,
+          "suggestedCourseIds": [
+            "uni-programming"
+          ],
+          "status": "authored-draft"
+        },
+        {
+          "id": "uni-economics",
+          "code": "HH",
+          "title": "Kinh tế vi mô — nhập môn",
+          "credits": null,
+          "year": null,
+          "term": null,
+          "suggestedCourseIds": [
+            "uni-economics"
+          ],
+          "status": "authored-draft"
+        },
+        {
+          "id": "uni-research",
+          "code": "HH",
+          "title": "Phương pháp học và nghiên cứu",
+          "credits": null,
+          "year": null,
+          "term": null,
+          "suggestedCourseIds": [
+            "uni-research"
+          ],
+          "status": "authored-draft"
+        },
+        {
+          "id": "uni-circuits",
+          "code": "HH",
+          "title": "Mạch điện một chiều — nhập môn",
+          "credits": null,
+          "year": null,
+          "term": null,
+          "suggestedCourseIds": [
+            "uni-circuits"
+          ],
+          "status": "authored-draft"
+        }
+      ]
+    },
+    {
+      "id": "uit-se-2025",
+      "title": "Kỹ thuật Phần mềm",
+      "institutionId": "uit",
+      "cohort": "2025",
+      "version": "Khóa 20 — 2025",
+      "url": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+      "educationLevel": "university",
+      "faculty": "Công nghệ phần mềm",
+      "status": "catalogue-checked",
+      "officialComplete": false,
+      "officialOutcomeCount": null,
+      "scope": "Đã ghi mã môn, tên và tín chỉ từ bảng công khai; chưa đối chiếu toàn bộ đề cương, điều kiện tự chọn, học kỳ và điều kiện tốt nghiệp.",
+      "courses": [
+        {
+          "id": "uit-se-2025.SS003",
+          "code": "SS003",
+          "title": "Tư tưởng Hồ Chí Minh",
+          "credits": 2,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SS007",
+          "code": "SS007",
+          "title": "Triết học Mác – Lênin",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SS008",
+          "code": "SS008",
+          "title": "Kinh tế chính trị Mác – Lênin",
+          "credits": 2,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SS009",
+          "code": "SS009",
+          "title": "Chủ nghĩa xã hội khoa học",
+          "credits": 2,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SS010",
+          "code": "SS010",
+          "title": "Lịch sử Đảng Cộng sản Việt Nam",
+          "credits": 2,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SS006",
+          "code": "SS006",
+          "title": "Pháp luật đại cương",
+          "credits": 2,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.MA006",
+          "code": "MA006",
+          "title": "Giải tích",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.MA003",
+          "code": "MA003",
+          "title": "Đại số tuyến tính",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": [
+            "uni-linear"
+          ]
+        },
+        {
+          "id": "uit-se-2025.MA004",
+          "code": "MA004",
+          "title": "Cấu trúc rời rạc",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.MA005",
+          "code": "MA005",
+          "title": "Xác suất thống kê",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": [
+            "uni-statistics"
+          ]
+        },
+        {
+          "id": "uit-se-2025.IT001",
+          "code": "IT001",
+          "title": "Nhập môn Lập trình",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": [
+            "uni-programming"
+          ]
+        },
+        {
+          "id": "uit-se-2025.ENG01",
+          "code": "ENG01",
+          "title": "Anh văn 1",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.ENG02",
+          "code": "ENG02",
+          "title": "Anh văn 2",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.ENG03",
+          "code": "ENG03",
+          "title": "Anh văn 3",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.ME001",
+          "code": "ME001",
+          "title": "Giáo dục Quốc phòng",
+          "credits": null,
+          "creditNote": "Tính riêng",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.PE231",
+          "code": "PE231",
+          "title": "Giáo dục thể chất 1",
+          "credits": null,
+          "creditNote": "Tính riêng",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.PE232",
+          "code": "PE232",
+          "title": "Giáo dục thể chất 2",
+          "credits": null,
+          "creditNote": "Tính riêng",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE005",
+          "code": "SE005",
+          "title": "Giới thiệu ngành Kỹ thuật Phần mềm",
+          "credits": 1,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.IT002",
+          "code": "IT002",
+          "title": "Lập trình hướng đối tượng",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.IT003",
+          "code": "IT003",
+          "title": "Cấu trúc dữ liệu và giải thuật",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.IT004",
+          "code": "IT004",
+          "title": "Cơ sở dữ liệu",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.IT005",
+          "code": "IT005",
+          "title": "Nhập môn mạng máy tính",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.IT007",
+          "code": "IT007",
+          "title": "Hệ điều hành",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.IT012",
+          "code": "IT012",
+          "title": "Tổ chức và cấu trúc máy tính II",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.IT008",
+          "code": "IT008",
+          "title": "Lập trình trực quan",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE100",
+          "code": "SE100",
+          "title": "Phương pháp phát triển phần mềm hướng đối tượng",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE104",
+          "code": "SE104",
+          "title": "Nhập môn công nghệ phần mềm",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE359",
+          "code": "SE359",
+          "title": "DevOps trong Phát triển Phần mềm",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE102",
+          "code": "SE102",
+          "title": "Nhập môn phát triển game (1)",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE115",
+          "code": "SE115",
+          "title": "Phát triển game với Unity",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE116",
+          "code": "SE116",
+          "title": "Phát triển kỹ năng lập trình Game ứng dụng trong thực tế",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE114",
+          "code": "SE114",
+          "title": "Nhập môn ứng dụng di động (1)",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE360",
+          "code": "SE360",
+          "title": "Điện toán đám mây và phát triển ứng dụng hướng dịch vụ",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE361",
+          "code": "SE361",
+          "title": "Phát triển phần mềm theo kiến trúc Microservices",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE301",
+          "code": "SE301",
+          "title": "Phát triển phần mềm mã nguồn mở (1)",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE215",
+          "code": "SE215",
+          "title": "Giao tiếp người máy (2)",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE113",
+          "code": "SE113",
+          "title": "Kiểm chứng phần mềm (1)",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE358",
+          "code": "SE358",
+          "title": "Quản lý dự án phát triển phần mềm (2)",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE117",
+          "code": "SE117",
+          "title": "Kỹ thuật lập trình",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE330",
+          "code": "SE330",
+          "title": "Ngôn ngữ lập trình Java (1)",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE332",
+          "code": "SE332",
+          "title": "Chuyên đề CSDL nâng cao (1)",
+          "credits": 2,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE334",
+          "code": "SE334",
+          "title": "Các phương pháp lập trình (1)",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE347",
+          "code": "SE347",
+          "title": "Công nghệ Web và ứng dụng (2)",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE350",
+          "code": "SE350",
+          "title": "Chuyên đề E-learning (1)",
+          "credits": 2,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE343",
+          "code": "SE343",
+          "title": "Công nghệ Portal (2)",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE355",
+          "code": "SE355",
+          "title": "Máy học và các công cụ (2)",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE310",
+          "code": "SE310",
+          "title": "Công nghệ .NET (2)",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE346",
+          "code": "SE346",
+          "title": "Lập trình trên thiết bị di động (1)",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE404",
+          "code": "SE404",
+          "title": "Chuyên đề E-Government (1)",
+          "credits": 2,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE331",
+          "code": "SE331",
+          "title": "Chuyên đề E-Commerce (1)",
+          "credits": 2,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE313",
+          "code": "SE313",
+          "title": "Một số thuật toán thông minh (2)",
+          "credits": 2,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE352",
+          "code": "SE352",
+          "title": "Phát triển ứng dụng VR (1)",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE109",
+          "code": "SE109",
+          "title": "Phát triển, vận hành, bảo trì phần mềm (1)",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE356",
+          "code": "SE356",
+          "title": "Kiến trúc phần mềm (2)",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE357",
+          "code": "SE357",
+          "title": "Kỹ thuật phân tích yêu cầu (2)",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE325",
+          "code": "SE325",
+          "title": "Chuyên đề J2EE (2)",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE101",
+          "code": "SE101",
+          "title": "Phương pháp mô hình hóa",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE106",
+          "code": "SE106",
+          "title": "Đặc tả hình thức",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE214",
+          "code": "SE214",
+          "title": "Công nghệ phần mềm chuyên sâu",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE362",
+          "code": "SE362",
+          "title": "An toàn phần mềm và hệ thống",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE363",
+          "code": "SE363",
+          "title": "Phát triển ứng dụng trên nền tảng dữ liệu lớn",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE364",
+          "code": "SE364",
+          "title": "Thiết kế giao diện và trải nghiệm người dùng",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE365",
+          "code": "SE365",
+          "title": "Học sâu ứng dụng trong phát triển phần mềm",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE221",
+          "code": "SE221",
+          "title": "Lập trình game nâng cao (1)",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE220",
+          "code": "SE220",
+          "title": "Thiết kế game (1)",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE320",
+          "code": "SE320",
+          "title": "Lập trình đồ họa 3 chiều với Direct 3D (1)",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE327",
+          "code": "SE327",
+          "title": "Phát triển và vận hành game (1)",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE328",
+          "code": "SE328",
+          "title": "Lập trình TTNT trong game (2)",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE344",
+          "code": "SE344",
+          "title": "Lập trình game trên các thiết bị di động (2)",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE314",
+          "code": "SE314",
+          "title": "Công nghệ game 3D",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE315",
+          "code": "SE315",
+          "title": "Công nghệ Game Online",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE316",
+          "code": "SE316",
+          "title": "Phát triển Game đa nền tảng",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE317",
+          "code": "SE317",
+          "title": "Công nghệ tiên tiến trong phát triển game",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SS004",
+          "code": "SS004",
+          "title": "Kỹ năng nghề nghiệp",
+          "credits": 2,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": [
+            "uni-research"
+          ]
+        },
+        {
+          "id": "uit-se-2025.SE502",
+          "code": "SE502",
+          "title": "Thực tập",
+          "credits": 2,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE503",
+          "code": "SE503",
+          "title": "Đồ án",
+          "credits": 2,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE505",
+          "code": "SE505",
+          "title": "Khóa luận tốt nghiệp",
+          "credits": 10,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE506",
+          "code": "SE506",
+          "title": "Đồ án tốt nghiệp tại doanh nghiệp",
+          "credits": 10,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE507",
+          "code": "SE507",
+          "title": "Đồ án tốt nghiệp",
+          "credits": 6,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE400",
+          "code": "SE400",
+          "title": "Seminar các vấn đề hiện đại của Công nghệ Phần mềm",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE406",
+          "code": "SE406",
+          "title": "Mẫu thiết kế hướng đối tượng",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE403",
+          "code": "SE403",
+          "title": "Nguyên lý thiết kế thế giới ảo",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE407",
+          "code": "SE407",
+          "title": "Chuyên đề Pervasive and Mobile Computing",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE408",
+          "code": "SE408",
+          "title": "Phát triển game với Blockchain",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-se-2025.SE409",
+          "code": "SE409",
+          "title": "Phát triển dự án Game",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-nganh-ky-thuat-phan-mem-ap-dung-tu-khoa-20-2025",
+          "suggestedCourseIds": []
+        }
+      ],
+      "checkedAt": "2026-10-28T03:51:19.652Z"
+    },
+    {
+      "id": "uit-ds-2024",
+      "title": "Khoa học Dữ liệu",
+      "institutionId": "uit",
+      "cohort": "2024",
+      "version": "Khóa 19 — 2024",
+      "url": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+      "educationLevel": "university",
+      "faculty": "Khoa học và Kỹ thuật Thông tin",
+      "status": "catalogue-checked",
+      "officialComplete": false,
+      "officialOutcomeCount": null,
+      "scope": "Đã ghi mã môn, tên và tín chỉ từ bảng công khai; chưa đối chiếu toàn bộ đề cương, điều kiện tự chọn, học kỳ và điều kiện tốt nghiệp.",
+      "courses": [
+        {
+          "id": "uit-ds-2024.SS003",
+          "code": "SS003",
+          "title": "Tư tưởng Hồ Chí Minh",
+          "credits": 2,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.SS007",
+          "code": "SS007",
+          "title": "Triết học Mác ‒ Lênin",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.SS008",
+          "code": "SS008",
+          "title": "Kinh tế chính trị Mác ‒ Lênin",
+          "credits": 2,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.SS009",
+          "code": "SS009",
+          "title": "Chủ nghĩa xã hội khoa học",
+          "credits": 2,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.SS010",
+          "code": "SS010",
+          "title": "Lịch sử Đảng Cộng sản Việt Nam",
+          "credits": 2,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.SS006",
+          "code": "SS006",
+          "title": "Pháp luật đại cương",
+          "credits": 2,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.MA006",
+          "code": "MA006",
+          "title": "Giải tích",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.MA003",
+          "code": "MA003",
+          "title": "Đại số tuyến tính",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": [
+            "uni-linear"
+          ]
+        },
+        {
+          "id": "uit-ds-2024.MA004",
+          "code": "MA004",
+          "title": "Cấu trúc rời rạc",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.MA005",
+          "code": "MA005",
+          "title": "Xác suất thống kê",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": [
+            "uni-statistics"
+          ]
+        },
+        {
+          "id": "uit-ds-2024.IT001",
+          "code": "IT001",
+          "title": "Nhập môn Lập trình",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": [
+            "uni-programming"
+          ]
+        },
+        {
+          "id": "uit-ds-2024.ENG01",
+          "code": "ENG01",
+          "title": "Anh văn 1",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.ENG02",
+          "code": "ENG02",
+          "title": "Anh văn 2",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.ENG03",
+          "code": "ENG03",
+          "title": "Anh văn 3",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.PE231",
+          "code": "PE231",
+          "title": "Giáo dục thể chất 1",
+          "credits": null,
+          "creditNote": "Tính riêng",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.PE232",
+          "code": "PE232",
+          "title": "Giáo dục thể chất 2",
+          "credits": null,
+          "creditNote": "Tính riêng",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.ME001",
+          "code": "ME001",
+          "title": "Giáo dục quốc phòng",
+          "credits": null,
+          "creditNote": "Tính riêng",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.SS004",
+          "code": "SS004",
+          "title": "Kỹ năng nghề nghiệp",
+          "credits": 2,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": [
+            "uni-research"
+          ]
+        },
+        {
+          "id": "uit-ds-2024.DS005",
+          "code": "DS005",
+          "title": "Giới thiệu ngành Khoa học dữ liệu",
+          "credits": 1,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.IT002",
+          "code": "IT002",
+          "title": "Lập trình hướng đối tượng",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.IT003",
+          "code": "IT003",
+          "title": "Cấu trúc dữ liệu và giải thuật",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.IT004",
+          "code": "IT004",
+          "title": "Cơ sở dữ liệu",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.IT005",
+          "code": "IT005",
+          "title": "Nhập môn mạng máy tính",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.IT010",
+          "code": "IT010",
+          "title": "Tổ chức và cấu trúc máy tính",
+          "credits": 2,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.IT007",
+          "code": "IT007",
+          "title": "Hệ điều hành",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS107",
+          "code": "DS107",
+          "title": "Tư duy tính toán cho Khoa học dữ liệu",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS101",
+          "code": "DS101",
+          "title": "Thống kê và xác suất chuyên sâu",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS111",
+          "code": "DS111",
+          "title": "Phân tích dữ liệu",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS102",
+          "code": "DS102",
+          "title": "Học máy thống kê",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS108",
+          "code": "DS108",
+          "title": "Tiền xử lý và xây dựng bộ dữ liệu",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS304",
+          "code": "DS304",
+          "title": "Thiết kế và phân tích thực nghiệm",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS307",
+          "code": "DS307",
+          "title": "Phân tích dữ liệu truyền thông xã hội",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS200",
+          "code": "DS200",
+          "title": "Phân tích dữ liệu lớn",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS315",
+          "code": "DS315",
+          "title": "Phân tích Kho dữ liệu",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS325",
+          "code": "DS325",
+          "title": "Thiết kế ứng dụng với dữ liệu chuyên sâu",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS104",
+          "code": "DS104",
+          "title": "Tính toán song song và phân tán",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS317",
+          "code": "DS317",
+          "title": "Khai phá dữ liệu trong doanh nghiệp",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS322",
+          "code": "DS322",
+          "title": "Thiết kế hệ thống Học máy",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS318",
+          "code": "DS318",
+          "title": "Đạo đức trong Trí tuệ nhân tạo và Khoa học dữ liệu",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS306",
+          "code": "DS306",
+          "title": "Phân tích dữ liệu lớn trong tài chính",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS305",
+          "code": "DS305",
+          "title": "Phân tích dữ liệu chuỗi thời gian và ứng dụng",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.IE403",
+          "code": "IE403",
+          "title": "Khai thác dữ liệu truyền thông xã hội",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS204",
+          "code": "DS204",
+          "title": "Đồ án Khoa học dữ liệu và ứng dụng",
+          "credits": 2,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS207",
+          "code": "DS207",
+          "title": "Đồ án",
+          "credits": 2,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS201",
+          "code": "DS201",
+          "title": "Deep Learning trong Khoa học dữ liệu",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS310",
+          "code": "DS310",
+          "title": "Xử lý ngôn ngữ tự nhiên cho Khoa học dữ liệu",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS106",
+          "code": "DS106",
+          "title": "Tối ưu hoá và ứng dụng",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS312",
+          "code": "DS312",
+          "title": "Xử lý ảnh y khoa",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS313",
+          "code": "DS313",
+          "title": "Xử lý thông tin giọng nói",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS314",
+          "code": "DS314",
+          "title": "Rút trích và truy vấn thông tin",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS327",
+          "code": "DS327",
+          "title": "Các mô hình nền tảng",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS319",
+          "code": "DS319",
+          "title": "Mô hình ngôn ngữ lớn",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS320",
+          "code": "DS320",
+          "title": "Học đa thể thức",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS321",
+          "code": "DS321",
+          "title": "Khoa học dữ liệu cho An toàn thông tin",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS324",
+          "code": "DS324",
+          "title": "Khai thác dữ liệu ảnh số",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS300",
+          "code": "DS300",
+          "title": "Hệ khuyến nghị",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS326",
+          "code": "DS326",
+          "title": "Khai phá dữ liệu đa phương tiện và ứng dụng",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS302",
+          "code": "DS302",
+          "title": "Phân tích thống kê đa biến",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS303",
+          "code": "DS303",
+          "title": "Thống kê Bayes",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS308",
+          "code": "DS308",
+          "title": "Mô hình đồ thị xác suất",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.IE103",
+          "code": "IE103",
+          "title": "Quản lý thông tin",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.IE108",
+          "code": "IE108",
+          "title": "Phân tích thiết kế phần mềm",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.IE104",
+          "code": "IE104",
+          "title": "Internet và công nghệ Web",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS311",
+          "code": "DS311",
+          "title": "Kỹ năng nghiên cứu và viết bài báo khoa học",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS323",
+          "code": "DS323",
+          "title": "Viết báo cáo kỹ thuật và thuyết trình",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.IE310",
+          "code": "IE310",
+          "title": "Tư duy thiết kế",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS309",
+          "code": "DS309",
+          "title": "Thực tập doanh nghiệp",
+          "credits": 2,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.INI01",
+          "code": "INI01",
+          "title": "Thực tập Quốc tế",
+          "credits": 2,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.BUS1125",
+          "code": "BUS1125",
+          "title": "Khởi nghiệp kinh doanh",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.TLH025",
+          "code": "TLH025",
+          "title": "Tâm lý học nhân cách",
+          "credits": 3,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.CS231",
+          "code": "CS231",
+          "title": "Nhập môn Thị giác máy tính",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.CS331",
+          "code": "CS331",
+          "title": "Thị giác máy tính nâng cao",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.CS412",
+          "code": "CS412",
+          "title": "Web ngữ nghĩa",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.IE233",
+          "code": "IE233",
+          "title": "Phân tích và mô hình mạng xã hội",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.CS323",
+          "code": "CS323",
+          "title": "Các hệ thống hỏi-đáp",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.CS321",
+          "code": "CS321",
+          "title": "Ngôn ngữ học ngữ liệu",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.CS410",
+          "code": "CS410",
+          "title": "Mạng neural và thuật giải di truyền",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.CS112",
+          "code": "CS112",
+          "title": "Phân tích và thiết kế thuật toán",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.CS116",
+          "code": "CS116",
+          "title": "Lập trình Python cho Máy học",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.CS115",
+          "code": "CS115",
+          "title": "Toán cho Khoa học máy tính",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.CS406",
+          "code": "CS406",
+          "title": "Xử lý ảnh và ứng dụng",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS505",
+          "code": "DS505",
+          "title": "Khoá luận tốt nghiệp",
+          "credits": 10,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS400",
+          "code": "DS400",
+          "title": "Chuyên đề tốt nghiệp Khoa học dữ liệu",
+          "credits": 4,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS501",
+          "code": "DS501",
+          "title": "Đồ án tốt nghiệp",
+          "credits": 6,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS502",
+          "code": "DS502",
+          "title": "Đồ án tốt nghiệp tại doanh nghiệp",
+          "credits": 10,
+          "creditNote": "",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.IS211",
+          "code": "IS211",
+          "title": "Cơ sở dữ liệu phân tán",
+          "credits": null,
+          "creditNote": "IE103",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS103",
+          "code": "DS103",
+          "title": "Thu thập và tiền xử lý dữ liệu",
+          "credits": null,
+          "creditNote": "DS108",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.IE207",
+          "code": "IE207",
+          "title": "Đồ án",
+          "credits": null,
+          "creditNote": "DS207",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.PE012",
+          "code": "PE012",
+          "title": "Giáo dục thể chất",
+          "credits": null,
+          "creditNote": "PE231",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS316",
+          "code": "DS316",
+          "title": "Xây dựng ứng dụng thông minh",
+          "credits": null,
+          "creditNote": "DS322",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        },
+        {
+          "id": "uit-ds-2024.DS105",
+          "code": "DS105",
+          "title": "Phân tích và trực quan dữ liệu",
+          "credits": null,
+          "creditNote": "DS111",
+          "required": null,
+          "year": null,
+          "term": null,
+          "prerequisites": [],
+          "status": "metadata-only",
+          "sourceUrl": "https://daa.uit.edu.vn/content/cu-nhan-khoa-hoc-nganh-khoa-hoc-du-lieu-ap-dung-tu-khoa-19-2024",
+          "suggestedCourseIds": []
+        }
+      ],
+      "checkedAt": "2026-10-28T03:51:19.652Z"
+    }
+  ],
+  "courses": [
+    {
+      "id": "uni-linear",
+      "title": "Đại số tuyến tính — nền tảng",
+      "titleEn": "Linear Algebra Foundations",
+      "fieldId": "math",
+      "version": "2026.10.28-university-v1",
+      "contentStatus": "draft",
+      "scope": "Chuỗi nguyên bản gồm sáu chủ đề nền. Chưa bao phủ toàn bộ MIT 18.06, chưa gồm QR, SVD, dạng toàn phương hoặc toàn bộ ứng dụng.",
+      "estimatedHours": 12,
+      "credits": null,
+      "officialComplete": false,
+      "lessons": 6,
+      "questions": 21,
+      "sourceIds": [
+        "mit-linear",
+        "mitmath"
+      ],
+      "url": "data/hh-school/university/courses/uni-linear.json?v=00445f57942b",
+      "sha256": "00445f57942bec353d6cb32a77560219ca346409cdad37aa563c6f2153bcdc03",
+      "bytes": 33725
+    },
+    {
+      "id": "uni-statistics",
+      "title": "Xác suất và thống kê — nền tảng",
+      "titleEn": "Probability and Statistical Reasoning",
+      "fieldId": "math",
+      "version": "2026.10.28-university-v1",
+      "contentStatus": "draft",
+      "scope": "Sáu chủ đề để đọc và kiểm tra lập luận dữ liệu. Chưa là toàn bộ Data 8 hoặc học phần xác suất thống kê của một trường.",
+      "estimatedHours": 12,
+      "credits": null,
+      "officialComplete": false,
+      "lessons": 6,
+      "questions": 21,
+      "sourceIds": [
+        "berkeley-data8"
+      ],
+      "url": "data/hh-school/university/courses/uni-statistics.json?v=19647cc15eec",
+      "sha256": "19647cc15eecc05336d671c9df7dac8f4756e26504bdcb0916183c55791ce097",
+      "bytes": 35983
+    },
+    {
+      "id": "uni-programming",
+      "title": "Tư duy lập trình — nền tảng",
+      "titleEn": "Programming and Algorithmic Thinking",
+      "fieldId": "computing",
+      "version": "2026.10.28-university-v1",
+      "contentStatus": "draft",
+      "scope": "Sáu chủ đề tư duy lập trình với mã giả và kiểm tra bằng tay. Không thay toàn bộ CS50, học phần lập trình C/C++ hay Full Stack Open; không chạy mã từ repo bên ngoài.",
+      "estimatedHours": 12,
+      "credits": null,
+      "officialComplete": false,
+      "lessons": 6,
+      "questions": 21,
+      "sourceIds": [
+        "harvard-cs50",
+        "cs50-github",
+        "helsinki-fullstack"
+      ],
+      "url": "data/hh-school/university/courses/uni-programming.json?v=caeec8476306",
+      "sha256": "caeec84763067c17a748636dd295c018db68f5b39676b44e66d8c912dde2e666",
+      "bytes": 35052
+    },
+    {
+      "id": "uni-economics",
+      "title": "Kinh tế vi mô — nhập môn",
+      "titleEn": "Microeconomic Reasoning",
+      "fieldId": "business",
+      "version": "2026.10.28-university-v1",
+      "contentStatus": "draft",
+      "scope": "Sáu chủ đề nền bằng mô hình nhỏ, chưa là toàn bộ học phần 14.01 hoặc tư vấn quyết định đầu tư, giá bán thực tế.",
+      "estimatedHours": 12,
+      "credits": null,
+      "officialComplete": false,
+      "lessons": 6,
+      "questions": 21,
+      "sourceIds": [
+        "mit-economics"
+      ],
+      "url": "data/hh-school/university/courses/uni-economics.json?v=5f0d7faf1f5b",
+      "sha256": "5f0d7faf1f5b1ad3ae97f7c661bc4142ced0b7830aa3f2f888b1a465205f228d",
+      "bytes": 35611
+    },
+    {
+      "id": "uni-research",
+      "title": "Phương pháp học và nghiên cứu",
+      "titleEn": "Academic Learning and Research Literacy",
+      "fieldId": "general",
+      "version": "2026.10.28-university-v1",
+      "contentStatus": "draft",
+      "scope": "Sáu chủ đề thực hành học thuật nguyên bản. Chưa là môn phương pháp nghiên cứu chuyên ngành hay chứng nhận nghiên cứu với con người.",
+      "estimatedHours": 10,
+      "credits": null,
+      "officialComplete": false,
+      "lessons": 6,
+      "questions": 21,
+      "sourceIds": [
+        "mit-citing",
+        "otl"
+      ],
+      "url": "data/hh-school/university/courses/uni-research.json?v=bee263ac78b5",
+      "sha256": "bee263ac78b59a96dd88e55ec4ab6b1ac55a514d097613d9660d58648d174676",
+      "bytes": 37896
+    },
+    {
+      "id": "uni-circuits",
+      "title": "Mạch điện một chiều — nhập môn",
+      "titleEn": "Ideal DC Circuit Foundations",
+      "fieldId": "electrical",
+      "version": "2026.10.28-university-v1",
+      "contentStatus": "draft",
+      "scope": "Sáu chủ đề về mô hình DC lý tưởng với nguồn áp và điện trở. Chưa gồm đáp ứng quá độ, AC, linh kiện bán dẫn hoặc toàn bộ môn mạch. Hoạt động là mô phỏng, không hướng dẫn thao tác điện lưới.",
+      "estimatedHours": 12,
+      "credits": null,
+      "officialComplete": false,
+      "lessons": 6,
+      "questions": 21,
+      "sourceIds": [
+        "mit-circuits"
+      ],
+      "url": "data/hh-school/university/courses/uni-circuits.json?v=192fda792849",
+      "sha256": "192fda792849e7cd1b678356b9301499373731750b7bb61398c5b564d3412d52",
+      "bytes": 33095
+    }
+  ],
+  "resources": [
+    {
+      "id": "mit-linear",
+      "title": "MIT 18.06 — Linear Algebra",
+      "provider": "MIT",
+      "url": "https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/pages/syllabus/",
+      "edition": "Spring 2010",
+      "licenseDeclared": "CC BY-NC-SA 4.0",
+      "fieldIds": [
+        "math"
+      ],
+      "type": "course-source",
+      "rights": "link-only",
+      "checkedAt": "2026-10-28",
+      "checkScope": "course/catalogue page and stated terms only; no external content imported",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/pages/syllabus/",
+        "finalUrl": "https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/pages/syllabus/",
+        "http": 200,
+        "sha256": "e575992453e9a849ebb44f6da717621c3fd3134fe983e8e6b3816bbdf983a08b",
+        "checkedAt": "2026-10-28T04:12:43.204Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "mit-economics",
+      "title": "MIT 14.01 — Principles of Microeconomics",
+      "provider": "MIT",
+      "url": "https://ocw.mit.edu/courses/14-01-principles-of-microeconomics-fall-2023/pages/syllabus/",
+      "edition": "Fall 2023",
+      "licenseDeclared": "CC BY-NC-SA 4.0",
+      "fieldIds": [
+        "business"
+      ],
+      "type": "course-source",
+      "rights": "link-only",
+      "checkedAt": "2026-10-28",
+      "checkScope": "course/catalogue page and stated terms only; no external content imported",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://ocw.mit.edu/courses/14-01-principles-of-microeconomics-fall-2023/pages/syllabus/",
+        "finalUrl": "https://ocw.mit.edu/courses/14-01-principles-of-microeconomics-fall-2023/pages/syllabus/",
+        "http": 200,
+        "sha256": "b31b493851aedae4f61983915dcd211332d354b3480c66798687841a7ea3cf1b",
+        "checkedAt": "2026-10-28T04:12:43.204Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "mit-circuits",
+      "title": "MIT 6.002 — Circuits and Electronics",
+      "provider": "MIT",
+      "url": "https://ocw.mit.edu/courses/6-002-circuits-and-electronics-spring-2007/",
+      "edition": "Spring 2007",
+      "licenseDeclared": "CC BY-NC-SA 4.0",
+      "fieldIds": [
+        "electrical"
+      ],
+      "type": "course-source",
+      "rights": "link-only",
+      "checkedAt": "2026-10-28",
+      "checkScope": "course/catalogue page and stated terms only; no external content imported",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://ocw.mit.edu/courses/6-002-circuits-and-electronics-spring-2007/",
+        "finalUrl": "https://ocw.mit.edu/courses/6-002-circuits-and-electronics-spring-2007/",
+        "http": 200,
+        "sha256": "dd36ff8f9f075cce9f679be8850efd830d6cdbb0e78168cbaf2722cdfb7cfeee",
+        "checkedAt": "2026-10-28T04:12:43.202Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "harvard-cs50",
+      "title": "CS50 — Introduction to Computer Science",
+      "provider": "Harvard",
+      "url": "https://cs50.harvard.edu/x/syllabus/",
+      "edition": "2026",
+      "licenseDeclared": "CC BY-NC-SA 4.0",
+      "fieldIds": [
+        "computing"
+      ],
+      "type": "course-source",
+      "rights": "link-only",
+      "checkedAt": "2026-10-28",
+      "checkScope": "course/catalogue page and stated terms only; no external content imported",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://cs50.harvard.edu/x/syllabus/",
+        "finalUrl": "https://cs50.harvard.edu/x/syllabus/",
+        "http": 200,
+        "sha256": "027afa9fde0fec1ad669e3e62fc9f849e1f5c4792661cff4645c18c6cfa207c3",
+        "checkedAt": "2026-10-28T04:12:44.005Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "berkeley-data8",
+      "title": "Data 8 — Foundations of Data Science",
+      "provider": "UC Berkeley",
+      "url": "https://data8.org/",
+      "edition": "Fall 2026",
+      "licenseDeclared": "Sách: CC BY-NC-ND 4.0; từng repo có điều kiện riêng",
+      "fieldIds": [
+        "math"
+      ],
+      "type": "course-source",
+      "rights": "link-only",
+      "checkedAt": "2026-10-28",
+      "checkScope": "course/catalogue page and stated terms only; no external content imported",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://data8.org/",
+        "finalUrl": "https://data8.org/",
+        "http": 200,
+        "sha256": "a56d26c8eaf459df6883ad2e1ab1b7be675f49e942b66834d49f2030f672dccb",
+        "checkedAt": "2026-10-28T04:12:44.589Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "helsinki-fullstack",
+      "title": "Full Stack Open",
+      "provider": "University of Helsinki",
+      "url": "https://fullstackopen.com/en/part0/general_info/",
+      "edition": "Khóa cập nhật liên tục",
+      "licenseDeclared": "Tài liệu: CC BY-NC-SA 3.0; kiểm tra từng file",
+      "fieldIds": [
+        "computing"
+      ],
+      "type": "course-source",
+      "rights": "link-only",
+      "checkedAt": "2026-10-28",
+      "checkScope": "course/catalogue page and stated terms only; no external content imported",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://fullstackopen.com/en/part0/general_info/",
+        "finalUrl": "https://fullstackopen.com/en/part0/general_info/",
+        "http": 200,
+        "sha256": "b95ce4457787b5f34b5084a8b37f52029c32755f6f74d979eee4e2ae26a250e1",
+        "checkedAt": "2026-10-28T04:12:44.521Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "mit-citing",
+      "title": "Citing sources",
+      "provider": "MIT Libraries",
+      "url": "https://libguides.mit.edu/citing",
+      "edition": "Nguồn cập nhật liên tục",
+      "licenseDeclared": "Chưa xác minh quyền tái phân phối",
+      "fieldIds": [
+        "general"
+      ],
+      "type": "course-source",
+      "rights": "link-only",
+      "checkedAt": "2026-10-28",
+      "checkScope": "course/catalogue page and stated terms only; no external content imported",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://libguides.mit.edu/citing",
+        "finalUrl": "https://libguides.mit.edu/citing",
+        "http": 200,
+        "sha256": "04f38ad5a02e746a3779d7a8543b78ecb1182d179842b4d75e15765614845d84",
+        "checkedAt": "2026-10-28T04:12:45.128Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl",
+      "title": "Open Textbook Library",
+      "provider": "Open Education Network",
+      "url": "https://open.umn.edu/opentextbooks",
+      "edition": "Thư mục cập nhật liên tục",
+      "licenseDeclared": "Từng sách có giấy phép riêng",
+      "fieldIds": [
+        "general"
+      ],
+      "type": "course-source",
+      "rights": "link-only",
+      "checkedAt": "2026-10-28",
+      "checkScope": "course/catalogue page and stated terms only; no external content imported",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks",
+        "finalUrl": "https://open.umn.edu/opentextbooks",
+        "http": 200,
+        "sha256": "a9bd61563f75c94a0a797bce3a998e2c970d4be9b7ece01e4a1e683dad8177f3",
+        "checkedAt": "2026-10-28T04:12:45.351Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "tudelft",
+      "title": "TU Delft OpenCourseWare",
+      "provider": "TU Delft",
+      "url": "https://ocw.tudelft.nl/",
+      "edition": "Chuyển nền tảng cuối 2026 — cần kiểm tra lại URL",
+      "licenseDeclared": "Kiểm tra từng học liệu",
+      "fieldIds": [
+        "civil"
+      ],
+      "type": "course-source",
+      "rights": "link-only",
+      "checkedAt": "2026-10-28",
+      "checkScope": "course/catalogue page and stated terms only; no external content imported",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://ocw.tudelft.nl/",
+        "http": null,
+        "error": "fetch failed",
+        "checkedAt": "2026-10-28T04:12:55.581Z"
+      }
+    },
+    {
+      "id": "yale",
+      "title": "Open Yale Courses",
+      "provider": "Yale",
+      "url": "https://oyc.yale.edu/",
+      "edition": "Nhiều niên khóa; không mặc định là hiện hành",
+      "licenseDeclared": "Kiểm tra từng học liệu",
+      "fieldIds": [
+        "social"
+      ],
+      "type": "course-source",
+      "rights": "link-only",
+      "checkedAt": "2026-10-28",
+      "checkScope": "course/catalogue page and stated terms only; no external content imported",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://oyc.yale.edu/",
+        "finalUrl": "https://oyc.yale.edu/",
+        "http": 200,
+        "sha256": "c1969a3de8edd2e526f2d6ec42d39d89863899bf9be8f336c59d7a1e9bda0006",
+        "checkedAt": "2026-10-28T04:12:46.021Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "hust",
+      "title": "Chương trình và đào tạo SoICT",
+      "provider": "HUST / SoICT",
+      "url": "https://soict.hust.edu.vn/",
+      "edition": "Cần chọn đúng chương trình và khóa",
+      "licenseDeclared": "Chưa xác minh quyền tái phân phối",
+      "fieldIds": [
+        "computing"
+      ],
+      "type": "course-source",
+      "rights": "link-only",
+      "checkedAt": "2026-10-28",
+      "checkScope": "course/catalogue page and stated terms only; no external content imported",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://soict.hust.edu.vn/",
+        "finalUrl": "https://soict.hust.edu.vn/",
+        "http": 200,
+        "sha256": "4705d55b50eba5f3d8ddc47ddeda24f0383674a4a81dda3a2e30b06590c55cc6",
+        "checkedAt": "2026-10-28T04:12:45.766Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "ueh",
+      "title": "Cổng đào tạo UEH",
+      "provider": "UEH",
+      "url": "https://daotao.ueh.edu.vn/",
+      "edition": "Cần chọn đúng chương trình và khóa",
+      "licenseDeclared": "Chưa xác minh quyền tái phân phối",
+      "fieldIds": [
+        "business"
+      ],
+      "type": "course-source",
+      "rights": "link-only",
+      "checkedAt": "2026-10-28",
+      "checkScope": "course/catalogue page and stated terms only; no external content imported",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://daotao.ueh.edu.vn/",
+        "finalUrl": "https://daotao.ueh.edu.vn/",
+        "http": 200,
+        "sha256": "faf0241a9fa4777ddb80f815ad8864fc930257707f9f0af42a17c37133fdb9e4",
+        "checkedAt": "2026-10-28T04:12:45.822Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "openstax",
+      "title": "OpenStax — sách đại học",
+      "provider": "Rice University / OpenStax",
+      "url": "https://openstax.org/subjects",
+      "edition": "Từng sách có ấn bản riêng",
+      "licenseDeclared": "CC BY-NC-SA; kiểm tra ấn bản và tài sản",
+      "fieldIds": [
+        "science"
+      ],
+      "type": "course-source",
+      "rights": "link-only",
+      "checkedAt": "2026-10-28",
+      "checkScope": "course/catalogue page and stated terms only; no external content imported",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://openstax.org/subjects",
+        "finalUrl": "https://openstax.org/subjects",
+        "http": 200,
+        "sha256": "122a7b58174184305f56c8c5c86c995abd6060bc1920fae9a3cec195c07fcf18",
+        "checkedAt": "2026-10-28T04:12:56.409Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "repo": "mitmath/1806",
+      "url": "https://github.com/mitmath/1806",
+      "branch": "master",
+      "commit": "469ddbc94b68bbe7a121b503605c6683b94dabcc",
+      "path": "README.md",
+      "commitAt": "2026-02-27T13:48:13Z",
+      "licenseDeclared": "NOASSERTION",
+      "rights": "link-only",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "academicReview": "not-reviewed",
+      "verificationUrl": "https://web.mit.edu/18.06/www/",
+      "id": "mitmath",
+      "title": "mitmath/1806",
+      "type": "github",
+      "provider": "mitmath",
+      "fieldIds": [
+        "math"
+      ],
+      "linkCheck": {
+        "url": "https://github.com/mitmath/1806",
+        "finalUrl": "https://github.com/mitmath/1806",
+        "http": 200,
+        "sha256": "407ae7e1ddd386c63e61a0b083a44f8921fd6fd1e70438d233d5954a6bda9137",
+        "checkedAt": "2026-10-28T04:12:56.441Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "repo": "cs50/python-cs50",
+      "url": "https://github.com/cs50/python-cs50",
+      "branch": "main",
+      "commit": "c9f86eff2ba951768957d5289b35716deb4a0c43",
+      "path": "README.md",
+      "commitAt": "2026-09-05T03:15:15Z",
+      "licenseDeclared": "GPL-3.0",
+      "rights": "link-only",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "academicReview": "not-reviewed",
+      "verificationUrl": "https://cs50.harvard.edu/x/",
+      "id": "cs50-github",
+      "title": "cs50/python-cs50",
+      "type": "github",
+      "provider": "cs50",
+      "fieldIds": [
+        "computing"
+      ],
+      "linkCheck": {
+        "url": "https://github.com/cs50/python-cs50",
+        "finalUrl": "https://github.com/cs50/python-cs50",
+        "http": 200,
+        "sha256": "2bc550f5368865c6a470f2e785e54d0ff91de3ec7fbc6e1f49fa6af771750ac3",
+        "checkedAt": "2026-10-28T04:12:56.490Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "repo": "data-8/textbook",
+      "url": "https://github.com/data-8/textbook",
+      "branch": "main",
+      "commit": "41a47b89e03bf8edd1bed013b1ab225220212823",
+      "path": "README.md",
+      "commitAt": "2026-10-27T17:29:35Z",
+      "licenseDeclared": "NOASSERTION",
+      "rights": "link-only",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "academicReview": "not-reviewed",
+      "verificationUrl": "https://data8.org/",
+      "id": "github-data-8-textbook",
+      "title": "data-8/textbook",
+      "type": "github",
+      "provider": "data-8",
+      "fieldIds": [
+        "computing"
+      ],
+      "linkCheck": {
+        "url": "https://github.com/data-8/textbook",
+        "finalUrl": "https://github.com/data-8/textbook",
+        "http": 200,
+        "sha256": "8d5a30add6bd7fb255b0d73ec2b79c04487c8e1bb247c74b97cd66e5a726629d",
+        "checkedAt": "2026-10-28T04:12:56.424Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "repo": "data-8/materials-fa26",
+      "url": "https://github.com/data-8/materials-fa26",
+      "branch": "main",
+      "commit": "12ba662cbffd10b46692267307e2211e2a6f96d9",
+      "path": "README.md",
+      "commitAt": "2026-10-26T20:31:45Z",
+      "licenseDeclared": "NOASSERTION",
+      "rights": "link-only",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "academicReview": "not-reviewed",
+      "verificationUrl": "https://data8.org/",
+      "id": "github-data-8-materials-fa26",
+      "title": "data-8/materials-fa26",
+      "type": "github",
+      "provider": "data-8",
+      "fieldIds": [
+        "computing"
+      ],
+      "linkCheck": {
+        "url": "https://github.com/data-8/materials-fa26",
+        "finalUrl": "https://github.com/data-8/materials-fa26",
+        "http": 200,
+        "sha256": "7f9024d10ddf08c62c042f0277c72c64f6bac23b2186159c55080f3a0a67ca85",
+        "checkedAt": "2026-10-28T04:12:57.223Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "repo": "fullstack-hy2020/fullstack-hy2020.github.io",
+      "url": "https://github.com/fullstack-hy2020/fullstack-hy2020.github.io",
+      "branch": "source",
+      "commit": "9c24482abcf387699d0f36bcdff5811dbe2ce5a7",
+      "path": "README.md",
+      "commitAt": "2026-10-17T12:57:21Z",
+      "licenseDeclared": "NOASSERTION",
+      "rights": "link-only",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "academicReview": "not-reviewed",
+      "verificationUrl": "https://fullstackopen.com/en/part0/general_info/",
+      "id": "github-fullstack-hy2020-fullstack-hy2020-github-io",
+      "title": "fullstack-hy2020/fullstack-hy2020.github.io",
+      "type": "github",
+      "provider": "fullstack-hy2020",
+      "fieldIds": [
+        "computing"
+      ],
+      "linkCheck": {
+        "url": "https://github.com/fullstack-hy2020/fullstack-hy2020.github.io",
+        "finalUrl": "https://github.com/fullstack-hy2020/fullstack-hy2020.github.io",
+        "http": 200,
+        "sha256": "8e49776362876f40d7656310e177a8b1d2bd614848c49211a3d965941bacc334",
+        "checkedAt": "2026-10-28T04:12:57.120Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-5",
+      "type": "textbook",
+      "title": "A First Course in Linear Algebra",
+      "fieldIds": [
+        "math"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/a-first-course-in-linear-algebra",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Robert A. Beezer",
+          "institution": "University of Puget Sound"
+        }
+      ],
+      "publishers": [
+        "Robert Beezer"
+      ],
+      "edition": "",
+      "copyrightYear": 2015,
+      "metadataUpdatedAt": "2026-05-18T12:03:48.000-05:00",
+      "licenseDeclared": "Free Documentation License (GNU)",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/a-first-course-in-linear-algebra",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/a-first-course-in-linear-algebra",
+        "http": 200,
+        "sha256": "73bb70a470a5e6b9bfa5fd40020ab85e786e6ec2b04fd063e88ed1646b3c17a4",
+        "checkedAt": "2026-10-28T04:12:57.213Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-7",
+      "type": "textbook",
+      "title": "Book of Proof",
+      "fieldIds": [
+        "math"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/book-of-proof",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Richard Hammack",
+          "institution": "Virginia Commonwealth University"
+        }
+      ],
+      "publishers": [
+        "Richard Hammack"
+      ],
+      "edition": "Third Edition",
+      "copyrightYear": 2018,
+      "metadataUpdatedAt": "2026-05-18T12:03:48.000-05:00",
+      "licenseDeclared": "Attribution-NoDerivs",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/book-of-proof",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/book-of-proof",
+        "http": 200,
+        "sha256": "540514c156676277cd39c8c17e3874725b80aaf43270777df0256b373fda5485",
+        "checkedAt": "2026-10-28T04:12:57.183Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-10",
+      "type": "textbook",
+      "title": "Calculus",
+      "fieldIds": [
+        "math"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/calculus",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Gilbert Strang",
+          "institution": "MIT"
+        }
+      ],
+      "publishers": [
+        "Wellesley-Cambridge Press"
+      ],
+      "edition": "Third Edition",
+      "copyrightYear": 1991,
+      "metadataUpdatedAt": "2026-06-25T08:28:20.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/calculus",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/calculus",
+        "http": 200,
+        "sha256": "241e7018b8fad5fc536960c7f425591151f0fe20045470f8cb93c8f9804d8524",
+        "checkedAt": "2026-10-28T04:12:57.544Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-22",
+      "type": "textbook",
+      "title": "Introductory Chemistry",
+      "fieldIds": [
+        "science"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/introductory-chemistry",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "David W. Ball",
+          "institution": "Cleveland State University"
+        }
+      ],
+      "publishers": [
+        "Saylor Foundation"
+      ],
+      "edition": "",
+      "copyrightYear": 2011,
+      "metadataUpdatedAt": "2026-05-18T12:03:48.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/introductory-chemistry",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/introductory-chemistry",
+        "http": 200,
+        "sha256": "7a0eeca94583a25cac91d488170688e33659b2c59d5bb2dca25d4f0a6a351db3",
+        "checkedAt": "2026-10-28T04:12:57.482Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-40",
+      "type": "textbook",
+      "title": "The Basics of General, Organic, and Biological Chemistry",
+      "fieldIds": [
+        "science"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/the-basics-of-general-organic-and-biological-chemistry",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "David W Ball",
+          "institution": "Cleveland State University"
+        },
+        {
+          "name": "John W Hill",
+          "institution": "University of Wisconsin"
+        },
+        {
+          "name": "Rhonda J Scott",
+          "institution": "Southern Adventist University"
+        }
+      ],
+      "publishers": [
+        "Saylor Foundation"
+      ],
+      "edition": "",
+      "copyrightYear": 2011,
+      "metadataUpdatedAt": "2026-05-18T12:03:49.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/the-basics-of-general-organic-and-biological-chemistry",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/the-basics-of-general-organic-and-biological-chemistry",
+        "http": 200,
+        "sha256": "1b1652e62cb3ac05f815a2920ecdad63fcb95c58c8fe85f822f78af020201d52",
+        "checkedAt": "2026-10-28T04:12:57.923Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-59",
+      "type": "textbook",
+      "title": "Light and Matter",
+      "fieldIds": [
+        "science"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/light-and-matter",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Benjamin Crowell",
+          "institution": "Fullerton College"
+        }
+      ],
+      "publishers": [
+        "Benjamin Crowell"
+      ],
+      "edition": "",
+      "copyrightYear": 2010,
+      "metadataUpdatedAt": "2026-05-18T02:10:09.000-05:00",
+      "licenseDeclared": "Attribution-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/light-and-matter",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/light-and-matter",
+        "http": 200,
+        "sha256": "1f72bd08c19ed953de617d589039e3b32ff526ed8e0253d5a8c4e6cd032a4ce2",
+        "checkedAt": "2026-10-28T04:12:57.945Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-9",
+      "type": "textbook",
+      "title": "College Success",
+      "fieldIds": [
+        "general"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/college-success",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [],
+      "publishers": [
+        "University of Minnesota Libraries Publishing"
+      ],
+      "edition": "",
+      "copyrightYear": 2015,
+      "metadataUpdatedAt": "2026-05-18T02:09:59.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/college-success",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/college-success",
+        "http": 200,
+        "sha256": "54c303c444f476c6757ed974d94b0ba4e74ce4ba6605ab71d5db00b896c00083",
+        "checkedAt": "2026-10-28T04:12:58.281Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-53",
+      "type": "textbook",
+      "title": "Writing for Success",
+      "fieldIds": [
+        "general"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/writing-for-success",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [],
+      "publishers": [
+        "University of Minnesota Libraries Publishing"
+      ],
+      "edition": "",
+      "copyrightYear": 2015,
+      "metadataUpdatedAt": "2026-05-18T02:10:01.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/writing-for-success",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/writing-for-success",
+        "http": 200,
+        "sha256": "0c92f0ea2d53431d5f41ea403112117812ccac94b1f70edcd923c93f919dd92e",
+        "checkedAt": "2026-10-28T04:12:58.288Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-76",
+      "type": "textbook",
+      "title": "Six Steps To Job Search Success",
+      "fieldIds": [
+        "general"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/six-steps-to-job-search-success",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Caroline Ceniza-Levine",
+          "institution": "SixFigureStart"
+        },
+        {
+          "name": "Connie Thanasoulis-Cerrachio",
+          "institution": "SixFigureStart"
+        }
+      ],
+      "publishers": [
+        "Saylor Foundation"
+      ],
+      "edition": "",
+      "copyrightYear": 2011,
+      "metadataUpdatedAt": "2026-05-18T02:09:30.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/six-steps-to-job-search-success",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/six-steps-to-job-search-success",
+        "http": 200,
+        "sha256": "cc3fb5ac2685a597c2c8da607268c5b64e2058deec9db4750169a9e5085766d2",
+        "checkedAt": "2026-10-28T04:12:58.228Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-532",
+      "type": "textbook",
+      "title": "Electromagnetics",
+      "fieldIds": [
+        "electrical"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/electromagnetics-vol-1",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Steven W. Ellingson",
+          "institution": "Virginia Tech"
+        }
+      ],
+      "publishers": [
+        "Virginia Tech Libraries"
+      ],
+      "edition": "",
+      "copyrightYear": 2018,
+      "metadataUpdatedAt": "2026-05-18T12:03:51.000-05:00",
+      "licenseDeclared": "Attribution-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/electromagnetics-vol-1",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/electromagnetics-vol-1",
+        "http": 200,
+        "sha256": "f2e09899d7ea4c41b4f6c53194a18512b8f131a3d07ae9ab9e4378500571591c",
+        "checkedAt": "2026-10-28T04:12:58.280Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-708",
+      "type": "textbook",
+      "title": "Electromagnetics",
+      "fieldIds": [
+        "electrical"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/electromagnetics-vol-2",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Steven W. Ellingson",
+          "institution": ""
+        }
+      ],
+      "publishers": [
+        "Virginia Tech Publishing"
+      ],
+      "edition": "",
+      "copyrightYear": 2020,
+      "metadataUpdatedAt": "2026-05-18T12:03:52.000-05:00",
+      "licenseDeclared": "Attribution-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/electromagnetics-vol-2",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/electromagnetics-vol-2",
+        "http": 200,
+        "sha256": "0ec3c47760f63a18a3dffcd5dfb0a3537773a255e25a0adc015791831dacf7a8",
+        "checkedAt": "2026-10-28T04:12:58.652Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-758",
+      "type": "textbook",
+      "title": "Microwave and RF Design: Amplifiers and Oscillators",
+      "fieldIds": [
+        "electrical"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/microwave-and-rf-design-amplifiers-and-oscillators",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Michael Steer",
+          "institution": "NC State"
+        }
+      ],
+      "publishers": [
+        "North Carolina State University Libraries"
+      ],
+      "edition": "",
+      "copyrightYear": 2019,
+      "metadataUpdatedAt": "2026-05-18T02:06:44.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/microwave-and-rf-design-amplifiers-and-oscillators",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/microwave-and-rf-design-amplifiers-and-oscillators",
+        "http": 200,
+        "sha256": "56d564edfc2fc7db60652fec38d1a559dc7b0c6a574c427704138e8248a65529",
+        "checkedAt": "2026-10-28T04:12:58.579Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-85",
+      "type": "textbook",
+      "title": "Basics of Fluid Mechanics",
+      "fieldIds": [
+        "mechanical",
+        "civil"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/basics-of-fluid-mechanics",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Genick Bar-Meir",
+          "institution": ""
+        }
+      ],
+      "publishers": [
+        "Potto Project"
+      ],
+      "edition": "ver. 0.7.5",
+      "copyrightYear": 2025,
+      "metadataUpdatedAt": "2026-06-25T09:15:32.000-05:00",
+      "licenseDeclared": "Free Documentation License (GNU)",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/basics-of-fluid-mechanics",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/basics-of-fluid-mechanics",
+        "http": 200,
+        "sha256": "674376e64fe2749c390d354e9fec42a8be8773e300e7512a544302409a827ecc",
+        "checkedAt": "2026-10-28T04:12:58.698Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-86",
+      "type": "textbook",
+      "title": "Fundamentals of Compressible Flow Mechanics",
+      "fieldIds": [
+        "mechanical"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/fundamentals-of-compressible-flow-mechanics",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Genick Bar-Meir",
+          "institution": ""
+        }
+      ],
+      "publishers": [
+        "Potto Project"
+      ],
+      "edition": "ver. 0.5.4",
+      "copyrightYear": 2026,
+      "metadataUpdatedAt": "2026-06-25T09:18:35.000-05:00",
+      "licenseDeclared": "Attribution",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/fundamentals-of-compressible-flow-mechanics",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/fundamentals-of-compressible-flow-mechanics",
+        "http": 200,
+        "sha256": "6a3e31f8d0b2cfa93f1d74f4e0e1b512388c63f0b88eb2df29113d1ff1c0ca27",
+        "checkedAt": "2026-10-28T04:12:58.694Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-645",
+      "type": "textbook",
+      "title": "Manufacturing Processes",
+      "fieldIds": [
+        "mechanical"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/manufacturing-processes-4-5",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "LamNgeun Virasak",
+          "institution": ""
+        }
+      ],
+      "publishers": [
+        "Open Oregon Educational Resources"
+      ],
+      "edition": "",
+      "copyrightYear": 2019,
+      "metadataUpdatedAt": "2026-05-18T02:10:44.000-05:00",
+      "licenseDeclared": "Attribution",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/manufacturing-processes-4-5",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/manufacturing-processes-4-5",
+        "http": 200,
+        "sha256": "8654c7fe8a782c3357d4292559b76786282e990fe429fc5c9a403d2086f2c884",
+        "checkedAt": "2026-10-28T04:12:59.015Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-16",
+      "type": "textbook",
+      "title": "Information Systems - A Manager's Guide to Harnessing Technology",
+      "fieldIds": [
+        "computing"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/information-systems-a-manager-s-guide-to-harnessing-technology",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [],
+      "publishers": [
+        "University of Minnesota Libraries Publishing"
+      ],
+      "edition": "",
+      "copyrightYear": 2015,
+      "metadataUpdatedAt": "2026-05-18T02:10:00.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/information-systems-a-manager-s-guide-to-harnessing-technology",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/information-systems-a-manager-s-guide-to-harnessing-technology",
+        "http": 200,
+        "sha256": "100bb6c26ac012d2cb1f0378a4d021b2a8e9eb983ca3c7b7331845dab3e060b0",
+        "checkedAt": "2026-10-28T04:12:58.966Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-35",
+      "type": "textbook",
+      "title": "Programming Languages: Application and Interpretation",
+      "fieldIds": [
+        "computing"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/programming-languages-application-and-interpretation",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Shriram Krishnamurthi",
+          "institution": "Brown University"
+        }
+      ],
+      "publishers": [
+        "Brown University"
+      ],
+      "edition": "Version Second Edition",
+      "copyrightYear": 2007,
+      "metadataUpdatedAt": "2026-06-25T08:35:21.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/programming-languages-application-and-interpretation",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/programming-languages-application-and-interpretation",
+        "http": 200,
+        "sha256": "ce5a94c597f6f1153bc7a2ae1aa3af1ee17c0a2731eaeaf54fe7afdc345f1be0",
+        "checkedAt": "2026-10-28T04:12:59.033Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-43",
+      "type": "textbook",
+      "title": "Think Python: How to Think Like a Computer Scientist",
+      "fieldIds": [
+        "computing"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/think-python-how-to-think-like-a-computer-scientist",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Allen B. Downey",
+          "institution": "Franklin W. Olin College of Engineering"
+        }
+      ],
+      "publishers": [
+        "Green Tea Press"
+      ],
+      "edition": "2e",
+      "copyrightYear": 2012,
+      "metadataUpdatedAt": "2026-05-18T12:03:49.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/think-python-how-to-think-like-a-computer-scientist",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/think-python-how-to-think-like-a-computer-scientist",
+        "http": 200,
+        "sha256": "26ef33537c37c468738334c81ebec867104ffb2bdc58b6df8afb634b7c79bd68",
+        "checkedAt": "2026-10-28T04:12:59.009Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-612",
+      "type": "textbook",
+      "title": "Building Maintenance & Construction: Tools and Maintenance Tasks",
+      "fieldIds": [
+        "civil"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/building-maintenance-construction-tools-and-maintenance-tasks",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Clifford Rutherford",
+          "institution": ""
+        }
+      ],
+      "publishers": [
+        "University of Hawaii Manoa"
+      ],
+      "edition": "",
+      "copyrightYear": 2018,
+      "metadataUpdatedAt": "2026-05-18T02:10:49.000-05:00",
+      "licenseDeclared": "Attribution",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/building-maintenance-construction-tools-and-maintenance-tasks",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/building-maintenance-construction-tools-and-maintenance-tasks",
+        "http": 200,
+        "sha256": "19fd5dd7cb581c85ca6839e6ffde8e4cda5a5698c2a86807a8d04a41c9bf6e7d",
+        "checkedAt": "2026-10-28T04:12:59.355Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-528",
+      "type": "textbook",
+      "title": "Fundamentals of Infrastructure Management",
+      "fieldIds": [
+        "civil"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/fundamentals-of-infrastructure-management",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Donald Coffelt",
+          "institution": "Carnegie Mellon University"
+        },
+        {
+          "name": "Chris Hendrickson",
+          "institution": "Carnegie Mellon University"
+        }
+      ],
+      "publishers": [
+        "Donald Coffelt and Chris Hendrickson"
+      ],
+      "edition": "",
+      "copyrightYear": 2017,
+      "metadataUpdatedAt": "2026-05-18T02:06:08.000-05:00",
+      "licenseDeclared": "Attribution-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/fundamentals-of-infrastructure-management",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/fundamentals-of-infrastructure-management",
+        "http": 200,
+        "sha256": "4b32025d4d2fdc5798c01ffb97441e684fa33fcb3b8163976e3f4569efa2c597",
+        "checkedAt": "2026-10-28T04:12:59.331Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-51",
+      "type": "textbook",
+      "title": "The Legal and Ethical Environment of Business",
+      "fieldIds": [
+        "law"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/the-legal-and-ethical-environment-of-business",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Terence Lau",
+          "institution": "University of Dayton"
+        },
+        {
+          "name": "Lisa Johnson",
+          "institution": "University of Puget Sound"
+        }
+      ],
+      "publishers": [
+        "Saylor Foundation"
+      ],
+      "edition": "",
+      "copyrightYear": 2011,
+      "metadataUpdatedAt": "2026-05-18T02:09:30.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/the-legal-and-ethical-environment-of-business",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/the-legal-and-ethical-environment-of-business",
+        "http": 200,
+        "sha256": "d74f24a4a28f00f98f2a9ebb75505cbc34d65ab83aec94677e95061f3929358e",
+        "checkedAt": "2026-10-28T04:12:59.361Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-66",
+      "type": "textbook",
+      "title": "Introduction to Criminal Law",
+      "fieldIds": [
+        "law"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/criminal-law",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [],
+      "publishers": [
+        "University of Minnesota Libraries Publishing"
+      ],
+      "edition": "",
+      "copyrightYear": 2015,
+      "metadataUpdatedAt": "2026-05-18T02:09:59.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/criminal-law",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/criminal-law",
+        "http": 200,
+        "sha256": "11abe17cb1525acfbc6f359f6dddc2d7767d03ebbe972728f49eadfcae58b46a",
+        "checkedAt": "2026-10-28T04:12:59.340Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-99",
+      "type": "textbook",
+      "title": "Introduction to Basic Legal Citation",
+      "fieldIds": [
+        "law"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/introduction-to-basic-legal-citation",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Peter W. Martin",
+          "institution": "Cornell Law School"
+        }
+      ],
+      "publishers": [
+        "CALI's eLangdell® Press"
+      ],
+      "edition": "",
+      "copyrightYear": 2013,
+      "metadataUpdatedAt": "2026-05-18T02:10:10.000-05:00",
+      "licenseDeclared": "Attribution-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/introduction-to-basic-legal-citation",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/introduction-to-basic-legal-citation",
+        "http": 200,
+        "sha256": "10aadacd3074bb57d23ddd54a86d528ae406734d80bd411545e58793ed37ebcc",
+        "checkedAt": "2026-10-28T04:12:59.718Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-474",
+      "type": "textbook",
+      "title": "Intermediate Financial Accounting",
+      "fieldIds": [
+        "business"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/intermediate-financial-accounting-volume-2",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Glenn Arnold",
+          "institution": "Athabasca University"
+        },
+        {
+          "name": "Suzanne Kyle",
+          "institution": ""
+        }
+      ],
+      "publishers": [
+        "Lyryx"
+      ],
+      "edition": "2021-A",
+      "copyrightYear": 2017,
+      "metadataUpdatedAt": "2026-05-18T02:10:44.000-05:00",
+      "licenseDeclared": "Attribution",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/intermediate-financial-accounting-volume-2",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/intermediate-financial-accounting-volume-2",
+        "http": 200,
+        "sha256": "932d3bcae49ed51491ad091db29a1033f3c15bf618328eff42e2d8a4a00745c1",
+        "checkedAt": "2026-10-28T04:12:59.635Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-8",
+      "type": "textbook",
+      "title": "Communication for Business Success",
+      "fieldIds": [
+        "business"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/business-communication-for-success",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [],
+      "publishers": [
+        "University of Minnesota Libraries Publishing"
+      ],
+      "edition": "",
+      "copyrightYear": 2015,
+      "metadataUpdatedAt": "2026-05-18T02:09:28.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/business-communication-for-success",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/business-communication-for-success",
+        "http": 200,
+        "sha256": "bd9049a30fdcc7a32f6a6d9034d42442b9bede00778642728d32915e75c9b0f2",
+        "checkedAt": "2026-10-28T04:12:59.723Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-14",
+      "type": "textbook",
+      "title": "eMarketing: The Essential Guide to Marketing in a Digital World",
+      "fieldIds": [
+        "business"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/emarketing-the-essential-guide-to-marketing-in-a-digital-world",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Dionne Solomons",
+          "institution": ""
+        },
+        {
+          "name": "Tania Kliphuis",
+          "institution": ""
+        },
+        {
+          "name": "Michelle Wadley",
+          "institution": ""
+        }
+      ],
+      "publishers": [
+        "Red & Yellow"
+      ],
+      "edition": "7th Edition",
+      "copyrightYear": 2022,
+      "metadataUpdatedAt": "2026-05-18T02:06:08.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/emarketing-the-essential-guide-to-marketing-in-a-digital-world",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/emarketing-the-essential-guide-to-marketing-in-a-digital-world",
+        "http": 200,
+        "sha256": "ef2d5e2fa879b25f0cb3b44ecdcac8d687ee6ef11dd6f4bafa8eb2b90139365c",
+        "checkedAt": "2026-10-28T04:12:59.641Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-19",
+      "type": "textbook",
+      "title": "International Trade: Theory and Policy",
+      "fieldIds": [
+        "social"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/international-trade-theory-and-policy",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Steve Suranovic",
+          "institution": "George Washington University"
+        }
+      ],
+      "publishers": [
+        "Saylor Foundation"
+      ],
+      "edition": "",
+      "copyrightYear": 2010,
+      "metadataUpdatedAt": "2026-05-18T02:09:29.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/international-trade-theory-and-policy",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/international-trade-theory-and-policy",
+        "http": 200,
+        "sha256": "4ddea5fdbc2c93d4abc003c28aa69d338598fa513ffe30578db3688fbc55a57b",
+        "checkedAt": "2026-10-28T04:12:59.995Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-28",
+      "type": "textbook",
+      "title": "Microeconomics: Theory Through Applications",
+      "fieldIds": [
+        "social"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/microeconomics-theory-through-applications",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Russell Cooper",
+          "institution": "European University Institute"
+        },
+        {
+          "name": "Andrew John",
+          "institution": "Melbourne Business School"
+        }
+      ],
+      "publishers": [
+        "Saylor Foundation"
+      ],
+      "edition": "",
+      "copyrightYear": 2011,
+      "metadataUpdatedAt": "2026-05-18T02:09:30.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/microeconomics-theory-through-applications",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/microeconomics-theory-through-applications",
+        "http": 200,
+        "sha256": "17f9d725ef886a561ea92fa00edddb18a81622138dea040040e3f1f8eb8c4528",
+        "checkedAt": "2026-10-28T04:12:59.983Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-32",
+      "type": "textbook",
+      "title": "Principles of Economics",
+      "fieldIds": [
+        "social"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/principles-of-economics",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [],
+      "publishers": [
+        "University of Minnesota Libraries Publishing"
+      ],
+      "edition": "",
+      "copyrightYear": 2016,
+      "metadataUpdatedAt": "2026-05-18T02:10:01.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/principles-of-economics",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/principles-of-economics",
+        "http": 200,
+        "sha256": "9a9a91cb7bd4e0b1b5bc047758e4930bd8c954777b236ac48052d2d27ae768a7",
+        "checkedAt": "2026-10-28T04:13:00.001Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-246",
+      "type": "textbook",
+      "title": "Nursing Care at the End of Life: What Every Clinician Should Know",
+      "fieldIds": [
+        "health"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/nursing-care-at-the-end-of-life-what-every-clinician-should-know",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Susan E. Lowey",
+          "institution": "SUNY, Brockport"
+        }
+      ],
+      "publishers": [
+        "Open SUNY"
+      ],
+      "edition": "",
+      "copyrightYear": 2015,
+      "metadataUpdatedAt": "2026-05-18T02:10:08.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/nursing-care-at-the-end-of-life-what-every-clinician-should-know",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/nursing-care-at-the-end-of-life-what-every-clinician-should-know",
+        "http": 200,
+        "sha256": "29126cf77a64aee1bb8f2ad5737d5316edb7300fe08bc51bd3d30f20daa42b0d",
+        "checkedAt": "2026-10-28T04:13:00.007Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-317",
+      "type": "textbook",
+      "title": "Creative Clinical Teaching In The Health Professions",
+      "fieldIds": [
+        "health"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/creative-clinical-teaching-in-the-health-professions",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Sherri Melrose",
+          "institution": "Athabasca University"
+        },
+        {
+          "name": "Caroline Park",
+          "institution": "Athabasca University"
+        },
+        {
+          "name": "Beth Perry",
+          "institution": "Athabasca University"
+        }
+      ],
+      "publishers": [
+        "Athabasca University Press"
+      ],
+      "edition": "",
+      "copyrightYear": 2015,
+      "metadataUpdatedAt": "2026-05-18T02:10:09.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/creative-clinical-teaching-in-the-health-professions",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/creative-clinical-teaching-in-the-health-professions",
+        "http": 200,
+        "sha256": "b034b21c57cf3d1303b36240ec7967d31bafd8805573def6d1b2df07ea7d92d5",
+        "checkedAt": "2026-10-28T04:13:00.307Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-367",
+      "type": "textbook",
+      "title": "Clinical Procedures for Safer Patient Care",
+      "fieldIds": [
+        "health"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/clinical-procedures-for-safer-patient-care",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Glynda Rees Doyle",
+          "institution": "British Columbia Institute of Technology"
+        },
+        {
+          "name": "Jodie McCutcheon",
+          "institution": "British Columbia Institute of Technology"
+        }
+      ],
+      "publishers": [
+        "BCcampus"
+      ],
+      "edition": "",
+      "copyrightYear": 2015,
+      "metadataUpdatedAt": "2026-05-18T02:10:11.000-05:00",
+      "licenseDeclared": "Attribution",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/clinical-procedures-for-safer-patient-care",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/clinical-procedures-for-safer-patient-care",
+        "http": 200,
+        "sha256": "3343c7c96ea9586a226faf85aaf08df59c3b77178e2e199f0f595497a96d6aee",
+        "checkedAt": "2026-10-28T04:13:00.294Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-68",
+      "type": "textbook",
+      "title": "Exploring Perspectives: A Concise Guide to Analysis",
+      "fieldIds": [
+        "education"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/exploring-perspectives-a-concise-guide-to-analysis",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Randall Fallows",
+          "institution": "University of California Los Angeles"
+        }
+      ],
+      "publishers": [
+        "Saylor Foundation"
+      ],
+      "edition": "",
+      "copyrightYear": 2011,
+      "metadataUpdatedAt": "2026-05-18T02:09:29.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/exploring-perspectives-a-concise-guide-to-analysis",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/exploring-perspectives-a-concise-guide-to-analysis",
+        "http": 200,
+        "sha256": "a3a49bb4bce6c55ad0870475827c8ea3d2405f4ee509d499e0b7d86d1ad6882f",
+        "checkedAt": "2026-10-28T04:13:00.296Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-153",
+      "type": "textbook",
+      "title": "Educational Psychology",
+      "fieldIds": [
+        "education"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/educational-psychology",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Kelvin Seifert",
+          "institution": "University of Manitoba"
+        },
+        {
+          "name": "Rosemary Sutton",
+          "institution": "Cleveland State University"
+        }
+      ],
+      "publishers": [
+        "University of Manitoba"
+      ],
+      "edition": "Second Edition",
+      "copyrightYear": 2009,
+      "metadataUpdatedAt": "2026-05-18T12:03:49.000-05:00",
+      "licenseDeclared": "Attribution",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/educational-psychology",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/educational-psychology",
+        "http": 200,
+        "sha256": "9217a0efed3e9fa579bd139b9db50973f7bc633e0a59915ef23cf85e9bab0662",
+        "checkedAt": "2026-10-28T04:13:00.342Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-190",
+      "type": "textbook",
+      "title": "The Information Literacy User's Guide: An Open, Online Textbook",
+      "fieldIds": [
+        "education"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/the-information-literacy-user-s-guide-an-open-online-textbook",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Deborah Bernnard",
+          "institution": "University of Albany"
+        },
+        {
+          "name": "Greg Bobish",
+          "institution": "University of Albany"
+        },
+        {
+          "name": "Daryl Bullis",
+          "institution": "Babson College"
+        },
+        {
+          "name": "Jenna Hecker",
+          "institution": "University of Albany"
+        },
+        {
+          "name": "Irina Holden",
+          "institution": "University of Albany"
+        },
+        {
+          "name": "Allison Hosier",
+          "institution": "University of Albany"
+        },
+        {
+          "name": "Trudi Jacobson",
+          "institution": "University of Albany"
+        },
+        {
+          "name": "Tor Loney",
+          "institution": "Albany Public Library"
+        }
+      ],
+      "publishers": [
+        "Open SUNY"
+      ],
+      "edition": "",
+      "copyrightYear": 2014,
+      "metadataUpdatedAt": "2026-05-18T02:10:19.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/the-information-literacy-user-s-guide-an-open-online-textbook",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/the-information-literacy-user-s-guide-an-open-online-textbook",
+        "http": 200,
+        "sha256": "353f1312f536aa2ff79b952d397658c63efd99e313309fa1cde5bd95a71079e9",
+        "checkedAt": "2026-10-28T04:13:00.642Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-527",
+      "type": "textbook",
+      "title": "Recorridos",
+      "fieldIds": [
+        "languages"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/recorridos",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "spa",
+      "authors": [
+        {
+          "name": "Betsy Arnold",
+          "institution": ""
+        },
+        {
+          "name": "Rose Potter",
+          "institution": ""
+        }
+      ],
+      "publishers": [
+        "COERLL"
+      ],
+      "edition": "",
+      "copyrightYear": 2017,
+      "metadataUpdatedAt": "2026-05-18T12:03:51.000-05:00",
+      "licenseDeclared": "Attribution",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/recorridos",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/recorridos",
+        "http": 200,
+        "sha256": "a0565ec582b951fb58caa118fa2c8b97941f1f24c53e086addf4430b3df8a0c2",
+        "checkedAt": "2026-10-28T04:13:00.641Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-194",
+      "type": "textbook",
+      "title": "Liberté",
+      "fieldIds": [
+        "languages"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/liberte",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Gretchen Angelo",
+          "institution": "California State University"
+        }
+      ],
+      "publishers": [
+        "Gretchen V. Angelo"
+      ],
+      "edition": "",
+      "copyrightYear": 2003,
+      "metadataUpdatedAt": "2026-05-18T02:05:06.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/liberte",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/liberte",
+        "http": 200,
+        "sha256": "c95bfa25bdab54c78e410090864cf11604e27e3b2a0dfc801ad72c426571198d",
+        "checkedAt": "2026-10-28T04:13:00.638Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-236",
+      "type": "textbook",
+      "title": "Preadvanced Japanese",
+      "fieldIds": [
+        "languages"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/preadvanced-japanese",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Emiko Konomi",
+          "institution": "Portland State University, Portland, OR"
+        }
+      ],
+      "publishers": [
+        "Portland State University Library"
+      ],
+      "edition": "",
+      "copyrightYear": 2014,
+      "metadataUpdatedAt": "2026-05-18T02:09:27.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/preadvanced-japanese",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/preadvanced-japanese",
+        "http": 200,
+        "sha256": "179a2a63d6404520dc7cabad8c3020484d168aefc05947351cdd776595a09cdc",
+        "checkedAt": "2026-10-28T04:13:00.614Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-1091",
+      "type": "textbook",
+      "title": "Genetics, Agriculture, and Biotechnology",
+      "fieldIds": [
+        "agriculture"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/genetics-agriculture-and-biotechnology-2021",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Walter Suza",
+          "institution": "Iowa State University"
+        },
+        {
+          "name": "Donald Lee",
+          "institution": "University of Nebraska-Lincoln"
+        }
+      ],
+      "publishers": [
+        "Iowa State University"
+      ],
+      "edition": "",
+      "copyrightYear": 2021,
+      "metadataUpdatedAt": "2026-05-18T02:10:22.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/genetics-agriculture-and-biotechnology-2021",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/genetics-agriculture-and-biotechnology-2021",
+        "http": 200,
+        "sha256": "dc37608b01a3f8f5a827fd7b0922c3edea17f915070197827422b21b59a1963f",
+        "checkedAt": "2026-10-28T04:13:00.919Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-1465",
+      "type": "textbook",
+      "title": "The Art and Science of Teaching Agriculture: Four Keys to Dynamic Learning",
+      "fieldIds": [
+        "agriculture"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/the-art-and-science-of-teaching-agriculture-four-keys-to-dynamic-learning",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [],
+      "publishers": [
+        "Virginia Tech Publishing"
+      ],
+      "edition": "",
+      "copyrightYear": 2023,
+      "metadataUpdatedAt": "2026-05-18T02:10:52.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/the-art-and-science-of-teaching-agriculture-four-keys-to-dynamic-learning",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/the-art-and-science-of-teaching-agriculture-four-keys-to-dynamic-learning",
+        "http": 200,
+        "sha256": "7828671a140847b62a08538e00fa98c7737bdf5be90ea0c83c1770837b8b75f5",
+        "checkedAt": "2026-10-28T04:13:00.913Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-1775",
+      "type": "textbook",
+      "title": "Methods of Teaching Agriculture",
+      "fieldIds": [
+        "agriculture"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/methods-of-teaching-agriculture-third-edition",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "L. H. Newcomb",
+          "institution": "The Ohio State University"
+        },
+        {
+          "name": "J. David McCracken",
+          "institution": "The Ohio State University"
+        },
+        {
+          "name": "J. Robert Warmbrod (1929-2022)",
+          "institution": "The Ohio State University"
+        },
+        {
+          "name": "M. Susie Whittington",
+          "institution": "The Ohio State University"
+        }
+      ],
+      "publishers": [
+        "Virginia Tech Libraries"
+      ],
+      "edition": "Third edition",
+      "copyrightYear": 2025,
+      "metadataUpdatedAt": "2026-05-18T02:10:38.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/methods-of-teaching-agriculture-third-edition",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/methods-of-teaching-agriculture-third-edition",
+        "http": 200,
+        "sha256": "f97c406cea29d42ea9b7d0ac394482eaa5226082bce7f094bd647289287ef28f",
+        "checkedAt": "2026-10-28T04:13:00.928Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-242",
+      "type": "textbook",
+      "title": "Theatrical Worlds",
+      "fieldIds": [
+        "arts"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/theatrical-worlds",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [],
+      "publishers": [
+        "University Press of Florida"
+      ],
+      "edition": "",
+      "copyrightYear": 2014,
+      "metadataUpdatedAt": "2026-05-18T02:05:58.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial-NoDerivs",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/theatrical-worlds",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/theatrical-worlds",
+        "http": 200,
+        "sha256": "580e3dadfce815f5f6c164ba028fa8c9a01383309a5b3bb46f8e43707972d965",
+        "checkedAt": "2026-10-28T04:13:00.904Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-257",
+      "type": "textbook",
+      "title": "Understanding Basic Music Theory",
+      "fieldIds": [
+        "arts"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/understanding-basic-music-theory-2013",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Catherine Schmidt-Jones",
+          "institution": ""
+        }
+      ],
+      "publishers": [
+        "OpenStax CNX"
+      ],
+      "edition": "",
+      "copyrightYear": 2013,
+      "metadataUpdatedAt": "2026-05-18T02:10:47.000-05:00",
+      "licenseDeclared": "Attribution",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/understanding-basic-music-theory-2013",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/understanding-basic-music-theory-2013",
+        "http": 200,
+        "sha256": "cdf4ee0810adae5732650fde26aff8a6f6aad4f9ad9ced77a756394486adaccb",
+        "checkedAt": "2026-10-28T04:13:01.231Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-283",
+      "type": "textbook",
+      "title": "Music and the Child",
+      "fieldIds": [
+        "arts"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/music-and-the-child",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Natalie Sarrazin",
+          "institution": "College at Brockport, SUNY"
+        }
+      ],
+      "publishers": [
+        "Open SUNY"
+      ],
+      "edition": "",
+      "copyrightYear": 2016,
+      "metadataUpdatedAt": "2026-05-18T02:10:08.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/music-and-the-child",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/music-and-the-child",
+        "http": 200,
+        "sha256": "23f901568d066a34688cdf95c2fa43cbef84ff501b0028793ce6c740fc8d480b",
+        "checkedAt": "2026-10-28T04:13:01.211Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-438",
+      "type": "textbook",
+      "title": "Introduction to Tourism and Hospitality in BC",
+      "fieldIds": [
+        "services"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/introduction-to-tourism-and-hospitality-in-bc",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [],
+      "publishers": [
+        "BCcampus"
+      ],
+      "edition": "2nd Edition",
+      "copyrightYear": 2021,
+      "metadataUpdatedAt": "2026-06-10T12:02:45.000-05:00",
+      "licenseDeclared": "Attribution",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/introduction-to-tourism-and-hospitality-in-bc",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/introduction-to-tourism-and-hospitality-in-bc",
+        "http": 200,
+        "sha256": "07f018dacd7ed6a2a1fb7914204458f8f638996d649421aa5bf0d39d283eab58",
+        "checkedAt": "2026-10-28T04:13:01.364Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-2020",
+      "type": "textbook",
+      "title": "The Marketing Map: Navigating the Principles of Marketing for Tourism, Hospitality, and Services",
+      "fieldIds": [
+        "services"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/the-marketing-map-navigating-the-principles-of-marketing-for-tourism-hospitality-and-services",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Lian Dumouchel",
+          "institution": "Thompson Rivers University"
+        }
+      ],
+      "publishers": [
+        "Thompson Rivers University"
+      ],
+      "edition": "",
+      "copyrightYear": 2025,
+      "metadataUpdatedAt": "2026-06-04T09:05:55.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/the-marketing-map-navigating-the-principles-of-marketing-for-tourism-hospitality-and-services",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/the-marketing-map-navigating-the-principles-of-marketing-for-tourism-hospitality-and-services",
+        "http": 200,
+        "sha256": "fca361f6fffd48ca401684f4859e3c4c3924d50669f889e376134fb570dea592",
+        "checkedAt": "2026-10-28T04:13:01.276Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    },
+    {
+      "id": "otl-2075",
+      "type": "textbook",
+      "title": "Business Ethics and Social Responsibility",
+      "fieldIds": [
+        "services"
+      ],
+      "url": "https://open.umn.edu/opentextbooks/textbooks/business-ethics-and-social-responsibility",
+      "provider": "Open Textbook Library / Open Education Network",
+      "language": "eng",
+      "authors": [
+        {
+          "name": "Caroline Burns",
+          "institution": "Saint Mary’s College of California"
+        },
+        {
+          "name": "Grant Rozeboom",
+          "institution": "Saint Mary’s College of California"
+        },
+        {
+          "name": "Sarah M. Vital",
+          "institution": "Saint Mary’s College of California"
+        }
+      ],
+      "publishers": [
+        "Saint Mary's College of California"
+      ],
+      "edition": "",
+      "copyrightYear": 2024,
+      "metadataUpdatedAt": "2026-07-30T13:49:50.000-05:00",
+      "licenseDeclared": "Attribution-NonCommercial-ShareAlike",
+      "rights": "link-only",
+      "rightsScope": "Nhãn giấy phép từ API thư mục; chưa rà điều kiện từng tài sản. Chỉ nhập metadata và liên kết, không nhập nội dung sách.",
+      "checkedAt": "2026-10-28T03:51:19.652Z",
+      "checkScope": "metadata-api",
+      "academicReview": "not-reviewed",
+      "linkCheck": {
+        "url": "https://open.umn.edu/opentextbooks/textbooks/business-ethics-and-social-responsibility",
+        "finalUrl": "https://open.umn.edu/opentextbooks/textbooks/business-ethics-and-social-responsibility",
+        "http": 200,
+        "sha256": "46aaad8429c6ec45b79b72ddf9f0ef8cb3d6e0432f5b019b0c85d5fbcd649c44",
+        "checkedAt": "2026-10-28T04:13:01.743Z",
+        "scope": "HTTP reachability only;no academic or reuse approval"
+      }
+    }
+  ],
+  "coverage": {
+    "fieldGroups": 16,
+    "programmes": 2,
+    "programCourseRows": 176,
+    "authoredCourses": 6,
+    "lessons": 36,
+    "questions": 126,
+    "approvedCourses": 0,
+    "officialOutcomeCount": null,
+    "officialComplete": false
+  }
+}

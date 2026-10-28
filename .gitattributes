@@ -7,3 +7,5 @@
 vendor/monaco-0.55.1/** -text -whitespace
 # Grade packs are verified against the manifest's SHA-256 bytes.
 data/hh-school/curriculum/*.json text eol=lf
+data/hh-school/university/*.json text eol=lf
+data/hh-school/university/courses/*.json text eol=lf

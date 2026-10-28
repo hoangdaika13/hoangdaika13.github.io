@@ -1,0 +1,5609 @@
+{
+  "audit": [
+    {
+      "label": "cosmic-university-home",
+      "theme": "cosmic",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Học đại học, theo lộ trình của bạn",
+          "contrast": 17.99761449554375,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đại số tuyến tính — nền tảng",
+          "contrast": 17.297852128019077,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hai cách bắt đầu",
+          "contrast": 17.297852128019077,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Chuỗi có nội dung trong ứng dụng",
+          "contrast": 17.99761449554375,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Chọn chương trình để đối chiếu, học chuỗi nền tảng hoặc tìm giáo trình",
+          "contrast": 11.649732008076771,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Chuỗi nguyên bản gồm sáu chủ đề nền. Chưa bao phủ toàn bộ MIT 18.06, c",
+          "contrast": 11.19678064316015,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề để đọc và kiểm tra lập luận dữ liệu. Chưa là toàn bộ Data 8",
+          "contrast": 11.19678064316015,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề tư duy lập trình với mã giả và kiểm tra bằng tay. Không tha",
+          "contrast": 11.19678064316015,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem trước bản biên soạn",
+          "contrast": 15.997681816260982,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 17.99761449554375,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 17.99761449554375,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 17.99761449554375,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 17.99761449554375,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 17.99761449554375,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bàn học",
+          "contrast": 13.291453222724135,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Theo trường và chương trình",
+          "contrast": 15.997681816260982,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự chọn chuỗi học",
+          "contrast": 15.997681816260982,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tìm sách, video và GitHub",
+          "contrast": 15.997681816260982,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tham gia lớp",
+          "contrast": 15.997681816260982,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 15.997681816260982,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 13.291453222724135,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 15.997681816260982,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 13.291453222724135,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 15.997681816260982,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 13.291453222724135,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "midnight-university-home",
+      "theme": "midnight",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Học đại học, theo lộ trình của bạn",
+          "contrast": 18.144213748366138,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đại số tuyến tính — nền tảng",
+          "contrast": 17.45747609071829,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hai cách bắt đầu",
+          "contrast": 17.45747609071829,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Chuỗi có nội dung trong ứng dụng",
+          "contrast": 18.144213748366138,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Chọn chương trình để đối chiếu, học chuỗi nền tảng hoặc tìm giáo trình",
+          "contrast": 11.984018744064308,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Chuỗi nguyên bản gồm sáu chủ đề nền. Chưa bao phủ toàn bộ MIT 18.06, c",
+          "contrast": 11.530437394349018,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề để đọc và kiểm tra lập luận dữ liệu. Chưa là toàn bộ Data 8",
+          "contrast": 11.530437394349018,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề tư duy lập trình với mã giả và kiểm tra bằng tay. Không tha",
+          "contrast": 11.530437394349018,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem trước bản biên soạn",
+          "contrast": 16.0723599571223,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 18.144213748366138,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 18.144213748366138,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 18.144213748366138,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 18.144213748366138,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 18.144213748366138,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bàn học",
+          "contrast": 6.7131294739510485,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Theo trường và chương trình",
+          "contrast": 16.0723599571223,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự chọn chuỗi học",
+          "contrast": 16.0723599571223,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tìm sách, video và GitHub",
+          "contrast": 16.0723599571223,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tham gia lớp",
+          "contrast": 16.0723599571223,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 16.0723599571223,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 6.7131294739510485,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 16.0723599571223,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 6.7131294739510485,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 16.0723599571223,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 6.7131294739510485,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "basic-light-university-home",
+      "theme": "basic-light",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Học đại học, theo lộ trình của bạn",
+          "contrast": 13.764920411532065,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đại số tuyến tính — nền tảng",
+          "contrast": 14.755068102467318,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hai cách bắt đầu",
+          "contrast": 14.755068102467318,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Chuỗi có nội dung trong ứng dụng",
+          "contrast": 13.764920411532065,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Chọn chương trình để đối chiếu, học chuỗi nền tảng hoặc tìm giáo trình",
+          "contrast": 6.0228526404084395,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Chuỗi nguyên bản gồm sáu chủ đề nền. Chưa bao phủ toàn bộ MIT 18.06, c",
+          "contrast": 6.456092605221279,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề để đọc và kiểm tra lập luận dữ liệu. Chưa là toàn bộ Data 8",
+          "contrast": 6.456092605221279,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề tư duy lập trình với mã giả và kiểm tra bằng tay. Không tha",
+          "contrast": 6.456092605221279,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem trước bản biên soạn",
+          "contrast": 13.264739977672141,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 13.764920411532065,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 13.764920411532065,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 13.764920411532065,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 13.764920411532065,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 13.764920411532065,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bàn học",
+          "contrast": 5.168555560022562,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Theo trường và chương trình",
+          "contrast": 13.264739977672141,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự chọn chuỗi học",
+          "contrast": 13.264739977672141,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tìm sách, video và GitHub",
+          "contrast": 13.264739977672141,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tham gia lớp",
+          "contrast": 13.264739977672141,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 13.264739977672141,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 5.168555560022562,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 13.264739977672141,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 5.168555560022562,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 13.264739977672141,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 5.168555560022562,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "basic-dark-university-home",
+      "theme": "basic-dark",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Học đại học, theo lộ trình của bạn",
+          "contrast": 16.73941327978109,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đại số tuyến tính — nền tảng",
+          "contrast": 15.038036797612593,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hai cách bắt đầu",
+          "contrast": 15.038036797612593,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Chuỗi có nội dung trong ứng dụng",
+          "contrast": 16.73941327978109,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Chọn chương trình để đối chiếu, học chuỗi nền tảng hoặc tìm giáo trình",
+          "contrast": 10.809298971442518,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Chuỗi nguyên bản gồm sáu chủ đề nền. Chưa bao phủ toàn bộ MIT 18.06, c",
+          "contrast": 9.710653113827313,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề để đọc và kiểm tra lập luận dữ liệu. Chưa là toàn bộ Data 8",
+          "contrast": 9.710653113827313,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề tư duy lập trình với mã giả và kiểm tra bằng tay. Không tha",
+          "contrast": 9.710653113827313,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem trước bản biên soạn",
+          "contrast": 13.503814913205968,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 16.73941327978109,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 16.73941327978109,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 16.73941327978109,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 16.73941327978109,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 16.73941327978109,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bàn học",
+          "contrast": 7.524770668954799,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Theo trường và chương trình",
+          "contrast": 13.503814913205968,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự chọn chuỗi học",
+          "contrast": 13.503814913205968,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tìm sách, video và GitHub",
+          "contrast": 13.503814913205968,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tham gia lớp",
+          "contrast": 13.503814913205968,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 13.503814913205968,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 7.524770668954799,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 13.503814913205968,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 7.524770668954799,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 13.503814913205968,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 7.524770668954799,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "slate-university-home",
+      "theme": "slate",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Học đại học, theo lộ trình của bạn",
+          "contrast": 16.955105845628285,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đại số tuyến tính — nền tảng",
+          "contrast": 14.029874741046042,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hai cách bắt đầu",
+          "contrast": 14.029874741046042,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Chuỗi có nội dung trong ứng dụng",
+          "contrast": 16.955105845628285,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Chọn chương trình để đối chiếu, học chuỗi nền tảng hoặc tìm giáo trình",
+          "contrast": 11.948333368856327,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Chuỗi nguyên bản gồm sáu chủ đề nền. Chưa bao phủ toàn bộ MIT 18.06, c",
+          "contrast": 9.886910884283136,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề để đọc và kiểm tra lập luận dữ liệu. Chưa là toàn bộ Data 8",
+          "contrast": 9.886910884283136,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề tư duy lập trình với mã giả và kiểm tra bằng tay. Không tha",
+          "contrast": 9.886910884283136,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem trước bản biên soạn",
+          "contrast": 11.855115843111005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 16.955105845628285,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 16.955105845628285,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 16.955105845628285,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 16.955105845628285,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 16.955105845628285,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bàn học",
+          "contrast": 11.474457874482079,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Theo trường và chương trình",
+          "contrast": 11.855115843111005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự chọn chuỗi học",
+          "contrast": 11.855115843111005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tìm sách, video và GitHub",
+          "contrast": 11.855115843111005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tham gia lớp",
+          "contrast": 11.855115843111005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 11.855115843111005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 11.474457874482079,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 11.855115843111005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 11.474457874482079,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 11.855115843111005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 11.474457874482079,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "warm-university-home",
+      "theme": "warm",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Học đại học, theo lộ trình của bạn",
+          "contrast": 11.896647790662866,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đại số tuyến tính — nền tảng",
+          "contrast": 13.163674589564193,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hai cách bắt đầu",
+          "contrast": 13.163674589564193,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Chuỗi có nội dung trong ứng dụng",
+          "contrast": 11.896647790662866,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Chọn chương trình để đối chiếu, học chuỗi nền tảng hoặc tìm giáo trình",
+          "contrast": 5.9938130270655465,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Chuỗi nguyên bản gồm sáu chủ đề nền. Chưa bao phủ toàn bộ MIT 18.06, c",
+          "contrast": 6.632171148321886,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề để đọc và kiểm tra lập luận dữ liệu. Chưa là toàn bộ Data 8",
+          "contrast": 6.632171148321886,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề tư duy lập trình với mã giả và kiểm tra bằng tay. Không tha",
+          "contrast": 6.632171148321886,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem trước bản biên soạn",
+          "contrast": 10.993314483935535,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 11.896647790662866,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 11.896647790662866,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 11.896647790662866,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 11.896647790662866,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 11.896647790662866,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bàn học",
+          "contrast": 5.352080935497952,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Theo trường và chương trình",
+          "contrast": 10.993314483935535,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự chọn chuỗi học",
+          "contrast": 10.993314483935535,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tìm sách, video và GitHub",
+          "contrast": 10.993314483935535,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tham gia lớp",
+          "contrast": 10.993314483935535,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 10.993314483935535,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 5.352080935497952,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 10.993314483935535,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 5.352080935497952,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 10.993314483935535,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 5.352080935497952,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "dark-university-home",
+      "theme": "dark",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Học đại học, theo lộ trình của bạn",
+          "contrast": 17.829607862114806,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đại số tuyến tính — nền tảng",
+          "contrast": 16.576653517643695,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hai cách bắt đầu",
+          "contrast": 16.576653517643695,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Chuỗi có nội dung trong ứng dụng",
+          "contrast": 17.829607862114806,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Chọn chương trình để đối chiếu, học chuỗi nền tảng hoặc tìm giáo trình",
+          "contrast": 10.498804103609498,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Chuỗi nguyên bản gồm sáu chủ đề nền. Chưa bao phủ toàn bộ MIT 18.06, c",
+          "contrast": 9.761013215828953,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề để đọc và kiểm tra lập luận dữ liệu. Chưa là toàn bộ Data 8",
+          "contrast": 9.761013215828953,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề tư duy lập trình với mã giả và kiểm tra bằng tay. Không tha",
+          "contrast": 9.761013215828953,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem trước bản biên soạn",
+          "contrast": 15.440144933501038,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 17.829607862114806,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 17.829607862114806,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 17.829607862114806,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 17.829607862114806,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 17.829607862114806,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bàn học",
+          "contrast": 5.931204930842422,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Theo trường và chương trình",
+          "contrast": 15.440144933501038,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự chọn chuỗi học",
+          "contrast": 15.440144933501038,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tìm sách, video và GitHub",
+          "contrast": 15.440144933501038,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tham gia lớp",
+          "contrast": 15.440144933501038,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 15.440144933501038,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 5.931204930842422,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 15.440144933501038,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 5.931204930842422,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 15.440144933501038,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 5.931204930842422,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "light-university-home",
+      "theme": "light",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Học đại học, theo lộ trình của bạn",
+          "contrast": 14.655092941714658,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đại số tuyến tính — nền tảng",
+          "contrast": 16.268480224545662,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hai cách bắt đầu",
+          "contrast": 16.268480224545662,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Chuỗi có nội dung trong ứng dụng",
+          "contrast": 14.655092941714658,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Chọn chương trình để đối chiếu, học chuỗi nền tảng hoặc tìm giáo trình",
+          "contrast": 6.139733804582271,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Chuỗi nguyên bản gồm sáu chủ đề nền. Chưa bao phủ toàn bộ MIT 18.06, c",
+          "contrast": 6.815660492981811,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề để đọc và kiểm tra lập luận dữ liệu. Chưa là toàn bộ Data 8",
+          "contrast": 6.815660492981811,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề tư duy lập trình với mã giả và kiểm tra bằng tay. Không tha",
+          "contrast": 6.815660492981811,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem trước bản biên soạn",
+          "contrast": 14.453552651179258,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 14.655092941714658,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 14.655092941714658,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 14.655092941714658,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 14.655092941714658,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 14.655092941714658,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bàn học",
+          "contrast": 4.65354127915403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Theo trường và chương trình",
+          "contrast": 14.453552651179258,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự chọn chuỗi học",
+          "contrast": 14.453552651179258,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tìm sách, video và GitHub",
+          "contrast": 14.453552651179258,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tham gia lớp",
+          "contrast": 14.453552651179258,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 14.453552651179258,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 4.65354127915403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 14.453552651179258,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 4.65354127915403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 14.453552651179258,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 4.65354127915403,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "cyberpunk-university-home",
+      "theme": "cyberpunk",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Học đại học, theo lộ trình của bạn",
+          "contrast": 17.842040936978268,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đại số tuyến tính — nền tảng",
+          "contrast": 18.14823512868477,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hai cách bắt đầu",
+          "contrast": 18.14823512868477,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Chuỗi có nội dung trong ứng dụng",
+          "contrast": 17.842040936978268,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Chọn chương trình để đối chiếu, học chuỗi nền tảng hoặc tìm giáo trình",
+          "contrast": 10.48375454989963,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Chuỗi nguyên bản gồm sáu chủ đề nền. Chưa bao phủ toàn bộ MIT 18.06, c",
+          "contrast": 10.663670332056755,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề để đọc và kiểm tra lập luận dữ liệu. Chưa là toàn bộ Data 8",
+          "contrast": 10.663670332056755,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề tư duy lập trình với mã giả và kiểm tra bằng tay. Không tha",
+          "contrast": 10.663670332056755,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem trước bản biên soạn",
+          "contrast": 17.187791523766776,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 17.842040936978268,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 17.842040936978268,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 17.842040936978268,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 17.842040936978268,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 17.842040936978268,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bàn học",
+          "contrast": 14.235675402530337,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Theo trường và chương trình",
+          "contrast": 17.187791523766776,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự chọn chuỗi học",
+          "contrast": 17.187791523766776,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tìm sách, video và GitHub",
+          "contrast": 17.187791523766776,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tham gia lớp",
+          "contrast": 17.187791523766776,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 17.187791523766776,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 14.235675402530337,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 17.187791523766776,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 14.235675402530337,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 17.187791523766776,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 14.235675402530337,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "ocean-university-home",
+      "theme": "ocean",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Học đại học, theo lộ trình của bạn",
+          "contrast": 15.512866525228993,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đại số tuyến tính — nền tảng",
+          "contrast": 16.205566489199175,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hai cách bắt đầu",
+          "contrast": 16.205566489199175,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Chuỗi có nội dung trong ứng dụng",
+          "contrast": 15.512866525228993,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Chọn chương trình để đối chiếu, học chuỗi nền tảng hoặc tìm giáo trình",
+          "contrast": 10.09374655804764,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Chuỗi nguyên bản gồm sáu chủ đề nền. Chưa bao phủ toàn bộ MIT 18.06, c",
+          "contrast": 10.544465183500424,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề để đọc và kiểm tra lập luận dữ liệu. Chưa là toàn bộ Data 8",
+          "contrast": 10.544465183500424,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề tư duy lập trình với mã giả và kiểm tra bằng tay. Không tha",
+          "contrast": 10.544465183500424,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem trước bản biên soạn",
+          "contrast": 14.309960838068445,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 15.512866525228993,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 15.512866525228993,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 15.512866525228993,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 15.512866525228993,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 15.512866525228993,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bàn học",
+          "contrast": 13.188219607653345,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Theo trường và chương trình",
+          "contrast": 14.309960838068445,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự chọn chuỗi học",
+          "contrast": 14.309960838068445,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tìm sách, video và GitHub",
+          "contrast": 14.309960838068445,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tham gia lớp",
+          "contrast": 14.309960838068445,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 14.309960838068445,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 13.188219607653345,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 14.309960838068445,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 13.188219607653345,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 14.309960838068445,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 13.188219607653345,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "aurora-university-home",
+      "theme": "aurora",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Học đại học, theo lộ trình của bạn",
+          "contrast": 17.493081098916235,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đại số tuyến tính — nền tảng",
+          "contrast": 16.936230844324374,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hai cách bắt đầu",
+          "contrast": 16.936230844324374,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Chuỗi có nội dung trong ứng dụng",
+          "contrast": 17.493081098916235,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Chọn chương trình để đối chiếu, học chuỗi nền tảng hoặc tìm giáo trình",
+          "contrast": 10.638641888680445,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Chuỗi nguyên bản gồm sáu chủ đề nền. Chưa bao phủ toàn bộ MIT 18.06, c",
+          "contrast": 10.299986256163518,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề để đọc và kiểm tra lập luận dữ liệu. Chưa là toàn bộ Data 8",
+          "contrast": 10.299986256163518,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề tư duy lập trình với mã giả và kiểm tra bằng tay. Không tha",
+          "contrast": 10.299986256163518,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem trước bản biên soạn",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bàn học",
+          "contrast": 13.670137430012923,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Theo trường và chương trình",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự chọn chuỗi học",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tìm sách, video và GitHub",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tham gia lớp",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 13.670137430012923,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 13.670137430012923,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 13.670137430012923,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "emerald-university-home",
+      "theme": "emerald",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Học đại học, theo lộ trình của bạn",
+          "contrast": 15.934633954144356,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đại số tuyến tính — nền tảng",
+          "contrast": 16.29937609170048,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hai cách bắt đầu",
+          "contrast": 16.29937609170048,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Chuỗi có nội dung trong ứng dụng",
+          "contrast": 15.934633954144356,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Chọn chương trình để đối chiếu, học chuỗi nền tảng hoặc tìm giáo trình",
+          "contrast": 10.474700641487583,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Chuỗi nguyên bản gồm sáu chủ đề nền. Chưa bao phủ toàn bộ MIT 18.06, c",
+          "contrast": 10.714465465281542,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề để đọc và kiểm tra lập luận dữ liệu. Chưa là toàn bộ Data 8",
+          "contrast": 10.714465465281542,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề tư duy lập trình với mã giả và kiểm tra bằng tay. Không tha",
+          "contrast": 10.714465465281542,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem trước bản biên soạn",
+          "contrast": 13.746978634754486,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 15.934633954144356,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 15.934633954144356,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 15.934633954144356,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 15.934633954144356,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 15.934633954144356,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bàn học",
+          "contrast": 13.468946666329595,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Theo trường và chương trình",
+          "contrast": 13.746978634754486,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự chọn chuỗi học",
+          "contrast": 13.746978634754486,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tìm sách, video và GitHub",
+          "contrast": 13.746978634754486,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tham gia lớp",
+          "contrast": 13.746978634754486,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 13.746978634754486,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 13.468946666329595,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 13.746978634754486,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 13.468946666329595,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 13.746978634754486,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 13.468946666329595,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "purple-university-home",
+      "theme": "purple",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Học đại học, theo lộ trình của bạn",
+          "contrast": 17.292615524875593,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đại số tuyến tính — nền tảng",
+          "contrast": 17.142828695909998,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hai cách bắt đầu",
+          "contrast": 17.142828695909998,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Chuỗi có nội dung trong ứng dụng",
+          "contrast": 17.292615524875593,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Chọn chương trình để đối chiếu, học chuỗi nền tảng hoặc tìm giáo trình",
+          "contrast": 10.636533015097408,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Chuỗi nguyên bản gồm sáu chủ đề nền. Chưa bao phủ toàn bộ MIT 18.06, c",
+          "contrast": 10.544400477412323,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề để đọc và kiểm tra lập luận dữ liệu. Chưa là toàn bộ Data 8",
+          "contrast": 10.544400477412323,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề tư duy lập trình với mã giả và kiểm tra bằng tay. Không tha",
+          "contrast": 10.544400477412323,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem trước bản biên soạn",
+          "contrast": 15.79540676664403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 17.292615524875593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 17.292615524875593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 17.292615524875593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 17.292615524875593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 17.292615524875593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bàn học",
+          "contrast": 7.704812741521142,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Theo trường và chương trình",
+          "contrast": 15.79540676664403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự chọn chuỗi học",
+          "contrast": 15.79540676664403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tìm sách, video và GitHub",
+          "contrast": 15.79540676664403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tham gia lớp",
+          "contrast": 15.79540676664403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 15.79540676664403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 7.704812741521142,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 15.79540676664403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 7.704812741521142,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 15.79540676664403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 7.704812741521142,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "sunset-university-home",
+      "theme": "sunset",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Học đại học, theo lộ trình của bạn",
+          "contrast": 16.92068735109923,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đại số tuyến tính — nền tảng",
+          "contrast": 16.539265863874387,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hai cách bắt đầu",
+          "contrast": 16.539265863874387,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Chuỗi có nội dung trong ứng dụng",
+          "contrast": 16.92068735109923,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Chọn chương trình để đối chiếu, học chuỗi nền tảng hoặc tìm giáo trình",
+          "contrast": 10.764589350464227,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Chuỗi nguyên bản gồm sáu chủ đề nền. Chưa bao phủ toàn bộ MIT 18.06, c",
+          "contrast": 10.521936933678568,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề để đọc và kiểm tra lập luận dữ liệu. Chưa là toàn bộ Data 8",
+          "contrast": 10.521936933678568,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề tư duy lập trình với mã giả và kiểm tra bằng tay. Không tha",
+          "contrast": 10.521936933678568,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem trước bản biên soạn",
+          "contrast": 14.462204446065785,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 16.92068735109923,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 16.92068735109923,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 16.92068735109923,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 16.92068735109923,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 16.92068735109923,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bàn học",
+          "contrast": 11.547280271739794,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Theo trường và chương trình",
+          "contrast": 14.462204446065785,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự chọn chuỗi học",
+          "contrast": 14.462204446065785,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tìm sách, video và GitHub",
+          "contrast": 14.462204446065785,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tham gia lớp",
+          "contrast": 14.462204446065785,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 14.462204446065785,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 11.547280271739794,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 14.462204446065785,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 11.547280271739794,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 14.462204446065785,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 11.547280271739794,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "neon-university-home",
+      "theme": "neon",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Học đại học, theo lộ trình của bạn",
+          "contrast": 19.282507415964005,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đại số tuyến tính — nền tảng",
+          "contrast": 19.467464209393505,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hai cách bắt đầu",
+          "contrast": 19.467464209393505,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Chuỗi có nội dung trong ứng dụng",
+          "contrast": 19.282507415964005,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Chọn chương trình để đối chiếu, học chuỗi nền tảng hoặc tìm giáo trình",
+          "contrast": 12.607455514313443,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Chuỗi nguyên bản gồm sáu chủ đề nền. Chưa bao phủ toàn bộ MIT 18.06, c",
+          "contrast": 12.72838556220244,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề để đọc và kiểm tra lập luận dữ liệu. Chưa là toàn bộ Data 8",
+          "contrast": 12.72838556220244,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề tư duy lập trình với mã giả và kiểm tra bằng tay. Không tha",
+          "contrast": 12.72838556220244,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem trước bản biên soạn",
+          "contrast": 18.33682930240713,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 19.282507415964005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 19.282507415964005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 19.282507415964005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 19.282507415964005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 19.282507415964005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bàn học",
+          "contrast": 14.355653231538524,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Theo trường và chương trình",
+          "contrast": 18.33682930240713,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự chọn chuỗi học",
+          "contrast": 18.33682930240713,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tìm sách, video và GitHub",
+          "contrast": 18.33682930240713,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tham gia lớp",
+          "contrast": 18.33682930240713,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 18.33682930240713,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 14.355653231538524,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 18.33682930240713,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 14.355653231538524,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 18.33682930240713,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 14.355653231538524,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "glass-university-home",
+      "theme": "glass",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Học đại học, theo lộ trình của bạn",
+          "contrast": 17.229647330306733,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Đại số tuyến tính — nền tảng",
+          "contrast": 17.229647330306733,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hai cách bắt đầu",
+          "contrast": 17.229647330306733,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Chuỗi có nội dung trong ứng dụng",
+          "contrast": 17.229647330306733,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Chọn chương trình để đối chiếu, học chuỗi nền tảng hoặc tìm giáo trình",
+          "contrast": 11.390993351406275,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Chuỗi nguyên bản gồm sáu chủ đề nền. Chưa bao phủ toàn bộ MIT 18.06, c",
+          "contrast": 11.390993351406275,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề để đọc và kiểm tra lập luận dữ liệu. Chưa là toàn bộ Data 8",
+          "contrast": 11.390993351406275,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Sáu chủ đề tư duy lập trình với mã giả và kiểm tra bằng tay. Không tha",
+          "contrast": 11.390993351406275,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem trước bản biên soạn",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Mở bàn học",
+          "contrast": 12.877175428813615,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Theo trường và chương trình",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự chọn chuỗi học",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tìm sách, video và GitHub",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tham gia lớp",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 12.877175428813615,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 12.877175428813615,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Lưu",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Xem đề cương",
+          "contrast": 12.877175428813615,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "cosmic-university-lesson",
+      "theme": "cosmic",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Vector và tổ hợp tuyến tính",
+          "contrast": 17.99761449554375,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hiểu kiến thức",
+          "contrast": 17.297852128019077,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Ví dụ giải từng bước",
+          "contrast": 15.997681816260982,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Tự thực hành",
+          "contrast": 17.297852128019077,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Quan sát bằng mô hình",
+          "contrast": 15.997681816260982,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn một bài toán phối hợp bằng vector và kiểm tra số chiều.",
+          "contrast": 11.649732008076771,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Một vector là một bộ số có thứ tự trong một không gian đã chọn. Vector",
+          "contrast": 17.297852128019077,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tổ hợp tuyến tính a·u + b·v biểu diễn tổng đóng góp của hai nguồn. Hệ ",
+          "contrast": 17.297852128019077,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tắt xem trước",
+          "contrast": 15.997681816260982,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 17.99761449554375,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 17.99761449554375,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 17.99761449554375,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 17.99761449554375,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 17.99761449554375,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1. Vector và tổ hợp tuyến tính",
+          "contrast": 12.994063848207828,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2. Khử Gauss và kiểm tra nghiệm",
+          "contrast": 15.997681816260982,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3. Ma trận và thứ tự nhân",
+          "contrast": 15.997681816260982,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4. Độc lập tuyến tính, cơ sở và số chiều",
+          "contrast": 15.997681816260982,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5. Định thức và khả nghịch trong hai chiều",
+          "contrast": 15.997681816260982,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6. Vector riêng và bình phương tối thiểu",
+          "contrast": 15.997681816260982,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tính / kiểm tra mô hình",
+          "contrast": 15.997681816260982,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự luyện bài này",
+          "contrast": 13.291453222724135,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Đánh dấu đã đọc",
+          "contrast": 15.997681816260982,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bài tiếp theo",
+          "contrast": 15.997681816260982,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "midnight-university-lesson",
+      "theme": "midnight",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Vector và tổ hợp tuyến tính",
+          "contrast": 18.144213748366138,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hiểu kiến thức",
+          "contrast": 17.45747609071829,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Ví dụ giải từng bước",
+          "contrast": 16.0723599571223,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Tự thực hành",
+          "contrast": 17.45747609071829,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Quan sát bằng mô hình",
+          "contrast": 16.0723599571223,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn một bài toán phối hợp bằng vector và kiểm tra số chiều.",
+          "contrast": 11.984018744064308,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Một vector là một bộ số có thứ tự trong một không gian đã chọn. Vector",
+          "contrast": 17.45747609071829,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tổ hợp tuyến tính a·u + b·v biểu diễn tổng đóng góp của hai nguồn. Hệ ",
+          "contrast": 17.45747609071829,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tắt xem trước",
+          "contrast": 16.0723599571223,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 18.144213748366138,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 18.144213748366138,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 18.144213748366138,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 18.144213748366138,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 18.144213748366138,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1. Vector và tổ hợp tuyến tính",
+          "contrast": 12.383547892868508,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2. Khử Gauss và kiểm tra nghiệm",
+          "contrast": 16.0723599571223,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3. Ma trận và thứ tự nhân",
+          "contrast": 16.0723599571223,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4. Độc lập tuyến tính, cơ sở và số chiều",
+          "contrast": 16.0723599571223,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5. Định thức và khả nghịch trong hai chiều",
+          "contrast": 16.0723599571223,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6. Vector riêng và bình phương tối thiểu",
+          "contrast": 16.0723599571223,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tính / kiểm tra mô hình",
+          "contrast": 16.0723599571223,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự luyện bài này",
+          "contrast": 6.7131294739510485,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Đánh dấu đã đọc",
+          "contrast": 16.0723599571223,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bài tiếp theo",
+          "contrast": 16.0723599571223,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "basic-light-university-lesson",
+      "theme": "basic-light",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Vector và tổ hợp tuyến tính",
+          "contrast": 13.764920411532065,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hiểu kiến thức",
+          "contrast": 14.755068102467318,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Ví dụ giải từng bước",
+          "contrast": 13.264739977672141,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Tự thực hành",
+          "contrast": 14.755068102467318,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Quan sát bằng mô hình",
+          "contrast": 13.264739977672141,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn một bài toán phối hợp bằng vector và kiểm tra số chiều.",
+          "contrast": 6.0228526404084395,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Một vector là một bộ số có thứ tự trong một không gian đã chọn. Vector",
+          "contrast": 14.755068102467318,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tổ hợp tuyến tính a·u + b·v biểu diễn tổng đóng góp của hai nguồn. Hệ ",
+          "contrast": 14.755068102467318,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tắt xem trước",
+          "contrast": 13.264739977672141,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 13.764920411532065,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 13.764920411532065,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 13.764920411532065,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 13.764920411532065,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 13.764920411532065,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1. Vector và tổ hợp tuyến tính",
+          "contrast": 11.317051006497476,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2. Khử Gauss và kiểm tra nghiệm",
+          "contrast": 13.264739977672141,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3. Ma trận và thứ tự nhân",
+          "contrast": 13.264739977672141,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4. Độc lập tuyến tính, cơ sở và số chiều",
+          "contrast": 13.264739977672141,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5. Định thức và khả nghịch trong hai chiều",
+          "contrast": 13.264739977672141,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6. Vector riêng và bình phương tối thiểu",
+          "contrast": 13.264739977672141,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tính / kiểm tra mô hình",
+          "contrast": 13.264739977672141,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự luyện bài này",
+          "contrast": 5.168555560022562,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Đánh dấu đã đọc",
+          "contrast": 13.264739977672141,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bài tiếp theo",
+          "contrast": 13.264739977672141,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "basic-dark-university-lesson",
+      "theme": "basic-dark",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Vector và tổ hợp tuyến tính",
+          "contrast": 16.73941327978109,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hiểu kiến thức",
+          "contrast": 15.038036797612593,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Ví dụ giải từng bước",
+          "contrast": 13.503814913205968,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Tự thực hành",
+          "contrast": 15.038036797612593,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Quan sát bằng mô hình",
+          "contrast": 13.503814913205968,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn một bài toán phối hợp bằng vector và kiểm tra số chiều.",
+          "contrast": 10.809298971442518,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Một vector là một bộ số có thứ tự trong một không gian đã chọn. Vector",
+          "contrast": 15.038036797612593,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tổ hợp tuyến tính a·u + b·v biểu diễn tổng đóng góp của hai nguồn. Hệ ",
+          "contrast": 15.038036797612593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tắt xem trước",
+          "contrast": 13.503814913205968,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 16.73941327978109,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 16.73941327978109,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 16.73941327978109,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 16.73941327978109,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 16.73941327978109,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1. Vector và tổ hợp tuyến tính",
+          "contrast": 10.173840503340038,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2. Khử Gauss và kiểm tra nghiệm",
+          "contrast": 13.503814913205968,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3. Ma trận và thứ tự nhân",
+          "contrast": 13.503814913205968,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4. Độc lập tuyến tính, cơ sở và số chiều",
+          "contrast": 13.503814913205968,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5. Định thức và khả nghịch trong hai chiều",
+          "contrast": 13.503814913205968,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6. Vector riêng và bình phương tối thiểu",
+          "contrast": 13.503814913205968,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tính / kiểm tra mô hình",
+          "contrast": 13.503814913205968,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự luyện bài này",
+          "contrast": 7.524770668954799,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Đánh dấu đã đọc",
+          "contrast": 13.503814913205968,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bài tiếp theo",
+          "contrast": 13.503814913205968,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "slate-university-lesson",
+      "theme": "slate",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Vector và tổ hợp tuyến tính",
+          "contrast": 16.955105845628285,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hiểu kiến thức",
+          "contrast": 14.029874741046042,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Ví dụ giải từng bước",
+          "contrast": 11.855115843111005,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Tự thực hành",
+          "contrast": 14.029874741046042,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Quan sát bằng mô hình",
+          "contrast": 11.855115843111005,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn một bài toán phối hợp bằng vector và kiểm tra số chiều.",
+          "contrast": 11.948333368856327,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Một vector là một bộ số có thứ tự trong một không gian đã chọn. Vector",
+          "contrast": 14.029874741046042,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tổ hợp tuyến tính a·u + b·v biểu diễn tổng đóng góp của hai nguồn. Hệ ",
+          "contrast": 14.029874741046042,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tắt xem trước",
+          "contrast": 11.855115843111005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 16.955105845628285,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 16.955105845628285,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 16.955105845628285,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 16.955105845628285,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 16.955105845628285,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1. Vector và tổ hợp tuyến tính",
+          "contrast": 8.216650713627327,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2. Khử Gauss và kiểm tra nghiệm",
+          "contrast": 11.855115843111005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3. Ma trận và thứ tự nhân",
+          "contrast": 11.855115843111005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4. Độc lập tuyến tính, cơ sở và số chiều",
+          "contrast": 11.855115843111005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5. Định thức và khả nghịch trong hai chiều",
+          "contrast": 11.855115843111005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6. Vector riêng và bình phương tối thiểu",
+          "contrast": 11.855115843111005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tính / kiểm tra mô hình",
+          "contrast": 11.855115843111005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự luyện bài này",
+          "contrast": 11.474457874482079,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Đánh dấu đã đọc",
+          "contrast": 11.855115843111005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bài tiếp theo",
+          "contrast": 11.855115843111005,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "warm-university-lesson",
+      "theme": "warm",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Vector và tổ hợp tuyến tính",
+          "contrast": 11.896647790662866,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hiểu kiến thức",
+          "contrast": 13.163674589564193,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Ví dụ giải từng bước",
+          "contrast": 10.993314483935535,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Tự thực hành",
+          "contrast": 13.163674589564193,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Quan sát bằng mô hình",
+          "contrast": 10.993314483935535,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn một bài toán phối hợp bằng vector và kiểm tra số chiều.",
+          "contrast": 5.9938130270655465,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Một vector là một bộ số có thứ tự trong một không gian đã chọn. Vector",
+          "contrast": 13.163674589564193,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tổ hợp tuyến tính a·u + b·v biểu diễn tổng đóng góp của hai nguồn. Hệ ",
+          "contrast": 13.163674589564193,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tắt xem trước",
+          "contrast": 10.993314483935535,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 11.896647790662866,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 11.896647790662866,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 11.896647790662866,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 11.896647790662866,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 11.896647790662866,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1. Vector và tổ hợp tuyến tính",
+          "contrast": 8.797764219890658,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2. Khử Gauss và kiểm tra nghiệm",
+          "contrast": 10.993314483935535,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3. Ma trận và thứ tự nhân",
+          "contrast": 10.993314483935535,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4. Độc lập tuyến tính, cơ sở và số chiều",
+          "contrast": 10.993314483935535,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5. Định thức và khả nghịch trong hai chiều",
+          "contrast": 10.993314483935535,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6. Vector riêng và bình phương tối thiểu",
+          "contrast": 10.993314483935535,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tính / kiểm tra mô hình",
+          "contrast": 10.993314483935535,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự luyện bài này",
+          "contrast": 5.352080935497952,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Đánh dấu đã đọc",
+          "contrast": 10.993314483935535,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bài tiếp theo",
+          "contrast": 10.993314483935535,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "dark-university-lesson",
+      "theme": "dark",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Vector và tổ hợp tuyến tính",
+          "contrast": 17.829607862114806,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hiểu kiến thức",
+          "contrast": 16.576653517643695,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Ví dụ giải từng bước",
+          "contrast": 15.440144933501038,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Tự thực hành",
+          "contrast": 16.576653517643695,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Quan sát bằng mô hình",
+          "contrast": 15.440144933501038,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn một bài toán phối hợp bằng vector và kiểm tra số chiều.",
+          "contrast": 10.498804103609498,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Một vector là một bộ số có thứ tự trong một không gian đã chọn. Vector",
+          "contrast": 16.576653517643695,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tổ hợp tuyến tính a·u + b·v biểu diễn tổng đóng góp của hai nguồn. Hệ ",
+          "contrast": 16.576653517643695,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tắt xem trước",
+          "contrast": 15.440144933501038,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 17.829607862114806,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 17.829607862114806,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 17.829607862114806,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 17.829607862114806,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 17.829607862114806,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1. Vector và tổ hợp tuyến tính",
+          "contrast": 12.11331488713398,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2. Khử Gauss và kiểm tra nghiệm",
+          "contrast": 15.440144933501038,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3. Ma trận và thứ tự nhân",
+          "contrast": 15.440144933501038,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4. Độc lập tuyến tính, cơ sở và số chiều",
+          "contrast": 15.440144933501038,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5. Định thức và khả nghịch trong hai chiều",
+          "contrast": 15.440144933501038,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6. Vector riêng và bình phương tối thiểu",
+          "contrast": 15.440144933501038,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tính / kiểm tra mô hình",
+          "contrast": 15.440144933501038,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự luyện bài này",
+          "contrast": 5.931204930842422,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Đánh dấu đã đọc",
+          "contrast": 15.440144933501038,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bài tiếp theo",
+          "contrast": 15.440144933501038,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "light-university-lesson",
+      "theme": "light",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Vector và tổ hợp tuyến tính",
+          "contrast": 14.655092941714658,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hiểu kiến thức",
+          "contrast": 16.268480224545662,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Ví dụ giải từng bước",
+          "contrast": 14.453552651179258,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Tự thực hành",
+          "contrast": 16.268480224545662,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Quan sát bằng mô hình",
+          "contrast": 14.453552651179258,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn một bài toán phối hợp bằng vector và kiểm tra số chiều.",
+          "contrast": 6.139733804582271,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Một vector là một bộ số có thứ tự trong một không gian đã chọn. Vector",
+          "contrast": 16.268480224545662,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tổ hợp tuyến tính a·u + b·v biểu diễn tổng đóng góp của hai nguồn. Hệ ",
+          "contrast": 16.268480224545662,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tắt xem trước",
+          "contrast": 14.453552651179258,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 14.655092941714658,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 14.655092941714658,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 14.655092941714658,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 14.655092941714658,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 14.655092941714658,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1. Vector và tổ hợp tuyến tính",
+          "contrast": 12.514194502121702,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2. Khử Gauss và kiểm tra nghiệm",
+          "contrast": 14.453552651179258,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3. Ma trận và thứ tự nhân",
+          "contrast": 14.453552651179258,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4. Độc lập tuyến tính, cơ sở và số chiều",
+          "contrast": 14.453552651179258,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5. Định thức và khả nghịch trong hai chiều",
+          "contrast": 14.453552651179258,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6. Vector riêng và bình phương tối thiểu",
+          "contrast": 14.453552651179258,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tính / kiểm tra mô hình",
+          "contrast": 14.453552651179258,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự luyện bài này",
+          "contrast": 4.65354127915403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Đánh dấu đã đọc",
+          "contrast": 14.453552651179258,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bài tiếp theo",
+          "contrast": 14.453552651179258,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "cyberpunk-university-lesson",
+      "theme": "cyberpunk",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Vector và tổ hợp tuyến tính",
+          "contrast": 17.842040936978268,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hiểu kiến thức",
+          "contrast": 18.14823512868477,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Ví dụ giải từng bước",
+          "contrast": 17.187791523766776,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Tự thực hành",
+          "contrast": 18.14823512868477,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Quan sát bằng mô hình",
+          "contrast": 17.187791523766776,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn một bài toán phối hợp bằng vector và kiểm tra số chiều.",
+          "contrast": 10.48375454989963,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Một vector là một bộ số có thứ tự trong một không gian đã chọn. Vector",
+          "contrast": 18.14823512868477,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tổ hợp tuyến tính a·u + b·v biểu diễn tổng đóng góp của hai nguồn. Hệ ",
+          "contrast": 18.14823512868477,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tắt xem trước",
+          "contrast": 17.187791523766776,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 17.842040936978268,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 17.842040936978268,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 17.842040936978268,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 17.842040936978268,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 17.842040936978268,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1. Vector và tổ hợp tuyến tính",
+          "contrast": 14.313509847702873,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2. Khử Gauss và kiểm tra nghiệm",
+          "contrast": 17.187791523766776,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3. Ma trận và thứ tự nhân",
+          "contrast": 17.187791523766776,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4. Độc lập tuyến tính, cơ sở và số chiều",
+          "contrast": 17.187791523766776,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5. Định thức và khả nghịch trong hai chiều",
+          "contrast": 17.187791523766776,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6. Vector riêng và bình phương tối thiểu",
+          "contrast": 17.187791523766776,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tính / kiểm tra mô hình",
+          "contrast": 17.187791523766776,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự luyện bài này",
+          "contrast": 14.235675402530337,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Đánh dấu đã đọc",
+          "contrast": 17.187791523766776,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bài tiếp theo",
+          "contrast": 17.187791523766776,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "ocean-university-lesson",
+      "theme": "ocean",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Vector và tổ hợp tuyến tính",
+          "contrast": 15.512866525228993,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hiểu kiến thức",
+          "contrast": 16.205566489199175,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Ví dụ giải từng bước",
+          "contrast": 14.309960838068445,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Tự thực hành",
+          "contrast": 16.205566489199175,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Quan sát bằng mô hình",
+          "contrast": 14.309960838068445,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn một bài toán phối hợp bằng vector và kiểm tra số chiều.",
+          "contrast": 10.09374655804764,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Một vector là một bộ số có thứ tự trong một không gian đã chọn. Vector",
+          "contrast": 16.205566489199175,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tổ hợp tuyến tính a·u + b·v biểu diễn tổng đóng góp của hai nguồn. Hệ ",
+          "contrast": 16.205566489199175,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tắt xem trước",
+          "contrast": 14.309960838068445,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 15.512866525228993,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 15.512866525228993,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 15.512866525228993,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 15.512866525228993,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 15.512866525228993,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1. Vector và tổ hợp tuyến tính",
+          "contrast": 10.173912042235271,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2. Khử Gauss và kiểm tra nghiệm",
+          "contrast": 14.309960838068445,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3. Ma trận và thứ tự nhân",
+          "contrast": 14.309960838068445,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4. Độc lập tuyến tính, cơ sở và số chiều",
+          "contrast": 14.309960838068445,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5. Định thức và khả nghịch trong hai chiều",
+          "contrast": 14.309960838068445,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6. Vector riêng và bình phương tối thiểu",
+          "contrast": 14.309960838068445,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tính / kiểm tra mô hình",
+          "contrast": 14.309960838068445,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự luyện bài này",
+          "contrast": 13.188219607653345,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Đánh dấu đã đọc",
+          "contrast": 14.309960838068445,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bài tiếp theo",
+          "contrast": 14.309960838068445,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "aurora-university-lesson",
+      "theme": "aurora",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Vector và tổ hợp tuyến tính",
+          "contrast": 17.493081098916235,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hiểu kiến thức",
+          "contrast": 16.936230844324374,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Ví dụ giải từng bước",
+          "contrast": 15.22503393264564,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Tự thực hành",
+          "contrast": 16.936230844324374,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Quan sát bằng mô hình",
+          "contrast": 15.22503393264564,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn một bài toán phối hợp bằng vector và kiểm tra số chiều.",
+          "contrast": 10.638641888680445,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Một vector là một bộ số có thứ tự trong một không gian đã chọn. Vector",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tổ hợp tuyến tính a·u + b·v biểu diễn tổng đóng góp của hai nguồn. Hệ ",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tắt xem trước",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1. Vector và tổ hợp tuyến tính",
+          "contrast": 11.149958847680903,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2. Khử Gauss và kiểm tra nghiệm",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3. Ma trận và thứ tự nhân",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4. Độc lập tuyến tính, cơ sở và số chiều",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5. Định thức và khả nghịch trong hai chiều",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6. Vector riêng và bình phương tối thiểu",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tính / kiểm tra mô hình",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự luyện bài này",
+          "contrast": 13.670137430012923,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Đánh dấu đã đọc",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bài tiếp theo",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "emerald-university-lesson",
+      "theme": "emerald",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Vector và tổ hợp tuyến tính",
+          "contrast": 15.934633954144356,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hiểu kiến thức",
+          "contrast": 16.29937609170048,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Ví dụ giải từng bước",
+          "contrast": 13.746978634754486,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Tự thực hành",
+          "contrast": 16.29937609170048,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Quan sát bằng mô hình",
+          "contrast": 13.746978634754486,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn một bài toán phối hợp bằng vector và kiểm tra số chiều.",
+          "contrast": 10.474700641487583,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Một vector là một bộ số có thứ tự trong một không gian đã chọn. Vector",
+          "contrast": 16.29937609170048,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tổ hợp tuyến tính a·u + b·v biểu diễn tổng đóng góp của hai nguồn. Hệ ",
+          "contrast": 16.29937609170048,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tắt xem trước",
+          "contrast": 13.746978634754486,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 15.934633954144356,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 15.934633954144356,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 15.934633954144356,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 15.934633954144356,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 15.934633954144356,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1. Vector và tổ hợp tuyến tính",
+          "contrast": 8.87077027038683,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2. Khử Gauss và kiểm tra nghiệm",
+          "contrast": 13.746978634754486,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3. Ma trận và thứ tự nhân",
+          "contrast": 13.746978634754486,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4. Độc lập tuyến tính, cơ sở và số chiều",
+          "contrast": 13.746978634754486,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5. Định thức và khả nghịch trong hai chiều",
+          "contrast": 13.746978634754486,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6. Vector riêng và bình phương tối thiểu",
+          "contrast": 13.746978634754486,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tính / kiểm tra mô hình",
+          "contrast": 13.746978634754486,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự luyện bài này",
+          "contrast": 13.468946666329595,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Đánh dấu đã đọc",
+          "contrast": 13.746978634754486,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bài tiếp theo",
+          "contrast": 13.746978634754486,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "purple-university-lesson",
+      "theme": "purple",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Vector và tổ hợp tuyến tính",
+          "contrast": 17.292615524875593,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hiểu kiến thức",
+          "contrast": 17.142828695909998,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Ví dụ giải từng bước",
+          "contrast": 15.79540676664403,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Tự thực hành",
+          "contrast": 17.142828695909998,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Quan sát bằng mô hình",
+          "contrast": 15.79540676664403,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn một bài toán phối hợp bằng vector và kiểm tra số chiều.",
+          "contrast": 10.636533015097408,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Một vector là một bộ số có thứ tự trong một không gian đã chọn. Vector",
+          "contrast": 17.142828695909998,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tổ hợp tuyến tính a·u + b·v biểu diễn tổng đóng góp của hai nguồn. Hệ ",
+          "contrast": 17.142828695909998,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tắt xem trước",
+          "contrast": 15.79540676664403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 17.292615524875593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 17.292615524875593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 17.292615524875593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 17.292615524875593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 17.292615524875593,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1. Vector và tổ hợp tuyến tính",
+          "contrast": 12.009439973509126,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2. Khử Gauss và kiểm tra nghiệm",
+          "contrast": 15.79540676664403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3. Ma trận và thứ tự nhân",
+          "contrast": 15.79540676664403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4. Độc lập tuyến tính, cơ sở và số chiều",
+          "contrast": 15.79540676664403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5. Định thức và khả nghịch trong hai chiều",
+          "contrast": 15.79540676664403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6. Vector riêng và bình phương tối thiểu",
+          "contrast": 15.79540676664403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tính / kiểm tra mô hình",
+          "contrast": 15.79540676664403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự luyện bài này",
+          "contrast": 7.704812741521142,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Đánh dấu đã đọc",
+          "contrast": 15.79540676664403,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bài tiếp theo",
+          "contrast": 15.79540676664403,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "sunset-university-lesson",
+      "theme": "sunset",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Vector và tổ hợp tuyến tính",
+          "contrast": 16.92068735109923,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hiểu kiến thức",
+          "contrast": 16.539265863874387,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Ví dụ giải từng bước",
+          "contrast": 14.462204446065785,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Tự thực hành",
+          "contrast": 16.539265863874387,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Quan sát bằng mô hình",
+          "contrast": 14.462204446065785,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn một bài toán phối hợp bằng vector và kiểm tra số chiều.",
+          "contrast": 10.764589350464227,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Một vector là một bộ số có thứ tự trong một không gian đã chọn. Vector",
+          "contrast": 16.539265863874387,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tổ hợp tuyến tính a·u + b·v biểu diễn tổng đóng góp của hai nguồn. Hệ ",
+          "contrast": 16.539265863874387,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tắt xem trước",
+          "contrast": 14.462204446065785,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 16.92068735109923,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 16.92068735109923,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 16.92068735109923,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 16.92068735109923,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 16.92068735109923,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1. Vector và tổ hợp tuyến tính",
+          "contrast": 10.13623374789329,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2. Khử Gauss và kiểm tra nghiệm",
+          "contrast": 14.462204446065785,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3. Ma trận và thứ tự nhân",
+          "contrast": 14.462204446065785,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4. Độc lập tuyến tính, cơ sở và số chiều",
+          "contrast": 14.462204446065785,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5. Định thức và khả nghịch trong hai chiều",
+          "contrast": 14.462204446065785,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6. Vector riêng và bình phương tối thiểu",
+          "contrast": 14.462204446065785,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tính / kiểm tra mô hình",
+          "contrast": 14.462204446065785,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự luyện bài này",
+          "contrast": 11.547280271739794,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Đánh dấu đã đọc",
+          "contrast": 14.462204446065785,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bài tiếp theo",
+          "contrast": 14.462204446065785,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "neon-university-lesson",
+      "theme": "neon",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Vector và tổ hợp tuyến tính",
+          "contrast": 19.282507415964005,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hiểu kiến thức",
+          "contrast": 19.467464209393505,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Ví dụ giải từng bước",
+          "contrast": 18.33682930240713,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Tự thực hành",
+          "contrast": 19.467464209393505,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Quan sát bằng mô hình",
+          "contrast": 18.33682930240713,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn một bài toán phối hợp bằng vector và kiểm tra số chiều.",
+          "contrast": 12.607455514313443,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Một vector là một bộ số có thứ tự trong một không gian đã chọn. Vector",
+          "contrast": 19.467464209393505,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tổ hợp tuyến tính a·u + b·v biểu diễn tổng đóng góp của hai nguồn. Hệ ",
+          "contrast": 19.467464209393505,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tắt xem trước",
+          "contrast": 18.33682930240713,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 19.282507415964005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 19.282507415964005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 19.282507415964005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 19.282507415964005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 19.282507415964005,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1. Vector và tổ hợp tuyến tính",
+          "contrast": 14.366703316838944,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2. Khử Gauss và kiểm tra nghiệm",
+          "contrast": 18.33682930240713,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3. Ma trận và thứ tự nhân",
+          "contrast": 18.33682930240713,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4. Độc lập tuyến tính, cơ sở và số chiều",
+          "contrast": 18.33682930240713,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5. Định thức và khả nghịch trong hai chiều",
+          "contrast": 18.33682930240713,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6. Vector riêng và bình phương tối thiểu",
+          "contrast": 18.33682930240713,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tính / kiểm tra mô hình",
+          "contrast": 18.33682930240713,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự luyện bài này",
+          "contrast": 14.355653231538524,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Đánh dấu đã đọc",
+          "contrast": 18.33682930240713,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bài tiếp theo",
+          "contrast": 18.33682930240713,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "glass-university-lesson",
+      "theme": "glass",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Vector và tổ hợp tuyến tính",
+          "contrast": 17.229647330306733,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hiểu kiến thức",
+          "contrast": 17.229647330306733,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Ví dụ giải từng bước",
+          "contrast": 17.229647330306733,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Tự thực hành",
+          "contrast": 17.229647330306733,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Quan sát bằng mô hình",
+          "contrast": 17.229647330306733,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn một bài toán phối hợp bằng vector và kiểm tra số chiều.",
+          "contrast": 11.390993351406275,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Một vector là một bộ số có thứ tự trong một không gian đã chọn. Vector",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tổ hợp tuyến tính a·u + b·v biểu diễn tổng đóng góp của hai nguồn. Hệ ",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tắt xem trước",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1. Vector và tổ hợp tuyến tính",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2. Khử Gauss và kiểm tra nghiệm",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3. Ma trận và thứ tự nhân",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4. Độc lập tuyến tính, cơ sở và số chiều",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5. Định thức và khả nghịch trong hai chiều",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6. Vector riêng và bình phương tối thiểu",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tính / kiểm tra mô hình",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự luyện bài này",
+          "contrast": 12.877175428813615,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Đánh dấu đã đọc",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bài tiếp theo",
+          "contrast": 17.229647330306733,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "university-1440",
+      "theme": "aurora",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Vector và tổ hợp tuyến tính",
+          "contrast": 17.493081098916235,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hiểu kiến thức",
+          "contrast": 16.936230844324374,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Ví dụ giải từng bước",
+          "contrast": 15.22503393264564,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Tự thực hành",
+          "contrast": 16.936230844324374,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Quan sát bằng mô hình",
+          "contrast": 15.22503393264564,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn một bài toán phối hợp bằng vector và kiểm tra số chiều.",
+          "contrast": 10.638641888680445,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Một vector là một bộ số có thứ tự trong một không gian đã chọn. Vector",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tổ hợp tuyến tính a·u + b·v biểu diễn tổng đóng góp của hai nguồn. Hệ ",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tắt xem trước",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1. Vector và tổ hợp tuyến tính",
+          "contrast": 11.149958847680903,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2. Khử Gauss và kiểm tra nghiệm",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3. Ma trận và thứ tự nhân",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4. Độc lập tuyến tính, cơ sở và số chiều",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5. Định thức và khả nghịch trong hai chiều",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6. Vector riêng và bình phương tối thiểu",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tính / kiểm tra mô hình",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự luyện bài này",
+          "contrast": 13.670137430012923,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Đánh dấu đã đọc",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bài tiếp theo",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "university-768",
+      "theme": "aurora",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Vector và tổ hợp tuyến tính",
+          "contrast": 17.493081098916235,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hiểu kiến thức",
+          "contrast": 16.936230844324374,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Ví dụ giải từng bước",
+          "contrast": 15.22503393264564,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Tự thực hành",
+          "contrast": 16.936230844324374,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Quan sát bằng mô hình",
+          "contrast": 15.22503393264564,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn một bài toán phối hợp bằng vector và kiểm tra số chiều.",
+          "contrast": 10.638641888680445,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Một vector là một bộ số có thứ tự trong một không gian đã chọn. Vector",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tổ hợp tuyến tính a·u + b·v biểu diễn tổng đóng góp của hai nguồn. Hệ ",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tắt xem trước",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1. Vector và tổ hợp tuyến tính",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2. Khử Gauss và kiểm tra nghiệm",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3. Ma trận và thứ tự nhân",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4. Độc lập tuyến tính, cơ sở và số chiều",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5. Định thức và khả nghịch trong hai chiều",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6. Vector riêng và bình phương tối thiểu",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tính / kiểm tra mô hình",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự luyện bài này",
+          "contrast": 13.670137430012923,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Đánh dấu đã đọc",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bài tiếp theo",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "university-375",
+      "theme": "aurora",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Vector và tổ hợp tuyến tính",
+          "contrast": 17.493081098916235,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hiểu kiến thức",
+          "contrast": 16.936230844324374,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Ví dụ giải từng bước",
+          "contrast": 15.22503393264564,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Tự thực hành",
+          "contrast": 16.936230844324374,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Quan sát bằng mô hình",
+          "contrast": 15.22503393264564,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn một bài toán phối hợp bằng vector và kiểm tra số chiều.",
+          "contrast": 10.638641888680445,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Một vector là một bộ số có thứ tự trong một không gian đã chọn. Vector",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tổ hợp tuyến tính a·u + b·v biểu diễn tổng đóng góp của hai nguồn. Hệ ",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tắt xem trước",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1. Vector và tổ hợp tuyến tính",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2. Khử Gauss và kiểm tra nghiệm",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3. Ma trận và thứ tự nhân",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4. Độc lập tuyến tính, cơ sở và số chiều",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5. Định thức và khả nghịch trong hai chiều",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6. Vector riêng và bình phương tối thiểu",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tính / kiểm tra mô hình",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự luyện bài này",
+          "contrast": 13.670137430012923,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Đánh dấu đã đọc",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bài tiếp theo",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    },
+    {
+      "label": "university-zoom200",
+      "theme": "aurora",
+      "checks": [
+        {
+          "role": "title",
+          "text": "Vector và tổ hợp tuyến tính",
+          "contrast": 17.493081098916235,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Hiểu kiến thức",
+          "contrast": 16.936230844324374,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Ví dụ giải từng bước",
+          "contrast": 15.22503393264564,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Tự thực hành",
+          "contrast": 16.936230844324374,
+          "required": 3
+        },
+        {
+          "role": "title",
+          "text": "Quan sát bằng mô hình",
+          "contrast": 15.22503393264564,
+          "required": 3
+        },
+        {
+          "role": "body",
+          "text": "Biểu diễn một bài toán phối hợp bằng vector và kiểm tra số chiều.",
+          "contrast": 10.638641888680445,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Một vector là một bộ số có thứ tự trong một không gian đã chọn. Vector",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "body",
+          "text": "Tổ hợp tuyến tính a·u + b·v biểu diễn tổng đóng góp của hai nguồn. Hệ ",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tắt xem trước",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bàn học",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học phần",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Chương trình",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Học liệu",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Ôn tập & kế hoạch",
+          "contrast": 17.493081098916235,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "1. Vector và tổ hợp tuyến tính",
+          "contrast": 16.936230844324374,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "2. Khử Gauss và kiểm tra nghiệm",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "3. Ma trận và thứ tự nhân",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "4. Độc lập tuyến tính, cơ sở và số chiều",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "5. Định thức và khả nghịch trong hai chiều",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "6. Vector riêng và bình phương tối thiểu",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tính / kiểm tra mô hình",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Tự luyện bài này",
+          "contrast": 13.670137430012923,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Đánh dấu đã đọc",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        },
+        {
+          "role": "button",
+          "text": "Bài tiếp theo",
+          "contrast": 15.22503393264564,
+          "required": 4.5
+        }
+      ],
+      "headerOverlap": false,
+      "noticeOverlap": false,
+      "overflow": false
+    }
+  ],
+  "failures": []
+}

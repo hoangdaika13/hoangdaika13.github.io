@@ -7,7 +7,7 @@
     assessments: { label: "Kiểm tra", title: "Kiểm tra năng lực" }, library: { label: "Thư viện", title: "Thư viện học liệu" },
     progress: { label: "Tiến độ", title: "Tiến độ theo kỹ năng" }, teacher: { label: "Giáo viên", title: "Teacher Mode" },
     family: { label: "Gia đình", title: "Family Mode" }, admin: { label: "Quản trị", title: "Education Admin Console" },
-    lesson: { label: "Bài học", title: "Lesson Player" }
+    lesson: { label: "Bài học", title: "Lesson Player" }, university: { label: "Đại học", title: "HH University — học phần và học liệu" }
   });
   const PRIMARY = ["today", "paths", "subjects", "practice", "assessments", "library", "progress"];
   const escape = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
@@ -63,14 +63,15 @@
   function shellMarkup(state, view) {
     const grade = root.HHSchoolCurriculum.gradeBy(state.profile.grade);
     const plan = root.HHSchoolCore.dailyPlan(state, root.HHSchoolCurriculum);
+    const university = view === "university", primary = university ? ["today", "university"] : ["today", "university", ...PRIMARY.slice(1)];
     return `<section class="hh-school age-${escape(state.profile.ageMode)} ${state.preferences.highContrast ? "is-contrast" : ""} ${state.preferences.dyslexia ? "is-dyslexia" : ""} ${state.preferences.largeText ? "is-large" : ""}" data-hh-school>
       <header class="hhs-topbar">
-        <button class="hhs-brand" type="button" data-school-view="today"><i>HH</i><span><small>TRƯỜNG HỌC SỐ 1–12</small><strong>HH SCHOOL</strong></span></button>
+        <button class="hhs-brand" type="button" data-school-view="today"><i>HH</i><span><small>PHỔ THÔNG & ĐẠI HỌC</small><strong>HH SCHOOL</strong></span></button>
         <label class="hhs-search"><span class="sr-only">Tìm bài học</span><input type="search" data-school-search placeholder="Tìm môn, bài học, kỹ năng..." autocomplete="off"><kbd>Ctrl K</kbd></label>
-        <div class="hhs-identity"><button type="button" data-school-grade-open><span>${escape(grade.stage)}</span><strong>${escape(grade.name)}</strong></button><button type="button" data-school-view="progress"><span>${escape(state.profile.name)}</span><strong>${escape(state.role)}</strong></button></div>
+        <div class="hhs-identity">${university ? '<button type="button" data-u-action="pane" data-u-pane="program"><span>Đại học</span><strong>Trường / ngành</strong></button>' : `<button type="button" data-school-grade-open><span>${escape(grade.stage)}</span><strong>${escape(grade.name)}</strong></button>`}<button type="button" ${university ? 'data-u-action="pane" data-u-pane="progress"' : 'data-school-view="progress"'}><span>${escape(university && state.profile.name === "Học sinh HH" ? "Người học HH" : state.profile.name)}</span><strong>${escape(state.role)}</strong></button></div>
       </header>
-      <nav class="hhs-main-nav" aria-label="Điều hướng HH School">${PRIMARY.map((id) => `<button type="button" data-school-view="${id}" ${view === id ? 'aria-current="page"' : ""}>${escape(VIEWS[id].label)}</button>`).join("")}<button type="button" data-school-study-together>Học cùng nhau</button></nav>
-      <div class="hhs-rolebar"><span><b>${state.profile.grade <= 2 ? "Học bằng hình ảnh và thao tác ngắn" : state.profile.grade <= 5 ? "Nhiệm vụ trực quan, dễ theo dõi" : state.profile.grade <= 9 ? "Kỹ năng, dự án và vận dụng" : "Chuyên đề, luyện thi và hướng nghiệp"}</b><small>${plan.review ? "Có nội dung đến hạn ôn" : "Lịch ôn đang ổn định"}</small></span>${resolveRoleViews(state).map((id) => `<button type="button" data-school-view="${id}" ${view === id ? 'aria-current="page"' : ""}>${VIEWS[id].label}</button>`).join("")}<button type="button" data-school-settings aria-label="Tùy chỉnh hiển thị">Aa</button><button type="button" data-school-sync title="Đồng bộ tiến độ">${state.syncStatus === "synced" ? "Đã đồng bộ" : "Đồng bộ"}</button></div>
+      <nav class="hhs-main-nav" aria-label="Điều hướng HH School">${primary.map((id) => `<button type="button" data-school-view="${id}" ${view === id ? 'aria-current="page"' : ""}>${escape(university && id === "today" ? "Phổ thông" : VIEWS[id].label)}</button>`).join("")}<button type="button" data-school-study-together>Học cùng nhau</button></nav>
+      <div class="hhs-rolebar"><span><b>${university ? "Học phần, thực hành và ôn tập đại học" : state.profile.grade <= 2 ? "Học bằng hình ảnh và thao tác ngắn" : state.profile.grade <= 5 ? "Nhiệm vụ trực quan, dễ theo dõi" : state.profile.grade <= 9 ? "Kỹ năng, dự án và vận dụng" : "Chuyên đề, luyện thi và hướng nghiệp"}</b><small>${plan.review ? "Có nội dung đến hạn ôn" : "Lịch ôn đang ổn định"}</small></span>${resolveRoleViews(state).map((id) => `<button type="button" data-school-view="${id}" ${view === id ? 'aria-current="page"' : ""}>${VIEWS[id].label}</button>`).join("")}<button type="button" data-school-settings aria-label="Tùy chỉnh hiển thị">Aa</button><button type="button" data-school-sync title="Đồng bộ tiến độ">${state.syncStatus === "synced" ? "Đã đồng bộ" : "Đồng bộ"}</button></div>
       <main class="hhs-workspace" data-school-workspace aria-live="polite"></main>
       <div class="hhs-toast-stack" data-school-toasts aria-live="polite"></div>
       <dialog class="hhs-dialog" data-school-dialog></dialog>
@@ -230,6 +231,7 @@
       const matchingForm=formAttribute?[...host.querySelectorAll('form')].find(f=>f.getAttribute(formAttribute.name)===formAttribute.value):null;
       const field=matchingForm?.elements[focusIndex]||(focusValue?.id?[...host.querySelectorAll('[id]')].find(e=>e.id===focusValue.id):null);
       if(focusValue&&field&&!field.disabled){field.value=focusValue.value;field.focus({preventScroll:true});try{field.setSelectionRange(focusValue.start,focusValue.end);}catch{}}
+      else if(field&&!field.disabled)field.focus?.({preventScroll:true});
       else if(active?.isConnected&&instance.host.contains(active))active.focus?.({preventScroll:true});
     });
   }
@@ -438,6 +440,7 @@
   }
 
   async function syncNow(instance) {
+    instance.workspace?.beforeRender?.();
     await instance.store.ready; await instance.store.whenSaved?.();
     if (mounted !== instance) return;
     const persistence = instance.store.getPersistence?.();
@@ -541,7 +544,9 @@
     const wrapper = document.createElement("div"); wrapper.innerHTML = shellMarkup(store.get(), view); host.replaceChildren(wrapper.firstElementChild);
     const instance = { rootHost: host, host: host.firstElementChild, options, view, store, sync: new root.HHSchoolSync({ apiBase: options.apiBase || "/api/education", ownerId:store.get().ownerId, onProgress: ({completed,total}) => { if(mounted?.store!==store)return;const output=host.querySelector("[data-school-sync]");if(output){output.textContent="Đang gửi "+completed+"/"+total;output.title="Đang gửi từng phần lịch sử; chỉ xác nhận khi máy chủ nhận đủ.";} } }), searchRecords: searchRecords(), searchWorker: null, searchRequestId: "" };
     mounted = instance;
-    instance.workspace = root.HHSchoolWorkspace?.create(instance, { render: () => renderView(instance), toast: message => toast(instance, message), download, dialog: html => dialog(instance, html) });
+    const workspaceFactory = view === "university" ? root.HHSchoolUniversity : root.HHSchoolWorkspace;
+    if (!workspaceFactory) throw new Error("Khu học đại học chưa được tải. Hãy tải lại ứng dụng.");
+    instance.workspace = workspaceFactory.create(instance, { render: (resetScroll = false) => renderView(instance, resetScroll), toast: message => toast(instance, message), download, dialog: html => dialog(instance, html) });
     bind(instance); renderView(instance); hydrate(instance).catch((error) => { if (mounted === instance) toast(instance, `Đang dùng dữ liệu offline: ${error.message}`, "warning"); });
     let priorPersistenceStatus=store.getPersistence?.().status;
     instance.unsubscribePersistence = store.subscribePersistence?.((value) => { const wasLoading=priorPersistenceStatus==="loading"; priorPersistenceStatus=value.status; if(wasLoading&&value.status!=="loading"&&mounted===instance)renderView(instance); const button = instance.host.querySelector("[data-school-sync]"); if (button) { button.title = value.error || (value.pending ? "Đang lưu trên thiết bị" : "Đã lưu trên thiết bị; trạng thái máy chủ được hiển thị trên nút"); const status=store.get().syncStatus; button.textContent=status==="synced"?"Đã đồng bộ":status==="conflict"?"Xung đột":options.currentUser?.id?"Chờ đồng bộ":"Đồng bộ"; } });
