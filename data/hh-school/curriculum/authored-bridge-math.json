@@ -1,0 +1,820 @@
+[
+  {
+    "grade": 4,
+    "slug": "compare-fractions",
+    "track": "standard",
+    "title": "So sánh phân số bằng cùng một đơn vị phần",
+    "chapter": "Phân số và các phép tính",
+    "outcome": "So sánh hai phân số dương bằng quy đồng hoặc mốc một nửa, nêu được điều kiện cùng một toàn thể.",
+    "prerequisites": [
+      "g4-math-equivalent-fractions"
+    ],
+    "prerequisiteText": "Hiểu phân số bằng nhau và phép nhân cả tử, mẫu với cùng số tự nhiên khác 0.",
+    "warmup": "Hai bạn ăn lần lượt 1/3 và 1/4 hai chiếc bánh cùng cỡ. Bạn nào ăn nhiều hơn? Hãy vẽ trước khi tính.",
+    "theory": [
+      "Muốn so sánh số phần, các phần phải có cùng kích thước. Với cùng một toàn thể, 1/3 lớn hơn 1/4 vì chia thành ba phần thì mỗi phần lớn hơn khi chia thành bốn phần. Mẫu số lớn hơn không có nghĩa phân số lớn hơn. Nếu hai toàn thể khác cỡ, chỉ nhìn phân số chưa đủ để kết luận lượng thực tế.",
+      "Khi mẫu số khác nhau, có thể đổi về cùng mẫu. Chẳng hạn so sánh 2/3 và 3/4: dùng 12 phần bằng nhau, 2/3 = 8/12 và 3/4 = 9/12. Tám phần ít hơn chín phần cùng cỡ nên 2/3 < 3/4. Việc đổi tên phần không làm thay đổi giá trị ban đầu.",
+      "Có thể dùng mốc: 3/8 < 4/8 = 1/2, còn 5/9 > 1/2 vì 10/18 > 9/18. Khi hai phân số ở hai phía của một mốc đã biết, không cần quy đồng trực tiếp với nhau. Luôn ghi rõ đang so sánh giá trị phân số hay lượng của hai vật cụ thể."
+    ],
+    "example": {
+      "prompt": "So sánh 3/5 và 7/10.",
+      "answer": "3/5 < 7/10",
+      "method": [
+        "Đổi 3/5 thành 6/10 bằng cách nhân cả tử và mẫu với 2.",
+        "So sánh 6 phần mười với 7 phần mười: 6 < 7.",
+        "Kết luận 3/5 < 7/10; kiểm tra 0,6 < 0,7."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Đổi 2/3 thành phân số có mẫu 12. Tử số là bao nhiêu?",
+      "answer": "8",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "Cả tử và mẫu cùng nhân 4.",
+      "family": "guided",
+      "hints": [
+        "12 gấp 3 mấy lần?",
+        "Nhân tử số với cùng số đó."
+      ]
+    },
+    "questions": [
+      {
+        "type": "single",
+        "prompt": "Quan hệ đúng giữa 5/8 và 2/3 là gì?",
+        "options": [
+          "5/8 < 2/3",
+          "5/8 = 2/3",
+          "5/8 > 2/3"
+        ],
+        "answer": "0",
+        "explanation": "5/8 = 15/24, 2/3 = 16/24; so sánh 15 và 16.",
+        "family": "reason"
+      },
+      {
+        "type": "short",
+        "prompt": "Viết tử số của phân số mẫu 20 bằng 3/4.",
+        "answer": "15",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "Nhân cả 3 và 4 với 5.",
+        "family": "equivalent"
+      },
+      {
+        "type": "essay",
+        "prompt": "An ăn 1/2 bánh nhỏ, Bình ăn 1/3 bánh lớn. Có chắc An ăn nhiều hơn không? Giải thích dữ kiện còn thiếu.",
+        "explanation": "Cần biết kích thước hai chiếc bánh; giá trị phân số chưa đủ cho lượng tuyệt đối.",
+        "family": "explain",
+        "rubric": [
+          {
+            "criterion": "Xác định đúng toàn thể và điều kiện",
+            "maxScore": 2,
+            "descriptor": "Ghi rõ đại lượng, đơn vị và giả thiết."
+          },
+          {
+            "criterion": "Giải thích từng bước",
+            "maxScore": 2,
+            "descriptor": "Lập luận dựa vào phần bằng nhau hoặc đại lượng giữ nguyên."
+          },
+          {
+            "criterion": "Kiểm tra kết luận",
+            "maxScore": 1,
+            "descriptor": "Thay lại dữ kiện hoặc dùng biểu diễn khác; chấp nhận cách giải hợp lệ."
+          }
+        ]
+      }
+    ],
+    "diagram": {
+      "type": "fraction-bars",
+      "denominator": 12,
+      "rows": [
+        {
+          "selected": 8,
+          "label": "2/3 = 8/12"
+        },
+        {
+          "selected": 9,
+          "label": "3/4 = 9/12"
+        }
+      ]
+    },
+    "application": "Vẽ hai thanh bằng nhau chia 12 phần. Tô 8 và 9 phần; giải thích vì sao phải giữ chiều dài hai thanh bằng nhau.",
+    "summary": "Đưa về phần cùng cỡ rồi so tử; hoặc dùng một mốc chung. Lượng thực tế còn phụ thuộc toàn thể.",
+    "mistakes": [
+      "So sánh riêng mẫu số mà bỏ qua tử số.",
+      "Dùng hai hình khác cỡ để kết luận lượng."
+    ],
+    "factualReferences": [
+      {
+        "title": "Prealgebra 2e",
+        "authors": [
+          "Lynn Marecek",
+          "MaryAnne Anthony-Smith",
+          "Andrea Honeycutt Mathis"
+        ],
+        "publisher": "OpenStax, Rice University",
+        "edition": "2e, published 2020-03-11; web viewed 2026-10-27",
+        "url": "https://openstax.org/books/prealgebra-2e/pages/4-5-add-and-subtract-fractions-with-different-denominators",
+        "licenseCode": "REFERENCE_ONLY",
+        "checkedScope": "Đối chiếu khái niệm toán học trong phần được dẫn; không sao chép lời văn, câu hỏi hoặc hình của sách. Không xác nhận đã đối chiếu SGK Việt Nam."
+      }
+    ],
+    "subjectId": "math",
+    "semester": 2,
+    "estimatedMinutes": null,
+    "reviewedAt": null,
+    "reviewerId": null
+  },
+  {
+    "grade": 4,
+    "slug": "subtract-fractions",
+    "track": "standard",
+    "title": "Trừ phân số và kiểm tra bằng phép cộng",
+    "chapter": "Phân số và các phép tính",
+    "outcome": "Trừ các phân số dương trong trường hợp hiệu không âm, giải thích quy đồng và kiểm tra kết quả.",
+    "prerequisites": [
+      "g4-math-equivalent-fractions",
+      "g4-math-compare-fractions"
+    ],
+    "prerequisiteText": "Nhận biết phân số bằng nhau và so sánh hai phân số.",
+    "warmup": "Một bình chứa 7/10 lít nước, rót ra 2/10 lít. Những phần mười còn lại được đếm thế nào?",
+    "theory": [
+      "Trừ phân số là bớt một lượng khỏi lượng ban đầu. Khi hai lượng đều đo bằng cùng đơn vị phần, trừ số phần và giữ tên phần: 7/10 − 2/10 = 5/10. Không trừ mẫu số vì đơn vị phần mười vẫn như cũ. Rút gọn 5/10 thành 1/2 nếu muốn.",
+      "Với khác mẫu, trước hết đổi cả hai lượng sang phần bằng nhau. Ví dụ 5/6 − 1/4: mẫu chung 12 cho 10/12 − 3/12 = 7/12. Hai phân số ban đầu không đổi giá trị khi quy đồng. Bài này chỉ xét số bị trừ không nhỏ hơn số trừ; trường hợp hiệu âm được học ở phạm vi số rộng hơn.",
+      "Để kiểm tra, cộng hiệu với số đã bớt: 7/12 + 1/4 = 7/12 + 3/12 = 10/12 = 5/6. Có thể ước lượng: bớt một số dương thì kết quả phải nhỏ hơn số ban đầu. Hai cách kiểm tra giúp phát hiện nhầm đơn vị hoặc phép tính."
+    ],
+    "example": {
+      "prompt": "Dây dài 7/8 m, cắt đi 1/3 m. Còn bao nhiêu mét?",
+      "answer": "13/24 m",
+      "method": [
+        "Chọn mẫu chung 24: 7/8 = 21/24, 1/3 = 8/24.",
+        "Lấy 21 − 8 = 13, giữ mẫu 24, được 13/24 m.",
+        "Kiểm tra 13/24 + 8/24 = 21/24 = 7/8 m."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "Tính 9/10 − 3/10. Nhập phân số tối giản.",
+      "answer": "3/5",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "6/10 = 3/5; mẫu không bị trừ.",
+      "family": "guided",
+      "hints": [
+        "Hai lượng cùng đo bằng phần mười."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Tính 5/6 − 1/3.",
+        "answer": "1/2",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "1/3 = 2/6, nên hiệu 3/6 = 1/2.",
+        "family": "difference"
+      },
+      {
+        "type": "short",
+        "prompt": "Bình có 3/4 lít, rót 1/6 lít. Còn bao nhiêu lít? Chỉ nhập số.",
+        "answer": "7/12",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "9/12 − 2/12 = 7/12 lít.",
+        "family": "application"
+      },
+      {
+        "type": "single",
+        "prompt": "Cách kiểm tra 4/5 − 1/2 = 3/10 là gì?",
+        "options": [
+          "Cộng 3/10 với 1/2 và so với 4/5",
+          "Cộng 4/5 với 1/2",
+          "Trừ cả tử và mẫu"
+        ],
+        "answer": "0",
+        "explanation": "3/10 + 5/10 = 8/10 = 4/5.",
+        "family": "reason"
+      },
+      {
+        "type": "essay",
+        "prompt": "Giải thích vì sao 4/7 − 2/7 không bằng 2/0. Dùng một thanh chia bảy phần.",
+        "explanation": "Bớt số phần đã tô; kích thước một phần bảy không đổi.",
+        "family": "explain",
+        "rubric": [
+          {
+            "criterion": "Xác định đúng toàn thể và điều kiện",
+            "maxScore": 2,
+            "descriptor": "Ghi rõ đại lượng, đơn vị và giả thiết."
+          },
+          {
+            "criterion": "Giải thích từng bước",
+            "maxScore": 2,
+            "descriptor": "Lập luận dựa vào phần bằng nhau hoặc đại lượng giữ nguyên."
+          },
+          {
+            "criterion": "Kiểm tra kết luận",
+            "maxScore": 1,
+            "descriptor": "Thay lại dữ kiện hoặc dùng biểu diễn khác; chấp nhận cách giải hợp lệ."
+          }
+        ]
+      }
+    ],
+    "diagram": {
+      "type": "fraction-bars",
+      "denominator": 12,
+      "rows": [
+        {
+          "selected": 10,
+          "label": "5/6 = 10/12"
+        },
+        {
+          "selected": 3,
+          "label": "1/4 = 3/12"
+        },
+        {
+          "selected": 7,
+          "label": "Hiệu = 7/12"
+        }
+      ]
+    },
+    "application": "Vẽ thanh 12 phần để biểu diễn 5/6 rồi gạch bỏ 1/4. Đếm số phần còn lại và kiểm tra bằng phép cộng.",
+    "summary": "Quy đồng nếu cần → trừ tử → giữ mẫu → rút gọn → cộng kiểm tra.",
+    "mistakes": [
+      "Trừ mẫu số.",
+      "Quên đổi tử số khi quy đồng."
+    ],
+    "factualReferences": [
+      {
+        "title": "Prealgebra 2e",
+        "authors": [
+          "Lynn Marecek",
+          "MaryAnne Anthony-Smith",
+          "Andrea Honeycutt Mathis"
+        ],
+        "publisher": "OpenStax, Rice University",
+        "edition": "2e, published 2020-03-11; web viewed 2026-10-27",
+        "url": "https://openstax.org/books/prealgebra-2e/pages/4-5-add-and-subtract-fractions-with-different-denominators",
+        "licenseCode": "REFERENCE_ONLY",
+        "checkedScope": "Đối chiếu khái niệm toán học trong phần được dẫn; không sao chép lời văn, câu hỏi hoặc hình của sách. Không xác nhận đã đối chiếu SGK Việt Nam."
+      }
+    ],
+    "subjectId": "math",
+    "semester": 2,
+    "estimatedMinutes": null,
+    "reviewedAt": null,
+    "reviewerId": null
+  },
+  {
+    "grade": 5,
+    "slug": "fraction-decimal-percent",
+    "track": "foundation",
+    "title": "Nối phân số, số thập phân và phần trăm",
+    "chapter": "Tỉ số phần trăm",
+    "outcome": "Biểu diễn cùng một phần của toàn thể bằng phân số, số thập phân và phần trăm.",
+    "prerequisites": [
+      "g5-math-decimal-place",
+      "g4-math-equivalent-fractions"
+    ],
+    "prerequisiteText": "Hiểu giá trị hàng thập phân và phân số bằng nhau.",
+    "warmup": "Một bảng 100 ô được tô 35 ô. Hãy mô tả phần đã tô bằng nhiều cách.",
+    "theory": [
+      "Phần trăm là một cách viết tỉ số theo một trăm phần bằng nhau. 35% nghĩa là 35/100 của toàn thể, cũng bằng 0,35. Dấu phẩy thập phân và kí hiệu phần trăm là hai cách biểu diễn; chúng không thay đổi lượng thực tế đang xét.",
+      "Để đổi một phân số sang phần trăm, nếu có thể hãy viết phân số bằng nó có mẫu 100. Ví dụ 3/5 = 60/100 = 60%. Đổi số thập phân sang phần trăm bằng cách nhân giá trị số với 100 rồi viết kí hiệu %. Vì 0,6 = 60/100 nên 0,6 tương ứng 60%, không phải 0,6%.",
+      "Ngược lại, 8% = 8/100 = 0,08. Số phần trăm lớn hơn 100% vẫn có nghĩa khi lượng so sánh lớn hơn toàn thể đã chọn: 1,2 lần toàn thể bằng 120%. Trong mô hình bảng một toàn thể ở đây, chỉ tô từ 0% đến 100%; bảng không mô phỏng lượng vượt một toàn thể."
+    ],
+    "example": {
+      "prompt": "Viết 7/20 dưới dạng số thập phân và phần trăm.",
+      "answer": "0,35 và 35%",
+      "method": [
+        "20 nhân 5 bằng 100 nên nhân cả tử và mẫu với 5.",
+        "7/20 = 35/100 = 0,35.",
+        "35 phần trong 100 phần bằng 35%; kiểm tra 0,35 × 20 = 7."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "0,42 bằng bao nhiêu phần trăm? Chỉ nhập số trước kí hiệu %.",
+      "answer": "42",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "0,42 = 42/100.",
+      "family": "guided",
+      "hints": [
+        "Đọc 0,42 là 42 phần trăm của 1."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Đổi 3/4 sang phần trăm. Chỉ nhập số.",
+        "answer": "75",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "3/4 = 75/100.",
+        "family": "fraction-convert"
+      },
+      {
+        "type": "short",
+        "prompt": "Đổi 6% sang số thập phân.",
+        "answer": "0.06",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "6/100 = 0,06.",
+        "family": "percent-convert"
+      },
+      {
+        "type": "single",
+        "prompt": "Khẳng định nào đúng?",
+        "options": [
+          "0,5 = 50%",
+          "0,5 = 0,5%",
+          "5% = 0,5"
+        ],
+        "answer": "0",
+        "explanation": "50% = 50/100 = 0,5.",
+        "family": "reason"
+      },
+      {
+        "type": "essay",
+        "prompt": "Vẽ hoặc mô tả 20% của một bảng 100 ô và viết hai biểu diễn khác.",
+        "explanation": "20 ô, phân số 20/100 = 1/5, số thập phân 0,2.",
+        "family": "explain",
+        "rubric": [
+          {
+            "criterion": "Xác định đúng toàn thể và điều kiện",
+            "maxScore": 2,
+            "descriptor": "Ghi rõ đại lượng, đơn vị và giả thiết."
+          },
+          {
+            "criterion": "Giải thích từng bước",
+            "maxScore": 2,
+            "descriptor": "Lập luận dựa vào phần bằng nhau hoặc đại lượng giữ nguyên."
+          },
+          {
+            "criterion": "Kiểm tra kết luận",
+            "maxScore": 1,
+            "descriptor": "Thay lại dữ kiện hoặc dùng biểu diễn khác; chấp nhận cách giải hợp lệ."
+          }
+        ]
+      }
+    ],
+    "diagram": {
+      "type": "hundred-grid",
+      "selected": 35,
+      "label": "35 ô trong 100 ô: 35/100 = 0,35 = 35%"
+    },
+    "application": "Thay số ô tô trong mô hình, đọc phân số theo mẫu 100 và số thập phân tương ứng. Không suy diễn đây là dữ liệu khảo sát thật.",
+    "summary": "Giữ nguyên toàn thể khi đổi cách viết. p% = p/100; chú ý hai chữ số hàng phần mười và phần trăm.",
+    "mistakes": [
+      "Đổi 6% thành 0,6.",
+      "Nhân với 100 nhưng quên kí hiệu %."
+    ],
+    "factualReferences": [
+      {
+        "title": "Prealgebra 2e",
+        "authors": [
+          "Lynn Marecek",
+          "MaryAnne Anthony-Smith",
+          "Andrea Honeycutt Mathis"
+        ],
+        "publisher": "OpenStax, Rice University",
+        "edition": "2e, published 2020-03-11; web viewed 2026-10-27",
+        "url": "https://openstax.org/books/prealgebra-2e/pages/6-1-understand-percent",
+        "licenseCode": "REFERENCE_ONLY",
+        "checkedScope": "Đối chiếu khái niệm toán học trong phần được dẫn; không sao chép lời văn, câu hỏi hoặc hình của sách. Không xác nhận đã đối chiếu SGK Việt Nam."
+      }
+    ],
+    "subjectId": "math",
+    "semester": 2,
+    "estimatedMinutes": null,
+    "reviewedAt": null,
+    "reviewerId": null
+  },
+  {
+    "grade": 5,
+    "slug": "find-whole-percent",
+    "track": "advanced",
+    "enrichmentOnly": true,
+    "title": "Tìm toàn thể khi biết một phần và phần trăm",
+    "chapter": "Tỉ số phần trăm",
+    "outcome": "Tìm lượng ban đầu từ một phần đã biết, giải thích đại lượng được chọn làm 100%.",
+    "prerequisites": [
+      "g5-math-percentage",
+      "g5-math-fraction-decimal-percent"
+    ],
+    "prerequisiteText": "Tính được phần trăm của một lượng và đổi p% thành p/100.",
+    "warmup": "Một phần tư số trang của quyển vở là 18 trang. Muốn tìm cả quyển, em chia hay nhân với 4?",
+    "theory": [
+      "Khi biết A là p% của toàn thể T, ta có A = T × p/100. Nếu p > 0 thì T = A : (p/100). Có thể tìm 1% bằng A : p rồi nhân 100. Hai cách đều xuất phát từ cùng một quan hệ, không phải mẹo chọn phép tính theo từ khóa.",
+      "Ví dụ 30% số cây là 24 cây: mỗi 1% ứng với 24 : 30 = 0,8 cây trong phép chia theo tỉ lệ; toàn bộ là 0,8 × 100 = 80 cây. Giá trị 0,8 là bước tính trung gian, không có nghĩa trồng 0,8 cây. Có thể tính thẳng 24 : 0,3 = 80.",
+      "Cần xác định lượng nào được coi là 100%. Nếu một vật sau khi giảm 20% còn 48 đơn vị thì 48 là 80% của lượng ban đầu, không phải 20%. Tìm lượng ban đầu bằng 48 : 0,8 = 60. Kiểm tra: giảm 20% của 60 là giảm 12, còn 48. Dữ kiện ở đây là tình huống số học giả định."
+    ],
+    "example": {
+      "prompt": "Sau khi dùng 25% giấy, còn 54 tờ. Ban đầu có bao nhiêu tờ?",
+      "answer": "72 tờ",
+      "method": [
+        "Lượng còn lại chiếm 100% − 25% = 75% ban đầu.",
+        "Tính toàn thể: 54 : 0,75 = 72 tờ.",
+        "Kiểm tra 25% của 72 là 18; 72 − 18 = 54 tờ."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "40% số nhãn là 28 nhãn. Có tất cả bao nhiêu nhãn?",
+      "answer": "70",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "28 : 0,4 = 70.",
+      "family": "guided",
+      "hints": [
+        "Viết 28 = toàn thể × 0,4."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "15% một lượng bằng 27. Lượng đó là bao nhiêu?",
+        "answer": "180",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "27 : 0,15 = 180.",
+        "family": "whole"
+      },
+      {
+        "type": "short",
+        "prompt": "Dùng 30% của một cuộn dây, còn 42 m. Ban đầu dài bao nhiêu mét? Chỉ nhập số.",
+        "answer": "60",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "42 là 70%; 42 : 0,7 = 60.",
+        "family": "remaining"
+      },
+      {
+        "type": "single",
+        "prompt": "Sau khi tăng 25%, một lượng thành 100. Lượng ban đầu là bao nhiêu?",
+        "options": [
+          "80",
+          "75",
+          "125"
+        ],
+        "answer": "0",
+        "explanation": "100 là 125% ban đầu; 100 : 1,25 = 80.",
+        "family": "reason"
+      },
+      {
+        "type": "essay",
+        "prompt": "Vì sao dùng 100 − 25 = 75 không tìm được lượng ban đầu trong ví dụ tăng 25% thành 100?",
+        "explanation": "25 là phần trăm của lượng ban đầu, không phải một lượng cùng đơn vị với 100.",
+        "family": "explain",
+        "rubric": [
+          {
+            "criterion": "Xác định đúng toàn thể và điều kiện",
+            "maxScore": 2,
+            "descriptor": "Ghi rõ đại lượng, đơn vị và giả thiết."
+          },
+          {
+            "criterion": "Giải thích từng bước",
+            "maxScore": 2,
+            "descriptor": "Lập luận dựa vào phần bằng nhau hoặc đại lượng giữ nguyên."
+          },
+          {
+            "criterion": "Kiểm tra kết luận",
+            "maxScore": 1,
+            "descriptor": "Thay lại dữ kiện hoặc dùng biểu diễn khác; chấp nhận cách giải hợp lệ."
+          }
+        ]
+      }
+    ],
+    "application": "Tự đặt bài toán biết lượng còn lại sau khi dùng một phần trăm; ghi rõ 100%, giải và kiểm tra lại lượng đã dùng.",
+    "summary": "Xác định 100% → xác định phần trăm của lượng đã biết → chia cho tỉ số tương ứng → thay lại kiểm tra.",
+    "mistakes": [
+      "Trừ trực tiếp số phần trăm khỏi số lượng.",
+      "Nhầm phần đã dùng với phần còn lại."
+    ],
+    "factualReferences": [
+      {
+        "title": "Prealgebra 2e",
+        "authors": [
+          "Lynn Marecek",
+          "MaryAnne Anthony-Smith",
+          "Andrea Honeycutt Mathis"
+        ],
+        "publisher": "OpenStax, Rice University",
+        "edition": "2e, published 2020-03-11; web viewed 2026-10-27",
+        "url": "https://openstax.org/books/prealgebra-2e/pages/6-5-solve-proportions-and-their-applications",
+        "licenseCode": "REFERENCE_ONLY",
+        "checkedScope": "Đối chiếu khái niệm toán học trong phần được dẫn; không sao chép lời văn, câu hỏi hoặc hình của sách. Không xác nhận đã đối chiếu SGK Việt Nam."
+      }
+    ],
+    "subjectId": "math",
+    "semester": 2,
+    "estimatedMinutes": null,
+    "reviewedAt": null,
+    "reviewerId": null
+  },
+  {
+    "grade": 6,
+    "slug": "ratio-and-unit-rate",
+    "track": "standard",
+    "title": "Tỉ số và giá trị ứng với một đơn vị",
+    "chapter": "Tỉ số và dữ liệu",
+    "outcome": "Lập tỉ số theo đúng thứ tự đại lượng, đổi đơn vị trước khi so sánh và tính giá trị một đơn vị.",
+    "prerequisites": [
+      "g4-math-equivalent-fractions"
+    ],
+    "prerequisiteText": "Biết chia hai số và nhận biết phân số bằng nhau.",
+    "warmup": "Hai nhóm gói được 18 và 24 phần quà. Muốn nói nhóm thứ nhất bằng mấy phần nhóm thứ hai, số nào đứng trước?",
+    "theory": [
+      "Tỉ số của a và b là a/b, với b khác 0; thứ tự được nêu trong câu quyết định tử và mẫu. Nếu so hai đại lượng cùng loại thì phải đổi về cùng đơn vị trước. Tỉ số 30 cm với 2 m là 30/200 = 3/20, không phải 30/2.",
+      "Giá trị ứng với một đơn vị cho biết lượng trung bình trên mỗi đơn vị đang xét. Trong tình huống giả định 6 chai nước giống nhau có giá tổng 54 nghìn đồng, giá một chai là 54 : 6 = 9 nghìn đồng/chai. Đơn vị đi kèm giúp hiểu thương, không chỉ ghi một số rời rạc.",
+      "Chỉ suy ra giá 10 chai là 90 nghìn khi giả sử giá mỗi chai không đổi, không có ưu đãi hay phí khác. Một phép chia từ dữ liệu tổng chưa chứng minh mọi trường hợp đều có tỉ lệ cố định. Khi so sánh hai lựa chọn, cần cùng điều kiện và cùng đơn vị của giá trị trên một đơn vị."
+    ],
+    "example": {
+      "prompt": "Một nhóm đọc 84 trang trong 4 ngày, đều mỗi ngày. Mỗi ngày đọc bao nhiêu trang?",
+      "answer": "21 trang/ngày",
+      "method": [
+        "Xác định đại lượng cần tìm là số trang cho 1 ngày.",
+        "Tính 84 : 4 = 21 trang/ngày.",
+        "Kiểm tra 21 × 4 = 84; giả thiết đều mỗi ngày là cần thiết."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "5 hộp giống nhau nặng tổng 3 kg. Mỗi hộp nặng bao nhiêu kg?",
+      "answer": "0.6",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "3 : 5 = 0,6 kg/hộp.",
+      "family": "guided",
+      "hints": [
+        "Tìm lượng ứng với một hộp."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Tỉ số của 45 cm và 3 m là bao nhiêu? Nhập phân số hoặc số thập phân.",
+        "answer": "3/20",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "3 m = 300 cm; 45/300 = 3/20.",
+        "family": "same-unit"
+      },
+      {
+        "type": "short",
+        "prompt": "8 tập giấy giống nhau có giá tổng 72 nghìn đồng. Giá một tập là mấy nghìn?",
+        "answer": "9",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "72 : 8 = 9 nghìn đồng/tập.",
+        "family": "unit-rate"
+      },
+      {
+        "type": "single",
+        "prompt": "Từ số trang đọc tổng trong 4 ngày, điều gì chưa thể khẳng định nếu không có thêm dữ kiện?",
+        "options": [
+          "Mỗi ngày đều đọc như nhau",
+          "Có thể tính số trung bình mỗi ngày",
+          "Có thể chia tổng cho 4"
+        ],
+        "answer": "0",
+        "explanation": "Số trung bình không chứng minh từng ngày bằng nhau.",
+        "family": "reason"
+      },
+      {
+        "type": "essay",
+        "prompt": "Hai chai dung tích khác nhau có giá khác nhau. Nêu cách so sánh giá theo cùng một đơn vị dung tích và dữ kiện cần có.",
+        "explanation": "Cần giá và dung tích cùng đơn vị; chia giá cho dung tích, xét thêm điều kiện tương đương.",
+        "family": "explain",
+        "rubric": [
+          {
+            "criterion": "Xác định đúng toàn thể và điều kiện",
+            "maxScore": 2,
+            "descriptor": "Ghi rõ đại lượng, đơn vị và giả thiết."
+          },
+          {
+            "criterion": "Giải thích từng bước",
+            "maxScore": 2,
+            "descriptor": "Lập luận dựa vào phần bằng nhau hoặc đại lượng giữ nguyên."
+          },
+          {
+            "criterion": "Kiểm tra kết luận",
+            "maxScore": 1,
+            "descriptor": "Thay lại dữ kiện hoặc dùng biểu diễn khác; chấp nhận cách giải hợp lệ."
+          }
+        ]
+      }
+    ],
+    "diagram": {
+      "type": "proportion-table",
+      "caption": "Giả sử đều 21 trang/ngày",
+      "columns": [
+        "Số ngày",
+        "Số trang"
+      ],
+      "rows": [
+        [
+          "1",
+          "21"
+        ],
+        [
+          "2",
+          "42"
+        ],
+        [
+          "4",
+          "84"
+        ]
+      ]
+    },
+    "application": "Dùng dữ liệu giả định về hai gói giấy khác khối lượng, tính giá trên 1 kg và nêu giới hạn của phép so sánh.",
+    "summary": "Đọc đúng thứ tự → đổi đơn vị phù hợp → lập thương → ghi đơn vị và điều kiện.",
+    "mistakes": [
+      "Đảo thứ tự tỉ số.",
+      "So sánh trước khi đổi về cùng đơn vị."
+    ],
+    "factualReferences": [
+      {
+        "title": "Prealgebra 2e",
+        "authors": [
+          "Lynn Marecek",
+          "MaryAnne Anthony-Smith",
+          "Andrea Honeycutt Mathis"
+        ],
+        "publisher": "OpenStax, Rice University",
+        "edition": "2e, published 2020-03-11; web viewed 2026-10-27",
+        "url": "https://openstax.org/books/prealgebra-2e/pages/6-5-solve-proportions-and-their-applications",
+        "licenseCode": "REFERENCE_ONLY",
+        "checkedScope": "Đối chiếu khái niệm toán học trong phần được dẫn; không sao chép lời văn, câu hỏi hoặc hình của sách. Không xác nhận đã đối chiếu SGK Việt Nam."
+      }
+    ],
+    "subjectId": "math",
+    "semester": 2,
+    "estimatedMinutes": null,
+    "reviewedAt": null,
+    "reviewerId": null
+  },
+  {
+    "grade": 7,
+    "slug": "inverse-proportion",
+    "track": "standard",
+    "title": "Tỉ lệ nghịch: nhận ra tích không đổi",
+    "chapter": "Các đại lượng tỉ lệ",
+    "outcome": "Nhận biết hai đại lượng tỉ lệ nghịch qua tích không đổi và giải thích điều kiện mô hình.",
+    "prerequisites": [
+      "g7-math-direct-proportion",
+      "g6-math-ratio-and-unit-rate"
+    ],
+    "prerequisiteText": "Biết tỉ lệ thuận có thương không đổi; nhân chia số dương.",
+    "warmup": "Cùng chia 60 thẻ đều cho 3 hoặc 5 bạn. Khi số bạn tăng, số thẻ mỗi bạn thay đổi thế nào?",
+    "theory": [
+      "Hai đại lượng x và y tỉ lệ nghịch khi x × y bằng cùng một số khác 0 trong mọi cặp giá trị đang xét; khi đó y = k/x và x khác 0. Với x, y dương, tăng x lên hai lần làm y giảm còn một nửa. Điều quyết định là tích không đổi, không chỉ là một đại lượng tăng và đại lượng kia giảm.",
+      "Nếu chia cố định 60 thẻ đều cho n bạn thì mỗi bạn nhận 60/n thẻ. Tích n × số thẻ mỗi bạn luôn bằng 60. Với 3 bạn được 20 thẻ/bạn; 5 bạn được 12 thẻ/bạn; 10 bạn được 6 thẻ/bạn. Khi yêu cầu số thẻ nguyên, chỉ xét số bạn chia hết 60.",
+      "Trong bài toán số người và thời gian hoàn thành công việc, mô hình tỉ lệ nghịch chỉ hợp lý khi lượng việc cố định, năng suất mỗi người bằng nhau và có thể phối hợp mà không cản trở. Không thể suy rằng tăng người bao nhiêu cũng giảm thời gian đúng tỉ lệ trong thực tế. Bảng số liệu cần được kiểm tra tích trước khi chọn mô hình."
+    ],
+    "example": {
+      "prompt": "Chia đều 72 thẻ. 6 bạn nhận mỗi bạn 12 thẻ. Nếu có 9 bạn thì mỗi bạn nhận bao nhiêu?",
+      "answer": "8 thẻ/bạn",
+      "method": [
+        "Tổng số thẻ không đổi: 6 × 12 = 72.",
+        "Với 9 bạn: 72 : 9 = 8 thẻ/bạn.",
+        "Kiểm tra 9 × 8 = 72, cùng tích ban đầu."
+      ]
+    },
+    "guided": {
+      "type": "short",
+      "prompt": "x × y = 48. Khi x = 8 thì y bằng bao nhiêu?",
+      "answer": "6",
+      "grading": {
+        "mode": "numeric",
+        "tolerance": 1e-9
+      },
+      "explanation": "48 : 8 = 6.",
+      "family": "guided",
+      "hints": [
+        "Giữ tích 48 không đổi."
+      ]
+    },
+    "questions": [
+      {
+        "type": "short",
+        "prompt": "Chia đều 90 phiếu cho 15 người. Mỗi người có mấy phiếu?",
+        "answer": "6",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "15 × 6 = 90.",
+        "family": "fixed-total"
+      },
+      {
+        "type": "single",
+        "prompt": "Dãy cặp nào mô tả tỉ lệ nghịch?",
+        "options": [
+          "(2;12), (3;8), (6;4)",
+          "(2;4), (3;6), (6;12)",
+          "(2;12), (3;11), (6;8)"
+        ],
+        "answer": "0",
+        "explanation": "Chỉ dãy đầu có các tích đều bằng 24.",
+        "family": "reason"
+      },
+      {
+        "type": "short",
+        "prompt": "x và y dương tỉ lệ nghịch. x tăng 3 lần thì y cũ bằng mấy lần y mới?",
+        "answer": "3",
+        "grading": {
+          "mode": "numeric",
+          "tolerance": 1e-9
+        },
+        "explanation": "y mới bằng 1/3 y cũ, nên y cũ gấp 3 lần y mới.",
+        "family": "scaling"
+      },
+      {
+        "type": "essay",
+        "prompt": "Một đại lượng tăng và một đại lượng giảm có đủ kết luận tỉ lệ nghịch không? Cho cách kiểm tra bằng ba cặp dữ liệu.",
+        "explanation": "Cần kiểm tra các tích bằng nhau; chỉ xu hướng ngược nhau chưa đủ.",
+        "family": "explain",
+        "rubric": [
+          {
+            "criterion": "Xác định đúng toàn thể và điều kiện",
+            "maxScore": 2,
+            "descriptor": "Ghi rõ đại lượng, đơn vị và giả thiết."
+          },
+          {
+            "criterion": "Giải thích từng bước",
+            "maxScore": 2,
+            "descriptor": "Lập luận dựa vào phần bằng nhau hoặc đại lượng giữ nguyên."
+          },
+          {
+            "criterion": "Kiểm tra kết luận",
+            "maxScore": 1,
+            "descriptor": "Thay lại dữ kiện hoặc dùng biểu diễn khác; chấp nhận cách giải hợp lệ."
+          }
+        ]
+      }
+    ],
+    "diagram": {
+      "type": "proportion-table",
+      "caption": "Chia cố định 60 thẻ: số bạn × thẻ mỗi bạn = 60",
+      "columns": [
+        "Số bạn",
+        "Thẻ mỗi bạn"
+      ],
+      "rows": [
+        [
+          "3",
+          "20"
+        ],
+        [
+          "5",
+          "12"
+        ],
+        [
+          "10",
+          "6"
+        ]
+      ]
+    },
+    "application": "Lập bảng chia 120 viên gạch đồ chơi cho 4, 6, 8 nhóm; kiểm tra tích và nêu điều kiện chia đều.",
+    "summary": "Tỉ lệ thuận: thương cố định. Tỉ lệ nghịch: tích cố định. Mô hình cần điều kiện và phạm vi áp dụng.",
+    "mistakes": [
+      "Thấy tăng–giảm là kết luận tỉ lệ nghịch.",
+      "Dùng quy tắc năng suất khi điều kiện phối hợp không thỏa."
+    ],
+    "factualReferences": [],
+    "subjectId": "math",
+    "semester": 2,
+    "estimatedMinutes": null,
+    "reviewedAt": null,
+    "reviewerId": null
+  }
+]

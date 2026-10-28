@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contentVersion": "2026.10.27-authored-drafts-v1",
+  "contentVersion": "2026.10.27-authored-drafts-v2",
   "grade": 5,
   "subjects": [
     {
@@ -95,6 +95,21 @@
       ],
       "chapters": [
         {
+          "id": "g5-math-ti-so-phan-tram",
+          "title": "Tỉ số phần trăm",
+          "semester": 2,
+          "outcomeIds": [
+            "g5-math-fraction-decimal-percent-outcome",
+            "g5-math-find-whole-percent-outcome",
+            "g5-math-percentage-outcome"
+          ],
+          "lessonIds": [
+            "g5-math-fraction-decimal-percent",
+            "g5-math-find-whole-percent",
+            "g5-math-percentage"
+          ]
+        },
+        {
           "id": "g5-math-so-thap-phan",
           "title": "Số thập phân",
           "semester": 1,
@@ -103,17 +118,6 @@
           ],
           "lessonIds": [
             "g5-math-decimal-place"
-          ]
-        },
-        {
-          "id": "g5-math-ti-so-phan-tram",
-          "title": "Tỉ số phần trăm",
-          "semester": 2,
-          "outcomeIds": [
-            "g5-math-percentage-outcome"
-          ],
-          "lessonIds": [
-            "g5-math-percentage"
           ]
         },
         {
@@ -129,9 +133,9 @@
         }
       ],
       "coverage": {
-        "authoredLessons": 3,
+        "authoredLessons": 5,
         "publishedLessons": 0,
-        "authoredOutcomes": 3,
+        "authoredOutcomes": 5,
         "officialOutcomeCount": null,
         "complete": false
       },
@@ -681,6 +685,40 @@
   ],
   "outcomes": [
     {
+      "id": "g5-math-fraction-decimal-percent-outcome",
+      "subjectId": "math",
+      "text": "Biểu diễn cùng một phần của toàn thể bằng phân số, số thập phân và phần trăm.",
+      "status": "source-aligned-draft",
+      "sourceRef": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-math-g5-p206",
+        "page": null,
+        "pageStart": 206,
+        "pageEnd": 212,
+        "precision": "grade-section-only"
+      },
+      "officialRequirementId": null,
+      "reviewed": false,
+      "scope": "authored-subset"
+    },
+    {
+      "id": "g5-math-find-whole-percent-outcome",
+      "subjectId": "math",
+      "text": "Tìm lượng ban đầu từ một phần đã biết, giải thích đại lượng được chọn làm 100%.",
+      "status": "source-aligned-draft",
+      "sourceRef": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-math-g5-p206",
+        "page": null,
+        "pageStart": 206,
+        "pageEnd": 212,
+        "precision": "grade-section-only"
+      },
+      "officialRequirementId": null,
+      "reviewed": false,
+      "scope": "authored-extension"
+    },
+    {
       "id": "g5-history-geography-duong-thoi-gian-moc-lich-su-outcome",
       "subjectId": "history-geography",
       "text": "Sắp các mốc 40, 248, 938 trên đường thời gian sau Công nguyên và phân biệt khoảng cách năm với thứ tự sự kiện.",
@@ -971,6 +1009,750 @@
     }
   ],
   "lessons": [
+    {
+      "gradeId": "grade-5",
+      "subjectId": "math",
+      "topicId": "g5-math-ti-so-phan-tram",
+      "chapterId": "g5-math-ti-so-phan-tram",
+      "lessonId": "g5-math-fraction-decimal-percent",
+      "title": "Nối phân số, số thập phân và phần trăm",
+      "outcome": "Biểu diễn cùng một phần của toàn thể bằng phân số, số thập phân và phần trăm.",
+      "outcomeIds": [
+        "g5-math-fraction-decimal-percent-outcome"
+      ],
+      "semester": 2,
+      "semesterBasis": "Phân bổ học kỳ nội bộ dự kiến; không thay kế hoạch nhà trường.",
+      "track": "foundation",
+      "difficulty": "Bù nền tảng",
+      "enrichmentOnly": false,
+      "language": null,
+      "listening": null,
+      "prerequisites": [
+        "g5-math-decimal-place",
+        "g4-math-equivalent-fractions"
+      ],
+      "prerequisiteText": "Hiểu giá trị hàng thập phân và phân số bằng nhau.",
+      "estimatedMinutes": null,
+      "durationStatus": "unmeasured-internal-design",
+      "contentStatus": "draft",
+      "editorialStatus": "needs-subject-review",
+      "reviewedAt": null,
+      "reviewerId": null,
+      "source": {
+        "sourceUrl": "https://hoang8.com/#/learn/library",
+        "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+        "publisher": "HH Platform",
+        "licenseCode": "HH-ORIGINAL",
+        "licenseUrl": "https://hoang8.com/terms.html",
+        "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+        "retrievedAt": "2026-10-27",
+        "reviewedAt": null,
+        "reviewerId": null,
+        "allowedForCommercialUse": true,
+        "allowedToModify": true,
+        "evidencePath": "data/hh-school/curriculum/authored-bridge-math.json"
+      },
+      "referenceSources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-math-g5-p206",
+          "page": null,
+          "pageStart": 206,
+          "pageEnd": 212,
+          "precision": "grade-section-only"
+        }
+      ],
+      "additionalDraftReferences": [
+        {
+          "title": "Prealgebra 2e",
+          "authors": [
+            "Lynn Marecek",
+            "MaryAnne Anthony-Smith",
+            "Andrea Honeycutt Mathis"
+          ],
+          "publisher": "OpenStax, Rice University",
+          "edition": "2e, published 2020-03-11; web viewed 2026-10-27",
+          "url": "https://openstax.org/books/prealgebra-2e/pages/6-1-understand-percent",
+          "licenseCode": "REFERENCE_ONLY",
+          "checkedScope": "Đối chiếu khái niệm toán học trong phần được dẫn; không sao chép lời văn, câu hỏi hoặc hình của sách. Không xác nhận đã đối chiếu SGK Việt Nam."
+        }
+      ],
+      "alignmentStatus": "draft-subset-source-section-located",
+      "textbookCrosscheck": {
+        "status": "not-completed",
+        "editions": []
+      },
+      "speaker": "HH School",
+      "steps": [
+        {
+          "id": "warmup",
+          "label": "Khởi động",
+          "body": "Một bảng 100 ô được tô 35 ô. Hãy mô tả phần đã tô bằng nhiều cách."
+        },
+        {
+          "id": "goal",
+          "label": "Mục tiêu và kiến thức nền",
+          "body": "Biểu diễn cùng một phần của toàn thể bằng phân số, số thập phân và phần trăm.\n\nKiến thức cần có: Hiểu giá trị hàng thập phân và phân số bằng nhau."
+        },
+        {
+          "id": "core",
+          "label": "Kiến thức cốt lõi",
+          "body": "Phần trăm là một cách viết tỉ số theo một trăm phần bằng nhau. 35% nghĩa là 35/100 của toàn thể, cũng bằng 0,35. Dấu phẩy thập phân và kí hiệu phần trăm là hai cách biểu diễn; chúng không thay đổi lượng thực tế đang xét.\n\nĐể đổi một phân số sang phần trăm, nếu có thể hãy viết phân số bằng nó có mẫu 100. Ví dụ 3/5 = 60/100 = 60%. Đổi số thập phân sang phần trăm bằng cách nhân giá trị số với 100 rồi viết kí hiệu %. Vì 0,6 = 60/100 nên 0,6 tương ứng 60%, không phải 0,6%.\n\nNgược lại, 8% = 8/100 = 0,08. Số phần trăm lớn hơn 100% vẫn có nghĩa khi lượng so sánh lớn hơn toàn thể đã chọn: 1,2 lần toàn thể bằng 120%. Trong mô hình bảng một toàn thể ở đây, chỉ tô từ 0% đến 100%; bảng không mô phỏng lượng vượt một toàn thể."
+        },
+        {
+          "id": "guided",
+          "label": "Ví dụ giải từng bước",
+          "body": "Đọc đề, theo dõi từng bước rồi đối chiếu lý do; sau đó tự làm bài luyện với dữ kiện khác."
+        },
+        {
+          "id": "interactive",
+          "label": "Quan sát và thực hành",
+          "body": "Thay số ô tô trong mô hình, đọc phân số theo mẫu 100 và số thập phân tương ứng. Không suy diễn đây là dữ liệu khảo sát thật.",
+          "diagram": {
+            "type": "hundred-grid",
+            "selected": 35,
+            "label": "35 ô trong 100 ô: 35/100 = 0,35 = 35%"
+          }
+        },
+        {
+          "id": "practice",
+          "label": "Luyện có hướng dẫn",
+          "body": "0,42 bằng bao nhiêu phần trăm? Chỉ nhập số trước kí hiệu %.\n\nGợi ý theo mức: Đọc 0,42 là 42 phần trăm của 1."
+        },
+        {
+          "id": "apply",
+          "label": "Vận dụng",
+          "body": "Thay số ô tô trong mô hình, đọc phân số theo mẫu 100 và số thập phân tương ứng. Không suy diễn đây là dữ liệu khảo sát thật."
+        },
+        {
+          "id": "quickcheck",
+          "label": "Tự làm độc lập",
+          "body": "Đóng phần ví dụ và tự giải các câu dưới đây. Đáp án hoặc rubric chỉ dùng để đối chiếu sau khi bạn đã thử. Nội dung đang chờ thẩm định chuyên môn."
+        },
+        {
+          "id": "summary",
+          "label": "Tóm tắt và sửa hiểu nhầm",
+          "body": "Giữ nguyên toàn thể khi đổi cách viết. p% = p/100; chú ý hai chữ số hàng phần mười và phần trăm."
+        },
+        {
+          "id": "next",
+          "label": "Ôn lại và học tiếp",
+          "body": "Sau một khoảng nghỉ, giải thích lại bằng lời của bạn: Biểu diễn cùng một phần của toàn thể bằng phân số, số thập phân và phần trăm.\nLưu câu hỏi còn vướng trong ghi chú; lần ôn sau thử câu độc lập trước khi mở lời giải."
+        }
+      ],
+      "workedExample": {
+        "prompt": "Viết 7/20 dưới dạng số thập phân và phần trăm.",
+        "answer": "0,35 và 35%",
+        "method": [
+          "20 nhân 5 bằng 100 nên nhân cả tử và mẫu với 5.",
+          "7/20 = 35/100 = 0,35.",
+          "35 phần trong 100 phần bằng 35%; kiểm tra 0,35 × 20 = 7."
+        ]
+      },
+      "commonMistakes": [
+        "Đổi 6% thành 0,6.",
+        "Nhân với 100 nhưng quên kí hiệu %."
+      ],
+      "questions": [
+        {
+          "type": "short",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 1e-9
+          },
+          "prompt": "0,42 bằng bao nhiêu phần trăm? Chỉ nhập số trước kí hiệu %.",
+          "answer": "42",
+          "explanation": "0,42 = 42/100.",
+          "family": "guided",
+          "hints": [
+            "Đọc 0,42 là 42 phần trăm của 1."
+          ],
+          "cognitiveLevel": "thông hiểu",
+          "id": "g5-math-fraction-decimal-percent-q1",
+          "gradeId": "grade-5",
+          "subjectId": "math",
+          "lessonId": "g5-math-fraction-decimal-percent",
+          "skillId": "g5-math-fraction-decimal-percent-outcome",
+          "outcomeId": "g5-math-fraction-decimal-percent-outcome",
+          "familyId": "g5-math-fraction-decimal-percent-guided",
+          "phase": "practice",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "difficulty": 1,
+          "hintSteps": [
+            "Đọc 0,42 là 42 phần trăm của 1."
+          ],
+          "helpLevel": 1
+        },
+        {
+          "type": "short",
+          "prompt": "Đổi 3/4 sang phần trăm. Chỉ nhập số.",
+          "answer": "75",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 1e-9
+          },
+          "explanation": "3/4 = 75/100.",
+          "family": "fraction-convert",
+          "id": "g5-math-fraction-decimal-percent-q2",
+          "gradeId": "grade-5",
+          "subjectId": "math",
+          "lessonId": "g5-math-fraction-decimal-percent",
+          "skillId": "g5-math-fraction-decimal-percent-outcome",
+          "outcomeId": "g5-math-fraction-decimal-percent-outcome",
+          "familyId": "g5-math-fraction-decimal-percent-fraction-convert",
+          "phase": "check",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "cognitiveLevel": "vận dụng",
+          "difficulty": 1,
+          "hintSteps": [],
+          "helpLevel": 0
+        },
+        {
+          "type": "short",
+          "prompt": "Đổi 6% sang số thập phân.",
+          "answer": "0.06",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 1e-9
+          },
+          "explanation": "6/100 = 0,06.",
+          "family": "percent-convert",
+          "id": "g5-math-fraction-decimal-percent-q3",
+          "gradeId": "grade-5",
+          "subjectId": "math",
+          "lessonId": "g5-math-fraction-decimal-percent",
+          "skillId": "g5-math-fraction-decimal-percent-outcome",
+          "outcomeId": "g5-math-fraction-decimal-percent-outcome",
+          "familyId": "g5-math-fraction-decimal-percent-percent-convert",
+          "phase": "check",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "cognitiveLevel": "vận dụng",
+          "difficulty": 1,
+          "hintSteps": [],
+          "helpLevel": 0
+        },
+        {
+          "type": "single",
+          "prompt": "Khẳng định nào đúng?",
+          "options": [
+            "0,5 = 50%",
+            "0,5 = 0,5%",
+            "5% = 0,5"
+          ],
+          "answer": "0",
+          "explanation": "50% = 50/100 = 0,5.",
+          "family": "reason",
+          "id": "g5-math-fraction-decimal-percent-q4",
+          "gradeId": "grade-5",
+          "subjectId": "math",
+          "lessonId": "g5-math-fraction-decimal-percent",
+          "skillId": "g5-math-fraction-decimal-percent-outcome",
+          "outcomeId": "g5-math-fraction-decimal-percent-outcome",
+          "familyId": "g5-math-fraction-decimal-percent-reason",
+          "phase": "check",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "cognitiveLevel": "vận dụng",
+          "difficulty": 1,
+          "hintSteps": [],
+          "helpLevel": 0
+        },
+        {
+          "type": "essay",
+          "prompt": "Vẽ hoặc mô tả 20% của một bảng 100 ô và viết hai biểu diễn khác.",
+          "explanation": "20 ô, phân số 20/100 = 1/5, số thập phân 0,2.",
+          "family": "explain",
+          "rubric": [
+            {
+              "criterion": "Xác định đúng toàn thể và điều kiện",
+              "maxScore": 2,
+              "descriptor": "Ghi rõ đại lượng, đơn vị và giả thiết."
+            },
+            {
+              "criterion": "Giải thích từng bước",
+              "maxScore": 2,
+              "descriptor": "Lập luận dựa vào phần bằng nhau hoặc đại lượng giữ nguyên."
+            },
+            {
+              "criterion": "Kiểm tra kết luận",
+              "maxScore": 1,
+              "descriptor": "Thay lại dữ kiện hoặc dùng biểu diễn khác; chấp nhận cách giải hợp lệ."
+            }
+          ],
+          "id": "g5-math-fraction-decimal-percent-q5",
+          "gradeId": "grade-5",
+          "subjectId": "math",
+          "lessonId": "g5-math-fraction-decimal-percent",
+          "skillId": "g5-math-fraction-decimal-percent-outcome",
+          "outcomeId": "g5-math-fraction-decimal-percent-outcome",
+          "familyId": "g5-math-fraction-decimal-percent-explain",
+          "phase": "check",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "cognitiveLevel": "vận dụng",
+          "difficulty": 1,
+          "hintSteps": [],
+          "helpLevel": 0
+        }
+      ],
+      "mission": {
+        "id": "g5-math-fraction-decimal-percent-activity",
+        "title": "Thực hành và tự đối chiếu",
+        "prompt": "Thay số ô tô trong mô hình, đọc phân số theo mẫu 100 và số thập phân tương ứng. Không suy diễn đây là dữ liệu khảo sát thật.",
+        "status": "draft"
+      },
+      "diagram": {
+        "type": "hundred-grid",
+        "selected": 35,
+        "label": "35 ô trong 100 ô: 35/100 = 0,35 = 35%"
+      },
+      "terms": [],
+      "formulas": [],
+      "rubric": [],
+      "contentVersion": 1,
+      "authoredFile": "data/hh-school/curriculum/authored-bridge-math.json"
+    },
+    {
+      "gradeId": "grade-5",
+      "subjectId": "math",
+      "topicId": "g5-math-ti-so-phan-tram",
+      "chapterId": "g5-math-ti-so-phan-tram",
+      "lessonId": "g5-math-find-whole-percent",
+      "title": "Tìm toàn thể khi biết một phần và phần trăm",
+      "outcome": "Tìm lượng ban đầu từ một phần đã biết, giải thích đại lượng được chọn làm 100%.",
+      "outcomeIds": [
+        "g5-math-find-whole-percent-outcome"
+      ],
+      "semester": 2,
+      "semesterBasis": "Phân bổ học kỳ nội bộ dự kiến; không thay kế hoạch nhà trường.",
+      "track": "advanced",
+      "difficulty": "Nâng cao",
+      "enrichmentOnly": true,
+      "language": null,
+      "listening": null,
+      "prerequisites": [
+        "g5-math-percentage",
+        "g5-math-fraction-decimal-percent"
+      ],
+      "prerequisiteText": "Tính được phần trăm của một lượng và đổi p% thành p/100.",
+      "estimatedMinutes": null,
+      "durationStatus": "unmeasured-internal-design",
+      "contentStatus": "draft",
+      "editorialStatus": "needs-subject-review",
+      "reviewedAt": null,
+      "reviewerId": null,
+      "source": {
+        "sourceUrl": "https://hoang8.com/#/learn/library",
+        "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+        "publisher": "HH Platform",
+        "licenseCode": "HH-ORIGINAL",
+        "licenseUrl": "https://hoang8.com/terms.html",
+        "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+        "retrievedAt": "2026-10-27",
+        "reviewedAt": null,
+        "reviewerId": null,
+        "allowedForCommercialUse": true,
+        "allowedToModify": true,
+        "evidencePath": "data/hh-school/curriculum/authored-bridge-math.json"
+      },
+      "referenceSources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-math-g5-p206",
+          "page": null,
+          "pageStart": 206,
+          "pageEnd": 212,
+          "precision": "grade-section-only"
+        }
+      ],
+      "additionalDraftReferences": [
+        {
+          "title": "Prealgebra 2e",
+          "authors": [
+            "Lynn Marecek",
+            "MaryAnne Anthony-Smith",
+            "Andrea Honeycutt Mathis"
+          ],
+          "publisher": "OpenStax, Rice University",
+          "edition": "2e, published 2020-03-11; web viewed 2026-10-27",
+          "url": "https://openstax.org/books/prealgebra-2e/pages/6-5-solve-proportions-and-their-applications",
+          "licenseCode": "REFERENCE_ONLY",
+          "checkedScope": "Đối chiếu khái niệm toán học trong phần được dẫn; không sao chép lời văn, câu hỏi hoặc hình của sách. Không xác nhận đã đối chiếu SGK Việt Nam."
+        }
+      ],
+      "alignmentStatus": "draft-subset-source-section-located",
+      "textbookCrosscheck": {
+        "status": "not-completed",
+        "editions": []
+      },
+      "speaker": "HH School",
+      "steps": [
+        {
+          "id": "warmup",
+          "label": "Khởi động",
+          "body": "Một phần tư số trang của quyển vở là 18 trang. Muốn tìm cả quyển, em chia hay nhân với 4?"
+        },
+        {
+          "id": "goal",
+          "label": "Mục tiêu và kiến thức nền",
+          "body": "Tìm lượng ban đầu từ một phần đã biết, giải thích đại lượng được chọn làm 100%.\n\nKiến thức cần có: Tính được phần trăm của một lượng và đổi p% thành p/100."
+        },
+        {
+          "id": "core",
+          "label": "Kiến thức cốt lõi",
+          "body": "Khi biết A là p% của toàn thể T, ta có A = T × p/100. Nếu p > 0 thì T = A : (p/100). Có thể tìm 1% bằng A : p rồi nhân 100. Hai cách đều xuất phát từ cùng một quan hệ, không phải mẹo chọn phép tính theo từ khóa.\n\nVí dụ 30% số cây là 24 cây: mỗi 1% ứng với 24 : 30 = 0,8 cây trong phép chia theo tỉ lệ; toàn bộ là 0,8 × 100 = 80 cây. Giá trị 0,8 là bước tính trung gian, không có nghĩa trồng 0,8 cây. Có thể tính thẳng 24 : 0,3 = 80.\n\nCần xác định lượng nào được coi là 100%. Nếu một vật sau khi giảm 20% còn 48 đơn vị thì 48 là 80% của lượng ban đầu, không phải 20%. Tìm lượng ban đầu bằng 48 : 0,8 = 60. Kiểm tra: giảm 20% của 60 là giảm 12, còn 48. Dữ kiện ở đây là tình huống số học giả định."
+        },
+        {
+          "id": "guided",
+          "label": "Ví dụ giải từng bước",
+          "body": "Đọc đề, theo dõi từng bước rồi đối chiếu lý do; sau đó tự làm bài luyện với dữ kiện khác."
+        },
+        {
+          "id": "interactive",
+          "label": "Quan sát và thực hành",
+          "body": "Tự đặt bài toán biết lượng còn lại sau khi dùng một phần trăm; ghi rõ 100%, giải và kiểm tra lại lượng đã dùng.",
+          "diagram": null
+        },
+        {
+          "id": "practice",
+          "label": "Luyện có hướng dẫn",
+          "body": "40% số nhãn là 28 nhãn. Có tất cả bao nhiêu nhãn?\n\nGợi ý theo mức: Viết 28 = toàn thể × 0,4."
+        },
+        {
+          "id": "apply",
+          "label": "Vận dụng",
+          "body": "Tự đặt bài toán biết lượng còn lại sau khi dùng một phần trăm; ghi rõ 100%, giải và kiểm tra lại lượng đã dùng."
+        },
+        {
+          "id": "quickcheck",
+          "label": "Tự làm độc lập",
+          "body": "Đóng phần ví dụ và tự giải các câu dưới đây. Đáp án hoặc rubric chỉ dùng để đối chiếu sau khi bạn đã thử. Nội dung đang chờ thẩm định chuyên môn."
+        },
+        {
+          "id": "summary",
+          "label": "Tóm tắt và sửa hiểu nhầm",
+          "body": "Xác định 100% → xác định phần trăm của lượng đã biết → chia cho tỉ số tương ứng → thay lại kiểm tra."
+        },
+        {
+          "id": "next",
+          "label": "Ôn lại và học tiếp",
+          "body": "Sau một khoảng nghỉ, giải thích lại bằng lời của bạn: Tìm lượng ban đầu từ một phần đã biết, giải thích đại lượng được chọn làm 100%.\nLưu câu hỏi còn vướng trong ghi chú; lần ôn sau thử câu độc lập trước khi mở lời giải."
+        }
+      ],
+      "workedExample": {
+        "prompt": "Sau khi dùng 25% giấy, còn 54 tờ. Ban đầu có bao nhiêu tờ?",
+        "answer": "72 tờ",
+        "method": [
+          "Lượng còn lại chiếm 100% − 25% = 75% ban đầu.",
+          "Tính toàn thể: 54 : 0,75 = 72 tờ.",
+          "Kiểm tra 25% của 72 là 18; 72 − 18 = 54 tờ."
+        ]
+      },
+      "commonMistakes": [
+        "Trừ trực tiếp số phần trăm khỏi số lượng.",
+        "Nhầm phần đã dùng với phần còn lại."
+      ],
+      "questions": [
+        {
+          "type": "short",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 1e-9
+          },
+          "prompt": "40% số nhãn là 28 nhãn. Có tất cả bao nhiêu nhãn?",
+          "answer": "70",
+          "explanation": "28 : 0,4 = 70.",
+          "family": "guided",
+          "hints": [
+            "Viết 28 = toàn thể × 0,4."
+          ],
+          "cognitiveLevel": "thông hiểu",
+          "id": "g5-math-find-whole-percent-q1",
+          "gradeId": "grade-5",
+          "subjectId": "math",
+          "lessonId": "g5-math-find-whole-percent",
+          "skillId": "g5-math-find-whole-percent-outcome",
+          "outcomeId": "g5-math-find-whole-percent-outcome",
+          "familyId": "g5-math-find-whole-percent-guided",
+          "phase": "practice",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "difficulty": 4,
+          "hintSteps": [
+            "Viết 28 = toàn thể × 0,4."
+          ],
+          "helpLevel": 1
+        },
+        {
+          "type": "short",
+          "prompt": "15% một lượng bằng 27. Lượng đó là bao nhiêu?",
+          "answer": "180",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 1e-9
+          },
+          "explanation": "27 : 0,15 = 180.",
+          "family": "whole",
+          "id": "g5-math-find-whole-percent-q2",
+          "gradeId": "grade-5",
+          "subjectId": "math",
+          "lessonId": "g5-math-find-whole-percent",
+          "skillId": "g5-math-find-whole-percent-outcome",
+          "outcomeId": "g5-math-find-whole-percent-outcome",
+          "familyId": "g5-math-find-whole-percent-whole",
+          "phase": "check",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "cognitiveLevel": "vận dụng",
+          "difficulty": 4,
+          "hintSteps": [],
+          "helpLevel": 0
+        },
+        {
+          "type": "short",
+          "prompt": "Dùng 30% của một cuộn dây, còn 42 m. Ban đầu dài bao nhiêu mét? Chỉ nhập số.",
+          "answer": "60",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 1e-9
+          },
+          "explanation": "42 là 70%; 42 : 0,7 = 60.",
+          "family": "remaining",
+          "id": "g5-math-find-whole-percent-q3",
+          "gradeId": "grade-5",
+          "subjectId": "math",
+          "lessonId": "g5-math-find-whole-percent",
+          "skillId": "g5-math-find-whole-percent-outcome",
+          "outcomeId": "g5-math-find-whole-percent-outcome",
+          "familyId": "g5-math-find-whole-percent-remaining",
+          "phase": "check",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "cognitiveLevel": "vận dụng",
+          "difficulty": 4,
+          "hintSteps": [],
+          "helpLevel": 0
+        },
+        {
+          "type": "single",
+          "prompt": "Sau khi tăng 25%, một lượng thành 100. Lượng ban đầu là bao nhiêu?",
+          "options": [
+            "75",
+            "125",
+            "80"
+          ],
+          "answer": "2",
+          "explanation": "100 là 125% ban đầu; 100 : 1,25 = 80.",
+          "family": "reason",
+          "id": "g5-math-find-whole-percent-q4",
+          "gradeId": "grade-5",
+          "subjectId": "math",
+          "lessonId": "g5-math-find-whole-percent",
+          "skillId": "g5-math-find-whole-percent-outcome",
+          "outcomeId": "g5-math-find-whole-percent-outcome",
+          "familyId": "g5-math-find-whole-percent-reason",
+          "phase": "check",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "cognitiveLevel": "vận dụng",
+          "difficulty": 4,
+          "hintSteps": [],
+          "helpLevel": 0
+        },
+        {
+          "type": "essay",
+          "prompt": "Vì sao dùng 100 − 25 = 75 không tìm được lượng ban đầu trong ví dụ tăng 25% thành 100?",
+          "explanation": "25 là phần trăm của lượng ban đầu, không phải một lượng cùng đơn vị với 100.",
+          "family": "explain",
+          "rubric": [
+            {
+              "criterion": "Xác định đúng toàn thể và điều kiện",
+              "maxScore": 2,
+              "descriptor": "Ghi rõ đại lượng, đơn vị và giả thiết."
+            },
+            {
+              "criterion": "Giải thích từng bước",
+              "maxScore": 2,
+              "descriptor": "Lập luận dựa vào phần bằng nhau hoặc đại lượng giữ nguyên."
+            },
+            {
+              "criterion": "Kiểm tra kết luận",
+              "maxScore": 1,
+              "descriptor": "Thay lại dữ kiện hoặc dùng biểu diễn khác; chấp nhận cách giải hợp lệ."
+            }
+          ],
+          "id": "g5-math-find-whole-percent-q5",
+          "gradeId": "grade-5",
+          "subjectId": "math",
+          "lessonId": "g5-math-find-whole-percent",
+          "skillId": "g5-math-find-whole-percent-outcome",
+          "outcomeId": "g5-math-find-whole-percent-outcome",
+          "familyId": "g5-math-find-whole-percent-explain",
+          "phase": "check",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "cognitiveLevel": "vận dụng",
+          "difficulty": 4,
+          "hintSteps": [],
+          "helpLevel": 0
+        }
+      ],
+      "mission": {
+        "id": "g5-math-find-whole-percent-activity",
+        "title": "Thực hành và tự đối chiếu",
+        "prompt": "Tự đặt bài toán biết lượng còn lại sau khi dùng một phần trăm; ghi rõ 100%, giải và kiểm tra lại lượng đã dùng.",
+        "status": "draft"
+      },
+      "diagram": null,
+      "terms": [],
+      "formulas": [],
+      "rubric": [],
+      "contentVersion": 1,
+      "authoredFile": "data/hh-school/curriculum/authored-bridge-math.json"
+    },
     {
       "gradeId": "grade-5",
       "subjectId": "history-geography",
@@ -2917,7 +3699,10 @@
       "enrichmentOnly": false,
       "language": null,
       "listening": null,
-      "prerequisites": [],
+      "prerequisites": [
+        "g5-math-decimal-place",
+        "g5-math-fraction-decimal-percent"
+      ],
       "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
       "estimatedMinutes": null,
       "durationStatus": "unmeasured-internal-design",
@@ -6081,9 +6866,9 @@
   "coverage": {
     "catalogueSlots": 12,
     "subjectsWithDrafts": 11,
-    "draftLessons": 17,
+    "draftLessons": 19,
     "publishedLessons": 0,
-    "authoredOutcomeCount": 17,
+    "authoredOutcomeCount": 19,
     "officialOutcomeCount": null,
     "complete": false
   }

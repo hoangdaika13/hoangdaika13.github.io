@@ -782,7 +782,9 @@
     "semester": 1,
     "outcome": "Tạo và rút gọn phân số bằng cách nhân/chia đồng thời tử và mẫu với cùng số khác 0; giải thích bằng mô hình phần bằng nhau.",
     "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
-    "prerequisites": [],
+    "prerequisites": [
+      "g3-math-unit-fraction"
+    ],
     "theory": [
       "Một lượng có thể được viết bằng nhiều phân số. Nếu chia mỗi phần của 1/2 thành ba phần nhỏ bằng nhau thì lượng đã chọn trở thành 3/6. Nhân cả tử và mẫu với cùng một số tự nhiên khác 0 giữ nguyên giá trị phân số.",
       "Rút gọn là làm ngược: chia cả tử và mẫu cho cùng một ước chung khác 0. Ví dụ 6/8 = 3/4 khi chia cả hai cho 2. Không được chỉ chia tử hoặc chỉ chia mẫu, vì khi đó lượng biểu thị sẽ thay đổi."
@@ -1125,7 +1127,10 @@
     "semester": 2,
     "outcome": "Xác định đại lượng làm 100%, tính phần trăm hoặc phần trăm của một số và giải bài giảm giá có nêu đại lượng gốc.",
     "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
-    "prerequisites": [],
+    "prerequisites": [
+      "g5-math-decimal-place",
+      "g5-math-fraction-decimal-percent"
+    ],
     "theory": [
       "Phần trăm là cách biểu thị tỉ số trên một trăm: 25% = 25/100 = 1/4. Muốn tính tỉ số phần trăm của phần so với toàn thể, chia phần cho toàn thể rồi nhân 100. Cần xác định rõ đại lượng nào được coi là 100%.",
       "Muốn tìm p% của một số, có thể nhân số đó với p rồi chia 100. Nếu giá niêm yết được giảm 20% thì số tiền giảm lấy theo giá niêm yết, còn giá phải trả bằng 80% giá ấy. Tỉ số phần trăm đổi khi đổi đại lượng làm gốc."
@@ -1471,7 +1476,10 @@
     "semester": 2,
     "outcome": "Tính biểu thức phân số có ngoặc, nhân/chia và cộng/trừ đúng thứ tự; giữ điều kiện chia và phân biệt số hạng với thừa số.",
     "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
-    "prerequisites": [],
+    "prerequisites": [
+      "g4-math-fraction-addition",
+      "g4-math-subtract-fractions"
+    ],
     "theory": [
       "Phân số vừa là một số vừa biểu thị phép chia. Khi tính biểu thức, làm trong ngoặc trước, rồi nhân chia, cuối cùng cộng trừ. Với phép chia cho một phân số khác 0, nhân với phân số nghịch đảo của nó; điều kiện khác 0 phải được giữ.",
       "Nên rút gọn thừa số chung trước khi nhân để giảm số lớn. Chỉ được rút gọn các thừa số của tích, không gạch bỏ tùy ý các số hạng trong một tổng. Khi kết quả vượt 1 hoặc âm, đó vẫn có thể là giá trị phân số hợp lệ."
@@ -1639,7 +1647,9 @@
     "semester": 1,
     "outcome": "Kiểm tra quan hệ y = kx bằng hệ số không đổi, giải bài đơn giá/vận tốc và nhận ra phản ví dụ có phần phí cố định.",
     "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
-    "prerequisites": [],
+    "prerequisites": [
+      "g6-math-ratio-and-unit-rate"
+    ],
     "theory": [
       "Hai đại lượng y và x tỉ lệ thuận khi y = kx với một hệ số k không đổi. Khi x khác 0 thì tỉ số y/x luôn bằng k. Chỉ thấy hai đại lượng cùng tăng chưa đủ kết luận tỉ lệ thuận; phải kiểm tra tỉ số hoặc quan hệ y = kx.",
       "Nếu cùng một loại vở có đơn giá không đổi thì tiền bằng số vở nhân đơn giá. Nếu còn phí vận chuyển cố định, tiền trả = đơn giá × số lượng + phí; khi đó tổng tiền không còn tỉ lệ thuận với số lượng."

@@ -1,0 +1,38 @@
+{
+  "at": "2026-10-27T09:56:47.659Z",
+  "results": [
+    {
+      "route": "today",
+      "passed": true
+    },
+    {
+      "route": "paths",
+      "passed": true
+    },
+    {
+      "route": "subjects",
+      "passed": true
+    },
+    {
+      "route": "practice",
+      "passed": true
+    },
+    {
+      "route": "assessments",
+      "passed": true
+    },
+    {
+      "route": "library",
+      "passed": true
+    },
+    {
+      "route": "progress",
+      "passed": true
+    },
+    {
+      "readability": "16 shell themes,375/768/1440,DPR2,zoom200,forced-color keyboard focus",
+      "checks": 760
+    }
+  ],
+  "errors": []
+}

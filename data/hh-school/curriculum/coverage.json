@@ -1,10 +1,10 @@
 {
-  "version": "2026.10.27-authored-drafts-v1",
+  "version": "2026.10.27-authored-drafts-v2",
   "coverage": {
     "grades": 12,
     "catalogueSlots": 168,
     "subjectsWithDrafts": 146,
-    "draftLessons": 219,
+    "draftLessons": 225,
     "publishedLessons": 0,
     "officialOutcomeCount": null,
     "complete": false
@@ -485,9 +485,9 @@
       "grade": 4,
       "catalogueSlots": 12,
       "subjectsWithDrafts": 11,
-      "draftLessons": 17,
+      "draftLessons": 19,
       "publishedLessons": 0,
-      "authoredOutcomeCount": 17,
+      "authoredOutcomeCount": 19,
       "officialOutcomeCount": null,
       "complete": false,
       "subjects": [
@@ -507,9 +507,9 @@
         {
           "id": "math",
           "status": "authored-subset",
-          "authoredLessons": 3,
+          "authoredLessons": 5,
           "publishedLessons": 0,
-          "authoredOutcomes": 3,
+          "authoredOutcomes": 5,
           "officialOutcomeCount": null,
           "complete": false,
           "gaps": [
@@ -656,9 +656,9 @@
       "grade": 5,
       "catalogueSlots": 12,
       "subjectsWithDrafts": 11,
-      "draftLessons": 17,
+      "draftLessons": 19,
       "publishedLessons": 0,
-      "authoredOutcomeCount": 17,
+      "authoredOutcomeCount": 19,
       "officialOutcomeCount": null,
       "complete": false,
       "subjects": [
@@ -678,9 +678,9 @@
         {
           "id": "math",
           "status": "authored-subset",
-          "authoredLessons": 3,
+          "authoredLessons": 5,
           "publishedLessons": 0,
-          "authoredOutcomes": 3,
+          "authoredOutcomes": 5,
           "officialOutcomeCount": null,
           "complete": false,
           "gaps": [
@@ -827,9 +827,9 @@
       "grade": 6,
       "catalogueSlots": 15,
       "subjectsWithDrafts": 12,
-      "draftLessons": 18,
+      "draftLessons": 19,
       "publishedLessons": 0,
-      "authoredOutcomeCount": 18,
+      "authoredOutcomeCount": 19,
       "officialOutcomeCount": null,
       "complete": false,
       "subjects": [
@@ -849,9 +849,9 @@
         {
           "id": "math",
           "status": "authored-subset",
-          "authoredLessons": 3,
+          "authoredLessons": 4,
           "publishedLessons": 0,
-          "authoredOutcomes": 3,
+          "authoredOutcomes": 4,
           "officialOutcomeCount": null,
           "complete": false,
           "gaps": [
@@ -1040,9 +1040,9 @@
       "grade": 7,
       "catalogueSlots": 15,
       "subjectsWithDrafts": 12,
-      "draftLessons": 18,
+      "draftLessons": 19,
       "publishedLessons": 0,
-      "authoredOutcomeCount": 18,
+      "authoredOutcomeCount": 19,
       "officialOutcomeCount": null,
       "complete": false,
       "subjects": [
@@ -1062,9 +1062,9 @@
         {
           "id": "math",
           "status": "authored-subset",
-          "authoredLessons": 3,
+          "authoredLessons": 4,
           "publishedLessons": 0,
-          "authoredOutcomes": 3,
+          "authoredOutcomes": 4,
           "officialOutcomeCount": null,
           "complete": false,
           "gaps": [

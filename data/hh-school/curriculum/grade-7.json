@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contentVersion": "2026.10.27-authored-drafts-v1",
+  "contentVersion": "2026.10.27-authored-drafts-v2",
   "grade": 7,
   "subjects": [
     {
@@ -95,6 +95,17 @@
       ],
       "chapters": [
         {
+          "id": "g7-math-cac-dai-luong-ti-le",
+          "title": "Các đại lượng tỉ lệ",
+          "semester": 2,
+          "outcomeIds": [
+            "g7-math-inverse-proportion-outcome"
+          ],
+          "lessonIds": [
+            "g7-math-inverse-proportion"
+          ]
+        },
+        {
           "id": "g7-math-so-huu-ti",
           "title": "Số hữu tỉ",
           "semester": 1,
@@ -129,9 +140,9 @@
         }
       ],
       "coverage": {
-        "authoredLessons": 3,
+        "authoredLessons": 4,
         "publishedLessons": 0,
-        "authoredOutcomes": 3,
+        "authoredOutcomes": 4,
         "officialOutcomeCount": null,
         "complete": false
       },
@@ -772,6 +783,23 @@
   ],
   "outcomes": [
     {
+      "id": "g7-math-inverse-proportion-outcome",
+      "subjectId": "math",
+      "text": "Nhận biết hai đại lượng tỉ lệ nghịch qua tích không đổi và giải thích điều kiện mô hình.",
+      "status": "source-aligned-draft",
+      "sourceRef": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-math-g7-p221",
+        "page": null,
+        "pageStart": 221,
+        "pageEnd": 229,
+        "precision": "grade-section-only"
+      },
+      "officialRequirementId": null,
+      "reviewed": false,
+      "scope": "authored-subset"
+    },
+    {
       "id": "g7-history-geography-thanh-thi-trung-dai-outcome",
       "subjectId": "history-geography",
       "text": "Giải thích vai trò thủ công, thương mại và thành thị trong thay đổi kinh tế–xã hội Tây Âu trung đại ở mức nhập môn.",
@@ -1079,6 +1107,402 @@
     }
   ],
   "lessons": [
+    {
+      "gradeId": "grade-7",
+      "subjectId": "math",
+      "topicId": "g7-math-cac-dai-luong-ti-le",
+      "chapterId": "g7-math-cac-dai-luong-ti-le",
+      "lessonId": "g7-math-inverse-proportion",
+      "title": "Tỉ lệ nghịch: nhận ra tích không đổi",
+      "outcome": "Nhận biết hai đại lượng tỉ lệ nghịch qua tích không đổi và giải thích điều kiện mô hình.",
+      "outcomeIds": [
+        "g7-math-inverse-proportion-outcome"
+      ],
+      "semester": 2,
+      "semesterBasis": "Phân bổ học kỳ nội bộ dự kiến; không thay kế hoạch nhà trường.",
+      "track": "standard",
+      "difficulty": "Chuẩn chương trình",
+      "enrichmentOnly": false,
+      "language": null,
+      "listening": null,
+      "prerequisites": [
+        "g7-math-direct-proportion",
+        "g6-math-ratio-and-unit-rate"
+      ],
+      "prerequisiteText": "Biết tỉ lệ thuận có thương không đổi; nhân chia số dương.",
+      "estimatedMinutes": null,
+      "durationStatus": "unmeasured-internal-design",
+      "contentStatus": "draft",
+      "editorialStatus": "needs-subject-review",
+      "reviewedAt": null,
+      "reviewerId": null,
+      "source": {
+        "sourceUrl": "https://hoang8.com/#/learn/library",
+        "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+        "publisher": "HH Platform",
+        "licenseCode": "HH-ORIGINAL",
+        "licenseUrl": "https://hoang8.com/terms.html",
+        "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+        "retrievedAt": "2026-10-27",
+        "reviewedAt": null,
+        "reviewerId": null,
+        "allowedForCommercialUse": true,
+        "allowedToModify": true,
+        "evidencePath": "data/hh-school/curriculum/authored-bridge-math.json"
+      },
+      "referenceSources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-math-g7-p221",
+          "page": null,
+          "pageStart": 221,
+          "pageEnd": 229,
+          "precision": "grade-section-only"
+        }
+      ],
+      "additionalDraftReferences": [],
+      "alignmentStatus": "draft-subset-source-section-located",
+      "textbookCrosscheck": {
+        "status": "not-completed",
+        "editions": []
+      },
+      "speaker": "HH School",
+      "steps": [
+        {
+          "id": "warmup",
+          "label": "Khởi động",
+          "body": "Cùng chia 60 thẻ đều cho 3 hoặc 5 bạn. Khi số bạn tăng, số thẻ mỗi bạn thay đổi thế nào?"
+        },
+        {
+          "id": "goal",
+          "label": "Mục tiêu và kiến thức nền",
+          "body": "Nhận biết hai đại lượng tỉ lệ nghịch qua tích không đổi và giải thích điều kiện mô hình.\n\nKiến thức cần có: Biết tỉ lệ thuận có thương không đổi; nhân chia số dương."
+        },
+        {
+          "id": "core",
+          "label": "Kiến thức cốt lõi",
+          "body": "Hai đại lượng x và y tỉ lệ nghịch khi x × y bằng cùng một số khác 0 trong mọi cặp giá trị đang xét; khi đó y = k/x và x khác 0. Với x, y dương, tăng x lên hai lần làm y giảm còn một nửa. Điều quyết định là tích không đổi, không chỉ là một đại lượng tăng và đại lượng kia giảm.\n\nNếu chia cố định 60 thẻ đều cho n bạn thì mỗi bạn nhận 60/n thẻ. Tích n × số thẻ mỗi bạn luôn bằng 60. Với 3 bạn được 20 thẻ/bạn; 5 bạn được 12 thẻ/bạn; 10 bạn được 6 thẻ/bạn. Khi yêu cầu số thẻ nguyên, chỉ xét số bạn chia hết 60.\n\nTrong bài toán số người và thời gian hoàn thành công việc, mô hình tỉ lệ nghịch chỉ hợp lý khi lượng việc cố định, năng suất mỗi người bằng nhau và có thể phối hợp mà không cản trở. Không thể suy rằng tăng người bao nhiêu cũng giảm thời gian đúng tỉ lệ trong thực tế. Bảng số liệu cần được kiểm tra tích trước khi chọn mô hình."
+        },
+        {
+          "id": "guided",
+          "label": "Ví dụ giải từng bước",
+          "body": "Đọc đề, theo dõi từng bước rồi đối chiếu lý do; sau đó tự làm bài luyện với dữ kiện khác."
+        },
+        {
+          "id": "interactive",
+          "label": "Quan sát và thực hành",
+          "body": "Lập bảng chia 120 viên gạch đồ chơi cho 4, 6, 8 nhóm; kiểm tra tích và nêu điều kiện chia đều.",
+          "diagram": {
+            "type": "proportion-table",
+            "caption": "Chia cố định 60 thẻ: số bạn × thẻ mỗi bạn = 60",
+            "columns": [
+              "Số bạn",
+              "Thẻ mỗi bạn"
+            ],
+            "rows": [
+              [
+                "3",
+                "20"
+              ],
+              [
+                "5",
+                "12"
+              ],
+              [
+                "10",
+                "6"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "practice",
+          "label": "Luyện có hướng dẫn",
+          "body": "x × y = 48. Khi x = 8 thì y bằng bao nhiêu?\n\nGợi ý theo mức: Giữ tích 48 không đổi."
+        },
+        {
+          "id": "apply",
+          "label": "Vận dụng",
+          "body": "Lập bảng chia 120 viên gạch đồ chơi cho 4, 6, 8 nhóm; kiểm tra tích và nêu điều kiện chia đều."
+        },
+        {
+          "id": "quickcheck",
+          "label": "Tự làm độc lập",
+          "body": "Đóng phần ví dụ và tự giải các câu dưới đây. Đáp án hoặc rubric chỉ dùng để đối chiếu sau khi bạn đã thử. Nội dung đang chờ thẩm định chuyên môn."
+        },
+        {
+          "id": "summary",
+          "label": "Tóm tắt và sửa hiểu nhầm",
+          "body": "Tỉ lệ thuận: thương cố định. Tỉ lệ nghịch: tích cố định. Mô hình cần điều kiện và phạm vi áp dụng."
+        },
+        {
+          "id": "next",
+          "label": "Ôn lại và học tiếp",
+          "body": "Sau một khoảng nghỉ, giải thích lại bằng lời của bạn: Nhận biết hai đại lượng tỉ lệ nghịch qua tích không đổi và giải thích điều kiện mô hình.\nLưu câu hỏi còn vướng trong ghi chú; lần ôn sau thử câu độc lập trước khi mở lời giải."
+        }
+      ],
+      "workedExample": {
+        "prompt": "Chia đều 72 thẻ. 6 bạn nhận mỗi bạn 12 thẻ. Nếu có 9 bạn thì mỗi bạn nhận bao nhiêu?",
+        "answer": "8 thẻ/bạn",
+        "method": [
+          "Tổng số thẻ không đổi: 6 × 12 = 72.",
+          "Với 9 bạn: 72 : 9 = 8 thẻ/bạn.",
+          "Kiểm tra 9 × 8 = 72, cùng tích ban đầu."
+        ]
+      },
+      "commonMistakes": [
+        "Thấy tăng–giảm là kết luận tỉ lệ nghịch.",
+        "Dùng quy tắc năng suất khi điều kiện phối hợp không thỏa."
+      ],
+      "questions": [
+        {
+          "type": "short",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 1e-9
+          },
+          "prompt": "x × y = 48. Khi x = 8 thì y bằng bao nhiêu?",
+          "answer": "6",
+          "explanation": "48 : 8 = 6.",
+          "family": "guided",
+          "hints": [
+            "Giữ tích 48 không đổi."
+          ],
+          "cognitiveLevel": "thông hiểu",
+          "id": "g7-math-inverse-proportion-q1",
+          "gradeId": "grade-7",
+          "subjectId": "math",
+          "lessonId": "g7-math-inverse-proportion",
+          "skillId": "g7-math-inverse-proportion-outcome",
+          "outcomeId": "g7-math-inverse-proportion-outcome",
+          "familyId": "g7-math-inverse-proportion-guided",
+          "phase": "practice",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "difficulty": 2,
+          "hintSteps": [
+            "Giữ tích 48 không đổi."
+          ],
+          "helpLevel": 1
+        },
+        {
+          "type": "short",
+          "prompt": "Chia đều 90 phiếu cho 15 người. Mỗi người có mấy phiếu?",
+          "answer": "6",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 1e-9
+          },
+          "explanation": "15 × 6 = 90.",
+          "family": "fixed-total",
+          "id": "g7-math-inverse-proportion-q2",
+          "gradeId": "grade-7",
+          "subjectId": "math",
+          "lessonId": "g7-math-inverse-proportion",
+          "skillId": "g7-math-inverse-proportion-outcome",
+          "outcomeId": "g7-math-inverse-proportion-outcome",
+          "familyId": "g7-math-inverse-proportion-fixed-total",
+          "phase": "check",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "cognitiveLevel": "vận dụng",
+          "difficulty": 2,
+          "hintSteps": [],
+          "helpLevel": 0
+        },
+        {
+          "type": "single",
+          "prompt": "Dãy cặp nào mô tả tỉ lệ nghịch?",
+          "options": [
+            "(2;12), (3;8), (6;4)",
+            "(2;4), (3;6), (6;12)",
+            "(2;12), (3;11), (6;8)"
+          ],
+          "answer": "0",
+          "explanation": "Chỉ dãy đầu có các tích đều bằng 24.",
+          "family": "reason",
+          "id": "g7-math-inverse-proportion-q3",
+          "gradeId": "grade-7",
+          "subjectId": "math",
+          "lessonId": "g7-math-inverse-proportion",
+          "skillId": "g7-math-inverse-proportion-outcome",
+          "outcomeId": "g7-math-inverse-proportion-outcome",
+          "familyId": "g7-math-inverse-proportion-reason",
+          "phase": "check",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "cognitiveLevel": "vận dụng",
+          "difficulty": 2,
+          "hintSteps": [],
+          "helpLevel": 0
+        },
+        {
+          "type": "short",
+          "prompt": "x và y dương tỉ lệ nghịch. x tăng 3 lần thì y cũ bằng mấy lần y mới?",
+          "answer": "3",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 1e-9
+          },
+          "explanation": "y mới bằng 1/3 y cũ, nên y cũ gấp 3 lần y mới.",
+          "family": "scaling",
+          "id": "g7-math-inverse-proportion-q4",
+          "gradeId": "grade-7",
+          "subjectId": "math",
+          "lessonId": "g7-math-inverse-proportion",
+          "skillId": "g7-math-inverse-proportion-outcome",
+          "outcomeId": "g7-math-inverse-proportion-outcome",
+          "familyId": "g7-math-inverse-proportion-scaling",
+          "phase": "check",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "cognitiveLevel": "vận dụng",
+          "difficulty": 2,
+          "hintSteps": [],
+          "helpLevel": 0
+        },
+        {
+          "type": "essay",
+          "prompt": "Một đại lượng tăng và một đại lượng giảm có đủ kết luận tỉ lệ nghịch không? Cho cách kiểm tra bằng ba cặp dữ liệu.",
+          "explanation": "Cần kiểm tra các tích bằng nhau; chỉ xu hướng ngược nhau chưa đủ.",
+          "family": "explain",
+          "rubric": [
+            {
+              "criterion": "Xác định đúng toàn thể và điều kiện",
+              "maxScore": 2,
+              "descriptor": "Ghi rõ đại lượng, đơn vị và giả thiết."
+            },
+            {
+              "criterion": "Giải thích từng bước",
+              "maxScore": 2,
+              "descriptor": "Lập luận dựa vào phần bằng nhau hoặc đại lượng giữ nguyên."
+            },
+            {
+              "criterion": "Kiểm tra kết luận",
+              "maxScore": 1,
+              "descriptor": "Thay lại dữ kiện hoặc dùng biểu diễn khác; chấp nhận cách giải hợp lệ."
+            }
+          ],
+          "id": "g7-math-inverse-proportion-q5",
+          "gradeId": "grade-7",
+          "subjectId": "math",
+          "lessonId": "g7-math-inverse-proportion",
+          "skillId": "g7-math-inverse-proportion-outcome",
+          "outcomeId": "g7-math-inverse-proportion-outcome",
+          "familyId": "g7-math-inverse-proportion-explain",
+          "phase": "check",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "cognitiveLevel": "vận dụng",
+          "difficulty": 2,
+          "hintSteps": [],
+          "helpLevel": 0
+        }
+      ],
+      "mission": {
+        "id": "g7-math-inverse-proportion-activity",
+        "title": "Thực hành và tự đối chiếu",
+        "prompt": "Lập bảng chia 120 viên gạch đồ chơi cho 4, 6, 8 nhóm; kiểm tra tích và nêu điều kiện chia đều.",
+        "status": "draft"
+      },
+      "diagram": {
+        "type": "proportion-table",
+        "caption": "Chia cố định 60 thẻ: số bạn × thẻ mỗi bạn = 60",
+        "columns": [
+          "Số bạn",
+          "Thẻ mỗi bạn"
+        ],
+        "rows": [
+          [
+            "3",
+            "20"
+          ],
+          [
+            "5",
+            "12"
+          ],
+          [
+            "10",
+            "6"
+          ]
+        ]
+      },
+      "terms": [],
+      "formulas": [],
+      "rubric": [],
+      "contentVersion": 1,
+      "authoredFile": "data/hh-school/curriculum/authored-bridge-math.json"
+    },
     {
       "gradeId": "grade-7",
       "subjectId": "history-geography",
@@ -3049,7 +3473,9 @@
       "enrichmentOnly": false,
       "language": null,
       "listening": null,
-      "prerequisites": [],
+      "prerequisites": [
+        "g6-math-ratio-and-unit-rate"
+      ],
       "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
       "estimatedMinutes": null,
       "durationStatus": "unmeasured-internal-design",
@@ -6518,9 +6944,9 @@
   "coverage": {
     "catalogueSlots": 15,
     "subjectsWithDrafts": 12,
-    "draftLessons": 18,
+    "draftLessons": 19,
     "publishedLessons": 0,
-    "authoredOutcomeCount": 18,
+    "authoredOutcomeCount": 19,
     "officialOutcomeCount": null,
     "complete": false
   }

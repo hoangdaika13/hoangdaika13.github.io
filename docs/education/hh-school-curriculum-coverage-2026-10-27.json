@@ -1,10 +1,10 @@
 {
-  "version": "2026.10.27-authored-drafts-v1",
+  "version": "2026.10.27-authored-drafts-v2",
   "coverage": {
     "grades": 12,
     "catalogueSlots": 168,
     "subjectsWithDrafts": 146,
-    "draftLessons": 219,
+    "draftLessons": 225,
     "publishedLessons": 0,
     "officialOutcomeCount": null,
     "complete": false
@@ -1267,11 +1267,11 @@
       "name": "Toán",
       "required": true,
       "status": "authored-subset",
-      "draftLessons": 3,
-      "questions": 12,
+      "draftLessons": 5,
+      "questions": 21,
       "tracks": {
         "foundation": 1,
-        "standard": 1,
+        "standard": 3,
         "advanced": 1
       },
       "source": {
@@ -1741,12 +1741,12 @@
       "name": "Toán",
       "required": true,
       "status": "authored-subset",
-      "draftLessons": 3,
-      "questions": 12,
+      "draftLessons": 5,
+      "questions": 22,
       "tracks": {
-        "foundation": 1,
+        "foundation": 2,
         "standard": 1,
-        "advanced": 1
+        "advanced": 2
       },
       "source": {
         "sourceId": "tt32-2018-archive",
@@ -2215,11 +2215,11 @@
       "name": "Toán",
       "required": true,
       "status": "authored-subset",
-      "draftLessons": 3,
-      "questions": 12,
+      "draftLessons": 4,
+      "questions": 17,
       "tracks": {
         "foundation": 1,
-        "standard": 1,
+        "standard": 2,
         "advanced": 1
       },
       "source": {
@@ -2767,11 +2767,11 @@
       "name": "Toán",
       "required": true,
       "status": "authored-subset",
-      "draftLessons": 3,
-      "questions": 12,
+      "draftLessons": 4,
+      "questions": 17,
       "tracks": {
         "foundation": 1,
-        "standard": 1,
+        "standard": 2,
         "advanced": 1
       },
       "source": {

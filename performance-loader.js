@@ -246,11 +246,11 @@
       scripts: ["team-collaboration-pro.js?v=3", "work-center.js?v=5"]
     },
     learning: {
-      styles: ["hh-school.css?v=4", "hh-school-workspace.css?v=1"],
+      styles: ["hh-school.css?v=4", "hh-school-workspace.css?v=2"],
       scripts: [
-        "hh-school-curriculum.js?v=4", "hh-school-offline.js?v=5", "hh-school-core.js?v=5",
-        "hh-school-sync.js?v=4", "hh-school-assessments.js?v=1", "hh-school-content-manifest.js?v=1",
-        "hh-school-content.js?v=1", "hh-school-workspace.js?v=1", "hh-school.js?v=7"
+        "hh-school-curriculum.js?v=4", "hh-school-offline.js?v=5", "hh-school-core.js?v=6",
+        "hh-school-progress-codec.js?v=1", "hh-school-sync.js?v=5", "hh-school-assessments.js?v=1", "hh-school-content-manifest.js?v=2",
+        "hh-school-content.js?v=1", "hh-school-workspace.js?v=2", "hh-school.js?v=8"
       ]
     },
     "focus-study-room": {

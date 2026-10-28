@@ -3,6 +3,7 @@ const { createHash, randomBytes } = require("crypto");
 const { clean, currentUser, enforceRateLimit, isOwnerUser, withApi } = require("./platform");
 const { parseOpenAIKeys, runOpenAIResponse } = require("./openai-provider");
 const curriculum = require("../hh-school-curriculum");
+const progressStore = require("./education-progress-store");
 
 const ALLOWED_ROLES = new Set(["student", "parent", "teacher", "content-reviewer", "school-admin", "platform-admin"]);
 const AI_ACTIONS = new Set(["hint", "simplify", "similar", "summarize", "socratic", "exam-review", "flashcards", "rubric", "report"]);
@@ -39,6 +40,8 @@ async function indexes(db) {
   await db.collection("education_classes").dropIndex("education_classes_code").catch((error) => { if (error?.codeName !== "IndexNotFound" && error?.code !== 27 && error?.code !== 26) throw error; });
   await Promise.all([
     ensureIndex(db, "education_progress", { ownerId: 1, learnerProfileId: 1 }, { unique: true }),
+    ensureIndex(db, "education_progress_transfers", { ownerId: 1, learnerProfileId: 1, status: 1 }),
+    ensureIndex(db, "education_progress_parts", { ownerId: 1, learnerProfileId: 1, transferId: 1, index: 1 }, { unique: true }),
     ensureIndex(db, "education_classes", { teacherId: 1, updatedAt: -1 }),
     ensureIndex(db, "education_enrollments", { learnerOwnerId: 1, learnerProfileId: 1, classId: 1 }, { unique: true }),
     ensureIndex(db, "education_assignments", { classId: 1, dueAt: 1 }),
@@ -54,13 +57,13 @@ async function indexes(db) {
   indexReady = true;
 }
 function publicId(value) { return value?._id ? String(value._id) : clean(value?.id, 100); }
-function sanitizeState(input, user, profileId) {
+function sanitizeState(input, user, profileId, options = {}) {
   if (!input || typeof input !== "object" || Array.isArray(input)) fail(400, "Trạng thái học tập không hợp lệ.", "EDUCATION_STATE_INVALID");
   if (String(input.ownerId || "") !== String(user._id) || String(input.learnerProfileId || "") !== String(profileId) || input.profile?.id && String(input.profile.id) !== String(profileId)) fail(403, "Trạng thái không khớp chủ tài khoản hoặc hồ sơ; dữ liệu chưa được ghi.", "EDUCATION_STATE_OWNER_MISMATCH");
   if (!Number.isInteger(input.schemaVersion) || input.schemaVersion < 1 || input.schemaVersion > 3 || input.studyWorkspace?.version > 1) fail(422, "Phiên bản dữ liệu chưa hỗ trợ; giữ bản gốc trên thiết bị.", "EDUCATION_STATE_VERSION_UNSUPPORTED");
   if (input.storageArchive?.required) fail(422, "Bản tóm tắt không thể thay thế lịch sử đầy đủ; chưa đồng bộ.", "EDUCATION_STATE_ARCHIVE_REQUIRED");
   const serialized = JSON.stringify(input);
-  if (Buffer.byteLength(serialized, "utf8") > 280000) fail(413, "Lịch sử đầy đủ vượt giới hạn đồng bộ 280 KB; dữ liệu trên thiết bị được giữ, chưa đồng bộ.", "EDUCATION_STATE_TOO_LARGE");
+  if (Buffer.byteLength(serialized, "utf8") > (options.chunked ? progressStore.MAX_BYTES : 280000)) fail(413, "Lịch sử đầy đủ vượt giới hạn đồng bộ 280 KB; dữ liệu trên thiết bị được giữ, chưa đồng bộ.", "EDUCATION_STATE_TOO_LARGE");
   const clone = JSON.parse(serialized);
   clone.schemaVersion = 3;
   clone.ownerId = String(user._id);
@@ -96,44 +99,50 @@ async function audit(db, user, event, detail = {}) {
 
 async function progress(req, res, db, user, body) {
   let learnerProfileId = id(req.query.learnerProfileId || body.learnerProfileId, "learner-1");
+  if (req.method === "PUT" && body.action) return progressStore.transfer(req,res,db,user,body,{sanitizeState,audit,roleOf});
+  if(req.method==="GET"&&req.query.pendingTransfers){if(req.query.scope==="linked")return res.status(403).json({error:"Chỉ chủ hồ sơ xem phiên gửi."});const items=await db.collection("education_progress_transfers").find({ownerId:user._id,learnerProfileId,status:"staging"},{projection:{transferId:1,parts:1,bytes:1,baseRevision:1,createdAt:1}}).limit(10).toArray();return res.status(200).json({items});}
+  if (req.method === "GET" && req.query.snapshotId) return progressStore.readPart(req,res,db,user,learnerProfileId);
   if (req.method === "GET") {
     const linkedScope = req.query.scope === "linked";
     const access = await canAccessLearner(db, user, learnerProfileId, linkedScope ? "read-linked" : "read-own", req.query.accessId || req.query.linkId || req.query.enrollmentId);
     if (!access.allowed) return res.status(404).json({ error: "Không tìm thấy hồ sơ học sinh hoặc bạn không có quyền.", code: "LEARNER_NOT_FOUND" });
     const ownerId = access.learnerOwnerId || user._id;
     learnerProfileId = access.learnerProfileId || learnerProfileId;
-    const item = await db.collection("education_progress").findOne({ ownerId, learnerProfileId }, { projection: { state: 1, revision: 1, updatedAt: 1, schemaVersion: 1 } });
+    const item = await db.collection("education_progress").findOne({ ownerId, learnerProfileId }, { projection: { state: 1, stateTransfer: 1, report: 1, revision: 1, updatedAt: 1, schemaVersion: 1 } });
     if (linkedScope) {
+      if (item?.stateTransfer) return res.status(200).json({learnerProfileId,report:{...item.report,updatedAt:item.updatedAt},revision:item.revision,updatedAt:item.updatedAt,schemaVersion:3});
       const state = item?.state || {};
       const due = Array.isArray(state.reviews) ? state.reviews.filter((entry) => Number.isFinite(new Date(entry?.dueAt).getTime()) && new Date(entry.dueAt) <= new Date()).length : 0;
       return res.status(200).json({ learnerProfileId, report: { attempts: Array.isArray(state.attempts) ? state.attempts.length : 0, mistakes: Array.isArray(state.mistakes) ? state.mistakes.length : 0, due, completedLessons: Object.values(state.progress && typeof state.progress === "object" ? state.progress : {}).filter((entry) => entry?.status === "completed").length, skills: Object.keys(state.mastery && typeof state.mastery === "object" ? state.mastery : {}).length, updatedAt: item?.updatedAt || null }, revision: Number(item?.revision || 0), updatedAt: item?.updatedAt || null, schemaVersion: item?.schemaVersion || 3 });
     }
-    return res.status(200).json({ learnerProfileId, state: item?.state || null, revision: Number(item?.revision || 0), updatedAt: item?.updatedAt || null, schemaVersion: item?.schemaVersion || 3 });
+    return res.status(200).json({ ownerId:String(ownerId), learnerProfileId, state: item?.state || null, transfer: item?.stateTransfer || null, revision: Number(item?.revision || 0), updatedAt: item?.updatedAt || null, schemaVersion: item?.schemaVersion || 3 });
   }
   if (req.method !== "PUT") return res.status(405).json({ error: "Method not allowed" });
+  if(body.state && (String(body.state.ownerId||"")!==String(user._id)||String(body.state.learnerProfileId||"")!==learnerProfileId))return res.status(403).json({error:"Phiên đăng nhập không khớp dữ liệu gửi; bản trên thiết bị được giữ.",code:"EDUCATION_STATE_OWNER_MISMATCH"});
   const access = await canAccessLearner(db, user, learnerProfileId, "create-own");
   if (!access.allowed || !["owner", "platform-admin"].includes(access.scope)) return res.status(403).json({ error: "Chỉ chủ hồ sơ được đồng bộ trạng thái học tập.", code: "PROGRESS_WRITE_FORBIDDEN" });
-  const existing = await db.collection("education_progress").findOne({ ownerId: user._id, learnerProfileId }, { projection: { revision: 1, state: 1, updatedAt: 1 } });
+  const existing = await db.collection("education_progress").findOne({ ownerId: user._id, learnerProfileId }, { projection: { ownerId: 1, revision: 1, state: 1, stateTransfer: 1, updatedAt: 1 } });
+  if (existing?.stateTransfer && body.transportVersion !== 1) return res.status(426).json({error:"Cần tải lại ứng dụng để đồng bộ lịch sử nhiều phần; bản cũ được giữ.",code:"PROGRESS_CLIENT_UPGRADE"});
   const parsedBaseRevision = Number(body.baseRevision ?? body.state?.serverRevision ?? 0);
   if (!Number.isSafeInteger(parsedBaseRevision) || parsedBaseRevision < 0) return res.status(400).json({ error: "Phiên bản đồng bộ không hợp lệ.", code: "PROGRESS_REVISION_INVALID" });
   const baseRevision = parsedBaseRevision;
   const serverRevision = Number(existing?.revision || 0);
-  if (existing && baseRevision !== serverRevision) return res.status(409).json({ error: "Tiến độ trên máy chủ đã mới hơn. Hãy chọn giữ bản local, bản server hoặc hợp nhất.", code: "PROGRESS_CONFLICT", conflict: { serverState: existing.state, serverRevision, serverUpdatedAt: existing.updatedAt } });
-  if (!existing && baseRevision !== 0) return res.status(409).json({ error: "Tiến độ local dựa trên phiên bản không còn tồn tại.", code: "PROGRESS_CONFLICT", conflict: { serverState: null, serverRevision: 0, serverUpdatedAt: null } });
+  if (existing && baseRevision !== serverRevision) return res.status(409).json({ error: "Tiến độ trên máy chủ đã mới hơn. Hãy chọn giữ bản local, bản server hoặc hợp nhất.", code: "PROGRESS_CONFLICT", conflict: { ...progressStore.conflict(existing,learnerProfileId) } });
+  if (!existing && baseRevision !== 0) return res.status(409).json({ error: "Tiến độ local dựa trên phiên bản không còn tồn tại.", code: "PROGRESS_CONFLICT", conflict: { ownerId: String(user._id), learnerProfileId, serverState: null, serverRevision: 0, serverUpdatedAt: null } });
   const state = sanitizeState(body.state, user, learnerProfileId); const revision = serverRevision + 1; state.serverRevision = revision;
   const now = new Date();
   if (existing) {
-    const result = await db.collection("education_progress").updateOne({ ownerId: user._id, learnerProfileId, revision: baseRevision }, { $set: { state, revision, updatedAt: now, schemaVersion: 3 } });
+    const result = await db.collection("education_progress").updateOne({ ownerId: user._id, learnerProfileId, revision: baseRevision }, { $set: { state, stateTransfer:null, report:progressStore.summary(state), revision, updatedAt: now, schemaVersion: 3 } });
     if (!result.matchedCount) {
-      const latest = await db.collection("education_progress").findOne({ ownerId: user._id, learnerProfileId }, { projection: { revision: 1, state: 1, updatedAt: 1 } });
-      return res.status(409).json({ error: "Tiến độ trên máy chủ đã thay đổi trong lúc đồng bộ.", code: "PROGRESS_CONFLICT", conflict: { serverState: latest?.state || null, serverRevision: Number(latest?.revision || 0), serverUpdatedAt: latest?.updatedAt || null } });
+      const latest = await db.collection("education_progress").findOne({ ownerId: user._id, learnerProfileId }, { projection: { ownerId: 1, revision: 1, state: 1, stateTransfer: 1, updatedAt: 1 } });
+      return res.status(409).json({ error: "Tiến độ trên máy chủ đã thay đổi trong lúc đồng bộ.", code: "PROGRESS_CONFLICT", conflict: { ...progressStore.conflict(latest,learnerProfileId) } });
     }
   } else {
     try { await db.collection("education_progress").insertOne({ ownerId: user._id, learnerProfileId, state, revision, updatedAt: now, createdAt: now, schemaVersion: 3 }); }
     catch (error) {
       if (error?.code !== 11000) throw error;
-      const latest = await db.collection("education_progress").findOne({ ownerId: user._id, learnerProfileId }, { projection: { revision: 1, state: 1, updatedAt: 1 } });
-      return res.status(409).json({ error: "Một thiết bị khác vừa tạo tiến độ trước yêu cầu này.", code: "PROGRESS_CONFLICT", conflict: { serverState: latest?.state || null, serverRevision: Number(latest?.revision || 0), serverUpdatedAt: latest?.updatedAt || null } });
+      const latest = await db.collection("education_progress").findOne({ ownerId: user._id, learnerProfileId }, { projection: { ownerId: 1, revision: 1, state: 1, stateTransfer: 1, updatedAt: 1 } });
+      return res.status(409).json({ error: "Một thiết bị khác vừa tạo tiến độ trước yêu cầu này.", code: "PROGRESS_CONFLICT", conflict: { ...progressStore.conflict(latest,learnerProfileId) } });
     }
   }
   await audit(db, user, "education:progress:sync", { learnerProfileId, revision });

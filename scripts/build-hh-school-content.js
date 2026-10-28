@@ -5,7 +5,7 @@ const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypt
 const root=path.resolve(__dirname,'..'),folder=path.join(root,'data/hh-school/curriculum');
 const base=require('../hh-school-curriculum.js');
 const sourceIndex=JSON.parse(fs.readFileSync(path.join(folder,'source-index.json'),'utf8'));
-const VERSION='2026.10.27-authored-drafts-v1',DATE='2026-10-27';
+const VERSION='2026.10.27-authored-drafts-v2',DATE='2026-10-27';
 const sha=value=>crypto.createHash('sha256').update(value).digest('hex');
 const slug=value=>String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/gi,'d').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 const authored=fs.readdirSync(folder).filter(name=>/^authored-[a-z-]+\.json$/.test(name)).sort().flatMap(name=>{

@@ -210,19 +210,26 @@
 
   function forbidden(title, detail) { return `<section class="hhs-view"><article class="hhs-empty"><strong>${escape(title)}</strong><p>${escape(detail)}</p><button type="button" data-school-view="today">Về Hôm nay</button></article></section>`; }
 
-  function renderView(instance) {
+  function renderView(instance, resetScroll = false) {
+    instance.workspace?.beforeRender?.();
     const state = instance.store.get();
     const view = instance.view;
     const host = instance.host.querySelector("[data-school-workspace]");
-    const scrollHost = instance.host.closest(".app-main"); const mainScroll = scrollHost?.scrollTop || 0; const workspaceScroll = host.scrollTop;
+    const scrollHost = instance.host.closest(".app-main"); const mainScroll = resetScroll ? 0 : scrollHost?.scrollTop || 0; const workspaceScroll = resetScroll ? 0 : host.scrollTop;
     const active = instance.host.ownerDocument.activeElement; const focusName = active && instance.host.contains(active) ? active.getAttribute("name") : "";
     const renderer = { today: todayView, paths: pathsView, subjects: subjectsView, practice: (s) => practiceView(s, false), assessments: (s) => practiceView(s, true), library: libraryView, progress: progressView, lesson: lessonView, teacher: teacherView, family: familyView, admin: adminView }[view] || todayView;
+    const focusForm=active?.closest?.('form'), formAttribute=focusForm&&[...focusForm.attributes].find(a=>a.name.startsWith('data-'));
+    const focusIndex=focusForm?[...focusForm.elements].indexOf(active):-1;
+    const focusValue=host.contains(active)&&active.matches?.('input:not([type=file]),textarea,select')?{value:active.value,start:active.selectionStart,end:active.selectionEnd,id:active.id}:null;
     host.innerHTML = instance.workspace?.render(view) ?? renderer(state);
     instance.host.querySelectorAll("[data-school-view]").forEach((button) => button.toggleAttribute("aria-current", button.dataset.schoolView === view));
     (root.requestAnimationFrame || ((callback) => setTimeout(callback, 0)))(() => {
       if (!mounted || mounted !== instance) return;
       if (scrollHost) scrollHost.scrollTop = mainScroll; host.scrollTop = workspaceScroll;
-      if (focusName) host.querySelector(`[name="${attr(focusName)}"]`)?.focus?.({ preventScroll: true });
+      const matchingForm=formAttribute?[...host.querySelectorAll('form')].find(f=>f.getAttribute(formAttribute.name)===formAttribute.value):null;
+      const field=matchingForm?.elements[focusIndex]||(focusValue?.id?[...host.querySelectorAll('[id]')].find(e=>e.id===focusValue.id):null);
+      if(focusValue&&field&&!field.disabled){field.value=focusValue.value;field.focus({preventScroll:true});try{field.setSelectionRange(focusValue.start,focusValue.end);}catch{}}
+      else if(focusName&&active?.isConnected)active.focus?.({preventScroll:true});
     });
   }
 
@@ -284,7 +291,9 @@
         if (!record) return toast(instance, "Bài học không tồn tại hoặc đã được thay đổi. Hãy chọn lại từ danh sách môn.", "warning");
         const state = instance.store.get(); if (targetGrade && targetGrade !== state.profile.grade && state.profile.managed && state.role === "student") return toast(instance, `Bài này thuộc lớp ${targetGrade}; hồ sơ được quản lý chưa được phép đổi lớp.`, "warning");
         instance.store.update((draft) => { if (targetGrade && targetGrade !== draft.profile.grade) { draft.profile.grade = targetGrade; draft.profile.ageMode = root.HHSchoolCore.learnerProfile(draft.profile, draft.ownerId).ageMode; draft.profile.electiveSubjectIds = targetGrade >= 10 ? draft.profile.electiveSubjectIds.slice(0, 4) : []; } draft.activeLessonId = lessonId; draft.activeSubjectId = record?.subjectId || draft.activeSubjectId; return draft; }, button.dataset.schoolOpenLesson ? "lesson:open" : "practice:lesson-select");
-        return routeTo(button.dataset.schoolOpenLesson ? "lesson" : "practice");
+        const nextView = button.dataset.schoolOpenLesson ? "lesson" : "practice";
+        if (instance.view === nextView) return renderView(instance, true);
+        return routeTo(nextView);
       }
       if (button.hasAttribute("data-lesson-prev") || button.hasAttribute("data-lesson-next")) {
         const state = instance.store.get(); const lesson = resolveLesson(state, state.activeLessonId); if (!lesson) return toast(instance, "Bài học hiện chưa có dữ liệu khả dụng.", "warning"); const entry = state.progress[lesson.lessonId] || { step: 0, status: "learning" };
@@ -445,7 +454,7 @@
       if (mounted !== instance) return;
       if (error.status === 409) { instance.store.update(next => { next.syncStatus = "conflict"; next.syncConflict = error.data?.conflict || null; return next; }, "sync:conflict"); return syncConflictDialog(instance, error.data?.conflict); }
       instance.store.update(next => { next.syncStatus = "local-only"; return next; }, "sync:failed");
-      if (![400, 403, 413, 422].includes(error.status)) await root.HHSchoolOffline?.enqueue?.(state.ownerId, state.learnerProfileId, { url: "/api/education/progress", method: "PUT", body: { learnerProfileId: state.learnerProfileId, state, baseRevision: Number(state.serverRevision || 0) } }).catch(() => {});
+      if (![400, 403, 413, 422].includes(error.status)) await root.HHSchoolOffline?.enqueue?.(state.ownerId, state.learnerProfileId, { url: "/api/education/progress", method: "PUT", body: { learnerProfileId: state.learnerProfileId, state, baseRevision: Number(state.serverRevision || 0), transportVersion:1 } }).catch(() => {});
       toast(instance, "Chưa đồng bộ máy chủ: " + error.message, "warning");
     }
   }
@@ -529,7 +538,7 @@
     assertDependencies(); unmount(); if (!host) throw new Error("HH School requires a host.");
     const currentUser = options.currentUser || null; const store = options.store || root.HHSchoolCore.createStore({ currentUser }); const view = normalizeView(options.view);
     const wrapper = document.createElement("div"); wrapper.innerHTML = shellMarkup(store.get(), view); host.replaceChildren(wrapper.firstElementChild);
-    const instance = { rootHost: host, host: host.firstElementChild, options, view, store, sync: new root.HHSchoolSync({ apiBase: options.apiBase || "/api/education" }), searchRecords: searchRecords(), searchWorker: null, searchRequestId: "" };
+    const instance = { rootHost: host, host: host.firstElementChild, options, view, store, sync: new root.HHSchoolSync({ apiBase: options.apiBase || "/api/education", ownerId:store.get().ownerId, onProgress: ({completed,total}) => { if(mounted?.store!==store)return;const output=host.querySelector("[data-school-sync]");if(output){output.textContent="Đang gửi "+completed+"/"+total;output.title="Đang gửi từng phần lịch sử; chỉ xác nhận khi máy chủ nhận đủ.";} } }), searchRecords: searchRecords(), searchWorker: null, searchRequestId: "" };
     mounted = instance;
     instance.workspace = root.HHSchoolWorkspace?.create(instance, { render: () => renderView(instance), toast: message => toast(instance, message), download, dialog: html => dialog(instance, html) });
     bind(instance); renderView(instance); hydrate(instance).catch((error) => { if (mounted === instance) toast(instance, `Đang dùng dữ liệu offline: ${error.message}`, "warning"); });

@@ -2,16 +2,19 @@
   "use strict";
   const cleanPath = (value) => String(value || "/api/education").replace(/\/+$/, "");
   class HHSchoolSync {
-    constructor(options = {}) { this.base = cleanPath(options.apiBase); this.fetch = options.fetch || root.fetch?.bind(root); }
+    constructor(options = {}) { this.base = cleanPath(options.apiBase); this.fetch = options.fetch || root.fetch?.bind(root); this.ownerId=options.ownerId; this.onProgress=options.onProgress; this.codec=typeof module!=="undefined"&&module.exports?require("./hh-school-progress-codec"):root.HHSchoolProgressCodec; }
     async request(path, options = {}) {
       if (!this.fetch) throw Object.assign(new Error("Trình duyệt không hỗ trợ đồng bộ mạng."), { code: "FETCH_UNAVAILABLE" });
       const response = await this.fetch(`${this.base}${path}`, { credentials: "include", cache: "no-store", headers: { "Content-Type": "application/json", ...(options.headers || {}) }, ...options });
       const data = await response.json().catch(() => ({}));
+      if(!response.ok&&data.conflict&&this.ownerId){const owner=data.conflict.ownerId||data.conflict.serverState?.ownerId;if(owner&&owner!==this.ownerId)throw Object.assign(Error("Phiên đăng nhập đã đổi tài khoản; chưa hợp nhất."),{status:403,code:"SYNC_OWNER_CHANGED"});}
+      if(!response.ok&&data.conflict?.serverTransfer){const c=data.conflict;if(this.ownerId&&c.ownerId!==this.ownerId)throw Object.assign(Error("Phiên đăng nhập đã đổi tài khoản; chưa hợp nhất dữ liệu."),{status:403,code:"SYNC_OWNER_CHANGED"});c.serverState=await this.readSnapshot(c.learnerProfileId,c.serverTransfer);c.serverState.serverRevision=c.serverRevision;}
       if (!response.ok) throw Object.assign(new Error(data.error || `Đồng bộ lỗi HTTP ${response.status}.`), { code: data.code || "SYNC_FAILED", status: response.status, data });
       return data;
     }
-    load(profileId, scope = "own", accessId = "") { return this.request(`/progress?learnerProfileId=${encodeURIComponent(profileId)}${scope === "linked" ? `&scope=linked&accessId=${encodeURIComponent(accessId)}` : ""}`); }
-    save(profileId, state, baseRevision = Number(state?.serverRevision || 0)) { return this.request("/progress", { method: "PUT", body: JSON.stringify({ learnerProfileId: profileId, state, baseRevision }) }); }
+    async readSnapshot(profileId,transfer){if(!this.codec)throw Error('Cần tải lại ứng dụng để đọc lịch sử nhiều phần.');return this.codec.download((id,index)=>this.request('/progress?learnerProfileId='+encodeURIComponent(profileId)+'&snapshotId='+id+'&part='+index),transfer);}
+    async load(profileId,scope="own",accessId="") {const data=await this.request('/progress?learnerProfileId='+encodeURIComponent(profileId)+(scope==='linked'?'&scope=linked&accessId='+encodeURIComponent(accessId):''));if(scope==='own'&&this.ownerId&&data.ownerId&&data.ownerId!==this.ownerId)throw Object.assign(Error('Phiên đăng nhập đã đổi tài khoản; bản trên thiết bị được giữ.'),{status:403,code:'SYNC_OWNER_CHANGED'});if(data.transfer&&scope==='own'){data.state=await this.readSnapshot(profileId,data.transfer);data.state.serverRevision=data.revision;}return data;}
+    async save(profileId,state,baseRevision=Number(state?.serverRevision||0)){const payload={learnerProfileId:profileId,state,baseRevision,transportVersion:1};if(this.codec&&this.codec.byteLength(JSON.stringify(state))>this.codec.SMALL_BYTES)return this.codec.upload(data=>this.request('/progress',{method:'PUT',body:JSON.stringify(data)}),payload,{onProgress:this.onProgress});return this.request('/progress',{method:'PUT',body:JSON.stringify(payload)});}
     assignments(profileId) { return this.request(`/assignments?learnerProfileId=${encodeURIComponent(profileId)}`); }
     createAssignment(payload) { return this.request("/assignments", { method: "POST", body: JSON.stringify(payload) }); }
     submissions(query = "") { return this.request(`/submissions${query ? `?${query}` : ""}`); }

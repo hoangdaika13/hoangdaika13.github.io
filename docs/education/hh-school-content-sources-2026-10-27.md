@@ -39,3 +39,11 @@ Các mô hình khoa học có giả định, đơn vị và giới hạn; bài �
 - Thẩm định chuyên môn, rà đáp án/rubric và chơi thử học tập với người mới; test kỹ thuật không thay bước này.
 
 [Ma trận 168 cấu hình lớp–môn và khoảng trống](hh-school-curriculum-coverage-2026-10-27.md) được sinh lại từ dữ liệu thật. Các trường `complete: false` và 0 bài đã được duyệt phải được giữ cho đến khi có đủ bằng chứng tương ứng.
+
+## Đợt 1066: cầu nối Toán lớp 4–7
+
+Bổ sung 6 bài nguyên bản, 29 câu về so sánh/trừ phân số, chuyển đổi phân số–thập phân–phần trăm, tìm toàn thể, tỉ số/giá trị đơn vị và tỉ lệ nghịch. Tổng hiện có 225 bài, 822 câu; 0 bài được thẩm định. Bài tìm toàn thể được gắn nhãn mở rộng. Liên kết tiên quyết dùng ID bài thật, gồm đường quay từ lớp 5 về nền tảng lớp 4, không khóa người học.
+
+Đã mở đọc [Prealgebra 2e, phần 4.5](https://openstax.org/books/prealgebra-2e/pages/4-5-add-and-subtract-fractions-with-different-denominators), [6.1](https://openstax.org/books/prealgebra-2e/pages/6-1-understand-percent), [6.5](https://openstax.org/books/prealgebra-2e/pages/6-5-solve-proportions-and-their-applications) và [lời tựa/metadata](https://openstax.org/books/prealgebra-2e/pages/preface) ngày 27/10/2026 để đối chiếu khái niệm toán học và cách xác định phạm vi kiến thức nền. Tác giả được trang nguồn ghi: Lynn Marecek, MaryAnne Anthony-Smith, Andrea Honeycutt Mathis; OpenStax/Rice University; ấn bản 2e phát hành 11/3/2020. Đây là tài liệu tham khảo bổ sung, không phải SGK Việt Nam hoặc căn cứ để công bố hoàn chỉnh chương trình Việt Nam.
+
+Trang nguồn hiện ghi CC BY-NC-SA 4.0; repo giữ `REFERENCE_ONLY` cho các liên kết này. Không nhập văn bản, hình, ví dụ hoặc bài tập từ sách. Các ngữ cảnh, số liệu giả định, câu hỏi, lời giải và hình DOM mới được soạn riêng. Metadata từng bài lưu URL, ấn bản và phần khái niệm đã đối chiếu; `textbookCrosscheck` vẫn là `not-completed` vì chưa đối chiếu đầy đủ SGK/sách nâng cao theo chương trình Việt Nam. Chưa có xác nhận của giáo viên thẩm định hoặc đo hiệu quả trên người học thật.

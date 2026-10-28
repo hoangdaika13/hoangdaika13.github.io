@@ -1,0 +1,169 @@
+{
+  "release": 1066,
+  "verifiedAt": "2026-10-28T02:52:21.994Z",
+  "contentVersion": "2026.10.27-authored-drafts-v2",
+  "coverage": {
+    "grades": 12,
+    "catalogueSlots": 168,
+    "subjectsWithDrafts": 146,
+    "draftLessons": 225,
+    "publishedLessons": 0,
+    "officialOutcomeCount": null,
+    "complete": false,
+    "questions": 822
+  },
+  "suites": [
+    {
+      "command": "npm run test:learning",
+      "tests": 119,
+      "passed": 119,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "command": "npm run test:all-tools",
+      "tests": 241,
+      "passed": 241,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "command": "npm run test:security:full",
+      "tests": 107,
+      "passed": 107,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "browsers": [
+    {
+      "name": "workspace",
+      "at": "2026-10-27T09:51:16.319Z",
+      "results": 10,
+      "file": "workspace.json"
+    },
+    {
+      "name": "shell",
+      "at": "2026-10-27T09:56:47.659Z",
+      "results": 8,
+      "file": "shell.json"
+    },
+    {
+      "name": "recovery",
+      "at": "2026-10-27T09:51:14.198Z",
+      "results": 13,
+      "file": "recovery.json"
+    },
+    {
+      "name": "refinement",
+      "at": "2026-10-28T02:50:44.977Z",
+      "results": 4,
+      "file": "refinement.json"
+    },
+    {
+      "name": "offline",
+      "at": "2026-10-28T02:51:06.168Z",
+      "results": 6,
+      "file": "offline.json"
+    },
+    {
+      "name": "classroom",
+      "at": "2026-10-28T02:51:06.061Z",
+      "results": 4,
+      "file": "classroom.json"
+    },
+    {
+      "name": "editorial",
+      "at": "2026-10-28T02:51:08.512Z",
+      "results": 2,
+      "file": "editorial.json"
+    }
+  ],
+  "contrast": {
+    "themes": 16,
+    "checks": 760,
+    "failures": 0
+  },
+  "images": [
+    {
+      "file": "home-desktop.jpg",
+      "bytes": 349846,
+      "sha256": "de85794186aa9db7713db34d64953f7ceeee0a12086410cc4eeed627d889ef24"
+    },
+    {
+      "file": "home-mobile.jpg",
+      "bytes": 109044,
+      "sha256": "a7e062944d88bf984c98bd2dc20a1628656446fc2820e397cb8bc0de33fc3211"
+    },
+    {
+      "file": "subjects-desktop.jpg",
+      "bytes": 318364,
+      "sha256": "e5e1ce90d61541266e00e5b946d02a037e6b6e3d014a906474b9c51aa903479e"
+    },
+    {
+      "file": "practice-desktop.jpg",
+      "bytes": 315119,
+      "sha256": "a007c69ebb09b280f530b7e69b3188d6acb7c56f613ea2efa7b4481a0d3977f3"
+    },
+    {
+      "file": "library-desktop.jpg",
+      "bytes": 294600,
+      "sha256": "a30b856bb84fa2d4fdbc5045606314b23813f48bce829eb6de8b2025deffc6c3"
+    },
+    {
+      "file": "lesson-desktop.png",
+      "bytes": 1177608,
+      "sha256": "d0c6ca780ce52691f5ce6b5fefc31d46f909b1df2f9ea555c27c7a7143342378"
+    },
+    {
+      "file": "lesson-mobile.png",
+      "bytes": 235878,
+      "sha256": "59103118c383558fc461b364a5d5551c90ab8847099b6fc55587ccdbe8f220a6"
+    },
+    {
+      "file": "percent-model.png",
+      "bytes": 214699,
+      "sha256": "696b7bdc381f2bba1828737fe2819e9a2cbc57a255d881767b9a34d56cff371c"
+    },
+    {
+      "file": "exam-result.png",
+      "bytes": 207034,
+      "sha256": "bb8551ff498332116f313da6f570afe9f18f9a779411b98bb06100b1a27ee8c3"
+    },
+    {
+      "file": "mistake-flashcard.png",
+      "bytes": 161468,
+      "sha256": "6deee27d749ec8b69feef7e1e9b6909c6d06dcba4ca0cb9fe1d945af44bd06bd"
+    },
+    {
+      "file": "classroom-feedback.png",
+      "bytes": 322717,
+      "sha256": "d42db9d22625d21d0fb050d94fbd9376665ec133dc6f27c2321dd446afd60386"
+    },
+    {
+      "file": "editorial-drafts.png",
+      "bytes": 183394,
+      "sha256": "e2dc47d71f302fb700d665555eb7250329c1ef9fd830ef2f58f78ade0f0381dc"
+    },
+    {
+      "file": "progress-desktop.jpg",
+      "bytes": 318513,
+      "sha256": "ef1ee9ca403338f2c460eac4ec6fe1da1515d3af989432df8c1969c87278e08b"
+    }
+  ],
+  "academicComplete": false,
+  "cloud": {
+    "requestPartBytes": 180000,
+    "maxSnapshotBytes": 33554432,
+    "maxParts": 1024,
+    "publication": "Immutable parts, owner bound per request, hash verification, publication lease and root revision compare-and-set",
+    "verified": "1601 attempts through native forms;1500 queued attempts through native Service Worker with part failure and resume;1800 attempts through production handler tests",
+    "conflictRegression": "A small writer receives the complete multipart winner for stale revisions, concurrent creation and compare-and-set updates; database projections are applied in QA"
+  },
+  "limits": [
+    "225 authored drafts;0 approved;official outcome denominator unknown",
+    "Full Vietnamese textbook/advanced editions and human subject review not completed",
+    "32MB transport limit, no scheduled cleanup of retained cloud snapshots; operating-system retry timing is browser controlled",
+    "Backend QA uses explicit cookie identities and in-memory MongoDB transport; no live private classroom edits"
+  ]
+}

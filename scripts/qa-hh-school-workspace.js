@@ -2,8 +2,8 @@
 // Real renderer, native inputs and IndexedDB; unavailable backend is an explicit double.
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.HH_QA_PLAYWRIGHT||'playwright');
-const repo=path.resolve(__dirname,'..'),out=path.resolve(repo,process.env.HH_QA_OUTPUT||'.study-local/hh-school-1065');
-const assets=['hh-school-curriculum','hh-school-offline','hh-school-core','hh-school-sync','hh-school-assessments','hh-school-content-manifest','hh-school-content','hh-school-workspace','hh-school'];
+const repo=path.resolve(__dirname,'..'),out=path.resolve(repo,process.env.HH_QA_OUTPUT||'.study-local/hh-school-1066');
+const assets=['hh-school-curriculum','hh-school-offline','hh-school-core','hh-school-progress-codec','hh-school-sync','hh-school-assessments','hh-school-content-manifest','hh-school-content','hh-school-workspace','hh-school'];
 const errors=[],results=[],requests=[];let browser,page;
 const csp=JSON.parse(fs.readFileSync(path.join(repo,'vercel.json'),'utf8')).headers.flatMap(x=>x.headers).find(x=>x.key==='Content-Security-Policy').value;
 const server=http.createServer((req,res)=>{

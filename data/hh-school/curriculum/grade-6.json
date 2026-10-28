@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contentVersion": "2026.10.27-authored-drafts-v1",
+  "contentVersion": "2026.10.27-authored-drafts-v2",
   "grade": 6,
   "subjects": [
     {
@@ -95,6 +95,17 @@
       ],
       "chapters": [
         {
+          "id": "g6-math-ti-so-va-du-lieu",
+          "title": "Tỉ số và dữ liệu",
+          "semester": 2,
+          "outcomeIds": [
+            "g6-math-ratio-and-unit-rate-outcome"
+          ],
+          "lessonIds": [
+            "g6-math-ratio-and-unit-rate"
+          ]
+        },
+        {
           "id": "g6-math-so-nguyen",
           "title": "Số nguyên",
           "semester": 1,
@@ -129,9 +140,9 @@
         }
       ],
       "coverage": {
-        "authoredLessons": 3,
+        "authoredLessons": 4,
         "publishedLessons": 0,
-        "authoredOutcomes": 3,
+        "authoredOutcomes": 4,
         "officialOutcomeCount": null,
         "complete": false
       },
@@ -772,6 +783,23 @@
   ],
   "outcomes": [
     {
+      "id": "g6-math-ratio-and-unit-rate-outcome",
+      "subjectId": "math",
+      "text": "Lập tỉ số theo đúng thứ tự đại lượng, đổi đơn vị trước khi so sánh và tính giá trị một đơn vị.",
+      "status": "source-aligned-draft",
+      "sourceRef": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-math-g6-p212",
+        "page": null,
+        "pageStart": 212,
+        "pageEnd": 221,
+        "precision": "grade-section-only"
+      },
+      "officialRequirementId": null,
+      "reviewed": false,
+      "scope": "authored-subset"
+    },
+    {
       "id": "g6-history-geography-phan-loai-nguon-su-lieu-outcome",
       "subjectId": "history-geography",
       "text": "Phân loại nguồn tư liệu trong ví dụ và đặt câu hỏi về tác giả, thời điểm, mục đích trước khi dùng nguồn để kể quá khứ.",
@@ -1079,6 +1107,415 @@
     }
   ],
   "lessons": [
+    {
+      "gradeId": "grade-6",
+      "subjectId": "math",
+      "topicId": "g6-math-ti-so-va-du-lieu",
+      "chapterId": "g6-math-ti-so-va-du-lieu",
+      "lessonId": "g6-math-ratio-and-unit-rate",
+      "title": "Tỉ số và giá trị ứng với một đơn vị",
+      "outcome": "Lập tỉ số theo đúng thứ tự đại lượng, đổi đơn vị trước khi so sánh và tính giá trị một đơn vị.",
+      "outcomeIds": [
+        "g6-math-ratio-and-unit-rate-outcome"
+      ],
+      "semester": 2,
+      "semesterBasis": "Phân bổ học kỳ nội bộ dự kiến; không thay kế hoạch nhà trường.",
+      "track": "standard",
+      "difficulty": "Chuẩn chương trình",
+      "enrichmentOnly": false,
+      "language": null,
+      "listening": null,
+      "prerequisites": [
+        "g4-math-equivalent-fractions"
+      ],
+      "prerequisiteText": "Biết chia hai số và nhận biết phân số bằng nhau.",
+      "estimatedMinutes": null,
+      "durationStatus": "unmeasured-internal-design",
+      "contentStatus": "draft",
+      "editorialStatus": "needs-subject-review",
+      "reviewedAt": null,
+      "reviewerId": null,
+      "source": {
+        "sourceUrl": "https://hoang8.com/#/learn/library",
+        "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+        "publisher": "HH Platform",
+        "licenseCode": "HH-ORIGINAL",
+        "licenseUrl": "https://hoang8.com/terms.html",
+        "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+        "retrievedAt": "2026-10-27",
+        "reviewedAt": null,
+        "reviewerId": null,
+        "allowedForCommercialUse": true,
+        "allowedToModify": true,
+        "evidencePath": "data/hh-school/curriculum/authored-bridge-math.json"
+      },
+      "referenceSources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-math-g6-p212",
+          "page": null,
+          "pageStart": 212,
+          "pageEnd": 221,
+          "precision": "grade-section-only"
+        }
+      ],
+      "additionalDraftReferences": [
+        {
+          "title": "Prealgebra 2e",
+          "authors": [
+            "Lynn Marecek",
+            "MaryAnne Anthony-Smith",
+            "Andrea Honeycutt Mathis"
+          ],
+          "publisher": "OpenStax, Rice University",
+          "edition": "2e, published 2020-03-11; web viewed 2026-10-27",
+          "url": "https://openstax.org/books/prealgebra-2e/pages/6-5-solve-proportions-and-their-applications",
+          "licenseCode": "REFERENCE_ONLY",
+          "checkedScope": "Đối chiếu khái niệm toán học trong phần được dẫn; không sao chép lời văn, câu hỏi hoặc hình của sách. Không xác nhận đã đối chiếu SGK Việt Nam."
+        }
+      ],
+      "alignmentStatus": "draft-subset-source-section-located",
+      "textbookCrosscheck": {
+        "status": "not-completed",
+        "editions": []
+      },
+      "speaker": "HH School",
+      "steps": [
+        {
+          "id": "warmup",
+          "label": "Khởi động",
+          "body": "Hai nhóm gói được 18 và 24 phần quà. Muốn nói nhóm thứ nhất bằng mấy phần nhóm thứ hai, số nào đứng trước?"
+        },
+        {
+          "id": "goal",
+          "label": "Mục tiêu và kiến thức nền",
+          "body": "Lập tỉ số theo đúng thứ tự đại lượng, đổi đơn vị trước khi so sánh và tính giá trị một đơn vị.\n\nKiến thức cần có: Biết chia hai số và nhận biết phân số bằng nhau."
+        },
+        {
+          "id": "core",
+          "label": "Kiến thức cốt lõi",
+          "body": "Tỉ số của a và b là a/b, với b khác 0; thứ tự được nêu trong câu quyết định tử và mẫu. Nếu so hai đại lượng cùng loại thì phải đổi về cùng đơn vị trước. Tỉ số 30 cm với 2 m là 30/200 = 3/20, không phải 30/2.\n\nGiá trị ứng với một đơn vị cho biết lượng trung bình trên mỗi đơn vị đang xét. Trong tình huống giả định 6 chai nước giống nhau có giá tổng 54 nghìn đồng, giá một chai là 54 : 6 = 9 nghìn đồng/chai. Đơn vị đi kèm giúp hiểu thương, không chỉ ghi một số rời rạc.\n\nChỉ suy ra giá 10 chai là 90 nghìn khi giả sử giá mỗi chai không đổi, không có ưu đãi hay phí khác. Một phép chia từ dữ liệu tổng chưa chứng minh mọi trường hợp đều có tỉ lệ cố định. Khi so sánh hai lựa chọn, cần cùng điều kiện và cùng đơn vị của giá trị trên một đơn vị."
+        },
+        {
+          "id": "guided",
+          "label": "Ví dụ giải từng bước",
+          "body": "Đọc đề, theo dõi từng bước rồi đối chiếu lý do; sau đó tự làm bài luyện với dữ kiện khác."
+        },
+        {
+          "id": "interactive",
+          "label": "Quan sát và thực hành",
+          "body": "Dùng dữ liệu giả định về hai gói giấy khác khối lượng, tính giá trên 1 kg và nêu giới hạn của phép so sánh.",
+          "diagram": {
+            "type": "proportion-table",
+            "caption": "Giả sử đều 21 trang/ngày",
+            "columns": [
+              "Số ngày",
+              "Số trang"
+            ],
+            "rows": [
+              [
+                "1",
+                "21"
+              ],
+              [
+                "2",
+                "42"
+              ],
+              [
+                "4",
+                "84"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "practice",
+          "label": "Luyện có hướng dẫn",
+          "body": "5 hộp giống nhau nặng tổng 3 kg. Mỗi hộp nặng bao nhiêu kg?\n\nGợi ý theo mức: Tìm lượng ứng với một hộp."
+        },
+        {
+          "id": "apply",
+          "label": "Vận dụng",
+          "body": "Dùng dữ liệu giả định về hai gói giấy khác khối lượng, tính giá trên 1 kg và nêu giới hạn của phép so sánh."
+        },
+        {
+          "id": "quickcheck",
+          "label": "Tự làm độc lập",
+          "body": "Đóng phần ví dụ và tự giải các câu dưới đây. Đáp án hoặc rubric chỉ dùng để đối chiếu sau khi bạn đã thử. Nội dung đang chờ thẩm định chuyên môn."
+        },
+        {
+          "id": "summary",
+          "label": "Tóm tắt và sửa hiểu nhầm",
+          "body": "Đọc đúng thứ tự → đổi đơn vị phù hợp → lập thương → ghi đơn vị và điều kiện."
+        },
+        {
+          "id": "next",
+          "label": "Ôn lại và học tiếp",
+          "body": "Sau một khoảng nghỉ, giải thích lại bằng lời của bạn: Lập tỉ số theo đúng thứ tự đại lượng, đổi đơn vị trước khi so sánh và tính giá trị một đơn vị.\nLưu câu hỏi còn vướng trong ghi chú; lần ôn sau thử câu độc lập trước khi mở lời giải."
+        }
+      ],
+      "workedExample": {
+        "prompt": "Một nhóm đọc 84 trang trong 4 ngày, đều mỗi ngày. Mỗi ngày đọc bao nhiêu trang?",
+        "answer": "21 trang/ngày",
+        "method": [
+          "Xác định đại lượng cần tìm là số trang cho 1 ngày.",
+          "Tính 84 : 4 = 21 trang/ngày.",
+          "Kiểm tra 21 × 4 = 84; giả thiết đều mỗi ngày là cần thiết."
+        ]
+      },
+      "commonMistakes": [
+        "Đảo thứ tự tỉ số.",
+        "So sánh trước khi đổi về cùng đơn vị."
+      ],
+      "questions": [
+        {
+          "type": "short",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 1e-9
+          },
+          "prompt": "5 hộp giống nhau nặng tổng 3 kg. Mỗi hộp nặng bao nhiêu kg?",
+          "answer": "0.6",
+          "explanation": "3 : 5 = 0,6 kg/hộp.",
+          "family": "guided",
+          "hints": [
+            "Tìm lượng ứng với một hộp."
+          ],
+          "cognitiveLevel": "thông hiểu",
+          "id": "g6-math-ratio-and-unit-rate-q1",
+          "gradeId": "grade-6",
+          "subjectId": "math",
+          "lessonId": "g6-math-ratio-and-unit-rate",
+          "skillId": "g6-math-ratio-and-unit-rate-outcome",
+          "outcomeId": "g6-math-ratio-and-unit-rate-outcome",
+          "familyId": "g6-math-ratio-and-unit-rate-guided",
+          "phase": "practice",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "difficulty": 2,
+          "hintSteps": [
+            "Tìm lượng ứng với một hộp."
+          ],
+          "helpLevel": 1
+        },
+        {
+          "type": "short",
+          "prompt": "Tỉ số của 45 cm và 3 m là bao nhiêu? Nhập phân số hoặc số thập phân.",
+          "answer": "3/20",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 1e-9
+          },
+          "explanation": "3 m = 300 cm; 45/300 = 3/20.",
+          "family": "same-unit",
+          "id": "g6-math-ratio-and-unit-rate-q2",
+          "gradeId": "grade-6",
+          "subjectId": "math",
+          "lessonId": "g6-math-ratio-and-unit-rate",
+          "skillId": "g6-math-ratio-and-unit-rate-outcome",
+          "outcomeId": "g6-math-ratio-and-unit-rate-outcome",
+          "familyId": "g6-math-ratio-and-unit-rate-same-unit",
+          "phase": "check",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "cognitiveLevel": "vận dụng",
+          "difficulty": 2,
+          "hintSteps": [],
+          "helpLevel": 0
+        },
+        {
+          "type": "short",
+          "prompt": "8 tập giấy giống nhau có giá tổng 72 nghìn đồng. Giá một tập là mấy nghìn?",
+          "answer": "9",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 1e-9
+          },
+          "explanation": "72 : 8 = 9 nghìn đồng/tập.",
+          "family": "unit-rate",
+          "id": "g6-math-ratio-and-unit-rate-q3",
+          "gradeId": "grade-6",
+          "subjectId": "math",
+          "lessonId": "g6-math-ratio-and-unit-rate",
+          "skillId": "g6-math-ratio-and-unit-rate-outcome",
+          "outcomeId": "g6-math-ratio-and-unit-rate-outcome",
+          "familyId": "g6-math-ratio-and-unit-rate-unit-rate",
+          "phase": "check",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "cognitiveLevel": "vận dụng",
+          "difficulty": 2,
+          "hintSteps": [],
+          "helpLevel": 0
+        },
+        {
+          "type": "single",
+          "prompt": "Từ số trang đọc tổng trong 4 ngày, điều gì chưa thể khẳng định nếu không có thêm dữ kiện?",
+          "options": [
+            "Có thể tính số trung bình mỗi ngày",
+            "Có thể chia tổng cho 4",
+            "Mỗi ngày đều đọc như nhau"
+          ],
+          "answer": "2",
+          "explanation": "Số trung bình không chứng minh từng ngày bằng nhau.",
+          "family": "reason",
+          "id": "g6-math-ratio-and-unit-rate-q4",
+          "gradeId": "grade-6",
+          "subjectId": "math",
+          "lessonId": "g6-math-ratio-and-unit-rate",
+          "skillId": "g6-math-ratio-and-unit-rate-outcome",
+          "outcomeId": "g6-math-ratio-and-unit-rate-outcome",
+          "familyId": "g6-math-ratio-and-unit-rate-reason",
+          "phase": "check",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "cognitiveLevel": "vận dụng",
+          "difficulty": 2,
+          "hintSteps": [],
+          "helpLevel": 0
+        },
+        {
+          "type": "essay",
+          "prompt": "Hai chai dung tích khác nhau có giá khác nhau. Nêu cách so sánh giá theo cùng một đơn vị dung tích và dữ kiện cần có.",
+          "explanation": "Cần giá và dung tích cùng đơn vị; chia giá cho dung tích, xét thêm điều kiện tương đương.",
+          "family": "explain",
+          "rubric": [
+            {
+              "criterion": "Xác định đúng toàn thể và điều kiện",
+              "maxScore": 2,
+              "descriptor": "Ghi rõ đại lượng, đơn vị và giả thiết."
+            },
+            {
+              "criterion": "Giải thích từng bước",
+              "maxScore": 2,
+              "descriptor": "Lập luận dựa vào phần bằng nhau hoặc đại lượng giữ nguyên."
+            },
+            {
+              "criterion": "Kiểm tra kết luận",
+              "maxScore": 1,
+              "descriptor": "Thay lại dữ kiện hoặc dùng biểu diễn khác; chấp nhận cách giải hợp lệ."
+            }
+          ],
+          "id": "g6-math-ratio-and-unit-rate-q5",
+          "gradeId": "grade-6",
+          "subjectId": "math",
+          "lessonId": "g6-math-ratio-and-unit-rate",
+          "skillId": "g6-math-ratio-and-unit-rate-outcome",
+          "outcomeId": "g6-math-ratio-and-unit-rate-outcome",
+          "familyId": "g6-math-ratio-and-unit-rate-explain",
+          "phase": "check",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "cognitiveLevel": "vận dụng",
+          "difficulty": 2,
+          "hintSteps": [],
+          "helpLevel": 0
+        }
+      ],
+      "mission": {
+        "id": "g6-math-ratio-and-unit-rate-activity",
+        "title": "Thực hành và tự đối chiếu",
+        "prompt": "Dùng dữ liệu giả định về hai gói giấy khác khối lượng, tính giá trên 1 kg và nêu giới hạn của phép so sánh.",
+        "status": "draft"
+      },
+      "diagram": {
+        "type": "proportion-table",
+        "caption": "Giả sử đều 21 trang/ngày",
+        "columns": [
+          "Số ngày",
+          "Số trang"
+        ],
+        "rows": [
+          [
+            "1",
+            "21"
+          ],
+          [
+            "2",
+            "42"
+          ],
+          [
+            "4",
+            "84"
+          ]
+        ]
+      },
+      "terms": [],
+      "formulas": [],
+      "rubric": [],
+      "contentVersion": 1,
+      "authoredFile": "data/hh-school/curriculum/authored-bridge-math.json"
+    },
     {
       "gradeId": "grade-6",
       "subjectId": "history-geography",
@@ -3358,7 +3795,10 @@
       "enrichmentOnly": false,
       "language": null,
       "listening": null,
-      "prerequisites": [],
+      "prerequisites": [
+        "g4-math-fraction-addition",
+        "g4-math-subtract-fractions"
+      ],
       "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
       "estimatedMinutes": null,
       "durationStatus": "unmeasured-internal-design",
@@ -6523,9 +6963,9 @@
   "coverage": {
     "catalogueSlots": 15,
     "subjectsWithDrafts": 12,
-    "draftLessons": 18,
+    "draftLessons": 19,
     "publishedLessons": 0,
-    "authoredOutcomeCount": 18,
+    "authoredOutcomeCount": 19,
     "officialOutcomeCount": null,
     "complete": false
   }

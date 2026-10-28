@@ -15,7 +15,7 @@ test("HH School accepts only declared route views", () => {
 
 test("/learn lazy-loads only HH School and keeps language routes independent", () => {
   const loader = read("performance-loader.js"); const router = read("script.js"); const worker = read("sw.js");
-  for (const asset of ["hh-school.css?v=4", "hh-school-curriculum.js?v=4", "hh-school-core.js?v=5", "hh-school-offline.js?v=5", "hh-school-sync.js?v=4", "hh-school.js?v=7", "hh-school-workspace.js?v=1", "hh-school-workspace.css?v=1", "hh-school-assessments.js?v=1", "hh-school-content.js?v=1", "hh-school-content-manifest.js?v=1"]) {
+  for (const asset of ["hh-school.css?v=4", "hh-school-curriculum.js?v=4", "hh-school-core.js?v=6", "hh-school-offline.js?v=5", "hh-school-sync.js?v=5", "hh-school.js?v=8", "hh-school-workspace.js?v=2", "hh-school-workspace.css?v=2", "hh-school-assessments.js?v=1", "hh-school-content.js?v=1", "hh-school-content-manifest.js?v=2"]) {
     assert.match(loader, new RegExp(asset.replace(/[.?]/g, "\\$&")));
     assert.match(worker, new RegExp(asset.replace(/[.?]/g, "\\$&")));
   }
@@ -109,11 +109,11 @@ test("HH School routes, linked reports and offline conflicts fail closed", () =>
   const client = read("hh-school.js"); const sync = read("hh-school-sync.js"); const backend = read("utils/education-handler.js"); const worker = read("sw.js");
   assert.match(client, /const supports = \(view\) => Boolean\(resolveView\(view\)\)/);
   assert.match(client, /target\.linkId/);
-  assert.match(sync, /accessId=\$\{encodeURIComponent\(accessId\)\}/);
+  assert.match(sync, /encodeURIComponent\(accessId\)/);
   assert.match(backend, /report: \{ attempts:/);
   assert.match(backend, /revision: baseRevision/);
   assert.match(backend, /targetLearnerProfileIds: learnerProfileId/);
   assert.match(backend, /dropIndex\("education_classes_code"\)/);
   assert.match(worker, /syncStatus === "needs-resolution"/);
-  assert.match(worker, /response\.status === 409/);
+  assert.match(worker, /status\s*===\s*409/);
 });

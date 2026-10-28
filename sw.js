@@ -1,4 +1,7 @@
-const CACHE = "hh-identity-portal-v1065";
+const CACHE = "hh-identity-portal-v1066";
+// Worker dependencies must be part of its installed script graph.
+if (typeof self.importScripts === "function") self.importScripts("./hh-school-progress-codec.js?v=1");
+// Previous release: hh-identity-portal-v1065; ./performance-loader.js?v=726;
 // Previous release: hh-identity-portal-v1064; ./performance-loader.js?v=725;
 // Previous release: hh-identity-portal-v1063; ./performance-loader.js?v=724; ./all-game.js?v=5; ./all-game.css?v=5;
 // Previous release: hh-identity-portal-v1062; ./performance-loader.js?v=723; ./all-game.js?v=4; ./all-game.css?v=4;
@@ -802,17 +805,18 @@ const RUNTIME_ASSETS = [
   "./utility-lab-tools.js?v=14",
   "./feature-engines.js?v=2",
   "./hh-school-curriculum.js?v=4",
-  "./hh-school-workspace.css?v=1",
+  "./hh-school-workspace.css?v=2",
   "./hh-school-assessments.js?v=1",
-  "./hh-school-content-manifest.js?v=1",
+  "./hh-school-content-manifest.js?v=2",
   "./hh-school-content.js?v=1",
-  "./hh-school-workspace.js?v=1",
-  "./hh-school-core.js?v=5",
+  "./hh-school-workspace.js?v=2",
+  "./hh-school-core.js?v=6",
   "./hh-school-offline.js?v=5",
-  "./hh-school-sync.js?v=4",
+  "./hh-school-progress-codec.js?v=1",
+  "./hh-school-sync.js?v=5",
   "./hh-school-search-worker.js?v=3",
   "./hh-school-code-worker.js?v=2",
-  "./hh-school.js?v=7",
+  "./hh-school.js?v=8",
   "./study-together.css?v=7",
   "./study-classroom.css?v=1",
   "./study-campus.css?v=1",
@@ -913,7 +917,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=726",
+  "./performance-loader.js?v=727",
   "./auth-platform.js?v=22",
   "./auth-neon-gateway.js?v=35",
   "./script.js?v=295"
@@ -986,25 +990,18 @@ async function flushHHSchoolQueue() {
         if (target.origin !== self.location.origin || target.pathname !== "/api/education/progress" || String(queued.method || "PUT").toUpperCase() !== "PUT") throw new Error("Unsafe HH School sync target");
         const payload = typeof queued.body === "string" ? JSON.parse(queued.body) : queued.body;
         if (!item.learnerProfileId || item.ownerProfile !== activeOwner + ":" + item.learnerProfileId || payload?.learnerProfileId !== item.learnerProfileId || payload?.state?.ownerId !== activeOwner || payload?.state?.learnerProfileId !== item.learnerProfileId || payload?.state?.profile?.id !== item.learnerProfileId) throw new Error("HH School queued state owner/profile mismatch");
-        const response = await fetch(target.href, {
-          method: queued.method || "PUT",
-          credentials: "include",
-          cache: "no-store",
-          headers: { "Content-Type": "application/json" },
-          body: typeof queued.body === "string" ? queued.body : JSON.stringify(queued.body || {})
-        });
-        if (response.status === 409) {
-          const data = await response.json().catch(() => ({}));
-          await updateHHSchoolQueue(db, item, { conflict: true, conflictData: data.conflict || null, error: data.error || "HTTP 409" });
-          results.push({ id: item.id, learnerProfileId: item.learnerProfileId, ok: false, conflict: true, conflictData: data.conflict || null, error: data.error || "HTTP 409" });
-          continue;
-        }
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const acknowledged = await response.json();
-        if (!Number.isSafeInteger(acknowledged.revision) || acknowledged.revision < 1) throw new Error("HH School sync response has no confirmed revision");
+        const send = async body => {
+          const response=await fetch(target.href,{method:'PUT',credentials:'include',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+          const data=await response.json().catch(()=>({}));if(!response.ok)throw Object.assign(Error(data.error||'HTTP '+response.status),{status:response.status,data});return data;
+        };
+        if(JSON.stringify(payload.state).length>60000&&!self.HHSchoolProgressCodec)throw Error('Bộ đồng bộ chưa sẵn sàng; giữ dữ liệu trong hàng đợi.');
+        const codec=self.HHSchoolProgressCodec;
+        const acknowledged=codec&&codec.byteLength(JSON.stringify(payload.state))>codec.SMALL_BYTES?await codec.upload(send,payload):await send({...payload,transportVersion:1});
+        if(!Number.isSafeInteger(acknowledged.revision)||acknowledged.revision<1)throw Error('HH School sync response has no confirmed revision');
         await updateHHSchoolQueue(db, item, { remove: true });
         results.push({ id: item.id, learnerProfileId: item.learnerProfileId, ok: true, serverRevision: acknowledged.revision, localRevision: payload.state.revision, updatedAt: acknowledged.updatedAt });
       } catch (error) {
+        if(error.status===409){await updateHHSchoolQueue(db,item,{conflict:true,conflictData:error.data?.conflict||null,error:error.message});results.push({id:item.id,learnerProfileId:item.learnerProfileId,ok:false,conflict:true,error:error.message});continue;}
         await updateHHSchoolQueue(db, item, { error: String(error?.message || error) });
         results.push({ id: item.id, learnerProfileId: item.learnerProfileId, ok: false, error: String(error?.message || error) });
       }
@@ -1018,7 +1015,9 @@ async function flushHHSchoolQueue() {
   return results;
 }
 self.addEventListener("sync", event => {
-  if (event.tag === "hh-school-progress") event.waitUntil(flushHHSchoolQueue());
+  if (event.tag === "hh-school-progress") event.waitUntil(flushHHSchoolQueue().then(results => {
+    if (results.some(result => !result.ok && !result.conflict && !result.terminal)) throw new Error("HH School sync is pending; retry when the network permits.");
+  }));
 });
 self.addEventListener("fetch", event => {
   const request = event.request;

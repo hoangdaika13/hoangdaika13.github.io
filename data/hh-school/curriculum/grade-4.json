@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contentVersion": "2026.10.27-authored-drafts-v1",
+  "contentVersion": "2026.10.27-authored-drafts-v2",
   "grade": 4,
   "subjects": [
     {
@@ -95,6 +95,19 @@
       ],
       "chapters": [
         {
+          "id": "g4-math-phan-so-va-cac-phep-tinh",
+          "title": "Phân số và các phép tính",
+          "semester": 2,
+          "outcomeIds": [
+            "g4-math-compare-fractions-outcome",
+            "g4-math-subtract-fractions-outcome"
+          ],
+          "lessonIds": [
+            "g4-math-compare-fractions",
+            "g4-math-subtract-fractions"
+          ]
+        },
+        {
           "id": "g4-math-phan-so",
           "title": "Phân số",
           "semester": 1,
@@ -120,9 +133,9 @@
         }
       ],
       "coverage": {
-        "authoredLessons": 3,
+        "authoredLessons": 5,
         "publishedLessons": 0,
-        "authoredOutcomes": 3,
+        "authoredOutcomes": 5,
         "officialOutcomeCount": null,
         "complete": false
       },
@@ -672,6 +685,40 @@
   ],
   "outcomes": [
     {
+      "id": "g4-math-compare-fractions-outcome",
+      "subjectId": "math",
+      "text": "So sánh hai phân số dương bằng quy đồng hoặc mốc một nửa, nêu được điều kiện cùng một toàn thể.",
+      "status": "source-aligned-draft",
+      "sourceRef": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-math-g4-p200",
+        "page": null,
+        "pageStart": 200,
+        "pageEnd": 206,
+        "precision": "grade-section-only"
+      },
+      "officialRequirementId": null,
+      "reviewed": false,
+      "scope": "authored-subset"
+    },
+    {
+      "id": "g4-math-subtract-fractions-outcome",
+      "subjectId": "math",
+      "text": "Trừ các phân số dương trong trường hợp hiệu không âm, giải thích quy đồng và kiểm tra kết quả.",
+      "status": "source-aligned-draft",
+      "sourceRef": {
+        "sourceId": "tt32-2018-archive",
+        "unitId": "tt32-math-g4-p200",
+        "page": null,
+        "pageStart": 200,
+        "pageEnd": 206,
+        "precision": "grade-section-only"
+      },
+      "officialRequirementId": null,
+      "reviewed": false,
+      "scope": "authored-subset"
+    },
+    {
       "id": "g4-history-geography-doc-chu-giai-phuong-huong-outcome",
       "subjectId": "history-geography",
       "text": "Dùng chú giải và mũi tên Bắc để xác định đối tượng, phương hướng tương đối trên sơ đồ giả định.",
@@ -962,6 +1009,764 @@
     }
   ],
   "lessons": [
+    {
+      "gradeId": "grade-4",
+      "subjectId": "math",
+      "topicId": "g4-math-phan-so-va-cac-phep-tinh",
+      "chapterId": "g4-math-phan-so-va-cac-phep-tinh",
+      "lessonId": "g4-math-compare-fractions",
+      "title": "So sánh phân số bằng cùng một đơn vị phần",
+      "outcome": "So sánh hai phân số dương bằng quy đồng hoặc mốc một nửa, nêu được điều kiện cùng một toàn thể.",
+      "outcomeIds": [
+        "g4-math-compare-fractions-outcome"
+      ],
+      "semester": 2,
+      "semesterBasis": "Phân bổ học kỳ nội bộ dự kiến; không thay kế hoạch nhà trường.",
+      "track": "standard",
+      "difficulty": "Chuẩn chương trình",
+      "enrichmentOnly": false,
+      "language": null,
+      "listening": null,
+      "prerequisites": [
+        "g4-math-equivalent-fractions"
+      ],
+      "prerequisiteText": "Hiểu phân số bằng nhau và phép nhân cả tử, mẫu với cùng số tự nhiên khác 0.",
+      "estimatedMinutes": null,
+      "durationStatus": "unmeasured-internal-design",
+      "contentStatus": "draft",
+      "editorialStatus": "needs-subject-review",
+      "reviewedAt": null,
+      "reviewerId": null,
+      "source": {
+        "sourceUrl": "https://hoang8.com/#/learn/library",
+        "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+        "publisher": "HH Platform",
+        "licenseCode": "HH-ORIGINAL",
+        "licenseUrl": "https://hoang8.com/terms.html",
+        "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+        "retrievedAt": "2026-10-27",
+        "reviewedAt": null,
+        "reviewerId": null,
+        "allowedForCommercialUse": true,
+        "allowedToModify": true,
+        "evidencePath": "data/hh-school/curriculum/authored-bridge-math.json"
+      },
+      "referenceSources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-math-g4-p200",
+          "page": null,
+          "pageStart": 200,
+          "pageEnd": 206,
+          "precision": "grade-section-only"
+        }
+      ],
+      "additionalDraftReferences": [
+        {
+          "title": "Prealgebra 2e",
+          "authors": [
+            "Lynn Marecek",
+            "MaryAnne Anthony-Smith",
+            "Andrea Honeycutt Mathis"
+          ],
+          "publisher": "OpenStax, Rice University",
+          "edition": "2e, published 2020-03-11; web viewed 2026-10-27",
+          "url": "https://openstax.org/books/prealgebra-2e/pages/4-5-add-and-subtract-fractions-with-different-denominators",
+          "licenseCode": "REFERENCE_ONLY",
+          "checkedScope": "Đối chiếu khái niệm toán học trong phần được dẫn; không sao chép lời văn, câu hỏi hoặc hình của sách. Không xác nhận đã đối chiếu SGK Việt Nam."
+        }
+      ],
+      "alignmentStatus": "draft-subset-source-section-located",
+      "textbookCrosscheck": {
+        "status": "not-completed",
+        "editions": []
+      },
+      "speaker": "HH School",
+      "steps": [
+        {
+          "id": "warmup",
+          "label": "Khởi động",
+          "body": "Hai bạn ăn lần lượt 1/3 và 1/4 hai chiếc bánh cùng cỡ. Bạn nào ăn nhiều hơn? Hãy vẽ trước khi tính."
+        },
+        {
+          "id": "goal",
+          "label": "Mục tiêu và kiến thức nền",
+          "body": "So sánh hai phân số dương bằng quy đồng hoặc mốc một nửa, nêu được điều kiện cùng một toàn thể.\n\nKiến thức cần có: Hiểu phân số bằng nhau và phép nhân cả tử, mẫu với cùng số tự nhiên khác 0."
+        },
+        {
+          "id": "core",
+          "label": "Kiến thức cốt lõi",
+          "body": "Muốn so sánh số phần, các phần phải có cùng kích thước. Với cùng một toàn thể, 1/3 lớn hơn 1/4 vì chia thành ba phần thì mỗi phần lớn hơn khi chia thành bốn phần. Mẫu số lớn hơn không có nghĩa phân số lớn hơn. Nếu hai toàn thể khác cỡ, chỉ nhìn phân số chưa đủ để kết luận lượng thực tế.\n\nKhi mẫu số khác nhau, có thể đổi về cùng mẫu. Chẳng hạn so sánh 2/3 và 3/4: dùng 12 phần bằng nhau, 2/3 = 8/12 và 3/4 = 9/12. Tám phần ít hơn chín phần cùng cỡ nên 2/3 < 3/4. Việc đổi tên phần không làm thay đổi giá trị ban đầu.\n\nCó thể dùng mốc: 3/8 < 4/8 = 1/2, còn 5/9 > 1/2 vì 10/18 > 9/18. Khi hai phân số ở hai phía của một mốc đã biết, không cần quy đồng trực tiếp với nhau. Luôn ghi rõ đang so sánh giá trị phân số hay lượng của hai vật cụ thể."
+        },
+        {
+          "id": "guided",
+          "label": "Ví dụ giải từng bước",
+          "body": "Đọc đề, theo dõi từng bước rồi đối chiếu lý do; sau đó tự làm bài luyện với dữ kiện khác."
+        },
+        {
+          "id": "interactive",
+          "label": "Quan sát và thực hành",
+          "body": "Vẽ hai thanh bằng nhau chia 12 phần. Tô 8 và 9 phần; giải thích vì sao phải giữ chiều dài hai thanh bằng nhau.",
+          "diagram": {
+            "type": "fraction-bars",
+            "denominator": 12,
+            "rows": [
+              {
+                "selected": 8,
+                "label": "2/3 = 8/12"
+              },
+              {
+                "selected": 9,
+                "label": "3/4 = 9/12"
+              }
+            ]
+          }
+        },
+        {
+          "id": "practice",
+          "label": "Luyện có hướng dẫn",
+          "body": "Đổi 2/3 thành phân số có mẫu 12. Tử số là bao nhiêu?\n\nGợi ý theo mức: 12 gấp 3 mấy lần? → Nhân tử số với cùng số đó."
+        },
+        {
+          "id": "apply",
+          "label": "Vận dụng",
+          "body": "Vẽ hai thanh bằng nhau chia 12 phần. Tô 8 và 9 phần; giải thích vì sao phải giữ chiều dài hai thanh bằng nhau."
+        },
+        {
+          "id": "quickcheck",
+          "label": "Tự làm độc lập",
+          "body": "Đóng phần ví dụ và tự giải các câu dưới đây. Đáp án hoặc rubric chỉ dùng để đối chiếu sau khi bạn đã thử. Nội dung đang chờ thẩm định chuyên môn."
+        },
+        {
+          "id": "summary",
+          "label": "Tóm tắt và sửa hiểu nhầm",
+          "body": "Đưa về phần cùng cỡ rồi so tử; hoặc dùng một mốc chung. Lượng thực tế còn phụ thuộc toàn thể."
+        },
+        {
+          "id": "next",
+          "label": "Ôn lại và học tiếp",
+          "body": "Sau một khoảng nghỉ, giải thích lại bằng lời của bạn: So sánh hai phân số dương bằng quy đồng hoặc mốc một nửa, nêu được điều kiện cùng một toàn thể.\nLưu câu hỏi còn vướng trong ghi chú; lần ôn sau thử câu độc lập trước khi mở lời giải."
+        }
+      ],
+      "workedExample": {
+        "prompt": "So sánh 3/5 và 7/10.",
+        "answer": "3/5 < 7/10",
+        "method": [
+          "Đổi 3/5 thành 6/10 bằng cách nhân cả tử và mẫu với 2.",
+          "So sánh 6 phần mười với 7 phần mười: 6 < 7.",
+          "Kết luận 3/5 < 7/10; kiểm tra 0,6 < 0,7."
+        ]
+      },
+      "commonMistakes": [
+        "So sánh riêng mẫu số mà bỏ qua tử số.",
+        "Dùng hai hình khác cỡ để kết luận lượng."
+      ],
+      "questions": [
+        {
+          "type": "short",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 1e-9
+          },
+          "prompt": "Đổi 2/3 thành phân số có mẫu 12. Tử số là bao nhiêu?",
+          "answer": "8",
+          "explanation": "Cả tử và mẫu cùng nhân 4.",
+          "family": "guided",
+          "hints": [
+            "12 gấp 3 mấy lần?",
+            "Nhân tử số với cùng số đó."
+          ],
+          "cognitiveLevel": "thông hiểu",
+          "id": "g4-math-compare-fractions-q1",
+          "gradeId": "grade-4",
+          "subjectId": "math",
+          "lessonId": "g4-math-compare-fractions",
+          "skillId": "g4-math-compare-fractions-outcome",
+          "outcomeId": "g4-math-compare-fractions-outcome",
+          "familyId": "g4-math-compare-fractions-guided",
+          "phase": "practice",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "difficulty": 2,
+          "hintSteps": [
+            "12 gấp 3 mấy lần?",
+            "Nhân tử số với cùng số đó."
+          ],
+          "helpLevel": 1
+        },
+        {
+          "type": "single",
+          "prompt": "Quan hệ đúng giữa 5/8 và 2/3 là gì?",
+          "options": [
+            "5/8 < 2/3",
+            "5/8 = 2/3",
+            "5/8 > 2/3"
+          ],
+          "answer": "0",
+          "explanation": "5/8 = 15/24, 2/3 = 16/24; so sánh 15 và 16.",
+          "family": "reason",
+          "id": "g4-math-compare-fractions-q2",
+          "gradeId": "grade-4",
+          "subjectId": "math",
+          "lessonId": "g4-math-compare-fractions",
+          "skillId": "g4-math-compare-fractions-outcome",
+          "outcomeId": "g4-math-compare-fractions-outcome",
+          "familyId": "g4-math-compare-fractions-reason",
+          "phase": "check",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "cognitiveLevel": "vận dụng",
+          "difficulty": 2,
+          "hintSteps": [],
+          "helpLevel": 0
+        },
+        {
+          "type": "short",
+          "prompt": "Viết tử số của phân số mẫu 20 bằng 3/4.",
+          "answer": "15",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 1e-9
+          },
+          "explanation": "Nhân cả 3 và 4 với 5.",
+          "family": "equivalent",
+          "id": "g4-math-compare-fractions-q3",
+          "gradeId": "grade-4",
+          "subjectId": "math",
+          "lessonId": "g4-math-compare-fractions",
+          "skillId": "g4-math-compare-fractions-outcome",
+          "outcomeId": "g4-math-compare-fractions-outcome",
+          "familyId": "g4-math-compare-fractions-equivalent",
+          "phase": "check",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "cognitiveLevel": "vận dụng",
+          "difficulty": 2,
+          "hintSteps": [],
+          "helpLevel": 0
+        },
+        {
+          "type": "essay",
+          "prompt": "An ăn 1/2 bánh nhỏ, Bình ăn 1/3 bánh lớn. Có chắc An ăn nhiều hơn không? Giải thích dữ kiện còn thiếu.",
+          "explanation": "Cần biết kích thước hai chiếc bánh; giá trị phân số chưa đủ cho lượng tuyệt đối.",
+          "family": "explain",
+          "rubric": [
+            {
+              "criterion": "Xác định đúng toàn thể và điều kiện",
+              "maxScore": 2,
+              "descriptor": "Ghi rõ đại lượng, đơn vị và giả thiết."
+            },
+            {
+              "criterion": "Giải thích từng bước",
+              "maxScore": 2,
+              "descriptor": "Lập luận dựa vào phần bằng nhau hoặc đại lượng giữ nguyên."
+            },
+            {
+              "criterion": "Kiểm tra kết luận",
+              "maxScore": 1,
+              "descriptor": "Thay lại dữ kiện hoặc dùng biểu diễn khác; chấp nhận cách giải hợp lệ."
+            }
+          ],
+          "id": "g4-math-compare-fractions-q4",
+          "gradeId": "grade-4",
+          "subjectId": "math",
+          "lessonId": "g4-math-compare-fractions",
+          "skillId": "g4-math-compare-fractions-outcome",
+          "outcomeId": "g4-math-compare-fractions-outcome",
+          "familyId": "g4-math-compare-fractions-explain",
+          "phase": "check",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "cognitiveLevel": "vận dụng",
+          "difficulty": 2,
+          "hintSteps": [],
+          "helpLevel": 0
+        }
+      ],
+      "mission": {
+        "id": "g4-math-compare-fractions-activity",
+        "title": "Thực hành và tự đối chiếu",
+        "prompt": "Vẽ hai thanh bằng nhau chia 12 phần. Tô 8 và 9 phần; giải thích vì sao phải giữ chiều dài hai thanh bằng nhau.",
+        "status": "draft"
+      },
+      "diagram": {
+        "type": "fraction-bars",
+        "denominator": 12,
+        "rows": [
+          {
+            "selected": 8,
+            "label": "2/3 = 8/12"
+          },
+          {
+            "selected": 9,
+            "label": "3/4 = 9/12"
+          }
+        ]
+      },
+      "terms": [],
+      "formulas": [],
+      "rubric": [],
+      "contentVersion": 1,
+      "authoredFile": "data/hh-school/curriculum/authored-bridge-math.json"
+    },
+    {
+      "gradeId": "grade-4",
+      "subjectId": "math",
+      "topicId": "g4-math-phan-so-va-cac-phep-tinh",
+      "chapterId": "g4-math-phan-so-va-cac-phep-tinh",
+      "lessonId": "g4-math-subtract-fractions",
+      "title": "Trừ phân số và kiểm tra bằng phép cộng",
+      "outcome": "Trừ các phân số dương trong trường hợp hiệu không âm, giải thích quy đồng và kiểm tra kết quả.",
+      "outcomeIds": [
+        "g4-math-subtract-fractions-outcome"
+      ],
+      "semester": 2,
+      "semesterBasis": "Phân bổ học kỳ nội bộ dự kiến; không thay kế hoạch nhà trường.",
+      "track": "standard",
+      "difficulty": "Chuẩn chương trình",
+      "enrichmentOnly": false,
+      "language": null,
+      "listening": null,
+      "prerequisites": [
+        "g4-math-equivalent-fractions",
+        "g4-math-compare-fractions"
+      ],
+      "prerequisiteText": "Nhận biết phân số bằng nhau và so sánh hai phân số.",
+      "estimatedMinutes": null,
+      "durationStatus": "unmeasured-internal-design",
+      "contentStatus": "draft",
+      "editorialStatus": "needs-subject-review",
+      "reviewedAt": null,
+      "reviewerId": null,
+      "source": {
+        "sourceUrl": "https://hoang8.com/#/learn/library",
+        "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+        "publisher": "HH Platform",
+        "licenseCode": "HH-ORIGINAL",
+        "licenseUrl": "https://hoang8.com/terms.html",
+        "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+        "retrievedAt": "2026-10-27",
+        "reviewedAt": null,
+        "reviewerId": null,
+        "allowedForCommercialUse": true,
+        "allowedToModify": true,
+        "evidencePath": "data/hh-school/curriculum/authored-bridge-math.json"
+      },
+      "referenceSources": [
+        {
+          "sourceId": "tt32-2018-archive",
+          "unitId": "tt32-math-g4-p200",
+          "page": null,
+          "pageStart": 200,
+          "pageEnd": 206,
+          "precision": "grade-section-only"
+        }
+      ],
+      "additionalDraftReferences": [
+        {
+          "title": "Prealgebra 2e",
+          "authors": [
+            "Lynn Marecek",
+            "MaryAnne Anthony-Smith",
+            "Andrea Honeycutt Mathis"
+          ],
+          "publisher": "OpenStax, Rice University",
+          "edition": "2e, published 2020-03-11; web viewed 2026-10-27",
+          "url": "https://openstax.org/books/prealgebra-2e/pages/4-5-add-and-subtract-fractions-with-different-denominators",
+          "licenseCode": "REFERENCE_ONLY",
+          "checkedScope": "Đối chiếu khái niệm toán học trong phần được dẫn; không sao chép lời văn, câu hỏi hoặc hình của sách. Không xác nhận đã đối chiếu SGK Việt Nam."
+        }
+      ],
+      "alignmentStatus": "draft-subset-source-section-located",
+      "textbookCrosscheck": {
+        "status": "not-completed",
+        "editions": []
+      },
+      "speaker": "HH School",
+      "steps": [
+        {
+          "id": "warmup",
+          "label": "Khởi động",
+          "body": "Một bình chứa 7/10 lít nước, rót ra 2/10 lít. Những phần mười còn lại được đếm thế nào?"
+        },
+        {
+          "id": "goal",
+          "label": "Mục tiêu và kiến thức nền",
+          "body": "Trừ các phân số dương trong trường hợp hiệu không âm, giải thích quy đồng và kiểm tra kết quả.\n\nKiến thức cần có: Nhận biết phân số bằng nhau và so sánh hai phân số."
+        },
+        {
+          "id": "core",
+          "label": "Kiến thức cốt lõi",
+          "body": "Trừ phân số là bớt một lượng khỏi lượng ban đầu. Khi hai lượng đều đo bằng cùng đơn vị phần, trừ số phần và giữ tên phần: 7/10 − 2/10 = 5/10. Không trừ mẫu số vì đơn vị phần mười vẫn như cũ. Rút gọn 5/10 thành 1/2 nếu muốn.\n\nVới khác mẫu, trước hết đổi cả hai lượng sang phần bằng nhau. Ví dụ 5/6 − 1/4: mẫu chung 12 cho 10/12 − 3/12 = 7/12. Hai phân số ban đầu không đổi giá trị khi quy đồng. Bài này chỉ xét số bị trừ không nhỏ hơn số trừ; trường hợp hiệu âm được học ở phạm vi số rộng hơn.\n\nĐể kiểm tra, cộng hiệu với số đã bớt: 7/12 + 1/4 = 7/12 + 3/12 = 10/12 = 5/6. Có thể ước lượng: bớt một số dương thì kết quả phải nhỏ hơn số ban đầu. Hai cách kiểm tra giúp phát hiện nhầm đơn vị hoặc phép tính."
+        },
+        {
+          "id": "guided",
+          "label": "Ví dụ giải từng bước",
+          "body": "Đọc đề, theo dõi từng bước rồi đối chiếu lý do; sau đó tự làm bài luyện với dữ kiện khác."
+        },
+        {
+          "id": "interactive",
+          "label": "Quan sát và thực hành",
+          "body": "Vẽ thanh 12 phần để biểu diễn 5/6 rồi gạch bỏ 1/4. Đếm số phần còn lại và kiểm tra bằng phép cộng.",
+          "diagram": {
+            "type": "fraction-bars",
+            "denominator": 12,
+            "rows": [
+              {
+                "selected": 10,
+                "label": "5/6 = 10/12"
+              },
+              {
+                "selected": 3,
+                "label": "1/4 = 3/12"
+              },
+              {
+                "selected": 7,
+                "label": "Hiệu = 7/12"
+              }
+            ]
+          }
+        },
+        {
+          "id": "practice",
+          "label": "Luyện có hướng dẫn",
+          "body": "Tính 9/10 − 3/10. Nhập phân số tối giản.\n\nGợi ý theo mức: Hai lượng cùng đo bằng phần mười."
+        },
+        {
+          "id": "apply",
+          "label": "Vận dụng",
+          "body": "Vẽ thanh 12 phần để biểu diễn 5/6 rồi gạch bỏ 1/4. Đếm số phần còn lại và kiểm tra bằng phép cộng."
+        },
+        {
+          "id": "quickcheck",
+          "label": "Tự làm độc lập",
+          "body": "Đóng phần ví dụ và tự giải các câu dưới đây. Đáp án hoặc rubric chỉ dùng để đối chiếu sau khi bạn đã thử. Nội dung đang chờ thẩm định chuyên môn."
+        },
+        {
+          "id": "summary",
+          "label": "Tóm tắt và sửa hiểu nhầm",
+          "body": "Quy đồng nếu cần → trừ tử → giữ mẫu → rút gọn → cộng kiểm tra."
+        },
+        {
+          "id": "next",
+          "label": "Ôn lại và học tiếp",
+          "body": "Sau một khoảng nghỉ, giải thích lại bằng lời của bạn: Trừ các phân số dương trong trường hợp hiệu không âm, giải thích quy đồng và kiểm tra kết quả.\nLưu câu hỏi còn vướng trong ghi chú; lần ôn sau thử câu độc lập trước khi mở lời giải."
+        }
+      ],
+      "workedExample": {
+        "prompt": "Dây dài 7/8 m, cắt đi 1/3 m. Còn bao nhiêu mét?",
+        "answer": "13/24 m",
+        "method": [
+          "Chọn mẫu chung 24: 7/8 = 21/24, 1/3 = 8/24.",
+          "Lấy 21 − 8 = 13, giữ mẫu 24, được 13/24 m.",
+          "Kiểm tra 13/24 + 8/24 = 21/24 = 7/8 m."
+        ]
+      },
+      "commonMistakes": [
+        "Trừ mẫu số.",
+        "Quên đổi tử số khi quy đồng."
+      ],
+      "questions": [
+        {
+          "type": "short",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 1e-9
+          },
+          "prompt": "Tính 9/10 − 3/10. Nhập phân số tối giản.",
+          "answer": "3/5",
+          "explanation": "6/10 = 3/5; mẫu không bị trừ.",
+          "family": "guided",
+          "hints": [
+            "Hai lượng cùng đo bằng phần mười."
+          ],
+          "cognitiveLevel": "thông hiểu",
+          "id": "g4-math-subtract-fractions-q1",
+          "gradeId": "grade-4",
+          "subjectId": "math",
+          "lessonId": "g4-math-subtract-fractions",
+          "skillId": "g4-math-subtract-fractions-outcome",
+          "outcomeId": "g4-math-subtract-fractions-outcome",
+          "familyId": "g4-math-subtract-fractions-guided",
+          "phase": "practice",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "difficulty": 2,
+          "hintSteps": [
+            "Hai lượng cùng đo bằng phần mười."
+          ],
+          "helpLevel": 1
+        },
+        {
+          "type": "short",
+          "prompt": "Tính 5/6 − 1/3.",
+          "answer": "1/2",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 1e-9
+          },
+          "explanation": "1/3 = 2/6, nên hiệu 3/6 = 1/2.",
+          "family": "difference",
+          "id": "g4-math-subtract-fractions-q2",
+          "gradeId": "grade-4",
+          "subjectId": "math",
+          "lessonId": "g4-math-subtract-fractions",
+          "skillId": "g4-math-subtract-fractions-outcome",
+          "outcomeId": "g4-math-subtract-fractions-outcome",
+          "familyId": "g4-math-subtract-fractions-difference",
+          "phase": "check",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "cognitiveLevel": "vận dụng",
+          "difficulty": 2,
+          "hintSteps": [],
+          "helpLevel": 0
+        },
+        {
+          "type": "short",
+          "prompt": "Bình có 3/4 lít, rót 1/6 lít. Còn bao nhiêu lít? Chỉ nhập số.",
+          "answer": "7/12",
+          "grading": {
+            "mode": "numeric",
+            "tolerance": 1e-9
+          },
+          "explanation": "9/12 − 2/12 = 7/12 lít.",
+          "family": "application",
+          "id": "g4-math-subtract-fractions-q3",
+          "gradeId": "grade-4",
+          "subjectId": "math",
+          "lessonId": "g4-math-subtract-fractions",
+          "skillId": "g4-math-subtract-fractions-outcome",
+          "outcomeId": "g4-math-subtract-fractions-outcome",
+          "familyId": "g4-math-subtract-fractions-application",
+          "phase": "check",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "cognitiveLevel": "vận dụng",
+          "difficulty": 2,
+          "hintSteps": [],
+          "helpLevel": 0
+        },
+        {
+          "type": "single",
+          "prompt": "Cách kiểm tra 4/5 − 1/2 = 3/10 là gì?",
+          "options": [
+            "Trừ cả tử và mẫu",
+            "Cộng 3/10 với 1/2 và so với 4/5",
+            "Cộng 4/5 với 1/2"
+          ],
+          "answer": "1",
+          "explanation": "3/10 + 5/10 = 8/10 = 4/5.",
+          "family": "reason",
+          "id": "g4-math-subtract-fractions-q4",
+          "gradeId": "grade-4",
+          "subjectId": "math",
+          "lessonId": "g4-math-subtract-fractions",
+          "skillId": "g4-math-subtract-fractions-outcome",
+          "outcomeId": "g4-math-subtract-fractions-outcome",
+          "familyId": "g4-math-subtract-fractions-reason",
+          "phase": "check",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "cognitiveLevel": "vận dụng",
+          "difficulty": 2,
+          "hintSteps": [],
+          "helpLevel": 0
+        },
+        {
+          "type": "essay",
+          "prompt": "Giải thích vì sao 4/7 − 2/7 không bằng 2/0. Dùng một thanh chia bảy phần.",
+          "explanation": "Bớt số phần đã tô; kích thước một phần bảy không đổi.",
+          "family": "explain",
+          "rubric": [
+            {
+              "criterion": "Xác định đúng toàn thể và điều kiện",
+              "maxScore": 2,
+              "descriptor": "Ghi rõ đại lượng, đơn vị và giả thiết."
+            },
+            {
+              "criterion": "Giải thích từng bước",
+              "maxScore": 2,
+              "descriptor": "Lập luận dựa vào phần bằng nhau hoặc đại lượng giữ nguyên."
+            },
+            {
+              "criterion": "Kiểm tra kết luận",
+              "maxScore": 1,
+              "descriptor": "Thay lại dữ kiện hoặc dùng biểu diễn khác; chấp nhận cách giải hợp lệ."
+            }
+          ],
+          "id": "g4-math-subtract-fractions-q5",
+          "gradeId": "grade-4",
+          "subjectId": "math",
+          "lessonId": "g4-math-subtract-fractions",
+          "skillId": "g4-math-subtract-fractions-outcome",
+          "outcomeId": "g4-math-subtract-fractions-outcome",
+          "familyId": "g4-math-subtract-fractions-explain",
+          "phase": "check",
+          "contentVersion": 1,
+          "contentStatus": "draft",
+          "source": {
+            "sourceUrl": "https://hoang8.com/#/learn/library",
+            "sourceTitle": "HH School — bản biên soạn nguyên bản đang đối chiếu chương trình",
+            "publisher": "HH Platform",
+            "licenseCode": "HH-ORIGINAL",
+            "licenseUrl": "https://hoang8.com/terms.html",
+            "attribution": "Nội dung giải thích, ví dụ và bài tập do hệ thống HH School biên soạn; chưa được người thẩm định chuyên môn phê duyệt.",
+            "retrievedAt": "2026-10-27",
+            "reviewedAt": null,
+            "reviewerId": null,
+            "allowedForCommercialUse": true,
+            "allowedToModify": true,
+            "evidencePath": "docs/education/hh-school-content-sources-2026-10-27.md"
+          },
+          "cognitiveLevel": "vận dụng",
+          "difficulty": 2,
+          "hintSteps": [],
+          "helpLevel": 0
+        }
+      ],
+      "mission": {
+        "id": "g4-math-subtract-fractions-activity",
+        "title": "Thực hành và tự đối chiếu",
+        "prompt": "Vẽ thanh 12 phần để biểu diễn 5/6 rồi gạch bỏ 1/4. Đếm số phần còn lại và kiểm tra bằng phép cộng.",
+        "status": "draft"
+      },
+      "diagram": {
+        "type": "fraction-bars",
+        "denominator": 12,
+        "rows": [
+          {
+            "selected": 10,
+            "label": "5/6 = 10/12"
+          },
+          {
+            "selected": 3,
+            "label": "1/4 = 3/12"
+          },
+          {
+            "selected": 7,
+            "label": "Hiệu = 7/12"
+          }
+        ]
+      },
+      "terms": [],
+      "formulas": [],
+      "rubric": [],
+      "contentVersion": 1,
+      "authoredFile": "data/hh-school/curriculum/authored-bridge-math.json"
+    },
     {
       "gradeId": "grade-4",
       "subjectId": "history-geography",
@@ -2610,7 +3415,9 @@
       "enrichmentOnly": false,
       "language": null,
       "listening": null,
-      "prerequisites": [],
+      "prerequisites": [
+        "g3-math-unit-fraction"
+      ],
       "prerequisiteText": "Đọc số và phép tính đã gặp; nếu chưa chắc, dùng mô hình hoặc học lại bài bù nền tảng cùng môn.",
       "estimatedMinutes": null,
       "durationStatus": "unmeasured-internal-design",
@@ -6102,9 +6909,9 @@
   "coverage": {
     "catalogueSlots": 12,
     "subjectsWithDrafts": 11,
-    "draftLessons": 17,
+    "draftLessons": 19,
     "publishedLessons": 0,
-    "authoredOutcomeCount": 17,
+    "authoredOutcomeCount": 19,
     "officialOutcomeCount": null,
     "complete": false
   }

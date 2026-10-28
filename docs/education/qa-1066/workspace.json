@@ -1,0 +1,733 @@
+{
+  "at": "2026-10-27T09:51:16.319Z",
+  "results": [
+    {
+      "gate": "Published view excludes drafts; explicit preview enables labelled drafts; lazy one-grade load"
+    },
+    {
+      "planning": "Native foundation, advanced and school selectors change the recommended real lesson and explain the choice"
+    },
+    {
+      "gradeSubjectRoutes": 168,
+      "grades": 12,
+      "checks": [
+        {
+          "grade": 1,
+          "id": "vietnamese"
+        },
+        {
+          "grade": 1,
+          "id": "math"
+        },
+        {
+          "grade": 1,
+          "id": "ethics"
+        },
+        {
+          "grade": 1,
+          "id": "nature-society"
+        },
+        {
+          "grade": 1,
+          "id": "physical-education"
+        },
+        {
+          "grade": 1,
+          "id": "music"
+        },
+        {
+          "grade": 1,
+          "id": "art"
+        },
+        {
+          "grade": 1,
+          "id": "experience"
+        },
+        {
+          "grade": 1,
+          "id": "local-education"
+        },
+        {
+          "grade": 1,
+          "id": "foreign-1"
+        },
+        {
+          "grade": 1,
+          "id": "ethnic-language"
+        },
+        {
+          "grade": 2,
+          "id": "vietnamese"
+        },
+        {
+          "grade": 2,
+          "id": "math"
+        },
+        {
+          "grade": 2,
+          "id": "ethics"
+        },
+        {
+          "grade": 2,
+          "id": "nature-society"
+        },
+        {
+          "grade": 2,
+          "id": "physical-education"
+        },
+        {
+          "grade": 2,
+          "id": "music"
+        },
+        {
+          "grade": 2,
+          "id": "art"
+        },
+        {
+          "grade": 2,
+          "id": "experience"
+        },
+        {
+          "grade": 2,
+          "id": "local-education"
+        },
+        {
+          "grade": 2,
+          "id": "foreign-1"
+        },
+        {
+          "grade": 2,
+          "id": "ethnic-language"
+        },
+        {
+          "grade": 3,
+          "id": "vietnamese"
+        },
+        {
+          "grade": 3,
+          "id": "math"
+        },
+        {
+          "grade": 3,
+          "id": "foreign-1"
+        },
+        {
+          "grade": 3,
+          "id": "ethics"
+        },
+        {
+          "grade": 3,
+          "id": "nature-society"
+        },
+        {
+          "grade": 3,
+          "id": "informatics-technology"
+        },
+        {
+          "grade": 3,
+          "id": "physical-education"
+        },
+        {
+          "grade": 3,
+          "id": "music"
+        },
+        {
+          "grade": 3,
+          "id": "art"
+        },
+        {
+          "grade": 3,
+          "id": "experience"
+        },
+        {
+          "grade": 3,
+          "id": "local-education"
+        },
+        {
+          "grade": 4,
+          "id": "vietnamese"
+        },
+        {
+          "grade": 4,
+          "id": "math"
+        },
+        {
+          "grade": 4,
+          "id": "foreign-1"
+        },
+        {
+          "grade": 4,
+          "id": "ethics"
+        },
+        {
+          "grade": 4,
+          "id": "science"
+        },
+        {
+          "grade": 4,
+          "id": "history-geography"
+        },
+        {
+          "grade": 4,
+          "id": "informatics-technology"
+        },
+        {
+          "grade": 4,
+          "id": "physical-education"
+        },
+        {
+          "grade": 4,
+          "id": "music"
+        },
+        {
+          "grade": 4,
+          "id": "art"
+        },
+        {
+          "grade": 4,
+          "id": "experience"
+        },
+        {
+          "grade": 4,
+          "id": "local-education"
+        },
+        {
+          "grade": 5,
+          "id": "vietnamese"
+        },
+        {
+          "grade": 5,
+          "id": "math"
+        },
+        {
+          "grade": 5,
+          "id": "foreign-1"
+        },
+        {
+          "grade": 5,
+          "id": "ethics"
+        },
+        {
+          "grade": 5,
+          "id": "science"
+        },
+        {
+          "grade": 5,
+          "id": "history-geography"
+        },
+        {
+          "grade": 5,
+          "id": "informatics-technology"
+        },
+        {
+          "grade": 5,
+          "id": "physical-education"
+        },
+        {
+          "grade": 5,
+          "id": "music"
+        },
+        {
+          "grade": 5,
+          "id": "art"
+        },
+        {
+          "grade": 5,
+          "id": "experience"
+        },
+        {
+          "grade": 5,
+          "id": "local-education"
+        },
+        {
+          "grade": 6,
+          "id": "literature"
+        },
+        {
+          "grade": 6,
+          "id": "math"
+        },
+        {
+          "grade": 6,
+          "id": "foreign-1"
+        },
+        {
+          "grade": 6,
+          "id": "civic"
+        },
+        {
+          "grade": 6,
+          "id": "history-geography"
+        },
+        {
+          "grade": 6,
+          "id": "natural-science"
+        },
+        {
+          "grade": 6,
+          "id": "technology"
+        },
+        {
+          "grade": 6,
+          "id": "informatics"
+        },
+        {
+          "grade": 6,
+          "id": "physical-education"
+        },
+        {
+          "grade": 6,
+          "id": "music"
+        },
+        {
+          "grade": 6,
+          "id": "art"
+        },
+        {
+          "grade": 6,
+          "id": "experience-career"
+        },
+        {
+          "grade": 6,
+          "id": "local-education"
+        },
+        {
+          "grade": 6,
+          "id": "foreign-2"
+        },
+        {
+          "grade": 6,
+          "id": "ethnic-language"
+        },
+        {
+          "grade": 7,
+          "id": "literature"
+        },
+        {
+          "grade": 7,
+          "id": "math"
+        },
+        {
+          "grade": 7,
+          "id": "foreign-1"
+        },
+        {
+          "grade": 7,
+          "id": "civic"
+        },
+        {
+          "grade": 7,
+          "id": "history-geography"
+        },
+        {
+          "grade": 7,
+          "id": "natural-science"
+        },
+        {
+          "grade": 7,
+          "id": "technology"
+        },
+        {
+          "grade": 7,
+          "id": "informatics"
+        },
+        {
+          "grade": 7,
+          "id": "physical-education"
+        },
+        {
+          "grade": 7,
+          "id": "music"
+        },
+        {
+          "grade": 7,
+          "id": "art"
+        },
+        {
+          "grade": 7,
+          "id": "experience-career"
+        },
+        {
+          "grade": 7,
+          "id": "local-education"
+        },
+        {
+          "grade": 7,
+          "id": "foreign-2"
+        },
+        {
+          "grade": 7,
+          "id": "ethnic-language"
+        },
+        {
+          "grade": 8,
+          "id": "literature"
+        },
+        {
+          "grade": 8,
+          "id": "math"
+        },
+        {
+          "grade": 8,
+          "id": "foreign-1"
+        },
+        {
+          "grade": 8,
+          "id": "civic"
+        },
+        {
+          "grade": 8,
+          "id": "history-geography"
+        },
+        {
+          "grade": 8,
+          "id": "natural-science"
+        },
+        {
+          "grade": 8,
+          "id": "technology"
+        },
+        {
+          "grade": 8,
+          "id": "informatics"
+        },
+        {
+          "grade": 8,
+          "id": "physical-education"
+        },
+        {
+          "grade": 8,
+          "id": "music"
+        },
+        {
+          "grade": 8,
+          "id": "art"
+        },
+        {
+          "grade": 8,
+          "id": "experience-career"
+        },
+        {
+          "grade": 8,
+          "id": "local-education"
+        },
+        {
+          "grade": 8,
+          "id": "foreign-2"
+        },
+        {
+          "grade": 8,
+          "id": "ethnic-language"
+        },
+        {
+          "grade": 9,
+          "id": "literature"
+        },
+        {
+          "grade": 9,
+          "id": "math"
+        },
+        {
+          "grade": 9,
+          "id": "foreign-1"
+        },
+        {
+          "grade": 9,
+          "id": "civic"
+        },
+        {
+          "grade": 9,
+          "id": "history-geography"
+        },
+        {
+          "grade": 9,
+          "id": "natural-science"
+        },
+        {
+          "grade": 9,
+          "id": "technology"
+        },
+        {
+          "grade": 9,
+          "id": "informatics"
+        },
+        {
+          "grade": 9,
+          "id": "physical-education"
+        },
+        {
+          "grade": 9,
+          "id": "music"
+        },
+        {
+          "grade": 9,
+          "id": "art"
+        },
+        {
+          "grade": 9,
+          "id": "experience-career"
+        },
+        {
+          "grade": 9,
+          "id": "local-education"
+        },
+        {
+          "grade": 9,
+          "id": "foreign-2"
+        },
+        {
+          "grade": 9,
+          "id": "ethnic-language"
+        },
+        {
+          "grade": 10,
+          "id": "literature"
+        },
+        {
+          "grade": 10,
+          "id": "math"
+        },
+        {
+          "grade": 10,
+          "id": "foreign-1"
+        },
+        {
+          "grade": 10,
+          "id": "history"
+        },
+        {
+          "grade": 10,
+          "id": "physical-education"
+        },
+        {
+          "grade": 10,
+          "id": "defense-security"
+        },
+        {
+          "grade": 10,
+          "id": "experience-career"
+        },
+        {
+          "grade": 10,
+          "id": "local-education"
+        },
+        {
+          "grade": 10,
+          "id": "geography"
+        },
+        {
+          "grade": 10,
+          "id": "economics-law"
+        },
+        {
+          "grade": 10,
+          "id": "physics"
+        },
+        {
+          "grade": 10,
+          "id": "chemistry"
+        },
+        {
+          "grade": 10,
+          "id": "biology"
+        },
+        {
+          "grade": 10,
+          "id": "technology"
+        },
+        {
+          "grade": 10,
+          "id": "informatics"
+        },
+        {
+          "grade": 10,
+          "id": "music"
+        },
+        {
+          "grade": 10,
+          "id": "art"
+        },
+        {
+          "grade": 11,
+          "id": "literature"
+        },
+        {
+          "grade": 11,
+          "id": "math"
+        },
+        {
+          "grade": 11,
+          "id": "foreign-1"
+        },
+        {
+          "grade": 11,
+          "id": "history"
+        },
+        {
+          "grade": 11,
+          "id": "physical-education"
+        },
+        {
+          "grade": 11,
+          "id": "defense-security"
+        },
+        {
+          "grade": 11,
+          "id": "experience-career"
+        },
+        {
+          "grade": 11,
+          "id": "local-education"
+        },
+        {
+          "grade": 11,
+          "id": "geography"
+        },
+        {
+          "grade": 11,
+          "id": "economics-law"
+        },
+        {
+          "grade": 11,
+          "id": "physics"
+        },
+        {
+          "grade": 11,
+          "id": "chemistry"
+        },
+        {
+          "grade": 11,
+          "id": "biology"
+        },
+        {
+          "grade": 11,
+          "id": "technology"
+        },
+        {
+          "grade": 11,
+          "id": "informatics"
+        },
+        {
+          "grade": 11,
+          "id": "music"
+        },
+        {
+          "grade": 11,
+          "id": "art"
+        },
+        {
+          "grade": 12,
+          "id": "literature"
+        },
+        {
+          "grade": 12,
+          "id": "math"
+        },
+        {
+          "grade": 12,
+          "id": "foreign-1"
+        },
+        {
+          "grade": 12,
+          "id": "history"
+        },
+        {
+          "grade": 12,
+          "id": "physical-education"
+        },
+        {
+          "grade": 12,
+          "id": "defense-security"
+        },
+        {
+          "grade": 12,
+          "id": "experience-career"
+        },
+        {
+          "grade": 12,
+          "id": "local-education"
+        },
+        {
+          "grade": 12,
+          "id": "geography"
+        },
+        {
+          "grade": 12,
+          "id": "economics-law"
+        },
+        {
+          "grade": 12,
+          "id": "physics"
+        },
+        {
+          "grade": 12,
+          "id": "chemistry"
+        },
+        {
+          "grade": 12,
+          "id": "biology"
+        },
+        {
+          "grade": 12,
+          "id": "technology"
+        },
+        {
+          "grade": 12,
+          "id": "informatics"
+        },
+        {
+          "grade": 12,
+          "id": "music"
+        },
+        {
+          "grade": 12,
+          "id": "art"
+        }
+      ]
+    },
+    {
+      "subjectGroups": [
+        {
+          "grade": 2,
+          "subject": "vietnamese"
+        },
+        {
+          "grade": 6,
+          "subject": "foreign-1"
+        },
+        {
+          "grade": 8,
+          "subject": "natural-science"
+        },
+        {
+          "grade": 9,
+          "subject": "history-geography"
+        },
+        {
+          "grade": 11,
+          "subject": "informatics"
+        }
+      ],
+      "scienceLab": "Native pressure inputs compute40N/0.2m²=200Pa with model limits"
+    },
+    {
+      "persistence": "Draft choice, lesson note and bookmark survive native IndexedDB reload"
+    },
+    {
+      "evidence": "Interactive counting records activity; reading Next records finished navigation; neither certifies mastery"
+    },
+    {
+      "practice": "Real form input records a provisional draft attempt without certifying mastery"
+    },
+    {
+      "review": "An actual wrong answer persists as a flashcard; flipping does not certify learning; retry and review recommendation select the affected lesson"
+    },
+    {
+      "assessment": "Frozen mock questions, legal navigation/answer, unchanged deadline after reload, confirmation, final result and per-outcome analysis"
+    },
+    {
+      "responsive": "1440/768/375,DPR2,zoom200 and forced colors"
+    }
+  ],
+  "errors": []
+}

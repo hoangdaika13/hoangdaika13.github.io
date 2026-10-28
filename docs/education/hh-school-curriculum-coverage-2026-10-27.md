@@ -2,7 +2,7 @@
 
 Sinh từ nguồn biên soạn bằng `node scripts/build-hh-school-content.js`. Một dòng cho mỗi cấu hình lớp–môn/hoạt động trong catalog hiện có; không suy ra đây là toàn bộ yêu cầu cần đạt chính thức.
 
-- 219 bản ghi bài nguyên bản đang chờ thẩm định; 146/168 cấu hình có bài biên soạn.
+- 225 bản ghi bài nguyên bản đang chờ thẩm định; 146/168 cấu hình có bài biên soạn.
 - 0 bài đã được người thẩm định phê duyệt; không có phần trăm độ phủ giáo trình chính thức.
 - 153 vị trí phần chương trình đã định vị trong bản lưu văn bản; đây không phải số yêu cầu cần đạt.
 - Các số B/C/N là số bài bù nền tảng/chuẩn/nâng cao nội bộ, không phải số tiết quy định.
@@ -43,7 +43,7 @@ Sinh từ nguồn biên soạn bằng `node scripts/build-hh-school-content.js`.
 | 3 | Hoạt động trải nghiệm | 1 | 3 | 0/1/0 | PDF 1201–1203 | authored-subset |
 | 3 | Nội dung giáo dục địa phương | 0 | 0 | 0/0/0 | Cần nguồn riêng | needs-local-source |
 | 4 | Tiếng Việt | 2 | 8 | 1/1/0 | PDF 87–91 | authored-subset |
-| 4 | Toán | 3 | 12 | 1/1/1 | PDF 200–206 | authored-subset |
+| 4 | Toán | 5 | 21 | 1/3/1 | PDF 200–206 | authored-subset |
 | 4 | Ngoại ngữ 1 | 1 | 4 | 0/1/0 | PDF 1277–1279 | authored-subset |
 | 4 | Đạo đức | 1 | 3 | 0/1/0 | PDF 313–315 | authored-subset |
 | 4 | Khoa học | 2 | 8 | 1/1/0 | PDF 613–620 | authored-subset |
@@ -55,7 +55,7 @@ Sinh từ nguồn biên soạn bằng `node scripts/build-hh-school-content.js`.
 | 4 | Hoạt động trải nghiệm | 1 | 3 | 0/1/0 | PDF 1203–1205 | authored-subset |
 | 4 | Nội dung giáo dục địa phương | 0 | 0 | 0/0/0 | Cần nguồn riêng | needs-local-source |
 | 5 | Tiếng Việt | 2 | 8 | 0/2/0 | PDF 91–96 | authored-subset |
-| 5 | Toán | 3 | 12 | 1/1/1 | PDF 206–212 | authored-subset |
+| 5 | Toán | 5 | 22 | 2/1/2 | PDF 206–212 | authored-subset |
 | 5 | Ngoại ngữ 1 | 1 | 4 | 0/1/0 | PDF 1279–1281 | authored-subset |
 | 5 | Đạo đức | 1 | 3 | 0/1/0 | PDF 315–317 | authored-subset |
 | 5 | Khoa học | 2 | 8 | 1/1/0 | PDF 620–631 | authored-subset |
@@ -67,7 +67,7 @@ Sinh từ nguồn biên soạn bằng `node scripts/build-hh-school-content.js`.
 | 5 | Hoạt động trải nghiệm | 1 | 3 | 0/1/0 | PDF 1205–1207 | authored-subset |
 | 5 | Nội dung giáo dục địa phương | 0 | 0 | 0/0/0 | Cần nguồn riêng | needs-local-source |
 | 6 | Ngữ văn | 2 | 8 | 1/1/0 | PDF 96–101 | authored-subset |
-| 6 | Toán | 3 | 12 | 1/1/1 | PDF 212–221 | authored-subset |
+| 6 | Toán | 4 | 17 | 1/2/1 | PDF 212–221 | authored-subset |
 | 6 | Ngoại ngữ 1 | 1 | 4 | 1/0/0 | PDF 1281–1283 | authored-subset |
 | 6 | Giáo dục công dân | 1 | 3 | 0/1/0 | PDF 317–320 | authored-subset |
 | 6 | Lịch sử và Địa lí | 2 | 8 | 1/1/0 | PDF 418–428 | authored-subset |
@@ -82,7 +82,7 @@ Sinh từ nguồn biên soạn bằng `node scripts/build-hh-school-content.js`.
 | 6 | Ngoại ngữ 2 | 0 | 0 | 0/0/0 | Cần nguồn riêng | optional-language-unconfigured |
 | 6 | Tiếng dân tộc thiểu số | 0 | 0 | 0/0/0 | Cần nguồn riêng | optional-language-unconfigured |
 | 7 | Ngữ văn | 2 | 8 | 1/1/0 | PDF 101–105 | authored-subset |
-| 7 | Toán | 3 | 12 | 1/1/1 | PDF 221–229 | authored-subset |
+| 7 | Toán | 4 | 17 | 1/2/1 | PDF 221–229 | authored-subset |
 | 7 | Ngoại ngữ 1 | 1 | 4 | 0/1/0 | PDF 1283–1285 | authored-subset |
 | 7 | Giáo dục công dân | 1 | 3 | 0/1/0 | PDF 320–323 | authored-subset |
 | 7 | Lịch sử và Địa lí | 2 | 8 | 0/2/0 | PDF 428–438 | authored-subset |

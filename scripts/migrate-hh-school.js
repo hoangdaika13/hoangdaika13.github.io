@@ -30,6 +30,8 @@ const definitions = [
   ["education_licenses", { licenseCode: 1, version: 1 }, { unique: true }],
   ["education_ai_sessions", { ownerId: 1, learnerProfileId: 1, createdAt: -1 }],
   ["education_audit_logs", { actorId: 1, createdAt: -1 }],
+  ["education_progress_transfers", { ownerId: 1, learnerProfileId: 1, status: 1 }],
+  ["education_progress_parts", { ownerId: 1, learnerProfileId: 1, transferId: 1, index: 1 }, { unique: true }],
   ["education_progress", { ownerId: 1, learnerProfileId: 1 }, { unique: true }]
 ];
 const sameKeys = (left, right) => JSON.stringify(Object.entries(left || {})) === JSON.stringify(Object.entries(right || {}));
