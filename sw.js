@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1072";
+const CACHE = "hh-identity-portal-v1073";
+// Previous release: hh-identity-portal-v1072.
 // Previous release: hh-identity-portal-v1071.
 // Previous release: hh-identity-portal-v1070.
 // Previous release: hh-identity-portal-v1069.
@@ -828,13 +829,16 @@ const RUNTIME_ASSETS = [
   "./hh-school-search-worker.js?v=3",
   "./hh-school-code-worker.js?v=2",
   "./hh-school.js?v=11",
-  "./hh-mathcore-ai.css?v=1",
-  "./hh-mathcore-core.js?v=1",
-  "./hh-mathcore-content.js?v=1",
+  "./hh-mathcore-ai.css?v=2",
+  "./hh-mathcore-core.js?v=2",
+  "./hh-mathcore-engine.js?v=1",
+  "./hh-mathcore-practice.js?v=1",
+  "./hh-mathcore-image.js?v=1",
+  "./hh-mathcore-content.js?v=2",
   "./hh-mathcore-graphics.js?v=1",
   "./hh-mathcore-ocr.js?v=1",
   "./vendor/tesseract-core-simd-lstm.wasm.js",
-  "./hh-mathcore-ai.js?v=1",
+  "./hh-mathcore-ai.js?v=2",
   "./hh-vietnam-law.css?v=2",
   "./hh-vietnam-law-core.js?v=2",
   "./hh-vietnam-law-manifest.js?v=2",
@@ -947,7 +951,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=733",
+  "./performance-loader.js?v=734",
   "./auth-platform.js?v=22",
   "./auth-neon-gateway.js?v=35",
   "./script.js?v=300"

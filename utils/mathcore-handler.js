@@ -4,6 +4,7 @@ const P=require('./platform');
 const {parseOpenAIKeys,runOpenAIResponse}=require('./openai-provider');
 const C=require('../hh-mathcore-core');
 const D=require('../hh-mathcore-content');
+const E=require('../hh-mathcore-engine');
 const MAX_IMAGE_BYTES=1600000;
 const field={type:'string'},strings={type:'array',items:field};
 const object=properties=>({type:'object',additionalProperties:false,properties,required:Object.keys(properties)});
@@ -46,7 +47,7 @@ function createHandler(deps={}){
   const getDb=deps.getDb||P.database,getUser=deps.getUser||P.currentUser,run=deps.generate||generate,keys=deps.keys||(()=>parseOpenAIKeys()),rateLimit=deps.rateLimit||P.enforceRateLimit;
   return async(req,res)=>{P.setCors(req,res);res.setHeader('Cache-Control','no-store');if(req.method==='OPTIONS')return res.status(204).end();try{
     P.assertTrustedMutation(req);const resource=String(req.query?.mathResource||'status');
-    if(req.method==='GET'&&resource==='status')return res.status(200).json({ok:true,configured:keys().length>0,requiresLogin:true,photo:{maxBytes:MAX_IMAGE_BYTES,maxDimension:2400,savedOnServer:false},local:{topics:D.topics.length,practiceTopics:D.practiceTopics.length,algebraDegree:2},provider:'openai'});
+    if(req.method==='GET'&&resource==='status')return res.status(200).json({ok:true,configured:keys().length>0,requiresLogin:true,photo:{maxBytes:MAX_IMAGE_BYTES,maxDimension:2400,savedOnServer:false},local:{topics:D.topics.length,practiceTopics:D.practiceTopics.length,algebraDegree:2,...E.capabilities},provider:'openai'});
     if(req.method!=='POST')reject(405,'Phương thức chưa hỗ trợ.','METHOD_NOT_ALLOWED');if(!['tutor','photo'].includes(resource))reject(404,'Chức năng MATHCORE không tồn tại.','NOT_FOUND');
     const user=await getUser(req);if(!user?._id)reject(401,'Đăng nhập để dùng trợ giảng AI và sửa bài qua ảnh.','AUTH_REQUIRED');
     const body=P.bodyOf(req,{maxBodyBytes:2400000}),apiKey=keys()[0];if(!apiKey)reject(503,'Trợ giảng AI chưa được cấu hình trên máy chủ. Em vẫn có thể học, luyện tập và dùng đồ thị ngay.','MATHCORE_NOT_CONFIGURED');

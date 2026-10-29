@@ -35,7 +35,7 @@
     ['optimization','Bài toán tối ưu','Giải tích','THPT → Đại học','Chuyển tình huống thành hàm mục tiêu, nêu miền khả thi và kiểm tra cả biên.', ["Điểm trong miền có cực trị và có đạo hàm: f′(x) = 0","So sánh f tại điểm tới hạn và biên của đoạn đóng."],'Nghiệm f′ = 0 chỉ là ứng viên. Cần kiểm tra điều kiện và giá trị tại biên.','Hình chữ nhật chu vi 20. Kích thước nào có diện tích lớn nhất?',['Đặt một cạnh là x. Cạnh kia là 10 − x và x thuộc khoảng nào?'],[['Lập hàm','S(x) = x(10 − x), 0 < x < 10'],['Tìm ứng viên',"S′(x) = 10 − 2x = 0 ⇒ x = 5"],['Kết luận từ parabol quay xuống','Hai cạnh bằng 5; S lớn nhất = 25']],'Hình vuông cạnh 5, diện tích 25.','Không kết luận cực đại chỉ vì đạo hàm bằng 0.','Có thể dùng (x − 5)² ≥ 0 để chứng minh không cần đạo hàm không?']
   ];
   const topics=rows.map(([id,title,domain,stage,summary,formulas,conditions,problem,hints,steps,answer,mistake,reflect])=>({id,title,domain,stage,summary,formulas,conditions,problem,hints,steps:steps.map(([title,formula])=>({title,formula,text:''})),answer,mistake,reflect,source:domain==='Giải tích'?'calculus':domain==='Xác suất'?'statistics':'algebra'}));
-  const practiceTopics=['linear','fractions','powers','quadratic','trigonometry','derivative','integral','geometry','probability','statistics'];
+  const practiceTopics=['linear','systems','inequality','quadratic','fractions','powers','logarithm','sequences','trigonometry','derivative','integral','geometry','probability','statistics'];
   const manuals={
     'fx-580VN X':{pdf:'https://www.casio.com/content/dam/casio/global/support/manuals/calculators/pdf/004-vi/f/fx-580VNX_VI.pdf'},
     'fx-880BTG':{pdf:'https://www.casio.com/content/dam/casio/global/support/manuals/calculators/pdf/004-vi/f/fx-880BTG_VI.pdf'}

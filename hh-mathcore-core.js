@@ -1,19 +1,20 @@
 /* MATHCORE AI: bounded arithmetic, guided algebra and account-scoped learning state. */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.HHMathCore=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
-  const VERSION=1, MAX_INPUT=500;
+  const VERSION=2, MAX_INPUT=500;
   const fold=value=>String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase();
   const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const fmt=n=>!Number.isFinite(n)?'không xác định':Math.abs(n)<1e-12?'0':Number(n.toPrecision(11)).toString();
   const fail=message=>{throw new Error(message);};
   const normalize=value=>String(value??'').trim().replace(/[−–]/g,'-').replace(/[×·]/g,'*').replace(/÷/g,'/').replace(/π/g,'pi').replace(/²/g,'^2').replace(/³/g,'^3').replace(/√\(/g,'sqrt(');
   const FUNCTIONS=new Set(['sin','cos','tan','sqrt','abs','ln','log','exp']);
-  function parse(value){
+  function parse(value,options={}){
+    const variables=options.variables?.includes('y')?['x','y']:['x'];
     const text=normalize(value);if(!text||text.length>MAX_INPUT)fail('Biểu thức cần từ 1 đến 500 ký tự.');
     const tokens=[];let offset=0;
     while(offset<text.length){const part=text.slice(offset);if(/^\s/.test(part)){offset++;continue;}const m=part.match(/^(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?|^[a-z]+|^[+\-*/^()]/i);if(!m)fail('Ký hiệu chưa hỗ trợ. Dùng dấu chấm cho số thập phân, * để nhân và ^ để lũy thừa.');tokens.push(m[0].toLowerCase());offset+=m[0].length;if(tokens.length>180)fail('Biểu thức quá dài.');}
     // Explicit implicit multiplication: 2x, 2(x+1), (x+1)(x-1), 2pi.
-    const expanded=[];const atomEnd=t=>/^(?:\d|\.)/.test(t)||['x','pi','e',')'].includes(t);const atomStart=t=>/^(?:\d|\.)/.test(t)||['x','pi','e','('].includes(t)||FUNCTIONS.has(t);
+    const expanded=[];const atomEnd=t=>/^(?:\d|\.)/.test(t)||[...variables,'pi','e',')'].includes(t);const atomStart=t=>/^(?:\d|\.)/.test(t)||[...variables,'pi','e','('].includes(t)||FUNCTIONS.has(t);
     for(const t of tokens){const prev=expanded.at(-1);if(prev&&atomEnd(prev)&&atomStart(t))expanded.push('*');expanded.push(t);}
     let i=0,depth=0,nodes=0;
     const node=(op,...args)=>{if(++nodes>240)fail('Biểu thức quá phức tạp.');return {op,args};};
@@ -21,7 +22,7 @@
       if(t==='+'||t==='-')left=node(t==='-'?'neg':'pos',expression(25));
       else if(t==='('){left=expression();if(expanded[i++]!==')')fail('Thiếu dấu đóng ngoặc.');}
       else if(FUNCTIONS.has(t)){if(expanded[i++]!=='(')fail('Hàm cần ngoặc, ví dụ sin(x).');left=node(t,expression());if(expanded[i++]!==')')fail('Thiếu dấu đóng ngoặc của hàm.');}
-      else if(['x','pi','e'].includes(t))left=node(t);
+      else if([...variables,'pi','e'].includes(t))left=node(t);
       else if(t&&Number.isFinite(Number(t)))left=node('number',Number(t));
       else fail('Thiếu số, biến x hoặc hàm hợp lệ.');
       while(i<expanded.length){const op=expanded[i],priority={'+':10,'-':10,'*':20,'/':20,'^':30}[op];if(priority===undefined||priority<min)break;i++;left=node(op,left,expression(op==='^'?priority:priority+1));}
@@ -30,13 +31,13 @@
     const ast=expression();if(i!==expanded.length)fail('Biểu thức chưa đúng cú pháp.');return ast;
   }
   function evaluate(ast,x=0,unit='rad'){
-    function run(n){const a=n.args;if(n.op==='number')return a[0];if(n.op==='x')return Number(x);if(n.op==='pi')return Math.PI;if(n.op==='e')return Math.E;const u=run(a[0]),v=a[1]?run(a[1]):0;
+    function run(n){const a=n.args;if(n.op==='number')return a[0];if(n.op==='x'||n.op==='y')return Number(typeof x==='object'?x[n.op]:n.op==='x'?x:NaN);if(n.op==='pi')return Math.PI;if(n.op==='e')return Math.E;const u=run(a[0]),v=a[1]?run(a[1]):0;
       switch(n.op){case 'neg':return -u;case 'pos':return u;case '+':return u+v;case '-':return u-v;case '*':return u*v;case '/':return v===0?NaN:u/v;case '^':return Math.abs(v)>1000||u===0&&v===0?NaN:Math.pow(u,v);case 'sin':return Math.sin(unit==='deg'?u*Math.PI/180:u);case 'cos':return Math.cos(unit==='deg'?u*Math.PI/180:u);case 'tan':{const angle=unit==='deg'?u*Math.PI/180:u;return Math.abs(Math.cos(angle))<1e-12?NaN:Math.tan(angle);}case 'sqrt':return Math.sqrt(u);case 'abs':return Math.abs(u);case 'ln':return Math.log(u);case 'log':return Math.log10(u);case 'exp':return Math.exp(u);default:return NaN;}}
     const n=run(ast);return Number.isFinite(n)&&Math.abs(n)<1e100?n:NaN;
   }
   const calculator=(text,unit)=>{const ast=parse(text);if(hasVariable(ast))fail('Máy tính số không nhận biến x. Dùng khu Đồ thị để tính theo x.');const n=evaluate(ast,0,unit);if(!Number.isFinite(n))fail('Biểu thức nằm ngoài miền xác định hoặc vượt giới hạn tính toán.');return n;};
   function derivativeAt(ast,x){const dx=1e-5*Math.max(1,Math.abs(x)),center=evaluate(ast,x),left=(center-evaluate(ast,x-dx))/dx,right=(evaluate(ast,x+dx)-center)/dx;if(![center,left,right].every(Number.isFinite)||Math.abs(left-right)>.02*Math.max(1,Math.abs(left),Math.abs(right)))return NaN;return (left+right)/2;}
-  const hasVariable=ast=>ast.op==='x'||ast.args.some(a=>a&&typeof a==='object'&&hasVariable(a));
+  const hasVariable=ast=>ast.op==='x'||ast.op==='y'||ast.args.some(a=>a&&typeof a==='object'&&hasVariable(a));
   const cleanPoly=p=>{if(p.some(n=>n!==0&&Math.abs(n)<1e-12))fail('Hệ số quá nhỏ để đối chiếu tin cậy bằng bộ giải cục bộ. Hãy đổi đơn vị hoặc dùng cách giải ký hiệu.');if(!p.every(Number.isFinite)||p.some(n=>Math.abs(n)>1e9))fail('Hệ số vượt giới hạn tính toán.');return p.map(n=>Math.abs(n)<1e-12?0:n);};
   function polynomial(ast){const a=ast.args;if(ast.op==='number')return cleanPoly([a[0],0,0]);if(ast.op==='x')return [0,1,0];if(ast.op==='pi'||ast.op==='e')return [evaluate(ast),0,0];
     if(ast.op==='neg'||ast.op==='pos')return polynomial(a[0]).map(n=>ast.op==='neg'?-n:n);
@@ -63,35 +64,22 @@
   function checkLines(problem,attempt){const original=solveEquation(problem),rows=String(attempt||'').split(/\r?\n/).map(t=>t.trim()).filter(Boolean).slice(0,30),parts=normalize(problem).split('='),p=polynomial(parse(parts[0])).map((v,i)=>v-polynomial(parse(parts[1]))[i]);
     return rows.map((text,index)=>{try{let eq=normalize(text).replace(/^(?:[⇒⇔]|=>|<=>)\s*/,'');const sides=eq.split('=');if(sides.length!==2)throw Error();const q=polynomial(parse(sides[0])).map((v,i)=>v-polynomial(parse(sides[1]))[i]);const pivot=p.findIndex(v=>Math.abs(v)>1e-10);if(pivot<0)return {line:index+1,text,status:q.every(v=>v===0)?'equivalent':'review',note:'Kiểm tra đẳng thức sau khi thu gọn.'};const scale=q[pivot]/p[pivot],same=Math.abs(scale)>1e-12&&q.every((v,i)=>Math.abs(v-p[i]*scale)<=1e-8*Math.max(1,Math.abs(v),Math.abs(p[i]*scale)));return {line:index+1,text,status:same?'equivalent':'review',note:same?'Phương trình này có vế trái thu gọn là một bội khác 0 của phương trình gốc.':'Phương trình này không còn cùng dạng tương đương đã kiểm tra. Xem lại chuyển vế, dấu hoặc hệ số.'};}catch{return {line:index+1,text,status:'unread',note:'Chưa kiểm tra được dòng này. Mỗi dòng cần là một phương trình đa thức, ví dụ 2x = 8.'};}}).map(row=>({...row,scope:'Đối chiếu các phương trình đa thức tỉ lệ; không kiểm chứng mọi cách lập luận.'}));
   }
-  const random=seed=>{let n=Number(seed)>>>0;return()=>{n=(1664525*n+1013904223)>>>0;return n/4294967296;};};
-  const gcd=(a,b)=>b?gcd(b,a%b):Math.abs(a);
-  function practice(topic='linear',difficulty='basic',count=5,seed=Date.now()){
-    const r=random(seed),int=(a,b)=>Math.floor(r()*(b-a+1))+a,limit=difficulty==='advanced'?20:difficulty==='standard'?12:6,result=[];
-    for(let i=0;i<Math.max(1,Math.min(20,Number(count)||5));i++){
-      let text,answer,explanation,unit='',wrong=[];const a=int(2,limit),b=int(1,limit),c=int(1,limit);
-      switch(topic){
-        case 'fractions':{const d=int(2,limit),n=a*d+c*b,k=gcd(n,b*d);text=fmt(a)+'/'+fmt(b)+' + '+fmt(c)+'/'+fmt(d)+' bằng bao nhiêu?';answer=fmt(n/k)+'/'+fmt(b*d/k);explanation='Quy đồng: ('+a+' × '+d+' + '+c+' × '+b+')/('+b+' × '+d+'), rồi rút gọn.';wrong=[fmt(a+c)+'/'+fmt(b+d),fmt(n+1)+'/'+fmt(b*d),fmt(n)+'/'+fmt(b*d+1)];break;}
-        case 'quadratic':{const p=a,q=b+limit+1;text='Tổng hai nghiệm của x² − '+(p+q)+'x + '+(p*q)+' = 0 là?';answer=p+q;explanation='Theo Viète, tổng hai nghiệm là −b/a = '+(p+q)+'.';wrong=[p*q,p+q+2,-p-q];break;}
-        case 'derivative':text='Đạo hàm của f(x) = '+a+'x³ + '+b+'x tại x = '+c+' là?';answer=3*a*c*c+b;explanation="f′(x) = "+(3*a)+'x² + '+b+". Thế x = "+c+'.';break;
-        case 'integral':text='Tính ∫₀¹ ('+(2*a)+'x + '+b+') dx.';answer=a+b;explanation='Nguyên hàm là '+a+'x² + '+b+'x. Lấy giá trị tại 1 trừ tại 0.';break;
-        case 'probability':{const total=a+b,n=gcd(a,total);text='Hộp có '+a+' bi xanh và '+b+' bi đỏ. Chọn ngẫu nhiên một bi. Xác suất chọn bi xanh?';answer=(a/n)+'/'+(total/n);explanation='Các viên bi có khả năng được chọn như nhau: P = số bi xanh / tổng số bi.';wrong=[(a+1)+'/'+(total+1),(a+total)+'/'+total,'0'];break;}
-        case 'statistics':text='Trung bình cộng của '+a+', '+(a+b)+', '+(a+2*b)+' là?';answer=a+b;explanation='Cộng ba giá trị rồi chia cho 3; các số cách đều nên trung bình là số giữa.';break;
-        case 'geometry':text='Hình hộp chữ nhật có ba kích thước '+a+', '+b+', '+c+'. Thể tích bằng bao nhiêu?';answer=a*b*c;explanation='V = dài × rộng × cao = '+a+' × '+b+' × '+c+'.';unit='đơn vị³';break;
-        case 'powers':text='Giá trị của '+a+'² − '+b+'² là?';answer=a*a-b*b;explanation='Áp dụng a² − b² = (a − b)(a + b).';break;
-        case 'trigonometry':text='Tam giác vuông có hai cạnh góc vuông '+(3*a)+' và '+(4*a)+'. Độ dài cạnh huyền là?';answer=5*a;explanation='Theo Pythagore: c = √(a² + b²). Bộ 3–4–5 nhân với '+a+'.';break;
-        default:text='Giải phương trình '+a+'x + '+b+' = '+(a*c+b)+'. Giá trị của x là?';answer=c;explanation='Trừ '+b+' ở cả hai vế rồi chia cho '+a+'.';
-      }
-      const correct=String(answer);if(!wrong.length){const n=Number(answer);wrong=[n+1,n+a,n===0?-1:-n].map(String);}
-      const unique=[correct,...wrong.map(String)].filter((v,j,arr)=>arr.indexOf(v)===j);while(unique.length<4)unique.push(String(int(30,900)));
-      const options=unique.slice(0,4).map((value,j)=>({value,key:r(),j})).sort((x,y)=>x.key-y.key).map(x=>x.value);
-      result.push({id:'mc-'+(Number(seed)>>>0)+'-'+i,topic,difficulty,text,options,correct:options.indexOf(correct),explanation,unit});
-    }return result;
-  }
+  function practice(...args){const library=typeof module==='object'&&module.exports?require('./hh-mathcore-practice'):globalThis.HHMathCorePractice;if(!library)fail('Bộ luyện tập chưa tải xong.');return library.generate(...args);}
   function dimensions(input={}){const value=(name,fallback)=>{const n=Number(input[name]??fallback);return Number.isFinite(n)?Math.max(.5,Math.min(10,n)):fallback;};return {w:value('w',4),d:value('d',3),h:value('h',5),r:value('r',2)};}
   function solidMeasure(shape,input){const {w,d,h,r}=dimensions(input);if(shape==='pyramid')return {volume:w*d*h/3,formula:'V = Sđáy × h / 3',area:null};if(shape==='cylinder')return {volume:Math.PI*r*r*h,area:2*Math.PI*r*(r+h),formula:'V = πr²h'};if(shape==='cone')return {volume:Math.PI*r*r*h/3,area:Math.PI*r*(r+Math.hypot(r,h)),formula:'V = πr²h / 3'};if(shape==='sphere')return {volume:4*Math.PI*r*r*r/3,area:4*Math.PI*r*r,formula:'V = 4πr³ / 3'};return {volume:w*d*h,area:2*(w*d+w*h+d*h),formula:'V = dài × rộng × cao'};}
   const preferenceKey=user=>'hh.mathcore.v1:'+encodeURIComponent(String(user?.id||user?._id||'guest'));
-  const defaults=()=>({version:VERSION,topic:'linear',saved:[],attempts:[],notes:'',draft:{problem:'',attempt:''},casioModel:'fx-580VN X'});
-  function preferences(raw){if(raw===null||raw===undefined)return defaults();if(typeof raw!=='object'||Array.isArray(raw)||raw.version!==VERSION||!Array.isArray(raw.saved)||!Array.isArray(raw.attempts)||typeof raw.notes!=='string')fail('Dữ liệu MATHCORE trên thiết bị chưa đọc được. Hãy tải bản sao trước khi đặt lại.');return {...defaults(),topic:typeof raw.topic==='string'?raw.topic.slice(0,50):'linear',casioModel:['fx-580VN X','fx-880BTG'].includes(raw.casioModel)?raw.casioModel:'fx-580VN X',saved:raw.saved.filter(x=>x&&typeof x==='object'&&typeof x.problem==='string'&&typeof x.answer==='string').slice(0,100).map(x=>({problem:x.problem.slice(0,500),answer:x.answer.slice(0,3000),at:String(x.at||'').slice(0,40),provider:x.provider==='openai'?'openai':'local'})),attempts:raw.attempts.filter(x=>x&&typeof x==='object'&&typeof x.id==='string').slice(-500).map(x=>({id:x.id.slice(0,100),topic:String(x.topic||'').slice(0,40),correct:x.correct===true,at:String(x.at||'').slice(0,40)})),notes:raw.notes.slice(0,30000),draft:{problem:typeof raw.draft?.problem==='string'?raw.draft.problem.slice(0,5000):'',attempt:typeof raw.draft?.attempt==='string'?raw.draft.attempt.slice(0,8000):''}};}
+  const defaults=()=>({version:VERSION,topic:'linear',saved:[],attempts:[],mistakes:[],quiz:null,notes:'',draft:{problem:'',attempt:'',kind:'auto',lower:'0',upper:'1'},casioModel:'fx-580VN X'});
+  const clipped=(value,max)=>typeof value==='string'?value.slice(0,max):'';
+  const fingerprint=value=>{let hash=2166136261;for(const c of String(value)){hash^=c.charCodeAt(0);hash=Math.imul(hash,16777619);}return (hash>>>0).toString(16);};
+  const lessonIdentity=row=>JSON.stringify([row.kind||'equation',String(row.problem||''),row.bounds?.lower??null,row.bounds?.upper??null]);
+  function storedLesson(row){const problem=clipped(row.problem,2000),answer=clipped(row.answer,3000);return {rawProblem:clipped(row.rawProblem,2000)||problem,id:clipped(row.id,100)||'legacy-'+fingerprint(problem)+'-'+fingerprint(answer),problem,answer,at:clipped(row.at,40),provider:row.provider==='openai'?'openai':'local',kind:clipped(row.kind,40)||'equation',title:clipped(row.title,200),topic:clipped(row.topic,40),bounds:row.bounds&&[row.bounds.lower,row.bounds.upper].every(Number.isFinite)?{lower:row.bounds.lower,upper:row.bounds.upper}:null,hints:Array.isArray(row.hints)?row.hints.slice(0,8).map(x=>clipped(x,1800)):[],conditions:Array.isArray(row.conditions)?row.conditions.slice(0,8).map(x=>clipped(x,1800)):[],steps:Array.isArray(row.steps)?row.steps.slice(0,12).map(s=>({title:clipped(s?.title,200),text:clipped(s?.text,3000),formula:clipped(s?.formula,800)})):[],alternative:clipped(row.alternative,3000)};}
+  function question(value){if(!value||typeof value!=='object'||typeof value.id!=='string'||typeof value.text!=='string'||!Array.isArray(value.options)||value.options.length!==4||value.options.some(x=>typeof x!=='string')||!Number.isInteger(value.correct)||value.correct<0||value.correct>3)fail('Bộ luyện đã lưu chưa đúng định dạng. Hãy tải bản gốc trước khi đặt lại.');return {id:clipped(value.id,100),text:clipped(value.text,1500),topic:clipped(value.topic,40),difficulty:clipped(value.difficulty,30),options:value.options.map(x=>clipped(x,100)),correct:value.correct,explanation:clipped(value.explanation,3000),unit:clipped(value.unit,40),skill:clipped(value.skill,160)};}
+  function storedQuiz(value){if(value===undefined||value===null)return null;if(value.version!==1||typeof value.id!=='string'||!Array.isArray(value.questions)||value.questions.length<1||value.questions.length>20||!value.answers||typeof value.answers!=='object'||Array.isArray(value.answers))fail('Phiên luyện đã lưu cần khôi phục; ứng dụng sẽ giữ nguyên bản gốc.');const questions=value.questions.map(question),answers={};for(const q of questions){const answer=value.answers[q.id];if(Number.isInteger(answer)&&answer>=0&&answer<4)answers[q.id]=answer;}if(value.submitted===true&&Object.keys(answers).length!==questions.length)fail('Phiên luyện đã nộp bị thiếu đáp án.');return {version:1,id:clipped(value.id,100),questions,answers,index:Math.max(0,Math.min(questions.length-1,Math.floor(Number(value.index)||0))),submitted:value.submitted===true,review:value.review===true,createdAt:clipped(value.createdAt,40),updatedAt:clipped(value.updatedAt,40)};}
+  function preferences(raw){
+    if(raw===null||raw===undefined)return defaults();if(typeof raw!=='object'||Array.isArray(raw)||![1,VERSION].includes(raw.version)||!Array.isArray(raw.saved)||!Array.isArray(raw.attempts)||typeof raw.notes!=='string'||raw.mistakes!==undefined&&!Array.isArray(raw.mistakes))fail('Dữ liệu MATHCORE trên thiết bị chưa đọc được. Hãy tải bản sao trước khi đặt lại.');
+    const mistakes=(raw.mistakes||[]).slice(-120).map(row=>({...question(row),selected:Number.isInteger(row.selected)&&row.selected>=0&&row.selected<4?row.selected:null,at:clipped(row.at,40),resolved:row.resolved===true}));
+    return {...defaults(),topic:clipped(raw.topic,50)||'linear',casioModel:['fx-580VN X','fx-880BTG'].includes(raw.casioModel)?raw.casioModel:'fx-580VN X',saved:raw.saved.filter(x=>x&&typeof x==='object'&&typeof x.problem==='string'&&typeof x.answer==='string').slice(0,100).map(storedLesson),attempts:raw.attempts.filter(x=>x&&typeof x==='object'&&typeof x.id==='string').slice(-500).map(x=>({id:clipped(x.id,100),topic:clipped(x.topic,40),correct:x.correct===true,at:clipped(x.at,40)})),mistakes,quiz:storedQuiz(raw.quiz),notes:raw.notes.slice(0,30000),draft:{problem:clipped(raw.draft?.problem,5000),attempt:clipped(raw.draft?.attempt,8000),kind:['auto','equation','system','inequality','derivative','integral'].includes(raw.draft?.kind)?raw.draft.kind:'auto',lower:clipped(raw.draft?.lower,30)||'0',upper:clipped(raw.draft?.upper,30)||'1'}};
+  }
   function imageBox(value){if(value===null||value===undefined)return null;const {x,y,w,h}=value;if(![x,y,w,h].every(Number.isFinite)||x<0||y<0||w<=0||h<=0||x+w>1.001||y+h>1.001)fail('Vị trí đánh dấu ảnh không hợp lệ.');return {x,y,w,h};}
-  return Object.freeze({VERSION,fold,escape,fmt,normalize,parse,evaluate,calculator,derivativeAt,polynomial,polyText,solveEquation,checkLines,practice,dimensions,solidMeasure,preferenceKey,defaults,preferences,imageBox});
+  return Object.freeze({VERSION,fold,escape,fmt,normalize,parse,evaluate,calculator,derivativeAt,polynomial,polyText,solveEquation,checkLines,practice,dimensions,solidMeasure,preferenceKey,defaults,preferences,storedLesson,storedQuiz,question,lessonIdentity,imageBox});
 });

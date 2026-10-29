@@ -90,7 +90,7 @@ test('provider instruction and payload use existing Responses API with images an
 });
 test('route integration includes sidebar category, command search, lazy assets and module dispatch',()=>{
  const root=path.resolve(__dirname,'..'),read=f=>fs.readFileSync(path.join(root,f),'utf8'),client=read('script.js'),loader=read('performance-loader.js'),worker=read('sw.js');assert.match(client,/groupIds: \["learn", "mathcore"/);assert.match(client,/HHMathCoreAI\.mount/);assert.match(client,/HHMathCoreAI\?\.unmount/);assert.match(client,/sidebarSearchAliases\.mathcore/);assert.match(client,/item\.id === "mathcore"/);
- for(const asset of ['hh-mathcore-core.js','hh-mathcore-content.js','hh-mathcore-graphics.js','hh-mathcore-ai.js','hh-mathcore-ai.css']){assert.ok(loader.includes(asset+'?v=1'));assert.ok(worker.includes('./'+asset+'?v=1'));}
+ for(const asset of ['hh-mathcore-core.js','hh-mathcore-content.js','hh-mathcore-graphics.js','hh-mathcore-ai.js','hh-mathcore-ai.css']){const version=asset==='hh-mathcore-graphics.js'?1:2;assert.ok(loader.includes(asset+'?v='+version));assert.ok(worker.includes('./'+asset+'?v='+version));}
  assert.match(read('api/modules/[moduleId]/actions.js'),/moduleId === "mathcore"/);assert.ok(JSON.parse(read('vercel.json')).rewrites.some(r=>r.source==='/api/mathcore/:resource'));
  assert.equal(require('../hh-core-gateway').isCoreRoute('/mathcore/lab'),true);
 });

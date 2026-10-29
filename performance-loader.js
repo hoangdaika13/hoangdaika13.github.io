@@ -254,8 +254,8 @@
       ]
     },
     "mathcore": {
-      styles: ["hh-mathcore-ai.css?v=1"],
-      scripts: ["hh-mathcore-core.js?v=1", "hh-mathcore-content.js?v=1", "hh-mathcore-graphics.js?v=1", "hh-mathcore-ocr.js?v=1", "hh-mathcore-ai.js?v=1"]
+      styles: ["hh-mathcore-ai.css?v=2"],
+      scripts: ["hh-mathcore-core.js?v=2", "hh-mathcore-engine.js?v=1", "hh-mathcore-practice.js?v=1", "hh-mathcore-image.js?v=1", "hh-mathcore-content.js?v=2", "hh-mathcore-graphics.js?v=1", "hh-mathcore-ocr.js?v=1", "hh-mathcore-ai.js?v=2"]
     },
     "vietnam-law": {
       styles: ["hh-vietnam-law.css?v=2"],
