@@ -1,0 +1,95 @@
+{
+  "at": "2026-10-29T09:54:44.519Z",
+  "sha": "1890ad6266892ac1f88c62763ac414ae45eb7584",
+  "commitStatus": "success",
+  "statuses": [
+    {
+      "context": "Vercel – hoangdaika13-github-io",
+      "state": "success",
+      "description": "Deployment has completed",
+      "url": "https://vercel.com/nhhoang130803-5077s-projects/hoangdaika13-github-io/XcxCGfrjVwjTkbg7QqNmkredyCV6"
+    },
+    {
+      "context": "Vercel – hoangdaika13.github.io",
+      "state": "success",
+      "description": "Deployment has completed",
+      "url": "https://vercel.com/dungnguyen29082000-7228s-projects/hoangdaika13.github.io/7y4rrd1H4QqhcTFjLsyuTCadPvYu"
+    }
+  ],
+  "actions": [
+    {
+      "name": "Security gates",
+      "status": "in_progress",
+      "conclusion": null,
+      "url": "https://github.com/hoangdaika13/hoangdaika13.github.io/actions/runs/40853063874",
+      "jobs": [
+        {
+          "name": "application-security",
+          "conclusion": "failure",
+          "steps": [
+            "Audit production dependency graph"
+          ]
+        },
+        {
+          "name": "codeql",
+          "conclusion": null,
+          "steps": []
+        },
+        {
+          "name": "dependency-review",
+          "conclusion": "skipped",
+          "steps": []
+        }
+      ]
+    },
+    {
+      "name": "pages build and deployment",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/hoangdaika13/hoangdaika13.github.io/actions/runs/40853065282",
+      "jobs": [
+        {
+          "name": "build",
+          "conclusion": "success",
+          "steps": []
+        },
+        {
+          "name": "report-build-status",
+          "conclusion": "success",
+          "steps": []
+        },
+        {
+          "name": "deploy",
+          "conclusion": "success",
+          "steps": []
+        }
+      ]
+    }
+  ],
+  "site": {
+    "http": 200,
+    "loader736": true,
+    "script300": true
+  },
+  "university": {
+    "http": 200,
+    "data": {
+      "ok": true,
+      "configured": true,
+      "dataReady": true,
+      "provider": "gemini",
+      "requiresLogin": true,
+      "photo": "Use MATHCORE;no automatic image upload",
+      "personalStorage": "account-scoped-device",
+      "coverage": {
+        "programmes": 21286,
+        "schoolsWithProgrammes": 586,
+        "profiles": 3,
+        "tuition": 2,
+        "scholarships": 2,
+        "rules": 1
+      }
+    }
+  },
+  "errors": []
+}

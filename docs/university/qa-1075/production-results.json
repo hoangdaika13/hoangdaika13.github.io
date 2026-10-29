@@ -1,0 +1,135 @@
+{
+  "at": "2026-10-29T09:53:27.853Z",
+  "checks": [
+    "Production1075 with loader736 and verified server dataReady;Gemini configured without model request",
+    "Independent University navigation and both real user journeys load",
+    "Live programme index,comparison and wishlist work in isolated guest device state",
+    "Source-scoped HUBT admission calculator returns24.5",
+    "Live sourced calendar saves locally and exports ICS",
+    "Projected-cohort tuition and adjustable budget calculate with visible assumptions",
+    "Live semester planning,weightedGPA3.6 and reload persistence",
+    "Live original study content,flashcard generation and actual quiz questions",
+    "Live AI configuration shown;guest endpoint rejects401 before any model use",
+    "All11live workspaces fit375px and200%zoom"
+  ],
+  "errors": [],
+  "requests": [
+    {
+      "method": "GET",
+      "url": "https://hoang8.com/api/university/status"
+    },
+    {
+      "method": "GET",
+      "url": "https://hoang8.com/api/university/status"
+    },
+    {
+      "method": "GET",
+      "url": "https://hoang8.com/api/university/status"
+    },
+    {
+      "method": "GET",
+      "url": "https://hoang8.com/api/university/status"
+    },
+    {
+      "method": "GET",
+      "url": "https://hoang8.com/api/university/status"
+    },
+    {
+      "method": "GET",
+      "url": "https://hoang8.com/api/university/status"
+    },
+    {
+      "method": "GET",
+      "url": "https://hoang8.com/api/university/status"
+    },
+    {
+      "method": "GET",
+      "url": "https://hoang8.com/api/university/status"
+    },
+    {
+      "method": "GET",
+      "url": "https://hoang8.com/api/university/status"
+    },
+    {
+      "method": "GET",
+      "url": "https://hoang8.com/api/university/status"
+    },
+    {
+      "method": "POST",
+      "url": "https://hoang8.com/api/university/ask"
+    },
+    {
+      "method": "GET",
+      "url": "https://hoang8.com/api/university/status"
+    },
+    {
+      "method": "GET",
+      "url": "https://hoang8.com/api/university/status"
+    },
+    {
+      "method": "GET",
+      "url": "https://hoang8.com/api/university/status"
+    },
+    {
+      "method": "GET",
+      "url": "https://hoang8.com/api/university/status"
+    },
+    {
+      "method": "GET",
+      "url": "https://hoang8.com/api/university/status"
+    },
+    {
+      "method": "GET",
+      "url": "https://hoang8.com/api/university/status"
+    },
+    {
+      "method": "GET",
+      "url": "https://hoang8.com/api/university/status"
+    },
+    {
+      "method": "GET",
+      "url": "https://hoang8.com/api/university/status"
+    },
+    {
+      "method": "GET",
+      "url": "https://hoang8.com/api/university/status"
+    },
+    {
+      "method": "GET",
+      "url": "https://hoang8.com/api/university/status"
+    },
+    {
+      "method": "GET",
+      "url": "https://hoang8.com/api/university/status"
+    },
+    {
+      "method": "GET",
+      "url": "https://hoang8.com/api/university/status"
+    }
+  ],
+  "environment": "Production guest session;no interception,account changes or paid model calls",
+  "status": {
+    "ok": true,
+    "configured": true,
+    "dataReady": true,
+    "provider": "gemini",
+    "requiresLogin": true,
+    "photo": "Use MATHCORE;no automatic image upload",
+    "personalStorage": "account-scoped-device",
+    "coverage": {
+      "programmes": 21286,
+      "schoolsWithProgrammes": 586,
+      "profiles": 3,
+      "tuition": 2,
+      "scholarships": 2,
+      "rules": 1
+    }
+  },
+  "unauthorized": {
+    "http": 401,
+    "data": {
+      "error": "Đăng nhập để dùng Gemini hoặc gửi đề nghị nguồn.",
+      "code": "AUTH_REQUIRED"
+    }
+  }
+}

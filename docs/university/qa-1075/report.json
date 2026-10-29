@@ -60,7 +60,19 @@
     "low": 1,
     "newDependencies": 0
   },
-  "deployment": "Verify after push; see final handover",
+  "deployment": {
+    "codeCommit": "1890ad6266892ac1f88c62763ac414ae45eb7584",
+    "verifiedAt": "2026-10-29T09:54:44.519Z",
+    "vercel": "both projects success",
+    "pages": "success",
+    "productionUrl": "https://hoang8.com/#/university",
+    "productionFlows": 10,
+    "productionPageErrors": 0,
+    "geminiConfigured": true,
+    "dataReady": true,
+    "realModelCall": false,
+    "ci": "Application security audit failed on existing dependencies;CodeQL running at capture"
+  },
   "serverlessFiles": {
     "globCharacters": 162,
     "schemaMaximumCharacters": 256,

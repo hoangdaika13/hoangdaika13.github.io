@@ -77,3 +77,11 @@ Audit dependency hiện báo **5 high, 1 low** trong cây dependency có sẵn; 
 Đã bổ sung kiểm thử glob đóng gói bằng chính `@vercel/build-utils`: mẫu includeFiles 162 ký tự, dưới giới hạn schema 256 của Vercel; 3.225 file, giữ đủ mọi file cần có trước khi rút gọn.
 
 Version: release/cache **1075**, loader **736**, router **300**, University main/CSS **2**, helper workspace **1**. Kết quả deployment và smoke test website thật được xác minh sau push và báo trong chat.
+
+## Xác minh production sau push
+
+Commit chức năng `4d5745c2`, bản sửa giới hạn cấu hình deployment `1890ad62`. Cả hai project Vercel và GitHub Pages đã triển khai thành công. Website hoang8.com trả loader 736, `/api/university/status` HTTP 200 với `configured:true` và `dataReady:true`.
+
+Chromium truy cập website thật, không chặn/mô phỏng request: **10 luồng đạt, 0 page error**, gồm hai hành trình, tìm ngành/so sánh/nguyện vọng, công thức HUBT, xuất ICS, dự toán, GPA giữ qua reload, học liệu/flashcard/trắc nghiệm, khóa Gemini cho khách và cả 11 công cụ ở 375px/zoom 200%. Chỉ ghi state khách trong browser QA riêng; không sửa tài khoản, gửi báo sai production hoặc gọi mô hình trả phí.
+
+[Smoke test production](qa-1075/production-results.json), [deployment](qa-1075/deployment.json), [desktop thật](qa-1075/production-desktop.png), [mobile thật](qa-1075/production-mobile.png). Application-security CI thất bại ở bước audit dependency đã nêu; CodeQL còn chạy tại thời điểm lưu snapshot. Các kết quả này không được gộp thành tuyên bố mọi CI đều đạt.
