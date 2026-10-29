@@ -67,6 +67,7 @@
     "/learn",
     "/university",
     "/vietnam-law",
+    "/mathcore",
     "/focus-room",
     "/english",
     "/japanese",

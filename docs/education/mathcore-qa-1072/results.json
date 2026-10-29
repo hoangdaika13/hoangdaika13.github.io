@@ -1,0 +1,78 @@
+{
+  "at": "2026-10-29T03:21:27.229Z",
+  "results": [
+    "Primary learning navigation, six sections, lazy module and truthful AI configuration",
+    "Guided hints with hidden answer, preserved thinking, true polynomial diagnostics, quadratic solution and saving",
+    "24 complete original topic notes, accent-insensitive search, empty state and guided derivative example",
+    "Quiz answer lock until submission, five-question navigation, explanation and persistent real attempts",
+    "Five actual3D coordinate meshes, drag/keyboard orbit, dimensions, horizontal section and safe graph/tangent",
+    "Real scientific calculator, DEG/RAD and error handling, six model-specific Casio guides",
+    "Saved solution, actual practice stats and notes survive reload",
+    "Actual project-local Tesseract OCR reads printed image, confirms transcript, locates bad lines and drops boxes after manual correction",
+    "Real handler with explicit paid-provider fixture, withheld answers, reveal and cancelled stale-request protection",
+    "AI image review uses explicit fixture and server rejects fabricated image transcript quotes",
+    "Account partition and byte-identical future-schema recovery export",
+    "All16themes,375/768/1440layouts,200%zoom,visible keyboard focus and reduced motion;no overflow/page errors",
+    "Math listeners/workers/canvases unmount;K12,Law and University remain reachable"
+  ],
+  "errors": [],
+  "assets": [
+    {
+      "url": "/hh-mathcore-ai.css?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-core.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-content.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-graphics.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-ocr.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-ai.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-ai.css?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-core.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-content.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-graphics.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-ocr.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-ai.js?v=1",
+      "status": 200
+    }
+  ],
+  "providerCalls": 5,
+  "environment": {
+    "browser": "Native Chromium",
+    "identity": "Explicit guest/member fixtures",
+    "database": "Explicit memory DB",
+    "ai": "Explicit structured-provider fixture;no live model call",
+    "ocr": "Actual pinned Tesseract worker and English language data",
+    "images": "Generated printed arithmetic QA image;no user-private image"
+  }
+}

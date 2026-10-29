@@ -5748,6 +5748,15 @@ function initAppShell() {
       ]
     },
     { id: "study-together", label: "Học cùng nhau", icon: "◉", accent: "#71e8e2", route: "/learn/study-together", items: [] },
+    { id: "mathcore", label: "MATHCORE AI", icon: "∑", accent: "#79e5e9", route: "/mathcore", items: [], pages: [
+      { id: "tutor", title: "Trợ giảng toán từng bước", route: "/mathcore" },
+      { id: "photo", title: "Sửa bài toán qua ảnh", route: "/mathcore/photo" },
+      { id: "theory", title: "Kiến thức & công thức", route: "/mathcore/theory" },
+      { id: "practice", title: "Luyện trắc nghiệm toán", route: "/mathcore/practice" },
+      { id: "lab", title: "Hình học 3D & đồ thị", route: "/mathcore/lab" },
+      { id: "casio", title: "Máy tính & mẹo Casio", route: "/mathcore/casio" },
+      { id: "notebook", title: "Sổ tay toán học", route: "/mathcore/notebook" }
+    ] },
     { id: "vietnam-law", label: "Pháp Luật Việt Nam", icon: "§", accent: "#67dbc1", route: "/vietnam-law", items: [], pages: [
       { id: "home", title: "Trang chủ pháp luật", route: "/vietnam-law" },
       { id: "library", title: "Kho văn bản pháp luật", route: "/vietnam-law/library" },
@@ -5885,7 +5894,7 @@ function initAppShell() {
       icon: "◫",
       accent: "#ffd66b",
       accentSecondary: "#a87cff",
-      groupIds: ["learn", "focus-room", "study-together", "english", "japanese", "chinese", "phat-phap"]
+      groupIds: ["learn", "mathcore", "focus-room", "study-together", "english", "japanese", "chinese", "phat-phap"]
     },
     {
       id: "vietnam-law-hub", label: "Pháp Luật Việt Nam", icon: "§", accent: "#67dbc1", accentSecondary: "#699cff", groupIds: ["vietnam-law"]
@@ -5908,6 +5917,7 @@ function initAppShell() {
     }
   ];
   const sidebarSearchAliases = Object.freeze({
+    mathcore: "mathcore ai toán học trợ giảng gợi ý công thức đại số giải tích hình học3d đồ thị trắc nghiệm sửa bài qua ảnh casio máy tính sổ tay",
     "chat-ai": "ai trợ lý hỏi đáp nghiên cứu viết code ảnh pdf intelligence",
     create: "sáng tạo nội dung ảnh video chiến dịch creator creative",
     draw: "vẽ tranh ảnh canvas brush bút màu silk",
@@ -5991,7 +6001,7 @@ function initAppShell() {
     home: "home", search: "search", "ai-creative": "sparkles", "web-community": "orbit", entertainment: "play", "work-tech": "cpu", learning: "book", "system-admin": "shield",
     "chat-ai": "bot", create: "wand", draw: "brush", "music-ai": "music", "comic-motion": "panels", "media-design": "image", "graphic-design": "pen",
     google: "search", "youtube-main": "video", discord: "messages", communication: "send", remote: "monitor", "cosmic-observatory": "orbit", "play-center": "gamepad", "eonwild-game": "paw", "comic-reader": "reader", cinema: "clapper", "music-library": "headphones", patin: "orbit", fortune: "moon",
-    work: "briefcase", "davinci-resolve": "sliders", dev: "code", insights: "chart", copyright: "copyright", learn: "graduation", "focus-room": "timer", "study-together": "messages", english: "english", japanese: "japanese", chinese: "chinese", "phat-phap": "dharma",
+    work: "briefcase", "davinci-resolve": "sliders", dev: "code", insights: "chart", copyright: "copyright", learn: "graduation", mathcore: "graduation", "focus-room": "timer", "study-together": "messages", english: "english", japanese: "japanese", chinese: "chinese", "phat-phap": "dharma",
     "vietnam-law": "book", "vietnam-law-hub": "book", university: "graduation", "higher-education": "graduation", admin: "crown", system: "settings", support: "heart"
   });
   const sidebarIconMarkup = (id) => `<svg class="app-sidebar__svg-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">${sidebarIconPaths[sidebarIconNames[id] || "sparkles"]}</svg>`;
@@ -6887,7 +6897,7 @@ function initAppShell() {
     pageHeader.querySelector("h1").textContent = title;
     pageHeader.querySelector("p:not(.app-page-header__eyebrow)").textContent = description;
     const crumbs = route.split("?")[0].split("/").filter(Boolean);
-    const crumbLabels = { "vietnam-law": "Pháp Luật Việt Nam", university: "Đại học & Cao đẳng", home: "Trang chủ", universe: "Vũ trụ", observatory: "Đài quan sát", dsn: "Liên lạc DSN", surfaces: "Bề mặt hành tinh", timeline: "Dòng thời gian Vũ trụ", learning: "Phòng học thiên văn", create: "Sáng tạo", draw: "Vẽ", remote: "Remote", "chat-ai": "Chat AI", google: "Google", youtube: "YouTube", discord: "Discord", "music-ai": "Làm nhạc AI", music: "Nhạc", cinema: "Phim", copyright: "Bản quyền", fortune: "Xem bói", "phat-phap": "Phật Pháp", beginner: "Lộ trình tu học", situations: "Pháp học đời sống", teachings: "Giáo lý", scriptures: "Canonical Reader", research: "Tìm kiếm học thuật", scholar: "Scholar & OCR Lab", glossary: "Từ điển Phật học", map: "Bản đồ giáo pháp", provenance: "Editorial & Trust Center", practice: "Thiền đường số", rituals: "Nghi thức căn bản", chanting: "Phòng tụng niệm", audio: "Thư viện nghe", schedule: "Lịch tu học", temple: "Trung tâm Phật sự Việt Nam", vietnam: "Phật giáo Việt Nam", profile: "Hồ sơ tu học", request: "Thỉnh kinh", talks: "Pháp thoại Observatory", circles: "Nhóm đọc riêng tư", qna: "HH Phật học có nguồn", journal: "Nhật ký mã hóa", accessibility: "Trợ năng", "data-control": "Tủ dữ liệu", "davinci-resolve": "Tool", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", analytics: "Phân tích", admin: "Admin Panel", learn: "Học tập", "focus-room": "Phòng học tập trung", paths: "Lộ trình cá nhân", mastery: "Skill Graph", review: "Smart Review", mistakes: "Mistake Notebook", lesson: "Lesson Player", coach: "AI Learning Coach", assessments: "Kiểm tra & Chứng chỉ", classroom: "Classroom", "study-together": "Study Together", passport: "Learning Passport", english: "HH English", japanese: "HH Japanese", chinese: "HH Chinese", dictionary: "Từ điển", kanji: "Kanji", grammar: "Ngữ pháp", reader: "Đọc hiểu", jlpt: "Luyện JLPT", notebook: "Sổ tay & SRS", conversation: "Hội thoại", galaxy: "English Galaxy", lab: "19 chế độ học", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
+    const crumbLabels = { mathcore: "MATHCORE AI", "vietnam-law": "Pháp Luật Việt Nam", university: "Đại học & Cao đẳng", home: "Trang chủ", universe: "Vũ trụ", observatory: "Đài quan sát", dsn: "Liên lạc DSN", surfaces: "Bề mặt hành tinh", timeline: "Dòng thời gian Vũ trụ", learning: "Phòng học thiên văn", create: "Sáng tạo", draw: "Vẽ", remote: "Remote", "chat-ai": "Chat AI", google: "Google", youtube: "YouTube", discord: "Discord", "music-ai": "Làm nhạc AI", music: "Nhạc", cinema: "Phim", copyright: "Bản quyền", fortune: "Xem bói", "phat-phap": "Phật Pháp", beginner: "Lộ trình tu học", situations: "Pháp học đời sống", teachings: "Giáo lý", scriptures: "Canonical Reader", research: "Tìm kiếm học thuật", scholar: "Scholar & OCR Lab", glossary: "Từ điển Phật học", map: "Bản đồ giáo pháp", provenance: "Editorial & Trust Center", practice: "Thiền đường số", rituals: "Nghi thức căn bản", chanting: "Phòng tụng niệm", audio: "Thư viện nghe", schedule: "Lịch tu học", temple: "Trung tâm Phật sự Việt Nam", vietnam: "Phật giáo Việt Nam", profile: "Hồ sơ tu học", request: "Thỉnh kinh", talks: "Pháp thoại Observatory", circles: "Nhóm đọc riêng tư", qna: "HH Phật học có nguồn", journal: "Nhật ký mã hóa", accessibility: "Trợ năng", "data-control": "Tủ dữ liệu", "davinci-resolve": "Tool", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", analytics: "Phân tích", admin: "Admin Panel", learn: "Học tập", "focus-room": "Phòng học tập trung", paths: "Lộ trình cá nhân", mastery: "Skill Graph", review: "Smart Review", mistakes: "Mistake Notebook", lesson: "Lesson Player", coach: "AI Learning Coach", assessments: "Kiểm tra & Chứng chỉ", classroom: "Classroom", "study-together": "Study Together", passport: "Learning Passport", english: "HH English", japanese: "HH Japanese", chinese: "HH Chinese", dictionary: "Từ điển", kanji: "Kanji", grammar: "Ngữ pháp", reader: "Đọc hiểu", jlpt: "Luyện JLPT", notebook: "Sổ tay & SRS", conversation: "Hội thoại", galaxy: "English Galaxy", lab: "19 chế độ học", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
     Object.assign(crumbLabels, { play: "HH Play", arcade: "Arcade Galaxy", party: "Party Room", watch: "Watch Party", story: "Story Universe", escape: "Escape Room", rhythm: "Rhythm Arena", pet: "HH Virtual Pet", chill: "Chill Rooms", quiz: "Quiz Arena", game: "Game · EonWild", world: "Thế giới sống", species: "Eon Codex", ecosystem: "Lưới sinh thái", timeline: "Eon Atlas", expeditions: "Thám hiểm", lineage: "Dòng gene", observer: "Observer & Replay", network: "Multiplayer Readiness" });
     if (route === "/universe/timeline" || route.startsWith("/universe/timeline/")) crumbLabels.timeline = "Dòng thời gian Vũ trụ";
     crumbLabels["social-media-tools"] = "Công cụ truyền thông xã hội";
@@ -7188,7 +7198,8 @@ function initAppShell() {
   const hasLiveSameRouteWorkspace = (route) => {
     const routePath = routePathOnly(route);
     if (!routePath || routePath !== routePathOnly(renderedRoute) || routePath !== routePathOnly(activeRoute)) return false;
-    // PDF deep links may change file/page while keeping the same document path.
+    // PDF and math-topic deep links can change context on the same workspace path.
+    if ((routePath === "/mathcore" || routePath.startsWith("/mathcore/")) && route !== renderedRoute) return false;
     if ((routePath === "/vietnam-law" || routePath.startsWith("/vietnam-law/")) && route !== renderedRoute) return false;
 
     const layerOneHost = connectedWorkspaceHost("[data-hh-galaxy-layer-one-host]");
@@ -7372,6 +7383,7 @@ function initAppShell() {
     document.body.classList.toggle("app-dev-tools-route", route === "/dev-tools" || route.startsWith("/dev-tools/"));
     document.body.classList.toggle("app-all-tools-route", route === "/tools" || route.startsWith("/tools/"));
     document.body.classList.toggle("app-learning-route", (route === "/learn" || route.startsWith("/learn/")) && activeGroup?.id !== "study-together");
+    document.body.classList.toggle("app-mathcore-route", route.split("?")[0] === "/mathcore" || route.startsWith("/mathcore/"));
     document.body.classList.toggle("app-vietnam-law-route", route.split("?")[0] === "/vietnam-law" || route.startsWith("/vietnam-law/"));
     document.body.classList.toggle("app-university-route", route.split("?")[0] === "/university" || route.startsWith("/university/"));
     document.body.classList.toggle("app-study-together-route", activeGroup?.id === "study-together");
@@ -7444,6 +7456,7 @@ function initAppShell() {
     if (!(route === "/communication" || window.HHCommunicationSuite?.supports?.(communicationView))) window.HHCommunicationSuite?.unmount?.();
     window.HHUniversity?.unmount?.();
     window.HHVietnamLaw?.unmount?.();
+    window.HHMathCoreAI?.unmount?.();
     const learningView = route === "/learn" ? "today" : route.split("/").filter(Boolean)[1];
     if (!(route === "/learn" || window.HHSchool?.supports?.(learningView))) window.HHSchool?.unmount?.();
     if (route !== "/system") window.HHSystemPlatform?.unmount?.();
@@ -7749,6 +7762,12 @@ function initAppShell() {
       else mountSimpleView("Học cùng nhau", "Không tải được module phòng học.", '<button type="button" data-shell-retry-route>Thử lại</button>');
       remember("study-together");
       remember("learn");
+    } else if (routePath === "/mathcore" || routePath.startsWith("/mathcore/")) {
+      updatePageHeader("MATHCORE AI", "Trợ giảng toán, luyện tập, sửa bài qua ảnh, hình học3D và Casio.", route);
+      pageActions.innerHTML = "";
+      workspace.innerHTML = '<div data-hh-mathcore-host></div>';
+      if (window.HHMathCoreAI?.mount) window.HHMathCoreAI.mount(workspace.firstElementChild, { route, currentUser: readCurrentAuthUser() });
+      else mountSimpleView("MATHCORE AI", "Chưa tải được trợ giảng toán.", '<button type="button" data-shell-retry-route>Thử lại</button>');
     } else if (routePath === "/vietnam-law" || routePath.startsWith("/vietnam-law/")) {
       updatePageHeader("Pháp Luật Việt Nam", "Đọc PDF trong trang, tra điều khoản và đối chiếu nguồn pháp luật chính thức.", route);
       pageActions.innerHTML = "";
@@ -8449,6 +8468,7 @@ function initAppShell() {
         route: "/social-media-tools",
         key: "social media tools instagram facebook tiktok x threads whatsapp imessage youtube vimeo open graph utm caption thumbnail story mockup queue"
       },
+      ...(groups.find((item) => item.id === "mathcore")?.pages || []).map((item) => ({ type: "Học tập", title: `MATHCORE AI · ${item.title}`, description: "Trợ giảng toán gợi mở, công thức, luyện tập, ảnh bài làm, hình học3D và Casio", route: item.route, key: `mathcore toán ${item.title} ${sidebarSearchAliases.mathcore}` })),
       ...(groups.find((item) => item.id === "patin")?.pages || []).filter((item) => item.route !== "/patin").map((item) => ({ type: "Giải trí", title: `Patin · ${item.title}`, description: "Kỹ năng, thiết bị, lộ trình và tự ghi nhận Patin cục bộ", route: item.route, key: `patin ${item.title} ${sidebarSearchAliases.patin}` })),
       {
         type: "Chiêm nghiệm",

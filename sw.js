@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1071";
+const CACHE = "hh-identity-portal-v1072";
+// Previous release: hh-identity-portal-v1071.
 // Previous release: hh-identity-portal-v1070.
 // Previous release: hh-identity-portal-v1069.
 // Previous release: hh-identity-portal-v1068; ./performance-loader.js?v=729; ./script.js?v=296;
@@ -270,7 +271,7 @@ const RUNTIME_ASSETS = [
   "./home-cosmos-motion.css?v=5",
   "./home-cosmos-motion.js?v=3",
   "./platform-home.css?v=9",
-  "./platform-home.js?v=22",
+  "./platform-home.js?v=23",
   "./focus-study-room.css?v=2",
   "./focus-study-room.js?v=1",
   "./",
@@ -507,7 +508,7 @@ const RUNTIME_ASSETS = [
   "./galaxy-design-system.css?v=1",
   "./galaxy-shell.css?v=9",
   "./galaxy-shell.js?v=11",
-  "./hh-core-gateway.js?v=11",
+  "./hh-core-gateway.js?v=12",
   "./galaxy-home-ai.css?v=23",
   "./galaxy-home-ai.css?v=24",
   "./galaxy-home-ai.css?v=25",
@@ -827,6 +828,13 @@ const RUNTIME_ASSETS = [
   "./hh-school-search-worker.js?v=3",
   "./hh-school-code-worker.js?v=2",
   "./hh-school.js?v=11",
+  "./hh-mathcore-ai.css?v=1",
+  "./hh-mathcore-core.js?v=1",
+  "./hh-mathcore-content.js?v=1",
+  "./hh-mathcore-graphics.js?v=1",
+  "./hh-mathcore-ocr.js?v=1",
+  "./vendor/tesseract-core-simd-lstm.wasm.js",
+  "./hh-mathcore-ai.js?v=1",
   "./hh-vietnam-law.css?v=2",
   "./hh-vietnam-law-core.js?v=2",
   "./hh-vietnam-law-manifest.js?v=2",
@@ -939,10 +947,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=732",
+  "./performance-loader.js?v=733",
   "./auth-platform.js?v=22",
   "./auth-neon-gateway.js?v=35",
-  "./script.js?v=299"
+  "./script.js?v=300"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

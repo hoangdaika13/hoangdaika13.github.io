@@ -38,6 +38,7 @@
     insights: "Đọc báo cáo, hiệu suất, Web Vitals và tín hiệu vận hành từ nguồn dữ liệu thực tế.",
     copyright: "Quản lý nguồn, quyền sử dụng, giấy phép, ghi công và quy trình tiếp nhận khiếu nại.",
     learn: "Lộ trình, môn học, luyện tập, kiểm tra và thư viện với tiến độ của chính bạn.",
+    mathcore: "Trợ giảng toán từng bước, kiến thức và công thức, trắc nghiệm, sửa bài qua ảnh, hình học3D, đồ thị tương tác và hướng dẫn Casio.",
     "focus-room": "Timer tập trung, việc học, ghi chú, âm thanh tạo cục bộ và thống kê từ những phiên bạn thực sự hoàn thành.",
     "study-together": "Phòng học nhóm LiveKit: mic, camera, chia sẻ màn hình, bảng trắng đồng bộ, bình chọn, phân công công việc, chat, timer và tổng kết phiên chung; mời khách bằng link/QR.",
     english: "Học theo CEFR: từ vựng, phát âm, nghe, nói, đọc, viết và tiếng Anh chuyên ngành.",
@@ -107,6 +108,7 @@
     if (item.adminOnly) return { label: "Admin", detail: item.locked ? "Cần quyền Admin đã xác minh." : "Quyền Admin được xác minh bởi phiên hiện tại." };
     if (item.id === "draw") return { label: "Cục bộ", detail: "Canvas chạy trong trình duyệt; khả năng xuất phụ thuộc thiết bị." };
     if (item.id === "focus-room") return { label: "Cục bộ", detail: "Timer, task, ghi chú, âm thanh và thống kê được xử lý trên thiết bị theo tài khoản hiện tại." };
+    if (item.id === "mathcore") return { label: "Toán & AI", detail: "Công cụ toán, OCR, 3D và luyện tập chạy trên thiết bị. Trợ giảng AI kiểm tra cấu hình riêng khi mở; ảnh chỉ gửi khi bạn chọn AI nhận xét." };
     if (item.id === "study-together") return { label: "Phòng học trực tuyến", detail: "Workspace kiểm tra cấu hình LiveKit thật. Tạo phòng cần tài khoản HH; khách dùng lời mời khi chủ phòng cho phép." };
     if (PROVIDER_IDS.has(item.id)) return { label: "Cần xác minh provider", detail: "Kiểm tra cấu hình trong workspace; trang chủ không gọi AI hoặc gửi nội dung." };
     if (NETWORK_IDS.has(item.id)) return { label: online ? "Cần kết nối dịch vụ" : "Cần kết nối mạng", detail: "Trạng thái mạng không chứng minh backend/OAuth sẵn sàng. Kết nối khi bạn chủ động mở công cụ." };

@@ -25,6 +25,10 @@
   ],
   "rewrites": [
     {
+      "source": "/api/mathcore/:resource",
+      "destination": "/api/modules/mathcore/actions?mathResource=:resource"
+    },
+    {
       "source": "/api/study-together",
       "destination": "/api/modules/study-together/actions"
     },

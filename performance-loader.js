@@ -28,7 +28,7 @@
   const groups = Object.freeze({
     brand: {
       styles: [],
-      scripts: ["brand-galaxy-logo.js?v=2", "galaxy-favicon-controller.js?v=2", "hh-core-gateway.js?v=11", "galaxy-shell.js?v=11"]
+      scripts: ["brand-galaxy-logo.js?v=2", "galaxy-favicon-controller.js?v=2", "hh-core-gateway.js?v=12", "galaxy-shell.js?v=11"]
     },
     "auth-effects": {
       /*
@@ -65,7 +65,7 @@
     },
     "platform-home": {
       styles: ["platform-home.css?v=9", "home-cosmos-motion.css?v=5"],
-      scripts: ["home-cosmos-motion.js?v=3", "platform-home.js?v=22"]
+      scripts: ["home-cosmos-motion.js?v=3", "platform-home.js?v=23"]
     },
     "galaxy-home-ai": {
       styles: ["galaxy-home-ai.css?v=25", "home-cosmos-motion.css?v=5"],
@@ -253,6 +253,10 @@
         "hh-school-content.js?v=1", "hh-school-workspace.js?v=4", "hh-school-university-manifest.js?v=1", "hh-school-university-content.js?v=1", "hh-school-university.js?v=1", "hh-school.js?v=11"
       ]
     },
+    "mathcore": {
+      styles: ["hh-mathcore-ai.css?v=1"],
+      scripts: ["hh-mathcore-core.js?v=1", "hh-mathcore-content.js?v=1", "hh-mathcore-graphics.js?v=1", "hh-mathcore-ocr.js?v=1", "hh-mathcore-ai.js?v=1"]
+    },
     "vietnam-law": {
       styles: ["hh-vietnam-law.css?v=2"],
       scripts: ["hh-vietnam-law-core.js?v=2", "hh-vietnam-law-manifest.js?v=2", "hh-vietnam-law-data.js?v=1", "hh-vietnam-law-pdf-transport.js?v=1", "hh-vietnam-law-pdf.js?v=1", "hh-vietnam-law.js?v=2"]
@@ -432,6 +436,7 @@
     if (value === "/learn/study-together" || value.startsWith("/learn/study-together/")) return ["study-together"];
     if (value === "/learn/university" || value.startsWith("/learn/university/")) return ["learning", "university"];
     if (value === "/university/study" || value.startsWith("/university/study/")) return ["learning", "university"];
+    if (value === "/mathcore" || value.startsWith("/mathcore/")) return ["mathcore"];
     if (value === "/vietnam-law" || value.startsWith("/vietnam-law/")) return ["vietnam-law"];
     if (value === "/university" || value.startsWith("/university/")) return ["university"];
     if (value.startsWith("/learn")) return ["learning"];
