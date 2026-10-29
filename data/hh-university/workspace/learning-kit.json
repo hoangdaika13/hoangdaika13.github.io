@@ -1,0 +1,728 @@
+{
+  "schemaVersion": 1,
+  "version": "2026.10.29-university-practice-v1",
+  "author": "HH University",
+  "rights": "HH-original",
+  "academicReview": "not-reviewed",
+  "scope": "24 bài tự biên soạn mở rộng cho sáu học phần nền tảng; không thay thế đề thi hoặc chương trình chính thức.",
+  "courses": [
+    {
+      "courseId": "uni-linear",
+      "objective": "Phép tính vector, hệ tuyến tính và phép chiếu",
+      "prerequisites": "Cộng nhân số thực; tọa độ phẳng.",
+      "exercises": [
+        {
+          "id": "uni-linear-extended-1",
+          "lessonId": "uni-linear-vectors",
+          "title": "Vector và tổ hợp",
+          "level": "Cơ bản",
+          "problem": "Cho u=(2,-1), v=(1,2). Tính u+3v.",
+          "hints": [
+            "Nhân từng tọa độ của v với 3.",
+            "Cộng theo từng tọa độ, giữ dấu âm."
+          ],
+          "steps": [
+            "3v=(3,6).",
+            "u+3v=(2+3,-1+6)=(5,5)."
+          ],
+          "answer": "(5,5)",
+          "check": "Lấy kết quả trừ u sẽ được 3v.",
+          "question": {
+            "text": "u+3v bằng?",
+            "options": [
+              "(5,5)",
+              "(9,3)",
+              "(3,1)",
+              "(5,-7)"
+            ],
+            "correct": 0,
+            "explanation": "3v=(3,6). u+3v=(2+3,-1+6)=(5,5)."
+          }
+        },
+        {
+          "id": "uni-linear-extended-2",
+          "lessonId": "uni-linear-systems",
+          "title": "Giải và thử lại hệ",
+          "level": "Vận dụng",
+          "problem": "Giải 2x+y=7 và x-y=2.",
+          "hints": [
+            "Cộng hai phương trình để khử y.",
+            "Sau khi có x, thay vào x-y=2."
+          ],
+          "steps": [
+            "Cộng hai vế: 3x=9 nên x=3.",
+            "3-y=2 nên y=1."
+          ],
+          "answer": "x=3, y=1",
+          "check": "Thay vào: 2·3+1=7 và 3-1=2.",
+          "question": {
+            "text": "Nghiệm của hệ là?",
+            "options": [
+              "(1,3)",
+              "(2,3)",
+              "(3,-1)",
+              "(3,1)"
+            ],
+            "correct": 3,
+            "explanation": "Cộng hai vế: 3x=9 nên x=3. 3-y=2 nên y=1."
+          }
+        },
+        {
+          "id": "uni-linear-extended-3",
+          "lessonId": "uni-linear-determinants",
+          "title": "Định thức và tính khả nghịch",
+          "level": "Cơ bản",
+          "problem": "Cho A có hai hàng (2,1) và (4,3). A có khả nghịch không?",
+          "hints": [
+            "Định thức ma trận 2×2 là ad-bc.",
+            "So sánh định thức với 0."
+          ],
+          "steps": [
+            "det(A)=2·3-1·4=2.",
+            "Định thức khác 0 nên A khả nghịch."
+          ],
+          "answer": "Có, det(A)=2",
+          "check": "Hai hàng không phải bội của nhau.",
+          "question": {
+            "text": "Định thức bằng?",
+            "options": [
+              "10",
+              "-2",
+              "2",
+              "0"
+            ],
+            "correct": 2,
+            "explanation": "det(A)=2·3-1·4=2. Định thức khác 0 nên A khả nghịch."
+          }
+        },
+        {
+          "id": "uni-linear-extended-4",
+          "lessonId": "uni-linear-applications",
+          "title": "Phép chiếu lên trục",
+          "level": "Vận dụng",
+          "problem": "Chiếu v=(3,1) vuông góc lên đường thẳng sinh bởi u=(1,0).",
+          "hints": [
+            "Dùng (v·u)/(u·u) nhân u.",
+            "Tính tích vô hướng trước."
+          ],
+          "steps": [
+            "v·u=3; u·u=1.",
+            "Hình chiếu là 3(1,0)=(3,0).",
+            "Phần dư v-(3,0)=(0,1) vuông góc u."
+          ],
+          "answer": "(3,0)",
+          "check": "Tích vô hướng phần dư với u bằng 0.",
+          "question": {
+            "text": "Hình chiếu là?",
+            "options": [
+              "(1,0)",
+              "(3,0)",
+              "(0,1)",
+              "(3,1)"
+            ],
+            "correct": 1,
+            "explanation": "v·u=3; u·u=1. Hình chiếu là 3(1,0)=(3,0). Phần dư v-(3,0)=(0,1) vuông góc u."
+          }
+        }
+      ]
+    },
+    {
+      "courseId": "uni-statistics",
+      "objective": "Đọc số liệu và giới hạn kết luận",
+      "prerequisites": "Số học cơ bản; phân số và phần trăm.",
+      "exercises": [
+        {
+          "id": "uni-statistics-extended-1",
+          "lessonId": "uni-statistics-summaries",
+          "title": "Trung bình và trung vị",
+          "level": "Cơ bản",
+          "problem": "Dữ liệu 1,2,2,9 có trung bình và trung vị là bao nhiêu?",
+          "hints": [
+            "Trung bình là tổng chia số phần tử.",
+            "Trung vị của bốn số là trung bình hai số giữa."
+          ],
+          "steps": [
+            "Tổng 14, chia 4 được 3,5.",
+            "Hai số giữa đều là 2 nên trung vị là 2."
+          ],
+          "answer": "Trung bình 3,5; trung vị 2",
+          "check": "Giá trị 9 kéo trung bình lên; không thay số liệu chỉ vì nó lớn.",
+          "question": {
+            "text": "Cặp trung bình/trung vị đúng?",
+            "options": [
+              "3,5 và 2",
+              "2 và 3,5",
+              "14 và 2",
+              "3,5 và 5,5"
+            ],
+            "correct": 0,
+            "explanation": "Tổng 14, chia 4 được 3,5. Hai số giữa đều là 2 nên trung vị là 2."
+          }
+        },
+        {
+          "id": "uni-statistics-extended-2",
+          "lessonId": "uni-statistics-probability",
+          "title": "Lấy mẫu không hoàn lại",
+          "level": "Vận dụng",
+          "problem": "Hộp có 3 bi đỏ, 2 bi xanh. Lấy hai bi không hoàn lại. Xác suất cả hai đỏ?",
+          "hints": [
+            "Xác suất đỏ lần đầu là 3/5.",
+            "Sau một bi đỏ, còn 2 đỏ trong 4 bi."
+          ],
+          "steps": [
+            "P(đỏ,đỏ)=(3/5)(2/4)=6/20.",
+            "Rút gọn được 3/10."
+          ],
+          "answer": "0,3",
+          "check": "Không dùng (3/5)² vì không hoàn lại.",
+          "question": {
+            "text": "Xác suất hai bi đỏ?",
+            "options": [
+              "0,36",
+              "0,6",
+              "0,5",
+              "0,3"
+            ],
+            "correct": 3,
+            "explanation": "P(đỏ,đỏ)=(3/5)(2/4)=6/20. Rút gọn được 3/10."
+          }
+        },
+        {
+          "id": "uni-statistics-extended-3",
+          "lessonId": "uni-statistics-testing",
+          "title": "Đọc p-value đúng giới hạn",
+          "level": "Vận dụng",
+          "problem": "Một phép kiểm định được chọn trước có p=0,03 và mức ý nghĩa 0,05. Chọn kết luận phù hợp.",
+          "hints": [
+            "So p với mức ý nghĩa đã đặt.",
+            "p-value không phải xác suất giả thuyết gốc đúng."
+          ],
+          "steps": [
+            "0,03<0,05 nên bác bỏ giả thuyết gốc trong quy trình này.",
+            "Chưa suy ra độ lớn tác động hay quan hệ nhân quả từ riêng kết quả đó."
+          ],
+          "answer": "Bác bỏ H0 theo ngưỡng đã chọn",
+          "check": "Cần xem thiết kế, giả định và kích thước tác động.",
+          "question": {
+            "text": "Kết luận nào phù hợp?",
+            "options": [
+              "Chắc chắn có quan hệ nhân quả",
+              "Tác động chắc chắn rất lớn",
+              "Bác bỏ H0 theo quy tắc đã chọn",
+              "H0 có xác suất đúng 3%"
+            ],
+            "correct": 2,
+            "explanation": "0,03<0,05 nên bác bỏ giả thuyết gốc trong quy trình này. Chưa suy ra độ lớn tác động hay quan hệ nhân quả từ riêng kết quả đó."
+          }
+        },
+        {
+          "id": "uni-statistics-extended-4",
+          "lessonId": "uni-statistics-causality",
+          "title": "Nhận diện chọn mẫu",
+          "level": "Phân tích",
+          "problem": "Nhóm tự chọn dùng ứng dụng A có điểm cao hơn nhóm không dùng. Có đủ căn cứ nói A làm điểm tăng không?",
+          "hints": [
+            "Việc tự chọn có thể liên quan động lực học.",
+            "So sánh quan sát chưa loại các yếu tố khác."
+          ],
+          "steps": [
+            "Nhóm dùng A có thể khác từ trước về động lực hoặc thời gian học.",
+            "Kết quả mô tả liên hệ trong mẫu, chưa đủ xác nhận nhân quả."
+          ],
+          "answer": "Chưa đủ căn cứ nhân quả",
+          "check": "Cần thiết kế và thông tin bổ sung để đánh giá lời giải thích khác.",
+          "question": {
+            "text": "Kết luận được dữ liệu hỗ trợ trực tiếp?",
+            "options": [
+              "Không tồn tại yếu tố gây nhiễu",
+              "Có khác biệt quan sát giữa hai nhóm",
+              "A chắc chắn làm điểm tăng",
+              "Mọi người đều sẽ tăng điểm"
+            ],
+            "correct": 1,
+            "explanation": "Nhóm dùng A có thể khác từ trước về động lực hoặc thời gian học. Kết quả mô tả liên hệ trong mẫu, chưa đủ xác nhận nhân quả."
+          }
+        }
+      ]
+    },
+    {
+      "courseId": "uni-programming",
+      "objective": "Viết đặc tả, kiểm tra vòng lặp và biên",
+      "prerequisites": "Biến, phép gán và biểu thức điều kiện.",
+      "exercises": [
+        {
+          "id": "uni-programming-extended-1",
+          "lessonId": "uni-programming-contracts",
+          "title": "Đặc tả hàm chặn khoảng",
+          "level": "Cơ bản",
+          "problem": "Hàm clamp nhận số hữu hạn x và trả giá trị trong [0,100], gần x nhất. clamp(-5) và clamp(120) là gì?",
+          "hints": [
+            "x<0 trả 0; x>100 trả 100.",
+            "Đặc tả yêu cầu đầu vào là số hữu hạn."
+          ],
+          "steps": [
+            "-5 nhỏ hơn 0 nên kết quả 0.",
+            "120 lớn hơn 100 nên kết quả 100."
+          ],
+          "answer": "0 và 100",
+          "check": "Các biên x=0 và x=100 giữ nguyên.",
+          "question": {
+            "text": "Kết quả của hai lần gọi?",
+            "options": [
+              "0 và 100",
+              "-5 và 120",
+              "5 và 20",
+              "100 và 0"
+            ],
+            "correct": 0,
+            "explanation": "-5 nhỏ hơn 0 nên kết quả 0. 120 lớn hơn 100 nên kết quả 100."
+          }
+        },
+        {
+          "id": "uni-programming-extended-2",
+          "lessonId": "uni-programming-loops",
+          "title": "Theo dõi tổng tích lũy",
+          "level": "Vận dụng",
+          "problem": "s=0; với i từ 1 đến 5, thực hiện s=s+i. Giá trị cuối của s?",
+          "hints": [
+            "Liệt kê s sau từng vòng.",
+            "Sau vòng i, s là tổng các số từ 1 đến i."
+          ],
+          "steps": [
+            "s lần lượt là 1,3,6,10,15.",
+            "Sau i=5, s=15."
+          ],
+          "answer": "15",
+          "check": "Công thức 5·6/2 cũng cho 15.",
+          "question": {
+            "text": "Giá trị cuối của s?",
+            "options": [
+              "10",
+              "5",
+              "20",
+              "15"
+            ],
+            "correct": 3,
+            "explanation": "s lần lượt là 1,3,6,10,15. Sau i=5, s=15."
+          }
+        },
+        {
+          "id": "uni-programming-extended-3",
+          "lessonId": "uni-programming-search",
+          "title": "Tìm kiếm nhị phân và điều kiện",
+          "level": "Vận dụng",
+          "problem": "Có thể áp dụng tìm kiếm nhị phân trực tiếp cho danh sách chưa sắp xếp không?",
+          "hints": [
+            "Việc bỏ nửa danh sách cần dựa vào thứ tự.",
+            "Nếu không có thứ tự, nửa bị bỏ có thể chứa mục cần tìm."
+          ],
+          "steps": [
+            "Điều kiện thứ tự chưa được đảm bảo.",
+            "Cần sắp xếp theo cùng tiêu chí hoặc dùng cách tìm khác."
+          ],
+          "answer": "Không đảm bảo đúng nếu thiếu thứ tự",
+          "check": "Thử danh sách [7,1,9,3] cho thấy so sánh ở giữa không đủ để bỏ một nửa.",
+          "question": {
+            "text": "Điều kiện quan trọng của tìm kiếm nhị phân?",
+            "options": [
+              "Danh sách phải có số lượng chẵn",
+              "Danh sách phải dài ít nhất 100",
+              "Dữ liệu có thứ tự theo tiêu chí tìm",
+              "Mọi phần tử phải khác nhau"
+            ],
+            "correct": 2,
+            "explanation": "Điều kiện thứ tự chưa được đảm bảo. Cần sắp xếp theo cùng tiêu chí hoặc dùng cách tìm khác."
+          }
+        },
+        {
+          "id": "uni-programming-extended-4",
+          "lessonId": "uni-programming-testing",
+          "title": "Chọn ca kiểm thử biên",
+          "level": "Phân tích",
+          "problem": "Hàm nhận tuổi nguyên trong [18,60]. Bộ ca nào kiểm tra hai biên và hai phía ngoài?",
+          "hints": [
+            "Chọn 18 và 60.",
+            "Thêm số nguyên ngay ngoài mỗi biên."
+          ],
+          "steps": [
+            "17 nằm ngay dưới giới hạn; 18 là biên hợp lệ.",
+            "60 là biên hợp lệ; 61 nằm ngay trên giới hạn."
+          ],
+          "answer": "17,18,60,61",
+          "check": "Bổ sung ca kiểu dữ liệu sai là việc riêng, không được bộ này bao phủ.",
+          "question": {
+            "text": "Bộ ca phù hợp?",
+            "options": [
+              "0,1,2,3",
+              "17,18,60,61",
+              "20,30,40,50",
+              "18,18,60,60"
+            ],
+            "correct": 1,
+            "explanation": "17 nằm ngay dưới giới hạn; 18 là biên hợp lệ. 60 là biên hợp lệ; 61 nằm ngay trên giới hạn."
+          }
+        }
+      ]
+    },
+    {
+      "courseId": "uni-economics",
+      "objective": "Tính và diễn giải các mô hình nhỏ",
+      "prerequisites": "Hàm bậc nhất; đơn vị tiền và lượng.",
+      "exercises": [
+        {
+          "id": "uni-economics-extended-1",
+          "lessonId": "uni-economics-choice",
+          "title": "Chi phí cơ hội có giả định",
+          "level": "Cơ bản",
+          "problem": "Trong mô hình giả định, học 2 giờ khiến bạn bỏ đúng 2 giờ làm có thu nhập 80.000đ/giờ. Thu nhập từ cơ hội bị bỏ là bao nhiêu?",
+          "hints": [
+            "Nhân thời gian bỏ làm với thu nhập mỗi giờ.",
+            "Chỉ tính khoản được đề bài nêu."
+          ],
+          "steps": [
+            "2×80.000=160.000đ.",
+            "Đây là thu nhập bị bỏ trong giả định, không phải hóa đơn học phí."
+          ],
+          "answer": "160.000đ",
+          "check": "Nếu không thực sự có cơ hội làm việc đó, giả định cần đổi.",
+          "question": {
+            "text": "Thu nhập cơ hội bị bỏ?",
+            "options": [
+              "160.000đ",
+              "80.000đ",
+              "40.000đ",
+              "240.000đ"
+            ],
+            "correct": 0,
+            "explanation": "2×80.000=160.000đ. Đây là thu nhập bị bỏ trong giả định, không phải hóa đơn học phí."
+          }
+        },
+        {
+          "id": "uni-economics-extended-2",
+          "lessonId": "uni-economics-markets",
+          "title": "Cân bằng tuyến tính",
+          "level": "Vận dụng",
+          "problem": "Cho Qd=100-2P và Qs=20+2P. Tính giá và lượng cân bằng trong mô hình.",
+          "hints": [
+            "Tại cân bằng, Qd=Qs.",
+            "Giải phương trình rồi thay lại cả hai hàm."
+          ],
+          "steps": [
+            "100-2P=20+2P nên P=20.",
+            "Qd=100-40=60; Qs=20+40=60."
+          ],
+          "answer": "P=20, Q=60",
+          "check": "Hai lượng bằng nhau và không âm.",
+          "question": {
+            "text": "Giá và lượng cân bằng?",
+            "options": [
+              "P=60,Q=20",
+              "P=10,Q=80",
+              "P=40,Q=20",
+              "P=20,Q=60"
+            ],
+            "correct": 3,
+            "explanation": "100-2P=20+2P nên P=20. Qd=100-40=60; Qs=20+40=60."
+          }
+        },
+        {
+          "id": "uni-economics-extended-3",
+          "lessonId": "uni-economics-costs",
+          "title": "Điểm hòa vốn đơn giản",
+          "level": "Vận dụng",
+          "problem": "Doanh thu R=50Q, chi phí C=100+30Q, cùng một đơn vị tiền. Q nguyên không âm. Q hòa vốn?",
+          "hints": [
+            "Hòa vốn khi R=C.",
+            "Tách chi phí cố định khỏi chi phí mỗi đơn vị."
+          ],
+          "steps": [
+            "50Q=100+30Q.",
+            "20Q=100 nên Q=5.",
+            "R=C=250 tại Q=5."
+          ],
+          "answer": "Q=5",
+          "check": "Q=4 lỗ 20; Q=6 lãi 20 trong mô hình.",
+          "question": {
+            "text": "Lượng hòa vốn?",
+            "options": [
+              "10",
+              "20",
+              "5",
+              "2"
+            ],
+            "correct": 2,
+            "explanation": "50Q=100+30Q. 20Q=100 nên Q=5. R=C=250 tại Q=5."
+          }
+        },
+        {
+          "id": "uni-economics-extended-4",
+          "lessonId": "uni-economics-surplus",
+          "title": "Giá trần và thiếu hụt",
+          "level": "Phân tích",
+          "problem": "Vẫn Qd=100-2P và Qs=20+2P. Nếu giá trần có hiệu lực P=10, chênh lệch cầu-cung là bao nhiêu?",
+          "hints": [
+            "Tính riêng Qd và Qs tại P=10.",
+            "Thiếu hụt bằng Qd-Qs khi dương."
+          ],
+          "steps": [
+            "Qd=80 và Qs=40.",
+            "Chênh lệch 80-40=40 đơn vị."
+          ],
+          "answer": "Thiếu hụt 40 đơn vị",
+          "check": "Đây là kết quả mô hình cung cầu đã cho, chưa mô tả mọi phản ứng thực tế.",
+          "question": {
+            "text": "Chênh lệch trong mô hình?",
+            "options": [
+              "Thiếu hụt 80",
+              "Thiếu hụt 40",
+              "Dư cung 40",
+              "Cân bằng"
+            ],
+            "correct": 1,
+            "explanation": "Qd=80 và Qs=40. Chênh lệch 80-40=40 đơn vị."
+          }
+        }
+      ]
+    },
+    {
+      "courseId": "uni-circuits",
+      "objective": "Kiểm tra mạch điện trở lý tưởng",
+      "prerequisites": "Đổi mA/A; kΩ/Ω; phép tính phân số.",
+      "exercises": [
+        {
+          "id": "uni-circuits-extended-1",
+          "lessonId": "uni-circuits-ohm",
+          "title": "Ohm và công suất",
+          "level": "Cơ bản",
+          "problem": "Điện trở lý tưởng 6Ω chịu điện áp 12V. Tính dòng và công suất.",
+          "hints": [
+            "I=U/R.",
+            "P=UI, kiểm tra đơn vị A và W."
+          ],
+          "steps": [
+            "I=12/6=2A.",
+            "P=12×2=24W."
+          ],
+          "answer": "I=2A, P=24W",
+          "check": "I²R=4×6=24W.",
+          "question": {
+            "text": "Cặp dòng/công suất đúng?",
+            "options": [
+              "2A và 24W",
+              "0,5A và 6W",
+              "72A và 864W",
+              "2A và 6W"
+            ],
+            "correct": 0,
+            "explanation": "I=12/6=2A. P=12×2=24W."
+          }
+        },
+        {
+          "id": "uni-circuits-extended-2",
+          "lessonId": "uni-circuits-series",
+          "title": "Chia áp nối tiếp",
+          "level": "Vận dụng",
+          "problem": "Nguồn lý tưởng 12V nối tiếp 2kΩ và 4kΩ. Điện áp trên 4kΩ?",
+          "hints": [
+            "Tổng điện trở 6kΩ.",
+            "Dòng chung bằng 12V/6kΩ."
+          ],
+          "steps": [
+            "I=2mA.",
+            "U trên 4kΩ=2mA×4kΩ=8V."
+          ],
+          "answer": "8V",
+          "check": "Điện áp còn lại 4V; tổng 12V.",
+          "question": {
+            "text": "Điện áp trên 4kΩ?",
+            "options": [
+              "4V",
+              "6V",
+              "12V",
+              "8V"
+            ],
+            "correct": 3,
+            "explanation": "I=2mA. U trên 4kΩ=2mA×4kΩ=8V."
+          }
+        },
+        {
+          "id": "uni-circuits-extended-3",
+          "lessonId": "uni-circuits-parallel",
+          "title": "Mạch song song",
+          "level": "Vận dụng",
+          "problem": "Hai điện trở lý tưởng 6Ω và 3Ω mắc song song vào 12V. Tổng dòng?",
+          "hints": [
+            "Hai nhánh có cùng điện áp.",
+            "Cộng dòng nhánh hoặc tính điện trở tương đương."
+          ],
+          "steps": [
+            "Dòng nhánh 6Ω là 2A, nhánh 3Ω là 4A.",
+            "Tổng dòng là 6A."
+          ],
+          "answer": "6A",
+          "check": "Điện trở tương đương 2Ω nên 12/2=6A.",
+          "question": {
+            "text": "Tổng dòng của nguồn?",
+            "options": [
+              "2A",
+              "1A",
+              "6A",
+              "4A"
+            ],
+            "correct": 2,
+            "explanation": "Dòng nhánh 6Ω là 2A, nhánh 3Ω là 4A. Tổng dòng là 6A."
+          }
+        },
+        {
+          "id": "uni-circuits-extended-4",
+          "lessonId": "uni-circuits-power",
+          "title": "Đổi đơn vị năng lượng",
+          "level": "Cơ bản",
+          "problem": "Thiết bị giả định giữ công suất 10W trong 2 giờ. Năng lượng theo Wh và kWh?",
+          "hints": [
+            "Wh bằng W nhân giờ.",
+            "1kWh=1000Wh."
+          ],
+          "steps": [
+            "E=10×2=20Wh.",
+            "20/1000=0,02kWh."
+          ],
+          "answer": "20Wh = 0,02kWh",
+          "check": "Không nhầm 2 giờ với 2 giây hoặc kW với kWh.",
+          "question": {
+            "text": "Năng lượng bằng?",
+            "options": [
+              "0,2kWh",
+              "0,02kWh",
+              "20kWh",
+              "2kWh"
+            ],
+            "correct": 1,
+            "explanation": "E=10×2=20Wh. 20/1000=0,02kWh."
+          }
+        }
+      ]
+    },
+    {
+      "courseId": "uni-research",
+      "objective": "Thu hẹp câu hỏi và kiểm tra bằng chứng",
+      "prerequisites": "Đọc hiểu; tỷ lệ và phần trăm.",
+      "exercises": [
+        {
+          "id": "uni-research-extended-1",
+          "lessonId": "uni-research-questions",
+          "title": "Câu hỏi có phạm vi",
+          "level": "Cơ bản",
+          "problem": "Chọn câu hỏi có nhóm đối tượng, biến đo và khoảng thời gian rõ hơn.",
+          "hints": [
+            "Tìm người được khảo sát.",
+            "Tìm kết quả đo và thời gian."
+          ],
+          "steps": [
+            "Câu hỏi cần xác định nhóm, kết quả đo và khoảng thời gian.",
+            "Một khảo sát nhỏ không đại diện tự động cho mọi sinh viên."
+          ],
+          "answer": "Ví dụ: thời gian đi lại của sinh viên lớp A trong tuần 1",
+          "check": "Vẫn cần cách lấy mẫu và bảo vệ thông tin.",
+          "question": {
+            "text": "Câu hỏi rõ phạm vi nhất?",
+            "options": [
+              "Thời gian đi lại của lớp A trong tuần 1 là bao nhiêu?",
+              "Sinh viên sống thế nào?",
+              "Đại học có tốt không?",
+              "Mọi người có hạnh phúc không?"
+            ],
+            "correct": 0,
+            "explanation": "Câu hỏi cần xác định nhóm, kết quả đo và khoảng thời gian. Một khảo sát nhỏ không đại diện tự động cho mọi sinh viên."
+          }
+        },
+        {
+          "id": "uni-research-extended-2",
+          "lessonId": "uni-research-sources",
+          "title": "Phiên bản và năm áp dụng",
+          "level": "Vận dụng",
+          "problem": "Bạn thấy hai thông báo học phí cho hai khóa khác nhau. Cần làm gì trước khi dùng một mức cho kế hoạch?",
+          "hints": [
+            "So khóa, chương trình và năm học.",
+            "Ngày đăng mới hơn không tự làm thông báo áp dụng cho mọi khóa."
+          ],
+          "steps": [
+            "Xác định khóa và chương trình của người học.",
+            "Đọc năm áp dụng và đơn vị tính của từng thông báo.",
+            "Giữ rõ phần dự kiến hoặc chưa xác minh."
+          ],
+          "answer": "Chọn thông báo khớp phạm vi và giữ nguồn",
+          "check": "Không thay năm trong thông báo cũ để làm dữ liệu mới.",
+          "question": {
+            "text": "Tiêu chí phù hợp?",
+            "options": [
+              "Luôn lấy số thấp hơn",
+              "Chọn trang có nhiều lượt xem",
+              "Bỏ qua năm áp dụng",
+              "Khớp khóa,chương trình,năm và đơn vị"
+            ],
+            "correct": 3,
+            "explanation": "Xác định khóa và chương trình của người học. Đọc năm áp dụng và đơn vị tính của từng thông báo. Giữ rõ phần dự kiến hoặc chưa xác minh."
+          }
+        },
+        {
+          "id": "uni-research-extended-3",
+          "lessonId": "uni-research-design",
+          "title": "Dữ liệu nhận dạng tối thiểu",
+          "level": "Phân tích",
+          "problem": "Bài khảo sát lớp chỉ cần thống kê thời gian đi lại. Có cần thu số căn cước để tính trung bình không?",
+          "hints": [
+            "Xem thông tin nào thực sự phục vụ phép tính.",
+            "Tách nhu cầu thống kê khỏi nhận dạng người trả lời."
+          ],
+          "steps": [
+            "Tính trung bình chỉ cần các giá trị thời gian hợp lệ.",
+            "Số căn cước không cần thiết cho phép tính đã nêu."
+          ],
+          "answer": "Không cần cho mục đích thống kê này",
+          "check": "Nếu có mục đích khác, cần giải thích và đánh giá riêng.",
+          "question": {
+            "text": "Dữ liệu cần cho phép tính trung bình?",
+            "options": [
+              "Mật khẩu sinh viên",
+              "Ảnh thẻ bắt buộc",
+              "Các thời gian hợp lệ",
+              "Số căn cước"
+            ],
+            "correct": 2,
+            "explanation": "Tính trung bình chỉ cần các giá trị thời gian hợp lệ. Số căn cước không cần thiết cho phép tính đã nêu."
+          }
+        },
+        {
+          "id": "uni-research-extended-4",
+          "lessonId": "uni-research-reporting",
+          "title": "Báo cáo tỷ lệ thay đổi",
+          "level": "Vận dụng",
+          "problem": "Số lượt tham gia tăng từ 100 lên 150. Tính mức tăng tuyệt đối và tương đối so với ban đầu.",
+          "hints": [
+            "Mức tăng tuyệt đối là số mới trừ số cũ.",
+            "Tỷ lệ tăng lấy mức tăng chia số ban đầu."
+          ],
+          "steps": [
+            "Tăng 150-100=50 lượt.",
+            "Tỷ lệ tăng 50/100=50%.",
+            "Cần nêu cùng kỳ và cách đếm trước khi so sánh thực tế."
+          ],
+          "answer": "Tăng 50 lượt, tương đối 50%",
+          "check": "Không gọi mức tăng là 150%.",
+          "question": {
+            "text": "Kết quả đúng?",
+            "options": [
+              "100 lượt và 50%",
+              "50 lượt và 50%",
+              "150 lượt và 150%",
+              "50 lượt và 33,3%"
+            ],
+            "correct": 1,
+            "explanation": "Tăng 150-100=50 lượt. Tỷ lệ tăng 50/100=50%. Cần nêu cùng kỳ và cách đếm trước khi so sánh thực tế."
+          }
+        }
+      ]
+    }
+  ]
+}

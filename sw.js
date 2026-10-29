@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1075";
+const CACHE = "hh-identity-portal-v1076";
+// Previous release: hh-identity-portal-v1075.
 // Previous release: hh-identity-portal-v1074.
 // Previous release: hh-identity-portal-v1073.
 // Previous release: hh-identity-portal-v1072.
@@ -848,15 +849,18 @@ const RUNTIME_ASSETS = [
   "./hh-vietnam-law-pdf-transport.js?v=1",
   "./hh-vietnam-law-pdf.js?v=1",
   "./hh-vietnam-law.js?v=2",
-  "./hh-university.css?v=2",
+  "./hh-university.css?v=3",
   "./hh-university-core.js?v=1",
   "./hh-university-manifest.js?v=1",
   "./hh-university-data.js?v=1",
-  "./hh-university-tools.js?v=1",
-  "./hh-university-workspace-data.js?v=1",
-  "./hh-university-workspace.js?v=1",
+  "./hh-university-tools.js?v=2",
+  "./hh-university-workspace-data.js?v=2",
+  "./hh-university-workspace.js?v=2",
   "./hh-university-workspace.css?v=1",
-  "./hh-university.js?v=2",
+  "./hh-university-experience-core.js?v=1",
+  "./hh-university-experience.js?v=1",
+  "./hh-university-experience.css?v=1",
+  "./hh-university.js?v=3",
   "./study-together.css?v=7",
   "./study-classroom.css?v=1",
   "./study-campus.css?v=1",
@@ -957,7 +961,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=736",
+  "./performance-loader.js?v=737",
   "./auth-platform.js?v=22",
   "./auth-neon-gateway.js?v=35",
   "./script.js?v=300"

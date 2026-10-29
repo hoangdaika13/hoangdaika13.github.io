@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "version": "2026.10.29-university-workspace-v1",
+ "version": "2026.10.29-university-workspace-v2",
  "checkedAt": "2026-10-29",
  "sources": [
   {
@@ -66,6 +66,38 @@
    "kind": "official",
    "checkedAt": "2026-10-29",
    "scope": "PDF gốc có 25 trang. Chưa triển khai quy đổi bách phân vị và ưu tiên; không dùng hệ số trọng số đơn lẻ để tính điểm thi thô."
+  },
+  {
+   "id": "caothang-advanced-2026",
+   "title": "Cao Thắng — chương trình tiên tiến khóa 2026",
+   "url": "https://caothang.edu.vn/tuyensinh/chuong-trinh-tien-tien.html",
+   "kind": "official",
+   "checkedAt": "2026-10-29",
+   "scope": "Thông báo 413 ngày 11/03/2026; hai chương trình, học phí và thời lượng riêng, không áp dụng cho toàn trường."
+  },
+  {
+   "id": "caothang-faq-2026",
+   "title": "Cao Thắng — hỏi đáp tuyển sinh 2026",
+   "url": "https://caothang.edu.vn/tuyensinh/hoi-dap",
+   "kind": "official",
+   "checkedAt": "2026-10-29",
+   "scope": "Địa chỉ, mã CKC, ký túc xá và các mốc dự kiến theo FAQ; đối chiếu thông báo mới trước khi dùng."
+  },
+  {
+   "id": "hubt-contact",
+   "title": "HUBT — liên hệ tuyển sinh",
+   "url": "https://tuyensinh.hubt.edu.vn/thong-tin-lien-he/",
+   "kind": "official",
+   "checkedAt": "2026-10-29",
+   "scope": "Hai cơ sở, mã DQK và số điện thoại; chưa xác nhận mọi cơ sở đang tuyển theo ngành."
+  },
+  {
+   "id": "hubt-fees-2026",
+   "title": "HUBT — thông báo học phí khóa 31",
+   "url": "https://tuyensinh.hubt.edu.vn/dai-hoc/hoc-phi-k31/",
+   "kind": "official",
+   "checkedAt": "2026-10-29",
+   "scope": "Thông báo 13/08/2026; liên kết tài liệu gốc, chưa nhập số tiền từ tài liệu đính kèm."
   }
  ],
  "profiles": {
@@ -120,6 +152,49 @@
    ],
    "dormitory": "Chưa có thông báo ký túc xá đã đối chiếu cho từng cơ sở.",
    "accreditation": "Không suy ra kiểm định từ tên hệ thống hoặc cơ sở."
+  },
+  "vn-ts-89": {
+   "sourceId": "caothang-advanced-2026",
+   "website": "https://caothang.edu.vn/",
+   "admissionsWebsite": "https://caothang.edu.vn/tuyensinh/",
+   "email": "tuyensinh@caothang.edu.vn",
+   "phone": "0813 813 222",
+   "campuses": [
+    {
+     "name": "Địa chỉ tuyển sinh — Phòng Đào tạo, nhà E",
+     "address": "65 Huỳnh Thúc Kháng, Phường Sài Gòn, TP.HCM"
+    }
+   ],
+   "dormitory": "FAQ 2026: ký túc xá trường đang bảo trì, chưa tiếp nhận sinh viên ở; trường có hướng dẫn hỗ trợ chỗ ở. Kiểm tra lại với trường trước khi quyết định.",
+   "dormitorySourceId": "caothang-faq-2026",
+   "programmeNotes": [
+    {
+     "title": "Tiên tiến: Công nghệ Kỹ thuật Cơ khí; Công nghệ Kỹ thuật Điện, Điện tử",
+     "duration": "3 năm, 6 học kỳ",
+     "language": "Tăng cường tiếng Anh; một số học phần chuyên ngành song ngữ",
+     "outcome": "Theo thông báo: tiếng Anh bậc 3/6 hoặc tương đương TOEIC 550, IELTS 5.0.",
+     "scope": "Chương trình tiên tiến tuyển 2026, điều kiện đầu vào riêng. Không gán cho các chương trình chuẩn hoặc mọi khóa.",
+     "sourceId": "caothang-advanced-2026"
+    }
+   ]
+  },
+  "vn-ts-350": {
+   "sourceId": "hubt-contact",
+   "website": "https://hubt.edu.vn/",
+   "admissionsWebsite": "https://tuyensinh.hubt.edu.vn/",
+   "email": "",
+   "phone": "024-36339113; 024-36336507 (máy lẻ 110)",
+   "campuses": [
+    {
+     "name": "Cơ sở chính theo trang tuyển sinh",
+     "address": "29A, ngõ 124 phố Vĩnh Tuy, Phường Vĩnh Hưng, Hà Nội"
+    },
+    {
+     "name": "Cơ sở 2 theo trang tuyển sinh",
+     "address": "Phường Từ Sơn, tỉnh Bắc Ninh"
+    }
+   ],
+   "dormitory": "Chưa bổ sung thông tin ký túc xá đã đối chiếu."
   }
  },
  "tuition": [
@@ -148,6 +223,19 @@
    "high": 42000000,
    "status": "projected",
    "note": "Dự kiến dành cho khóa 2025 trong thông báo tháng 06/2025; không áp dụng mặc định cho tân sinh viên khóa 2026."
+  },
+  {
+   "id": "caothang-advanced-2026-term",
+   "schoolId": "vn-ts-89",
+   "title": "Hai chương trình tiên tiến: Cơ khí; Điện, Điện tử",
+   "academicYear": "2026–2027",
+   "cohort": "2026",
+   "unit": "term",
+   "low": 15000000,
+   "high": 15000000,
+   "status": "published",
+   "sourceId": "caothang-advanced-2026",
+   "note": "Mức công bố 15 triệu/học kỳ cho chương trình tiên tiến, 3 năm/6 kỳ. Lộ trình tăng các năm sau được nêu dự kiến tối đa 15%/năm; dự toán không tự nhân thành tổng khóa."
   }
  ],
  "scholarships": [
@@ -194,7 +282,8 @@
    "time": "",
    "schoolId": "vn-ts-313",
    "sourceId": "uit-scholarships-2026",
-   "note": "Áp dụng theo từng loại học bổng và đối tượng trong thông báo 19/10/2026."
+   "note": "Áp dụng theo từng loại học bổng và đối tượng trong thông báo 19/10/2026.",
+   "category": "scholarship"
   },
   {
    "id": "uit-scholarship-list-2026",
@@ -203,7 +292,8 @@
    "time": "",
    "schoolId": "vn-ts-313",
    "sourceId": "uit-scholarships-2026",
-   "note": "Mốc trong thông báo; đối chiếu thông tin cập nhật tại Phòng CTSV."
+   "note": "Mốc trong thông báo; đối chiếu thông tin cập nhật tại Phòng CTSV.",
+   "category": "scholarship"
   },
   {
    "id": "national-wishes-plan-2026",
@@ -213,6 +303,16 @@
    "schoolId": "",
    "sourceId": "national-plan-2026",
    "note": "Mốc lịch sử trong Quyết định 3037 công bố tháng 01/2026; chưa xác nhận văn bản điều chỉnh. Không dùng để suy ra lịch năm sau."
+  },
+  {
+   "id": "caothang-advanced-close-2026",
+   "title": "Cao Thắng — hạn dự kiến đăng ký chương trình tiên tiến",
+   "date": "2026-08-28",
+   "time": "",
+   "schoolId": "vn-ts-89",
+   "category": "admission",
+   "sourceId": "caothang-advanced-2026",
+   "note": "Mốc lịch sử dự kiến trong thông báo 413 ngày 11/03/2026, chỉ cho hai chương trình tiên tiến và người đáp ứng điều kiện; chưa xác nhận thông báo điều chỉnh."
   }
  ],
  "rules": [
@@ -532,5 +632,25 @@
    "note": "Đã kiểm tra HTTP 200, application/pdf, không có X-Frame-Options hoặc CSP chặn frame tại lần kiểm tra. Nếu nguồn đổi chính sách, mở PDF gốc.",
    "framePolicyCheckedAt": "2026-10-29"
   }
- ]
+ ],
+ "resourceFacts": {
+  "mit-linear": {
+   "language": "en",
+   "level": "undergraduate",
+   "checkedAt": "2026-10-29",
+   "scope": "Trang nguồn đọc bằng tiếng Anh và ghi trình độ Undergraduate; chưa xác minh mọi phụ đề hoặc bản dịch."
+  },
+  "mit-economics": {
+   "language": "en",
+   "level": "undergraduate",
+   "checkedAt": "2026-10-29",
+   "scope": "Trang nguồn đọc bằng tiếng Anh và ghi trình độ Undergraduate; chưa xác minh mọi phụ đề hoặc bản dịch."
+  },
+  "mit-circuits": {
+   "language": "en",
+   "level": "undergraduate",
+   "checkedAt": "2026-10-29",
+   "scope": "Trang nguồn đọc bằng tiếng Anh và ghi trình độ Undergraduate; chưa xác minh mọi phụ đề hoặc bản dịch."
+  }
+ }
 }

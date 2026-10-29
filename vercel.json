@@ -153,63 +153,24 @@
     {
       "source": "/(.*)",
       "headers": [
-        {
-          "key": "Strict-Transport-Security",
-          "value": "max-age=63072000; includeSubDomains; preload"
-        },
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "no-referrer"
-        },
-        {
-          "key": "Permissions-Policy",
-          "value": "camera=(self), microphone=(self), geolocation=(self), display-capture=(self), publickey-credentials-get=(self), payment=(), usb=(), accelerometer=(), gyroscope=(), magnetometer=(), serial=(), hid=(), browsing-topics=(), interest-cohort=(), attribution-reporting=()"
-        },
-        {
-          "key": "Cross-Origin-Opener-Policy",
-          "value": "same-origin-allow-popups"
-        },
-        {
-          "key": "X-Permitted-Cross-Domain-Policies",
-          "value": "none"
-        },
-        {
-          "key": "Origin-Agent-Cluster",
-          "value": "?1"
-        },
-        {
-          "key": "X-DNS-Prefetch-Control",
-          "value": "off"
-        },
-        {
-          "key": "Reporting-Endpoints",
-          "value": "csp-endpoint=\"/api/security/csp-report\""
-        },
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://accounts.google.com https://www.google.com https://www.gstatic.com https://cdn.jsdelivr.net https://cdn.payos.vn https://challenges.cloudflare.com https://cse.google.com https://hoangdaika13-astra-realtime.onrender.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' http://127.0.0.1:7880 http://localhost:7880 ws://127.0.0.1:7880 ws://localhost:7880 http://localhost:8765 http://127.0.0.1:8765 https: wss:; frame-src 'self' blob: https:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self' https://formsubmit.co https://accounts.google.com https://*.payos.vn; frame-ancestors 'none'; report-uri /api/security/csp-report; report-to csp-endpoint"
-        }
+        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "Permissions-Policy", "value": "camera=(self), microphone=(self), geolocation=(self), display-capture=(self), publickey-credentials-get=(self), payment=(), usb=(), accelerometer=(), gyroscope=(), magnetometer=(), serial=(), hid=(), browsing-topics=(), interest-cohort=(), attribution-reporting=()" },
+        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" },
+        { "key": "X-Permitted-Cross-Domain-Policies", "value": "none" },
+        { "key": "Origin-Agent-Cluster", "value": "?1" },
+        { "key": "X-DNS-Prefetch-Control", "value": "off" },
+        { "key": "Reporting-Endpoints", "value": "csp-endpoint=\"/api/security/csp-report\"" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://accounts.google.com https://www.google.com https://www.gstatic.com https://cdn.jsdelivr.net https://cdn.payos.vn https://challenges.cloudflare.com https://cse.google.com https://hoangdaika13-astra-realtime.onrender.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' http://127.0.0.1:7880 http://localhost:7880 ws://127.0.0.1:7880 ws://localhost:7880 http://localhost:8765 http://127.0.0.1:8765 https: wss:; frame-src 'self' blob: https:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self' https://formsubmit.co https://accounts.google.com https://*.payos.vn; frame-ancestors 'none'; report-uri /api/security/csp-report; report-to csp-endpoint" }
       ]
     },
     {
       "source": "/api/(.*)",
       "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex, nofollow, noarchive"
-        },
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
-        }
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" },
+        { "key": "Content-Security-Policy", "value": "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'" }
       ]
     }
   ]

@@ -262,8 +262,8 @@
       scripts: ["hh-vietnam-law-core.js?v=2", "hh-vietnam-law-manifest.js?v=2", "hh-vietnam-law-data.js?v=1", "hh-vietnam-law-pdf-transport.js?v=1", "hh-vietnam-law-pdf.js?v=1", "hh-vietnam-law.js?v=2"]
     },
     university: {
-      styles: ["hh-university.css?v=2", "hh-university-workspace.css?v=1"],
-      scripts: ["hh-university-core.js?v=1", "hh-university-manifest.js?v=1", "hh-university-data.js?v=1", "hh-university-tools.js?v=1", "hh-university-workspace-data.js?v=1", "hh-university-workspace.js?v=1", "hh-university.js?v=2"]
+      styles: ["hh-university.css?v=3", "hh-university-workspace.css?v=1", "hh-university-experience.css?v=1"],
+      scripts: ["hh-university-core.js?v=1", "hh-university-manifest.js?v=1", "hh-university-data.js?v=1", "hh-university-experience-core.js?v=1", "hh-university-tools.js?v=2", "hh-university-workspace-data.js?v=2", "hh-university-experience.js?v=1", "hh-university-workspace.js?v=2", "hh-university.js?v=3"]
     },
     "focus-study-room": {
       styles: ["focus-room.css?v=14"],

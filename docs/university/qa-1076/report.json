@@ -1,0 +1,85 @@
+{
+  "release": 1076,
+  "at": "2026-10-29T10:49:41.800Z",
+  "commands": {
+    "tools": "npm run test:all-tools",
+    "security": "npm run test:security:full",
+    "learning": "npm run test:learning",
+    "focused": "node --test tests/hh-university.test.js tests/hh-university-workspace.test.js tests/hh-university-experience.test.js tests/hh-mathcore.test.js tests/hh-mathcore-upgrade.test.js tests/hh-mathcore-gemini.test.js tests/hh-vietnam-law.test.js tests/hh-vietnam-law-pdf-transport.test.js tests/hh-core-gateway.test.js tests/platform-home.test.js tests/platform-home-scroll.test.js"
+  },
+  "unitTotal": 655,
+  "units": {
+    "tools": {
+      "tests": 241,
+      "passed": 241,
+      "failed": 0,
+      "skipped": 0
+    },
+    "security": {
+      "tests": 107,
+      "passed": 107,
+      "failed": 0,
+      "skipped": 0
+    },
+    "learning": {
+      "tests": 130,
+      "passed": 130,
+      "failed": 0,
+      "skipped": 0
+    },
+    "focused": {
+      "tests": 177,
+      "passed": 177,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "browser": {
+    "flows": 41,
+    "audits": 117,
+    "contrastChecks": 5804,
+    "contrastFailures": 0,
+    "pageErrors": [],
+    "overflow": 0,
+    "widths": [
+      375,
+      768,
+      1440
+    ],
+    "zoom": 200,
+    "themes": 16,
+    "backend": "Real University handler;explicit member/admin,in-memory DB and Gemini response fixtures;other APIs503;no production writes"
+  },
+  "coverage": {
+    "programmes": 21286,
+    "schoolsWithProgrammes": 586,
+    "profiles": 5,
+    "tuition": 3,
+    "scholarships": 2,
+    "rules": 1,
+    "foundationCourses": 6,
+    "authoredLessons": 36,
+    "additionalAuthoredExercises": 24,
+    "resourceLinks": 65,
+    "verifiedResourceLanguageLevel": 3,
+    "officialSources": 12,
+    "sourceHTTP200": 12
+  },
+  "storage": {
+    "key": "hh.university.workspace.v1:<owner>",
+    "schema": 2,
+    "migratesFrom": [
+      1
+    ],
+    "manualCloudScopes": [
+      "compare",
+      "wishes",
+      "calendar",
+      "planner"
+    ],
+    "automaticSync": false,
+    "realProductionAccountWrites": 0,
+    "geminiPaidCalls": 0
+  },
+  "deployment": "Verify after push;see final handover"
+}

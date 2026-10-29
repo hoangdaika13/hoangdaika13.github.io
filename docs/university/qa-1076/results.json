@@ -1,0 +1,561 @@
+{
+  "at": "2026-10-29T10:49:41.800Z",
+  "results": [
+    {
+      "navigation": "Independent University category and route;24school cards per page;K12 is not mounted",
+      "catalogue": 959
+    },
+    {
+      "programmes": "Native school selection and expandable programme variants",
+      "scores2026": "Separate30and100scales remain visible for UIT combined admission"
+    },
+    {
+      "history": "Actual2020record27.2;method filter;all7year columns;CSV download retains decimals and source"
+    },
+    {
+      "saved": "Bookmark survives real reload;new saved route lists selected school"
+    },
+    {
+      "responsive": "375/768/1440,DPR2,zoom200,scrollable score table and keyboard focus"
+    },
+    {
+      "college": "Cao Đẳng Cộng Đồng Lai Châu",
+      "missingData": "School with no records displays missing-data state,not score0"
+    },
+    {
+      "migration": "K12 no longer contains University tab;legacy URL redirects;existing university study note persists across modules"
+    },
+    {
+      "offline": "Real Service Worker retains visited directory,school and2020pack through offline reload;no unvisited data promised"
+    },
+    {
+      "workspace": "Cross-school accent-insensitive programme search,filters,comparison and wish quick-add use real index"
+    },
+    {
+      "compare": "Multiple school/programme columns,projected tuition source,notes,CSV and persistence after reload"
+    },
+    {
+      "wishes": "Keyboard reorder,notes,CSV formula protection and explainable deterministic recommendations"
+    },
+    {
+      "admissions": "Actual sourced HUBT2026 no-adjustment case calculates24.5;rule scope stays visible"
+    },
+    {
+      "calendar": "Source event and personal date/checklist persist;ICS converts Vietnam17:00toUTC10:00;notifications stay opt-in"
+    },
+    {
+      "finance": "Projected K2025 tuition remains labelled;budget separates months/fees/aid;scholarship bookmarks and checklist work"
+    },
+    {
+      "planner": "Real weighted GPA3.6,earned credits5,required futureGPA4 and retained course results"
+    },
+    {
+      "learning": "Actual authored lessons,resource page note,six due-dated cards,variable-option quiz,mistake replay and resolution"
+    },
+    {
+      "career": "Editable CV escapes markup,HTML download is inert and completed projects join portfolio"
+    },
+    {
+      "curriculum": "Real UIT table imports as unassigned planned courses,semester/prerequisites are editable and existing GPA is preserved"
+    },
+    {
+      "pdf": "Actual official PDF loads inside page;the same public document can be read as a local blob with an always-visible fallback and explicit cleanup"
+    },
+    {
+      "ai": "Real handler with explicit Gemini fixture,course context,citations,saveable cards and rejection of fabricated source quotes"
+    },
+    {
+      "aiLifecycle": "Changing AI context cancels stale responses;admissions result uses exact retrieved quotes rather than generated numbers"
+    },
+    {
+      "editorial": "Authenticated source report,standard-member403,admin revision-controlled acceptance and history;no automatic publication"
+    },
+    {
+      "privacy": "Guest/member partitions and byte-identical recovery export preserve future-version data"
+    },
+    {
+      "storageFailure": "Explicit quota failure retains successive edits in memory and exports a complete session without overwriting stored data"
+    },
+    {
+      "workspaceResponsive": "All11workspaces at375/768/1440,all16themes and200%zoom audited;keyboard focus preserved"
+    },
+    {
+      "overview": "Real personal metrics,two persistent journeys and optional onboarding;no fabricated progress"
+    },
+    {
+      "savedSearch": "Actual filtered index,versioned saved queries and public URL filters"
+    },
+    {
+      "boards": "Named comparison snapshot,selected criteria,mobile card view and per-choice questions survive reopening"
+    },
+    {
+      "wishPreparation": "Individual method/missing-condition note and real checklist per wish"
+    },
+    {
+      "monthlyCalendar": "42day month grid,typed filters and editable personal duration preserve source milestones"
+    },
+    {
+      "scenarios": "Independent budget snapshots retain assumptions and reopen without changing published tuition"
+    },
+    {
+      "timetable": "Week schedule,keyboard day movement,personal course grouping and non-mutatingGPA simulation"
+    },
+    {
+      "libraryFilters": "Real resource pagination,explicit no-results and verified language/level filters"
+    },
+    {
+      "practiceExpansion": "Actual authored exercise hints,lesson reading history and four graded expansion questions;reading grants no mastery"
+    },
+    {
+      "aiPreview": "Explicit payload preview before any model request;selected lesson is validated by the real handler"
+    },
+    {
+      "manualCloud": "Authenticated revisioned snapshot,explicit upload/download confirmations and selected-group restore preserve localCV"
+    },
+    {
+      "protectedCloud": "Future-version local data cannot silently become an empty uploaded snapshot"
+    },
+    {
+      "cloudConflict": "Second-device revision conflict keeps local changes;server snapshot delete requires a second confirmation"
+    },
+    {
+      "experienceResponsive": "Overview/month/week/criteria-card layouts audited at375/768/1440and16themes with200%zoom"
+    },
+    {
+      "directoryFilters": "Mobile filter drawer,saved school queries and back navigation retain the public searchURL"
+    },
+    {
+      "themes": 16,
+      "contrastChecks": 5804,
+      "pageErrors": 0
+    }
+  ],
+  "errors": [],
+  "assets": [
+    {
+      "url": "/hh-university.css?v=3",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-experience.css?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-workspace.css?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-core.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-manifest.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-data.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-experience-core.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-tools.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-workspace-data.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-experience.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-workspace.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-university.js?v=3",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/directory.json?v=4004393838bb",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/schools/vn-ts-313.json?v=204f8e93d354",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/scores/vn-ts-313/2026.json?v=2510c0e0e58f",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/scores/vn-ts-313/2020.json?v=ecdd70bf5625",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/scores/vn-ts-313/2021.json?v=573bc9072d6b",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/scores/vn-ts-313/2022.json?v=9fb681f9b55a",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/scores/vn-ts-313/2023.json?v=1a50f37eb7bd",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/scores/vn-ts-313/2024.json?v=6292efc85278",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/scores/vn-ts-313/2025.json?v=86f6e4404a8d",
+      "status": 200
+    },
+    {
+      "url": "/hh-university.css?v=3",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-workspace.css?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-experience.css?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-core.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-manifest.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-data.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-experience-core.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-tools.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-workspace-data.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-experience.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-workspace.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-university.js?v=3",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/directory.json?v=4004393838bb",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/schools/vn-ts-313.json?v=204f8e93d354",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/scores/vn-ts-313/2020.json?v=ecdd70bf5625",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/scores/vn-ts-313/2026.json?v=2510c0e0e58f",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/schools/vn-hocmai-43e44d163aa996.json?v=b34ca163e311",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/schools/vn-hocmai-fa990d8702c9b1.json?v=a6ff736b02d4",
+      "status": 200
+    },
+    {
+      "url": "/hh-university.css?v=3",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-workspace.css?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-experience.css?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-core.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-manifest.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-data.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-experience-core.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-tools.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-workspace-data.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-experience.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-workspace.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-university.js?v=3",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/directory.json?v=4004393838bb",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/schools/vn-ts-313.json?v=204f8e93d354",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/scores/vn-ts-313/2020.json?v=ecdd70bf5625",
+      "status": 200
+    },
+    {
+      "url": "/hh-university.css?v=3",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-workspace.css?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-experience.css?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-core.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-manifest.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-data.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-experience-core.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-tools.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-workspace-data.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-experience.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-workspace.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-university.js?v=3",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/directory.json?v=4004393838bb",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/schools/vn-ts-313.json?v=204f8e93d354",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/scores/vn-ts-313/2020.json?v=ecdd70bf5625",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/workspace/programme-index.json?v=e588d90fec55",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/schools/vn-ts-318.json?v=1ca4aff9100a",
+      "status": 200
+    },
+    {
+      "url": "/hh-university.css?v=3",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-workspace.css?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-experience.css?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-core.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-manifest.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-data.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-experience-core.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-tools.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-workspace-data.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-experience.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-workspace.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-university.js?v=3",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/directory.json?v=4004393838bb",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/workspace/programme-index.json?v=e588d90fec55",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/schools/vn-ts-318.json?v=1ca4aff9100a",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/schools/vn-ts-313.json?v=204f8e93d354",
+      "status": 200
+    },
+    {
+      "url": "/hh-university.css?v=3",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-workspace.css?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-experience.css?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-core.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-manifest.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-data.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-experience-core.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-tools.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-workspace-data.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-experience.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-university-workspace.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-university.js?v=3",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/directory.json?v=4004393838bb",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/workspace/programme-index.json?v=e588d90fec55",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/workspace/learning-kit.json?v=f992e3f01eb6",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/schools/vn-ts-313.json?v=204f8e93d354",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/schools/vn-ts-318.json?v=1ca4aff9100a",
+      "status": 200
+    },
+    {
+      "url": "/data/hh-university/schools/vn-hocmai-acaa9f4529bab3.json?v=fabcd21f74af",
+      "status": 200
+    }
+  ],
+  "environment": {
+    "browser": "Native Chromium",
+    "backend": "Real University handler;explicit member/admin,in-memory DB and Gemini response fixtures;other APIs503;no production writes",
+    "source": "Pinned catalogue facts plus actual official UIT PDF;no browser requests to aggregators"
+  }
+}

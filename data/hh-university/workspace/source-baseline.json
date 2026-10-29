@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "checkedAt": "2026-10-29T08:54:06.580Z",
+ "checkedAt": "2026-10-29T10:25:05.032Z",
  "published": false,
  "rows": [
   {
@@ -10,9 +10,9 @@
    "http": 200,
    "bytes": 82271,
    "sha256": "afb89834490737f762c77a838de9c3e23963fde06c1c34c81426468e4b22ab24",
-   "checkedAt": "2026-10-29T08:53:48.913Z",
+   "checkedAt": "2026-10-29T10:24:47.689Z",
    "scope": "HTTP and normalized page/PDF fingerprint only;semantic changes require editorial review",
-   "changed": null
+   "changed": false
   },
   {
    "id": "uit-fees-2025",
@@ -21,9 +21,9 @@
    "http": 200,
    "bytes": 32297,
    "sha256": "ac4d3a8ae33c1b684805e2edcc20647137a97c2282fdc0e8a5cac24d3626d06b",
-   "checkedAt": "2026-10-29T08:53:49.276Z",
+   "checkedAt": "2026-10-29T10:24:48.038Z",
    "scope": "HTTP and normalized page/PDF fingerprint only;semantic changes require editorial review",
-   "changed": null
+   "changed": false
   },
   {
    "id": "uit-scholarships-2026",
@@ -32,9 +32,9 @@
    "http": 200,
    "bytes": 53393,
    "sha256": "dd1e202c6b8aec110c5ab3ffed4da3274fdd2e9f224c463c1586298b527f9a85",
-   "checkedAt": "2026-10-29T08:53:49.725Z",
+   "checkedAt": "2026-10-29T10:24:48.477Z",
    "scope": "HTTP and normalized page/PDF fingerprint only;semantic changes require editorial review",
-   "changed": null
+   "changed": false
   },
   {
    "id": "dut-admissions",
@@ -43,16 +43,20 @@
    "http": 200,
    "bytes": 54550,
    "sha256": "1a9844c0093bef6aa1544311e8219111f3ca6e73d0498780c722668689074e64",
-   "checkedAt": "2026-10-29T08:53:49.871Z",
+   "checkedAt": "2026-10-29T10:24:48.616Z",
    "scope": "HTTP and normalized page/PDF fingerprint only;semantic changes require editorial review",
-   "changed": null
+   "changed": false
   },
   {
    "id": "fpt-contact",
    "url": "https://caodang.fpt.edu.vn/tuyen-sinh/hoc-phi",
-   "error": "The operation was aborted due to timeout",
-   "checkedAt": "2026-10-29T08:54:04.878Z",
-   "changed": null
+   "finalUrl": "https://caodang.fpt.edu.vn/tuyen-sinh/hoc-phi",
+   "http": 200,
+   "bytes": 235655,
+   "sha256": "f088dec08d53592db535c32cb69b8af4711aac5da37fdeece9581f547fa62a8b",
+   "checkedAt": "2026-10-29T10:25:03.120Z",
+   "scope": "HTTP and normalized page/PDF fingerprint only;semantic changes require editorial review",
+   "changed": true
   },
   {
    "id": "national-plan-2026",
@@ -61,9 +65,9 @@
    "http": 200,
    "bytes": 519650,
    "sha256": "e1296d4ba48ba6403fc3147138eaad088d1edc6fa7d4dfe31a36f1ebfe9add62",
-   "checkedAt": "2026-10-29T08:54:05.058Z",
+   "checkedAt": "2026-10-29T10:25:03.292Z",
    "scope": "HTTP and normalized page/PDF fingerprint only;semantic changes require editorial review",
-   "changed": null
+   "changed": false
   },
   {
    "id": "hubt-thpt-2026",
@@ -72,9 +76,9 @@
    "http": 200,
    "bytes": 60862,
    "sha256": "c160aa4b3c0ec6d058311937176f41405748d9fe4482055d49f8a56831865c69",
-   "checkedAt": "2026-10-29T08:54:06.197Z",
+   "checkedAt": "2026-10-29T10:25:04.413Z",
    "scope": "HTTP and normalized page/PDF fingerprint only;semantic changes require editorial review",
-   "changed": null
+   "changed": false
   },
   {
    "id": "uit-dean-2026",
@@ -83,11 +87,54 @@
    "http": 200,
    "bytes": 865152,
    "sha256": "fbc674b85cc7a0cc9da43add0a643bb1461de56cbf43d7349c6f227be214395a",
-   "checkedAt": "2026-10-29T08:54:06.580Z",
+   "checkedAt": "2026-10-29T10:25:04.746Z",
+   "scope": "HTTP and normalized page/PDF fingerprint only;semantic changes require editorial review",
+   "changed": false
+  },
+  {
+   "id": "caothang-advanced-2026",
+   "url": "https://caothang.edu.vn/tuyensinh/chuong-trinh-tien-tien.html",
+   "finalUrl": "https://caothang.edu.vn/tuyensinh/chuong-trinh-tien-tien.html",
+   "http": 200,
+   "bytes": 26279,
+   "sha256": "d64da483db6924adad393f1f28466416b3bf9c0572bbac6749ebaee14b3a3c93",
+   "checkedAt": "2026-10-29T10:25:04.876Z",
+   "scope": "HTTP and normalized page/PDF fingerprint only;semantic changes require editorial review",
+   "changed": null
+  },
+  {
+   "id": "caothang-faq-2026",
+   "url": "https://caothang.edu.vn/tuyensinh/hoi-dap",
+   "finalUrl": "https://caothang.edu.vn/tuyensinh/hoi-dap",
+   "http": 200,
+   "bytes": 57365,
+   "sha256": "2534e854cd9a07d250165ff90e733a142815ff4aa93a76b8c17f0af339b3aab6",
+   "checkedAt": "2026-10-29T10:25:04.982Z",
+   "scope": "HTTP and normalized page/PDF fingerprint only;semantic changes require editorial review",
+   "changed": null
+  },
+  {
+   "id": "hubt-contact",
+   "url": "https://tuyensinh.hubt.edu.vn/thong-tin-lien-he/",
+   "finalUrl": "https://tuyensinh.hubt.edu.vn/thong-tin-lien-he/",
+   "http": 200,
+   "bytes": 48180,
+   "sha256": "1cf70aabe313de1ccf90619b772d3d2eb44239488e78301129f1d41b1d518874",
+   "checkedAt": "2026-10-29T10:25:05.006Z",
+   "scope": "HTTP and normalized page/PDF fingerprint only;semantic changes require editorial review",
+   "changed": null
+  },
+  {
+   "id": "hubt-fees-2026",
+   "url": "https://tuyensinh.hubt.edu.vn/dai-hoc/hoc-phi-k31/",
+   "finalUrl": "https://tuyensinh.hubt.edu.vn/dai-hoc/hoc-phi-k31/",
+   "http": 200,
+   "bytes": 56443,
+   "sha256": "9b60d14d3e7c58580c7e1ccda3cb9759de9b92f68267506996b45917e9f98ec0",
+   "checkedAt": "2026-10-29T10:25:05.032Z",
    "scope": "HTTP and normalized page/PDF fingerprint only;semantic changes require editorial review",
    "changed": null
   }
  ],
- "reviewedAt": "2026-10-29",
- "reviewScope": "HTTP checks and metadata sources reviewed for this release; fingerprints are not proof of semantic correctness."
+ "reviewScope": "HTTP and fingerprint checks only. Curated changes were separately checked against original official pages."
 }
