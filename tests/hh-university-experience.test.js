@@ -64,7 +64,7 @@ test('snapshot mutation rejects cross-origin, malformed payload and excess priva
   r=response();await f.h(req('PUT',{revision:0,payload:{schemaVersion:1,scopes:['compare'],data:{cv:{name:'extra'}}}}),r);assert.equal(r.code,400);assert.equal(f.db.rows('university_workspaces').length,0);
 });
 test('practice expansion contains24 authored exercises, valid lesson references and distinct quizzes',()=>{
-  const kit=H.__test.readEntry(R.learningKit),lib=H.__test.readEntry(R.library),ids=new Set();assert.equal(kit.rights,'HH-original');assert.equal(kit.courses.length,6);
+  const kit=H.__test.readEntry(R.learningKit),lib=H.__test.readEntry(R.library),ids=new Set();assert.ok(!fs.readFileSync(path.join(root,R.learningKit.url.split('?')[0]),'utf8').includes('\r\n'));assert.equal(kit.rights,'HH-original');assert.equal(kit.courses.length,6);
   for(const c of kit.courses){const entry=lib.courses.find(e=>e.id===c.courseId),source=H.__test.readEntry({...entry,version:lib.version});assert.equal(c.exercises.length,4);for(const e of c.exercises){assert.ok(!ids.has(e.id));ids.add(e.id);assert.ok(source.lessons.some(l=>l.id===e.lessonId));assert.ok(e.hints.length>=2&&e.steps.length>=2&&e.check);assert.equal(new Set(e.question.options).size,4);assert.ok(e.question.correct>=0&&e.question.correct<4);}}
   assert.equal(ids.size,24);
 });

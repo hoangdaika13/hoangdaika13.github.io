@@ -69,3 +69,5 @@ Lệnh focused thực tế và tổng số cụ thể được ghi trong [báo c
 [Luồng trình duyệt](qa-1076/results.json), [tương phản](qa-1076/readability.json), [tổng quan](qa-1076/experience-overview.png), [so sánh](qa-1076/experience-comparison.png), [lịch](qa-1076/experience-calendar.png), [thời khóa biểu](qa-1076/experience-timetable.png), [ôn tập](qa-1076/experience-study.png), [mobile](qa-1076/experience-mobile.png).
 
 Release/cache **1076**, loader **737**, router **300**, University main **3**, tools/workspace/data **2**, experience core/UI/CSS **1**. Cấu hình bảo mật Vercel giữ nguyên ngữ nghĩa, chỉ trả lại định dạng header tương thích contract test cũ. Dependency/lockfile không đổi; audit thư viện có sẵn vẫn cần xử lý riêng. Kết quả kiểm tra deployment/production được báo sau push.
+
+Kiểm tra production 1076 đã phát hiện lệch checksum do CRLF/LF của bộ bài tập; bản sửa và phiên bản triển khai cuối là [1077](RELEASE_1077.md). Các file QA kèm báo cáo được cập nhật bằng lượt kiểm tra cuối của 1077, cùng phạm vi chức năng nêu trên.

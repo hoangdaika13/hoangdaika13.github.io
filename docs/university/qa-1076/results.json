@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-29T10:49:41.800Z",
+  "at": "2026-10-29T11:00:44.262Z",
   "results": [
     {
       "navigation": "Independent University category and route;24school cards per page;K12 is not mounted",
@@ -122,7 +122,7 @@
       "experienceResponsive": "Overview/month/week/criteria-card layouts audited at375/768/1440and16themes with200%zoom"
     },
     {
-      "directoryFilters": "Mobile filter drawer,saved school queries and back navigation retain the public searchURL"
+      "directoryFilters": "Mobile filter drawer,saved school queries,Enter-key focus and back navigation retain the public searchURL"
     },
     {
       "themes": 16,
@@ -137,11 +137,11 @@
       "status": 200
     },
     {
-      "url": "/hh-university-experience.css?v=1",
+      "url": "/hh-university-workspace.css?v=1",
       "status": 200
     },
     {
-      "url": "/hh-university-workspace.css?v=1",
+      "url": "/hh-university-experience.css?v=1",
       "status": 200
     },
     {
@@ -165,7 +165,7 @@
       "status": 200
     },
     {
-      "url": "/hh-university-workspace-data.js?v=2",
+      "url": "/hh-university-workspace-data.js?v=3",
       "status": 200
     },
     {
@@ -177,7 +177,7 @@
       "status": 200
     },
     {
-      "url": "/hh-university.js?v=3",
+      "url": "/hh-university.js?v=4",
       "status": 200
     },
     {
@@ -205,11 +205,11 @@
       "status": 200
     },
     {
-      "url": "/data/hh-university/scores/vn-ts-313/2023.json?v=1a50f37eb7bd",
+      "url": "/data/hh-university/scores/vn-ts-313/2024.json?v=6292efc85278",
       "status": 200
     },
     {
-      "url": "/data/hh-university/scores/vn-ts-313/2024.json?v=6292efc85278",
+      "url": "/data/hh-university/scores/vn-ts-313/2023.json?v=1a50f37eb7bd",
       "status": 200
     },
     {
@@ -249,7 +249,7 @@
       "status": 200
     },
     {
-      "url": "/hh-university-workspace-data.js?v=2",
+      "url": "/hh-university-workspace-data.js?v=3",
       "status": 200
     },
     {
@@ -261,7 +261,7 @@
       "status": 200
     },
     {
-      "url": "/hh-university.js?v=3",
+      "url": "/hh-university.js?v=4",
       "status": 200
     },
     {
@@ -321,7 +321,7 @@
       "status": 200
     },
     {
-      "url": "/hh-university-workspace-data.js?v=2",
+      "url": "/hh-university-workspace-data.js?v=3",
       "status": 200
     },
     {
@@ -333,7 +333,7 @@
       "status": 200
     },
     {
-      "url": "/hh-university.js?v=3",
+      "url": "/hh-university.js?v=4",
       "status": 200
     },
     {
@@ -381,7 +381,7 @@
       "status": 200
     },
     {
-      "url": "/hh-university-workspace-data.js?v=2",
+      "url": "/hh-university-workspace-data.js?v=3",
       "status": 200
     },
     {
@@ -393,7 +393,7 @@
       "status": 200
     },
     {
-      "url": "/hh-university.js?v=3",
+      "url": "/hh-university.js?v=4",
       "status": 200
     },
     {
@@ -449,7 +449,7 @@
       "status": 200
     },
     {
-      "url": "/hh-university-workspace-data.js?v=2",
+      "url": "/hh-university-workspace-data.js?v=3",
       "status": 200
     },
     {
@@ -461,7 +461,7 @@
       "status": 200
     },
     {
-      "url": "/hh-university.js?v=3",
+      "url": "/hh-university.js?v=4",
       "status": 200
     },
     {
@@ -513,7 +513,7 @@
       "status": 200
     },
     {
-      "url": "/hh-university-workspace-data.js?v=2",
+      "url": "/hh-university-workspace-data.js?v=3",
       "status": 200
     },
     {
@@ -525,7 +525,7 @@
       "status": 200
     },
     {
-      "url": "/hh-university.js?v=3",
+      "url": "/hh-university.js?v=4",
       "status": 200
     },
     {
@@ -537,7 +537,7 @@
       "status": 200
     },
     {
-      "url": "/data/hh-university/workspace/learning-kit.json?v=f992e3f01eb6",
+      "url": "/data/hh-university/workspace/learning-kit.json?v=298847072b28",
       "status": 200
     },
     {

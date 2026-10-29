@@ -263,7 +263,7 @@
     },
     university: {
       styles: ["hh-university.css?v=3", "hh-university-workspace.css?v=1", "hh-university-experience.css?v=1"],
-      scripts: ["hh-university-core.js?v=1", "hh-university-manifest.js?v=1", "hh-university-data.js?v=1", "hh-university-experience-core.js?v=1", "hh-university-tools.js?v=2", "hh-university-workspace-data.js?v=2", "hh-university-experience.js?v=1", "hh-university-workspace.js?v=2", "hh-university.js?v=3"]
+      scripts: ["hh-university-core.js?v=1", "hh-university-manifest.js?v=1", "hh-university-data.js?v=1", "hh-university-experience-core.js?v=1", "hh-university-tools.js?v=2", "hh-university-workspace-data.js?v=3", "hh-university-experience.js?v=1", "hh-university-workspace.js?v=2", "hh-university.js?v=4"]
     },
     "focus-study-room": {
       styles: ["focus-room.css?v=14"],

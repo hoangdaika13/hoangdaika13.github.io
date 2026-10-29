@@ -1,6 +1,6 @@
 {
   "release": 1076,
-  "at": "2026-10-29T10:49:41.800Z",
+  "at": "2026-10-29T11:00:44.262Z",
   "commands": {
     "tools": "npm run test:all-tools",
     "security": "npm run test:security:full",
@@ -81,5 +81,8 @@
     "realProductionAccountWrites": 0,
     "geminiPaidCalls": 0
   },
-  "deployment": "Verify after push;see final handover"
+  "deployment": "Verify after push;see final handover",
+  "featureRelease": 1076,
+  "finalRelease": 1077,
+  "canonicalLearningKit": "UTF-8/LF before bytes and SHA256"
 }
