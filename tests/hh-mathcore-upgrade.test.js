@@ -55,7 +55,7 @@ test('all42practice variants have distinct skills and independently correct answ
 });
 test('legacy notes/answers migrate additively and rich saved lessons retain their steps',()=>{
  const legacy={version:1,topic:'linear',notes:'keep',saved:[{problem:'2x=8',answer:'x=4',provider:'local',at:'2026-10-29'}],attempts:[]},p=C.preferences(legacy);assert.equal(p.notes,'keep');assert.equal(p.quiz,null);assert.deepEqual(p.mistakes,[]);assert.ok(p.saved[0].id.startsWith('legacy-'));
- assert.equal(C.VERSION,2);assert.equal(p.version,2);assert.equal(C.preferenceKey(null),'hh.mathcore.v1:guest');assert.throws(()=>C.preferences({...legacy,version:3}));
+ assert.equal(C.VERSION,3);assert.equal(p.version,3);assert.equal(C.preferenceKey(null),'hh.mathcore.v1:guest');assert.throws(()=>C.preferences({...legacy,version:4}));
  const lesson={...E.solve('2x+y=7;x-y=2'),rawProblem:'2x+y=7;x-y=2',id:'example'},saved=C.preferences({...C.defaults(),saved:[lesson]}).saved[0];assert.equal(saved.steps.length,lesson.steps.length);assert.equal(saved.rawProblem,lesson.rawProblem);assert.equal(saved.kind,'system');
 });
 test('quiz state resumes exactly and protects malformed/future nested versions',()=>{

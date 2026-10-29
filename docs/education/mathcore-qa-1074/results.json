@@ -1,0 +1,181 @@
+{
+  "at": "2026-10-29T04:10:41.287Z",
+  "results": [
+    "Primary learning navigation, six sections, lazy module and truthful AI configuration",
+    "Guided hints with hidden answer, preserved thinking, true polynomial diagnostics, quadratic solution and saving",
+    "24 complete original topic notes, accent-insensitive search, empty state and guided derivative example",
+    "Quiz answer lock until submission, five-question navigation, explanation and persistent real attempts",
+    "Five actual3D coordinate meshes, drag/keyboard orbit, dimensions, horizontal section and safe graph/tangent",
+    "Real scientific calculator, DEG/RAD and error handling, six model-specific Casio guides",
+    "Saved solution, actual practice stats and notes survive reload",
+    "Systems,quadratic inequalities,polynomial derivatives/integrals are guided locally;complete saved solution reopens from notebook",
+    "Typed inequality diagnostics catch missing sign reversal",
+    "14subjects with42skill variants;quiz and selections survive navigation/reload;mistakes are replayable and successful review resolves them without duplicate grading",
+    "Real image rotation,crop dimensions,undo and project-local OCR of cropped work;old annotations clear after image changes",
+    "Actual project-local Tesseract OCR reads printed image, confirms transcript, locates bad lines and drops boxes after manual correction",
+    "Real handler with explicit paid-provider fixture, withheld answers, reveal and cancelled stale-request protection",
+    "AI image review uses explicit fixture and server rejects fabricated image transcript quotes",
+    "Gemini-only configuration, direct ask, hidden/revealed answer, original-question/provider binding, follow-up and saved provenance",
+    "Gemini quota error stays explicit, provider switching cancels stale answers and explicit OpenAI still works",
+    "Gemini image review,375px/200% layout and guest authentication boundary with working local math",
+    "Account partition and byte-identical future-schema recovery export",
+    "All16themes,375/768/1440layouts,200%zoom,visible keyboard focus and reduced motion;no overflow/page errors",
+    "Math listeners/workers/canvases unmount;K12,Law and University remain reachable"
+  ],
+  "errors": [],
+  "assets": [
+    {
+      "url": "/hh-mathcore-ai.css?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-core.js?v=3",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-engine.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-practice.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-image.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-content.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-graphics.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-ocr.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-ai.js?v=3",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-ai.css?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-core.js?v=3",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-engine.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-practice.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-image.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-content.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-graphics.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-ocr.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-ai.js?v=3",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-ai.css?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-core.js?v=3",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-engine.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-practice.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-image.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-content.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-graphics.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-ocr.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-ai.js?v=3",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-ai.css?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-core.js?v=3",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-engine.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-practice.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-image.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-content.js?v=2",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-graphics.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-ocr.js?v=1",
+      "status": 200
+    },
+    {
+      "url": "/hh-mathcore-ai.js?v=3",
+      "status": 200
+    }
+  ],
+  "providerCalls": 11,
+  "environment": {
+    "browser": "Native Chromium",
+    "identity": "Explicit guest/member fixtures",
+    "database": "Explicit memory DB",
+    "ai": "Explicit structured-provider fixture;no live model call",
+    "ocr": "Actual pinned Tesseract worker and English language data",
+    "images": "Generated printed arithmetic QA image;no user-private image"
+  }
+}

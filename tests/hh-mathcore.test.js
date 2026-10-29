@@ -58,15 +58,15 @@ const photoFixture=()=>({readBack:'2x + 3 = 11\n2x = 14',summary:'Một dòng c�
 function request(resource='status',body,extra={}){return {method:body?'POST':'GET',query:{mathResource:resource},headers:{origin:'https://hoang8.com'},body,...extra};}
 const png=()=>{const buf=Buffer.alloc(33);Buffer.from([137,80,78,71,13,10,26,10]).copy(buf);buf.write('IHDR',12,'ascii');buf.writeUInt32BE(800,16);buf.writeUInt32BE(600,20);return {mimeType:'image/png',data:buf.toString('base64')};};
 test('AI status is public and accurately reports a missing key without touching DB/provider',async()=>{
- const handler=H.createHandler({keys:()=>[],getDb:()=>{throw Error('DB should not run');},generate:()=>{throw Error('Provider should not run');}}),res=response();await handler(request(),res);assert.equal(res.code,200);assert.equal(res.value.configured,false);assert.equal(res.value.photo.savedOnServer,false);assert.equal(res.headers['Cache-Control'],'no-store');
+ const handler=H.createHandler({geminiKeys:()=>[],keys:()=>[],getDb:()=>{throw Error('DB should not run');},generate:()=>{throw Error('Provider should not run');}}),res=response();await handler(request(),res);assert.equal(res.code,200);assert.equal(res.value.configured,false);assert.equal(res.value.photo.savedOnServer,false);assert.equal(res.headers['Cache-Control'],'no-store');
 });
 test('AI requires authenticated account, rejects untrusted origins, and exposes configuration honestly',async()=>{
  for(const [user,keys,req,expected]of [[null,['test'],request('tutor',{question:'2x=8'}),401],[{_id:'member'},[],request('tutor',{question:'2x=8'}),503],[{_id:'member'},['test'],request('tutor',{question:'2x=8'},{headers:{origin:'https://evil.invalid','sec-fetch-site':'cross-site'}}),403]]){
-  const handler=H.createHandler({getUser:async()=>user,keys:()=>keys,generate:()=>{throw Error('Provider should not run');}}),res=response();await handler(req,res);assert.equal(res.code,expected);
+  const handler=H.createHandler({geminiKeys:()=>[],getUser:async()=>user,keys:()=>keys,generate:()=>{throw Error('Provider should not run');}}),res=response();await handler(req,res);assert.equal(res.code,expected);
  }
 });
 test('AI provider gets bounded data, uses both user/IP limits and withholds solution until explicitly revealed',async()=>{
- const db=createEducationMemoryDB(),limits=[],calls=[];const handler=H.createHandler({getUser:async()=>({_id:'member'}),getDb:async()=>db,keys:()=>['explicit-test-key'],rateLimit:async(...args)=>limits.push(args.slice(1)),generate:async input=>{calls.push(input);return {value:tutorFixture(),model:'explicit-qa-provider'};}});
+ const db=createEducationMemoryDB(),limits=[],calls=[];const handler=H.createHandler({geminiKeys:()=>[],getUser:async()=>({_id:'member'}),getDb:async()=>db,keys:()=>['explicit-test-key'],rateLimit:async(...args)=>limits.push(args.slice(1)),generate:async input=>{calls.push(input);return {value:tutorFixture(),model:'explicit-qa-provider'};}});
  let res=response();await handler(request('tutor',{question:'2x+3=11',topic:'linear'}),res);assert.equal(res.code,200);assert.equal(res.value.result.answer,'');assert.deepEqual(res.value.result.steps,[]);assert.equal(limits.length,2);assert.equal(calls[0].topic.id,'linear');
  res=response();await handler(request('tutor',{question:'2x+3=11',reveal:true}),res);assert.equal(res.value.result.answer,'x = 4');assert.equal(res.value.result.steps.length,1);
 });
@@ -83,14 +83,14 @@ test('invented typed-work citations are rejected before reaching the browser',()
  const value=tutorFixture();value.checks=[{quote:'not actually in work',status:'review',note:'test'}];assert.throws(()=>H.__test.validateTutor(value,'2x=8'),e=>e.code==='MATHCORE_QUOTE_INVALID');
 });
 test('image endpoint passes validated image and does not write problem/image to persistent storage',async()=>{
- const db=createEducationMemoryDB(),handler=H.createHandler({getUser:async()=>({_id:'member'}),getDb:async()=>db,keys:()=>['explicit-test'],rateLimit:async()=>{},generate:async({kind,image})=>{assert.equal(kind,'photo');assert.equal(image.mimeType,'image/png');return {value:photoFixture(),model:'fixture'};}}),res=response();await handler(request('photo',{question:'Kiểm tra bài',image:png()}),res);assert.equal(res.code,200);assert.equal(res.value.result.observations.length,1);assert.deepEqual(db.rows('mathcore'),[]);
+ const db=createEducationMemoryDB(),handler=H.createHandler({geminiKeys:()=>[],getUser:async()=>({_id:'member'}),getDb:async()=>db,keys:()=>['explicit-test'],rateLimit:async()=>{},generate:async({kind,image})=>{assert.equal(kind,'photo');assert.equal(image.mimeType,'image/png');return {value:photoFixture(),model:'fixture'};}}),res=response();await handler(request('photo',{question:'Kiểm tra bài',image:png()}),res);assert.equal(res.code,200);assert.equal(res.value.result.observations.length,1);assert.deepEqual(db.rows('mathcore'),[]);
 });
 test('provider instruction and payload use existing Responses API with images and strict schema',async()=>{
  let body;const out=await H.__test.generate({kind:'photo',question:'Xem bài',attempt:'',topic:D.topic('linear'),image:png(),apiKey:'explicit-test-key',fetchImpl:async(url,init)=>{assert.equal(url,'https://api.openai.com/v1/responses');body=JSON.parse(init.body);return new Response(JSON.stringify({output_text:JSON.stringify(photoFixture())}),{status:200});}});assert.equal(body.store,false);assert.equal(body.text.format.strict,true);assert.equal(body.input[0].content[1].type,'input_image');assert.match(body.instructions,/không phỏng đoán vị trí/);assert.equal(out.value.readBack,photoFixture().readBack);
 });
 test('route integration includes sidebar category, command search, lazy assets and module dispatch',()=>{
  const root=path.resolve(__dirname,'..'),read=f=>fs.readFileSync(path.join(root,f),'utf8'),client=read('script.js'),loader=read('performance-loader.js'),worker=read('sw.js');assert.match(client,/groupIds: \["learn", "mathcore"/);assert.match(client,/HHMathCoreAI\.mount/);assert.match(client,/HHMathCoreAI\?\.unmount/);assert.match(client,/sidebarSearchAliases\.mathcore/);assert.match(client,/item\.id === "mathcore"/);
- for(const asset of ['hh-mathcore-core.js','hh-mathcore-content.js','hh-mathcore-graphics.js','hh-mathcore-ai.js','hh-mathcore-ai.css']){const version=asset==='hh-mathcore-graphics.js'?1:2;assert.ok(loader.includes(asset+'?v='+version));assert.ok(worker.includes('./'+asset+'?v='+version));}
+ for(const asset of ['hh-mathcore-core.js','hh-mathcore-content.js','hh-mathcore-graphics.js','hh-mathcore-ai.js','hh-mathcore-ai.css']){const version=['hh-mathcore-core.js','hh-mathcore-ai.js'].includes(asset)?3:asset==='hh-mathcore-graphics.js'?1:2;assert.ok(loader.includes(asset+'?v='+version));assert.ok(worker.includes('./'+asset+'?v='+version));}
  assert.match(read('api/modules/[moduleId]/actions.js'),/moduleId === "mathcore"/);assert.ok(JSON.parse(read('vercel.json')).rewrites.some(r=>r.source==='/api/mathcore/:resource'));
  assert.equal(require('../hh-core-gateway').isCoreRoute('/mathcore/lab'),true);
 });
