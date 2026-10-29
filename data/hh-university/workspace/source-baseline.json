@@ -1,0 +1,93 @@
+{
+ "schemaVersion": 1,
+ "checkedAt": "2026-10-29T08:54:06.580Z",
+ "published": false,
+ "rows": [
+  {
+   "id": "uit-admissions",
+   "url": "https://tuyensinh.uit.edu.vn/",
+   "finalUrl": "https://tuyensinh.uit.edu.vn/",
+   "http": 200,
+   "bytes": 82271,
+   "sha256": "afb89834490737f762c77a838de9c3e23963fde06c1c34c81426468e4b22ab24",
+   "checkedAt": "2026-10-29T08:53:48.913Z",
+   "scope": "HTTP and normalized page/PDF fingerprint only;semantic changes require editorial review",
+   "changed": null
+  },
+  {
+   "id": "uit-fees-2025",
+   "url": "https://tuyensinh.uit.edu.vn/hoc-phi-hoc-bong",
+   "finalUrl": "https://tuyensinh.uit.edu.vn/hoc-phi-hoc-bong",
+   "http": 200,
+   "bytes": 32297,
+   "sha256": "ac4d3a8ae33c1b684805e2edcc20647137a97c2282fdc0e8a5cac24d3626d06b",
+   "checkedAt": "2026-10-29T08:53:49.276Z",
+   "scope": "HTTP and normalized page/PDF fingerprint only;semantic changes require editorial review",
+   "changed": null
+  },
+  {
+   "id": "uit-scholarships-2026",
+   "url": "https://ctsv.uit.edu.vn/bai-viet/thong-bao-dang-ky-xet-cap-cac-loai-hoc-bong-hk-1-nh-2026-2027",
+   "finalUrl": "https://ctsv.uit.edu.vn/bai-viet/thong-bao-dang-ky-xet-cap-cac-loai-hoc-bong-hk-1-nh-2026-2027",
+   "http": 200,
+   "bytes": 53393,
+   "sha256": "dd1e202c6b8aec110c5ab3ffed4da3274fdd2e9f224c463c1586298b527f9a85",
+   "checkedAt": "2026-10-29T08:53:49.725Z",
+   "scope": "HTTP and normalized page/PDF fingerprint only;semantic changes require editorial review",
+   "changed": null
+  },
+  {
+   "id": "dut-admissions",
+   "url": "https://tuyensinh.dut.udn.vn/phuong-thuc-tuyen-sinh",
+   "finalUrl": "https://tuyensinh.dut.udn.vn/phuong-thuc-tuyen-sinh",
+   "http": 200,
+   "bytes": 54550,
+   "sha256": "1a9844c0093bef6aa1544311e8219111f3ca6e73d0498780c722668689074e64",
+   "checkedAt": "2026-10-29T08:53:49.871Z",
+   "scope": "HTTP and normalized page/PDF fingerprint only;semantic changes require editorial review",
+   "changed": null
+  },
+  {
+   "id": "fpt-contact",
+   "url": "https://caodang.fpt.edu.vn/tuyen-sinh/hoc-phi",
+   "error": "The operation was aborted due to timeout",
+   "checkedAt": "2026-10-29T08:54:04.878Z",
+   "changed": null
+  },
+  {
+   "id": "national-plan-2026",
+   "url": "https://xaydungchinhsach.chinhphu.vn/ke-hoach-tuyen-sinh-dai-hoc-cao-dang-nam-2026-119251104111312456.htm",
+   "finalUrl": "https://xaydungchinhsach.chinhphu.vn/ke-hoach-tuyen-sinh-dai-hoc-cao-dang-nam-2026-119251104111312456.htm",
+   "http": 200,
+   "bytes": 519650,
+   "sha256": "e1296d4ba48ba6403fc3147138eaad088d1edc6fa7d4dfe31a36f1ebfe9add62",
+   "checkedAt": "2026-10-29T08:54:05.058Z",
+   "scope": "HTTP and normalized page/PDF fingerprint only;semantic changes require editorial review",
+   "changed": null
+  },
+  {
+   "id": "hubt-thpt-2026",
+   "url": "https://tuyensinh.hubt.edu.vn/cau-hoi-thuong-gap/truong-dai-hoc-kinh-doanh-va-cong-nghe-chi-ap-dung-cac-phuong-thuc-xet-tuyen-nao/",
+   "finalUrl": "https://tuyensinh.hubt.edu.vn/cau-hoi-thuong-gap/truong-dai-hoc-kinh-doanh-va-cong-nghe-chi-ap-dung-cac-phuong-thuc-xet-tuyen-nao/",
+   "http": 200,
+   "bytes": 60862,
+   "sha256": "c160aa4b3c0ec6d058311937176f41405748d9fe4482055d49f8a56831865c69",
+   "checkedAt": "2026-10-29T08:54:06.197Z",
+   "scope": "HTTP and normalized page/PDF fingerprint only;semantic changes require editorial review",
+   "changed": null
+  },
+  {
+   "id": "uit-dean-2026",
+   "url": "https://tuyensinh.uit.edu.vn/sites/default/files/uploads/files/202607/dean_moi.pdf",
+   "finalUrl": "https://tuyensinh.uit.edu.vn/sites/default/files/uploads/files/202607/dean_moi.pdf",
+   "http": 200,
+   "bytes": 865152,
+   "sha256": "fbc674b85cc7a0cc9da43add0a643bb1461de56cbf43d7349c6f227be214395a",
+   "checkedAt": "2026-10-29T08:54:06.580Z",
+   "scope": "HTTP and normalized page/PDF fingerprint only;semantic changes require editorial review",
+   "changed": null
+  }
+ ],
+ "reviewedAt": "2026-10-29",
+ "reviewScope": "HTTP checks and metadata sources reviewed for this release; fingerprints are not proof of semantic correctness."
+}

@@ -1,0 +1,64 @@
+{
+  "release": 1075,
+  "checkedAt": "2026-10-29T09:46:27.508Z",
+  "units": {
+    "tools": 241,
+    "security": 107,
+    "learning": 130,
+    "focused": 155,
+    "total": 633,
+    "failed": 0,
+    "skipped": 0
+  },
+  "browser": {
+    "flows": 26,
+    "audits": 89,
+    "contrastChecks": 4702,
+    "contrastFailures": 0,
+    "pageErrors": [],
+    "themes": 16,
+    "widths": [
+      375,
+      768,
+      1440
+    ],
+    "zoom": 200,
+    "backend": "Real University handler;explicit member/admin,in-memory DB and Gemini response fixtures;other APIs503;no production writes",
+    "paidModelCalls": 0
+  },
+  "coverage": {
+    "historicalSchoolEntries": 959,
+    "programmeVariants": 21286,
+    "schoolsWithProgrammes": 586,
+    "cutoffRecords": 119621,
+    "schoolsWithCutoffs": 309,
+    "enrichedSchoolProfiles": 3,
+    "projectedTuitionRows": 2,
+    "scholarshipRegistrationNotices": 2,
+    "verifiedNarrowAdmissionRules": 1,
+    "sourceEvents": 3,
+    "foundationCourses": 6,
+    "authoredLessons": 36,
+    "resourceLinks": 65
+  },
+  "sources": {
+    "total": 8,
+    "http200": 7,
+    "errorIds": [
+      "fpt-contact"
+    ],
+    "automaticallyPublished": false
+  },
+  "privacy": {
+    "personalWorkspace": "account-scoped-device",
+    "existingStudySync": "preserved",
+    "newNamespace": "hh.university.workspace.v1:<owner>",
+    "sourcePdfUploaded": false
+  },
+  "dependencyAudit": {
+    "high": 5,
+    "low": 1,
+    "newDependencies": 0
+  },
+  "deployment": "Verify after push; see final handover"
+}

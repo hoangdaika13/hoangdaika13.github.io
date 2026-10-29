@@ -3,7 +3,7 @@
   "functions": {
     "api/modules/*/actions.js": {
       "maxDuration": 30,
-      "includeFiles": "{data/hh-vietnam-law/**,node_modules/pdfjs-dist/legacy/build/**,node_modules/pdfjs-dist/package.json,node_modules/pdfjs-dist/LICENSE,node_modules/parse5/**,node_modules/entities/**,node_modules/@napi-rs/canvas*/**}"
+      "includeFiles": "{data/hh-university/**,data/hh-school/university/catalogue.json,data/hh-school/university/courses/**,data/hh-vietnam-law/**,node_modules/pdfjs-dist/legacy/build/**,node_modules/pdfjs-dist/package.json,node_modules/pdfjs-dist/LICENSE,node_modules/parse5/**,node_modules/entities/**,node_modules/@napi-rs/canvas*/**}"
     },
     "api/**/*.js": {
       "maxDuration": 30
@@ -24,6 +24,10 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/api/university/:resource",
+      "destination": "/api/modules/university/actions?universityResource=:resource"
+    },
     {
       "source": "/api/mathcore/:resource",
       "destination": "/api/modules/mathcore/actions?mathResource=:resource"
@@ -159,7 +163,7 @@
         { "key": "Origin-Agent-Cluster", "value": "?1" },
         { "key": "X-DNS-Prefetch-Control", "value": "off" },
         { "key": "Reporting-Endpoints", "value": "csp-endpoint=\"/api/security/csp-report\"" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://accounts.google.com https://www.google.com https://www.gstatic.com https://cdn.jsdelivr.net https://cdn.payos.vn https://challenges.cloudflare.com https://cse.google.com https://hoangdaika13-astra-realtime.onrender.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' http://127.0.0.1:7880 http://localhost:7880 ws://127.0.0.1:7880 ws://localhost:7880 http://localhost:8765 http://127.0.0.1:8765 https: wss:; frame-src 'self' https:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self' https://formsubmit.co https://accounts.google.com https://*.payos.vn; frame-ancestors 'none'; report-uri /api/security/csp-report; report-to csp-endpoint" }
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://accounts.google.com https://www.google.com https://www.gstatic.com https://cdn.jsdelivr.net https://cdn.payos.vn https://challenges.cloudflare.com https://cse.google.com https://hoangdaika13-astra-realtime.onrender.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' http://127.0.0.1:7880 http://localhost:7880 ws://127.0.0.1:7880 ws://localhost:7880 http://localhost:8765 http://127.0.0.1:8765 https: wss:; frame-src 'self' blob: https:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self' https://formsubmit.co https://accounts.google.com https://*.payos.vn; frame-ancestors 'none'; report-uri /api/security/csp-report; report-to csp-endpoint" }
       ]
     },
     {

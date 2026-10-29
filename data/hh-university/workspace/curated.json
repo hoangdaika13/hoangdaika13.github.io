@@ -1,0 +1,536 @@
+{
+ "schemaVersion": 1,
+ "version": "2026.10.29-university-workspace-v1",
+ "checkedAt": "2026-10-29",
+ "sources": [
+  {
+   "id": "uit-admissions",
+   "title": "UIT — thông tin tuyển sinh",
+   "url": "https://tuyensinh.uit.edu.vn/",
+   "kind": "official",
+   "checkedAt": "2026-10-29",
+   "scope": "Thông tin liên hệ và liên kết tuyển sinh của trường; không chứng nhận toàn bộ ngành đang mở."
+  },
+  {
+   "id": "uit-fees-2025",
+   "title": "UIT — dự kiến học phí khóa tuyển 2025",
+   "url": "https://tuyensinh.uit.edu.vn/hoc-phi-hoc-bong",
+   "kind": "official",
+   "checkedAt": "2026-10-29",
+   "scope": "Thông báo tháng 06/2025; mức dự kiến theo khóa 2025, không thay thế quyết định thu thực tế khóa 2026."
+  },
+  {
+   "id": "uit-scholarships-2026",
+   "title": "UIT — đăng ký học bổng HK1 năm học 2026–2027",
+   "url": "https://ctsv.uit.edu.vn/bai-viet/thong-bao-dang-ky-xet-cap-cac-loai-hoc-bong-hk-1-nh-2026-2027",
+   "kind": "official",
+   "checkedAt": "2026-10-29",
+   "scope": "Thông báo 19/10/2026; điều kiện và đối tượng khác nhau cho từng loại học bổng."
+  },
+  {
+   "id": "dut-admissions",
+   "title": "ĐH Bách khoa — ĐH Đà Nẵng: phương thức tuyển sinh",
+   "url": "https://tuyensinh.dut.udn.vn/phuong-thuc-tuyen-sinh",
+   "kind": "official",
+   "checkedAt": "2026-10-29",
+   "scope": "Thông tin liên hệ và phương thức công bố năm 2026; chưa đọc đủ công thức từ phần nội dung hình ảnh."
+  },
+  {
+   "id": "fpt-contact",
+   "title": "Cao đẳng FPT Polytechnic — cơ sở và thông tin liên hệ",
+   "url": "https://caodang.fpt.edu.vn/tuyen-sinh/hoc-phi",
+   "kind": "official",
+   "checkedAt": "2026-10-29",
+   "scope": "Đã xác minh địa chỉ cơ sở; bảng học phí nằm trong ảnh, chưa nhập giá trị khi chưa kiểm chứng được."
+  },
+  {
+   "id": "national-plan-2026",
+   "title": "Kế hoạch tuyển sinh 2026 — Quyết định 3037/QĐ-BGDĐT",
+   "url": "https://xaydungchinhsach.chinhphu.vn/ke-hoach-tuyen-sinh-dai-hoc-cao-dang-nam-2026-119251104111312456.htm",
+   "kind": "official",
+   "checkedAt": "2026-10-29",
+   "scope": "Mốc trong kế hoạch công bố tháng 01/2026; cần đối chiếu văn bản điều chỉnh, không dùng như lịch tương lai."
+  },
+  {
+   "id": "hubt-thpt-2026",
+   "title": "HUBT — phương thức tuyển sinh 2026",
+   "url": "https://tuyensinh.hubt.edu.vn/cau-hoi-thuong-gap/truong-dai-hoc-kinh-doanh-va-cong-nghe-chi-ap-dung-cac-phuong-thuc-xet-tuyen-nao/",
+   "kind": "official",
+   "checkedAt": "2026-10-29",
+   "scope": "Đối chiếu PTTS 100, tổng ba môn thang 30; công cụ chỉ áp dụng trường hợp không có ưu tiên/điểm cộng và không quy đổi chứng chỉ."
+  },
+  {
+   "id": "uit-dean-2026",
+   "title": "UIT — thông tin tuyển sinh 2026, bản được cổng trường dẫn tháng 07/2026",
+   "url": "https://tuyensinh.uit.edu.vn/sites/default/files/uploads/files/202607/dean_moi.pdf",
+   "kind": "official",
+   "checkedAt": "2026-10-29",
+   "scope": "PDF gốc có 25 trang. Chưa triển khai quy đổi bách phân vị và ưu tiên; không dùng hệ số trọng số đơn lẻ để tính điểm thi thô."
+  }
+ ],
+ "profiles": {
+  "vn-ts-313": {
+   "sourceId": "uit-admissions",
+   "website": "https://www.uit.edu.vn/",
+   "admissionsWebsite": "https://tuyensinh.uit.edu.vn/",
+   "email": "tuyensinh@uit.edu.vn",
+   "phone": "090.883.1246",
+   "campuses": [
+    {
+     "name": "Cơ sở theo trang tuyển sinh UIT",
+     "address": "Khu đô thị ĐHQG-HCM, Khu phố 9, Phường Linh Xuân, Thành phố Hồ Chí Minh",
+     "sourceId": "uit-admissions"
+    }
+   ],
+   "dormitory": "Chưa nhập thông báo ký túc xá đúng niên khóa; đối chiếu Phòng Công tác Sinh viên.",
+   "accreditation": "Hồ sơ kiểm định lịch sử được giữ ở mục nguồn; chưa suy ra hiệu lực hiện tại."
+  },
+  "vn-ts-301": {
+   "sourceId": "dut-admissions",
+   "website": "https://dut.udn.vn/",
+   "admissionsWebsite": "https://tuyensinh.dut.udn.vn/",
+   "email": "tuvantuyensinhbkdn@dut.udn.vn",
+   "phone": "0888 477 377",
+   "campuses": [],
+   "dormitory": "Chưa xác minh thông báo ký túc xá theo niên khóa.",
+   "accreditation": "Xem từng hồ sơ kiểm định và thời hạn tại nguồn."
+  },
+  "vn-colleges-842f2b83f4edbe": {
+   "sourceId": "fpt-contact",
+   "website": "https://caodang.fpt.edu.vn/",
+   "admissionsWebsite": "https://caodang.fpt.edu.vn/tuyen-sinh-cao-dang-xet-tuyen",
+   "email": "",
+   "phone": "0981725836",
+   "campuses": [
+    {
+     "name": "Hà Nội",
+     "address": "13 phố Phan Tây Nhạc, phường Xuân Phương, TP Hà Nội",
+     "sourceId": "fpt-contact"
+    },
+    {
+     "name": "TP Hồ Chí Minh",
+     "address": "Tòa nhà QTSC9, đường Tô Ký, phường Trung Mỹ Tây, TP HCM",
+     "sourceId": "fpt-contact"
+    },
+    {
+     "name": "Đà Nẵng",
+     "address": "137 Nguyễn Thị Thập, phường Thanh Khê, TP Đà Nẵng",
+     "sourceId": "fpt-contact"
+    }
+   ],
+   "dormitory": "Chưa có thông báo ký túc xá đã đối chiếu cho từng cơ sở.",
+   "accreditation": "Không suy ra kiểm định từ tên hệ thống hoặc cơ sở."
+  }
+ },
+ "tuition": [
+  {
+   "id": "uit-standard-k2025-2025",
+   "schoolId": "vn-ts-313",
+   "sourceId": "uit-fees-2025",
+   "title": "Chương trình chuẩn — khóa tuyển 2025",
+   "cohort": "2025",
+   "academicYear": "2025–2026",
+   "unit": "year",
+   "low": 37000000,
+   "high": 37000000,
+   "status": "projected",
+   "note": "Mức dự kiến trong thông báo tháng 06/2025, chưa gồm sinh hoạt và các khoản khác."
+  },
+  {
+   "id": "uit-standard-k2025-2026",
+   "schoolId": "vn-ts-313",
+   "sourceId": "uit-fees-2025",
+   "title": "Lộ trình dự kiến chương trình chuẩn — khóa tuyển 2025",
+   "cohort": "2025",
+   "academicYear": "2026–2027",
+   "unit": "year",
+   "low": 42000000,
+   "high": 42000000,
+   "status": "projected",
+   "note": "Dự kiến dành cho khóa 2025 trong thông báo tháng 06/2025; không áp dụng mặc định cho tân sinh viên khóa 2026."
+  }
+ ],
+ "scholarships": [
+  {
+   "id": "uit-kkht-2026-hk1",
+   "schoolId": "vn-ts-313",
+   "sourceId": "uit-scholarships-2026",
+   "title": "Đăng ký học bổng khuyến khích học tập HK1 2026–2027",
+   "provider": "UIT",
+   "value": "Theo quy định và kết quả xét; thông báo không ấn định một số tiền chung.",
+   "opens": "2026-10-19",
+   "deadline": "2026-11-01",
+   "conditions": "Sinh viên chính quy văn bằng 1 có nguyện vọng; thông báo loại trừ khóa 2026, liên thông, văn bằng 2 và chương trình BCU. Đọc đủ điều kiện học tập, rèn luyện và các trường hợp không xét tại nguồn.",
+   "documents": [
+    "Kiểm tra đúng loại học bổng và đối tượng áp dụng",
+    "Đăng ký trên portal UIT và kiểm tra trạng thái thành công",
+    "Đối chiếu thông tin sinh viên, học tập và rèn luyện theo thông báo"
+   ],
+   "applyUrl": "https://portal.uit.edu.vn/sinh-vien/hoc-bong"
+  },
+  {
+   "id": "uit-nns-2026-hk1",
+   "schoolId": "vn-ts-313",
+   "sourceId": "uit-scholarships-2026",
+   "title": "Đăng ký nguyện vọng học bổng ngoài ngân sách HK1 2026–2027",
+   "provider": "UIT / đơn vị cấp từng học bổng",
+   "value": "Tùy học bổng; đăng ký nguyện vọng không đồng nghĩa được cấp.",
+   "opens": "2026-10-19",
+   "deadline": "2026-11-01",
+   "conditions": "Sinh viên chính quy văn bằng 1, chương trình BCU và OUN các khóa có thể đăng ký nguyện vọng; sau đó nộp minh chứng theo từng học bổng triển khai từ 01/11/2026 đến 10/04/2027.",
+   "documents": [
+    "Khai hồ sơ và đăng ký nguyện vọng trên portal UIT",
+    "Chuẩn bị thông tin hoàn cảnh, thành tích và hoạt động xã hội",
+    "Theo dõi từng học bổng để nộp minh chứng và kiểm tra hạn riêng"
+   ],
+   "applyUrl": "https://portal.uit.edu.vn/sinh-vien/hoc-bong"
+  }
+ ],
+ "events": [
+  {
+   "id": "uit-scholarship-deadline-2026",
+   "title": "UIT — hết hạn đăng ký nguyện vọng học bổng HK1",
+   "date": "2026-11-01",
+   "time": "",
+   "schoolId": "vn-ts-313",
+   "sourceId": "uit-scholarships-2026",
+   "note": "Áp dụng theo từng loại học bổng và đối tượng trong thông báo 19/10/2026."
+  },
+  {
+   "id": "uit-scholarship-list-2026",
+   "title": "UIT — dự kiến công khai danh sách đăng ký học bổng",
+   "date": "2026-11-04",
+   "time": "",
+   "schoolId": "vn-ts-313",
+   "sourceId": "uit-scholarships-2026",
+   "note": "Mốc trong thông báo; đối chiếu thông tin cập nhật tại Phòng CTSV."
+  },
+  {
+   "id": "national-wishes-plan-2026",
+   "title": "Kế hoạch 2026 — hạn điều chỉnh nguyện vọng",
+   "date": "2026-07-14",
+   "time": "17:00",
+   "schoolId": "",
+   "sourceId": "national-plan-2026",
+   "note": "Mốc lịch sử trong Quyết định 3037 công bố tháng 01/2026; chưa xác nhận văn bản điều chỉnh. Không dùng để suy ra lịch năm sau."
+  }
+ ],
+ "rules": [
+  {
+   "id": "hubt-thpt-2026-no-adjustments",
+   "schoolId": "vn-ts-350",
+   "programmeCodes": [
+    "7480201",
+    "7340101"
+   ],
+   "year": 2026,
+   "method": "100",
+   "title": "HUBT 2026 — THPT, trường hợp không có ưu tiên/điểm cộng",
+   "verified": true,
+   "sourceId": "hubt-thpt-2026",
+   "sourceUrl": "https://tuyensinh.hubt.edu.vn/cau-hoi-thuong-gap/truong-dai-hoc-kinh-doanh-va-cong-nghe-chi-ap-dung-cac-phuong-thuc-xet-tuyen-nao/",
+   "scale": 30,
+   "parts": [
+    {
+     "id": "subject1",
+     "label": "Điểm thi môn thứ nhất trong tổ hợp",
+     "min": 0,
+     "max": 10,
+     "weight": 1
+    },
+    {
+     "id": "subject2",
+     "label": "Điểm thi môn thứ hai trong tổ hợp",
+     "min": 0,
+     "max": 10,
+     "weight": 1
+    },
+    {
+     "id": "subject3",
+     "label": "Điểm thi môn thứ ba trong tổ hợp",
+     "min": 0,
+     "max": 10,
+     "weight": 1
+    }
+   ],
+   "bonusCap": 0,
+   "priorityMax": 0,
+   "adjustmentsVerified": false,
+   "requiresNoAdjustments": true,
+   "scope": "Chỉ cộng ba điểm thi THPT thực của tổ hợp hợp lệ, PTTS 100, ngành CNTT hoặc Quản trị kinh doanh, năm 2026; người dùng xác nhận không có ưu tiên, điểm cộng hoặc quy đổi chứng chỉ. Không kiểm tra thay điều kiện dự tuyển, tổ hợp được trường chấp nhận hoặc kết quả trúng tuyển. Trường hợp có điều chỉnh chưa được công cụ hỗ trợ."
+  }
+ ],
+ "families": [
+  {
+   "id": "computing",
+   "title": "Máy tính & công nghệ thông tin",
+   "terms": [
+    "công nghệ thông tin",
+    "phần mềm",
+    "máy tính",
+    "dữ liệu",
+    "trí tuệ nhân tạo",
+    "an toàn thông tin"
+   ],
+   "skills": [
+    "Tư duy lập trình",
+    "Cấu trúc dữ liệu",
+    "Cơ sở dữ liệu",
+    "Git và kiểm thử"
+   ],
+   "roles": [
+    "Phát triển phần mềm",
+    "Phân tích dữ liệu",
+    "Kiểm thử phần mềm"
+   ],
+   "project": "Xây ứng dụng quản lý công việc có lưu dữ liệu, phân quyền và kiểm thử.",
+   "courses": [
+    "uni-programming",
+    "uni-linear",
+    "uni-statistics"
+   ]
+  },
+  {
+   "id": "business",
+   "title": "Kinh tế & quản trị",
+   "terms": [
+    "kinh tế",
+    "quản trị",
+    "tài chính",
+    "kế toán",
+    "marketing",
+    "logistics"
+   ],
+   "skills": [
+    "Phân tích số liệu",
+    "Lập ngân sách",
+    "Nghiên cứu thị trường",
+    "Trình bày lập luận"
+   ],
+   "roles": [
+    "Phân tích kinh doanh",
+    "Vận hành",
+    "Nghiên cứu thị trường"
+   ],
+   "project": "Khảo sát một nhu cầu thực tế, lập bảng chi phí và giải thích các giả định kinh doanh.",
+   "courses": [
+    "uni-economics",
+    "uni-statistics",
+    "uni-research"
+   ]
+  },
+  {
+   "id": "engineering",
+   "title": "Kỹ thuật & công nghệ",
+   "terms": [
+    "kỹ thuật",
+    "điện",
+    "điện tử",
+    "cơ khí",
+    "tự động",
+    "ô tô",
+    "xây dựng",
+    "kiến trúc"
+   ],
+   "skills": [
+    "Mô hình hóa",
+    "Đọc bản vẽ và sơ đồ",
+    "Đo lường",
+    "Đánh giá sai số"
+   ],
+   "roles": [
+    "Thiết kế kỹ thuật",
+    "Vận hành hệ thống",
+    "Kiểm tra chất lượng"
+   ],
+   "project": "Mô phỏng một hệ thống đơn giản, ghi rõ tham số, sai số và giới hạn mô hình.",
+   "courses": [
+    "uni-circuits",
+    "uni-linear",
+    "uni-statistics"
+   ]
+  },
+  {
+   "id": "science",
+   "title": "Toán & khoa học tự nhiên",
+   "terms": [
+    "toán",
+    "vật lý",
+    "hóa học",
+    "sinh học",
+    "khoa học",
+    "địa chất",
+    "môi trường"
+   ],
+   "skills": [
+    "Lập giả thuyết",
+    "Thiết kế kiểm chứng",
+    "Thống kê",
+    "Đọc tài liệu khoa học"
+   ],
+   "roles": [
+    "Nghiên cứu",
+    "Phân tích và đo lường",
+    "Hỗ trợ kỹ thuật khoa học"
+   ],
+   "project": "Thiết kế một khảo sát nhỏ, phân tích dữ liệu và trình bày giới hạn suy luận.",
+   "courses": [
+    "uni-linear",
+    "uni-statistics",
+    "uni-research"
+   ]
+  },
+  {
+   "id": "health",
+   "title": "Sức khỏe",
+   "terms": [
+    "y khoa",
+    "y học",
+    "dược",
+    "điều dưỡng",
+    "răng",
+    "hộ sinh",
+    "dinh dưỡng",
+    "xét nghiệm"
+   ],
+   "skills": [
+    "Đọc nghiên cứu",
+    "Thống kê cơ bản",
+    "Đạo đức nghề nghiệp",
+    "Giao tiếp chuyên môn"
+   ],
+   "roles": [
+    "Các vị trí chuyên môn theo văn bằng và điều kiện hành nghề",
+    "Nghiên cứu sức khỏe"
+   ],
+   "project": "Phân tích phương pháp và giới hạn của một nghiên cứu công khai; không tự hướng dẫn chẩn đoán hoặc điều trị.",
+   "courses": [
+    "uni-statistics",
+    "uni-research"
+   ]
+  },
+  {
+   "id": "education",
+   "title": "Giáo dục & ngôn ngữ",
+   "terms": [
+    "sư phạm",
+    "giáo dục",
+    "ngôn ngữ",
+    "tiếng",
+    "phiên dịch"
+   ],
+   "skills": [
+    "Thiết kế bài học",
+    "Đánh giá năng lực",
+    "Giao tiếp",
+    "Nghiên cứu tài liệu"
+   ],
+   "roles": [
+    "Giảng dạy theo điều kiện tuyển dụng",
+    "Biên tập học liệu",
+    "Biên dịch"
+   ],
+   "project": "Thiết kế một bài học có mục tiêu, hoạt động và tiêu chí đánh giá.",
+   "courses": [
+    "uni-research",
+    "uni-statistics"
+   ]
+  },
+  {
+   "id": "social",
+   "title": "Xã hội, luật & truyền thông",
+   "terms": [
+    "luật",
+    "xã hội",
+    "tâm lý",
+    "lịch sử",
+    "báo chí",
+    "truyền thông",
+    "quốc tế",
+    "chính trị"
+   ],
+   "skills": [
+    "Đối chiếu nguồn",
+    "Viết lập luận",
+    "Phỏng vấn",
+    "Phân tích bối cảnh"
+   ],
+   "roles": [
+    "Nghiên cứu xã hội",
+    "Truyền thông",
+    "Nghiệp vụ theo chuyên ngành và điều kiện tuyển dụng"
+   ],
+   "project": "Viết hồ sơ phân tích một vấn đề với nguồn gốc rõ và phân biệt sự kiện với nhận định.",
+   "courses": [
+    "uni-research",
+    "uni-statistics"
+   ]
+  },
+  {
+   "id": "services",
+   "title": "Dịch vụ, nghệ thuật & các ngành khác",
+   "terms": [
+    "du lịch",
+    "khách sạn",
+    "dịch vụ",
+    "nghệ thuật",
+    "thiết kế",
+    "âm nhạc",
+    "nông",
+    "lâm",
+    "thủy sản",
+    "thể thao"
+   ],
+   "skills": [
+    "Quản lý dự án",
+    "Phục vụ người dùng",
+    "Xây hồ sơ năng lực",
+    "Đánh giá chất lượng"
+   ],
+   "roles": [
+    "Vận hành dịch vụ",
+    "Sản xuất nội dung",
+    "Các vị trí theo chuyên ngành"
+   ],
+   "project": "Xây một sản phẩm hoặc kế hoạch dịch vụ và thu thập phản hồi theo tiêu chí rõ ràng.",
+   "courses": [
+    "uni-research",
+    "uni-economics"
+   ]
+  }
+ ],
+ "careerSources": [
+  {
+   "id": "dut-jobs",
+   "title": "Cổng cơ hội nghề nghiệp ĐH Bách khoa — ĐH Đà Nẵng",
+   "url": "https://jobs.dut.udn.vn/",
+   "scope": "Liên kết cổng trường; chưa nhập vị trí tuyển dụng hoặc mức lương."
+  },
+  {
+   "id": "uit-jobs",
+   "title": "Cổng tuyển dụng UIT",
+   "url": "https://tuyendung.uit.edu.vn/",
+   "scope": "Liên kết cổng trường; người dùng cần kiểm tra đối tượng và thời hạn của từng tin."
+  }
+ ],
+ "checklist": [
+  "Đối chiếu mã trường, mã chương trình và cơ sở học",
+  "Đọc phương thức và điều kiện tuyển sinh đúng năm",
+  "Kiểm tra giấy tờ theo thông báo trường",
+  "Chuẩn bị chứng chỉ hoặc minh chứng nếu phương thức yêu cầu",
+  "Rà soát thứ tự nguyện vọng trên hệ thống chính thức",
+  "Kiểm tra lệ phí và xác nhận nhập học theo thông báo"
+ ],
+ "documents": [
+  {
+   "id": "uit-admissions-pdf-2026",
+   "title": "UIT — thông tin tuyển sinh đại học chính quy năm 2026",
+   "sourceId": "uit-dean-2026",
+   "url": "https://tuyensinh.uit.edu.vn/sites/default/files/uploads/files/202607/dean_moi.pdf",
+   "year": 2026,
+   "embedAllowed": true,
+   "note": "Đã kiểm tra HTTP 200, application/pdf, không có X-Frame-Options hoặc CSP chặn frame tại lần kiểm tra. Nếu nguồn đổi chính sách, mở PDF gốc.",
+   "framePolicyCheckedAt": "2026-10-29"
+  }
+ ]
+}

@@ -29,6 +29,7 @@ const { handleOTruyenSource } = require("../../../utils/otruyen-source");
 const { handleOpenBooksSource } = require("../../../utils/open-books-source");
 const handleVietnamLaw = require("../../../utils/vietnam-law-handler");
 const handleMathcore = require("../../../utils/mathcore-handler");
+const handleUniversity = require("../../../utils/university-handler");
 const handleEducation = require("../../../utils/education-handler");
 const handleStudyTogether = require("../../../utils/study-together");
 const handleSocialMedia = require("../../../utils/social-media-handler");
@@ -1858,6 +1859,7 @@ module.exports = async function handler(req, res) {
   if (req.query.moduleId === "download-center") return downloadCenterAction(req, res);
   if (req.query.moduleId === "vietnam-law") return handleVietnamLaw(req, res);
   if (req.query.moduleId === "mathcore") return handleMathcore(req, res);
+  if (req.query.moduleId === "university") return handleUniversity(req, res);
   if (req.query.moduleId === "education") return handleEducation(req, res);
   if (req.query.moduleId === "study-together") return handleStudyTogether(req, res);
   if (req.query.moduleId === "social-media-tools") return handleSocialMedia(req, res);

@@ -15,3 +15,6 @@ body.app-university-route :is(#appPageHeader,#appBreadcrumb,#appContextBar){disp
 @container hhu (max-width:280px){.hhu-hero{padding:15px}.hhu-metrics{grid-template-columns:minmax(0,1fr)}.hhu :is(h1,h2,h3,p,summary,small,strong,a){overflow-wrap:anywhere}.hhu-brand strong{font-size:13px}.hhu-school-header>div{flex-basis:100%}.hhu-school-header>button{margin-left:0}.hhu-major summary>strong{flex-basis:100%}.hhu-school-tabs{display:grid}.hhu-card-heading .hhu-type{flex-basis:100%}}
 @media(prefers-reduced-motion:reduce){.hhu *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 @media(forced-colors:active){.hhu,.hhu :is(section,article,header,nav,button,input,select,summary,details,th,td){background:Canvas;color:CanvasText;border-color:ButtonText}.hhu :is(h1,h2,h3,p,small,strong,span){color:CanvasText!important}.hhu button[aria-pressed=true],.hhu a[aria-current]{outline:2px solid Highlight}.hhu a{color:LinkText}}
+
+/* Workspace navigation and cards retain the original catalogue controls. */
+.hhu-topbar.uw-topbar{align-items:stretch;flex-direction:column}.hhu-card-actions{display:flex;gap:8px;flex-wrap:wrap}.hhu-card-actions a:first-child{flex:1;min-width:130px;width:auto}.hhu-card-actions a:not(:first-child){width:auto;display:inline-flex;align-items:center;min-height:44px;font-size:12px}.hhu-role-grid{min-width:0}
