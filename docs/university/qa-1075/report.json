@@ -5,8 +5,8 @@
     "tools": 241,
     "security": 107,
     "learning": 130,
-    "focused": 155,
-    "total": 633,
+    "focused": 156,
+    "total": 634,
     "failed": 0,
     "skipped": 0
   },
@@ -60,5 +60,12 @@
     "low": 1,
     "newDependencies": 0
   },
-  "deployment": "Verify after push; see final handover"
+  "deployment": "Verify after push; see final handover",
+  "serverlessFiles": {
+    "globCharacters": 162,
+    "schemaMaximumCharacters": 256,
+    "fileCount": 3225,
+    "bytes": 158805218,
+    "preservesPreviousFiles": true
+  }
 }

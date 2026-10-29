@@ -55,7 +55,7 @@ Gemini đã tích hợp adapter thật. QA chỉ dùng phản hồi Gemini mô p
 
 Chạy `node scripts/build-hh-university-workspace.js` sau khi cập nhật metadata hoặc dữ liệu danh mục; script kiểm tra hash các gói và tạo chỉ mục/sidecar xác định. Build danh mục gốc cũng gọi bước này. Chạy `node scripts/audit-hh-university-sources.js --refresh` để tạo candidate tại `.study-local/university-1075/source-check-candidate.json`; không tự công bố dữ liệu lấy về. Mở rộng năm phải cập nhật cấu hình năm/pipeline gốc và kiểm tra dữ liệu nguồn, không tự đổi nhãn dữ liệu năm cũ.
 
-**633 kiểm thử đạt, 0 lỗi, 0 bỏ qua**: công cụ/shell 241, bảo mật đầy đủ 107, Học tập 130, University/MATHCORE/Pháp luật/gateway/home 155. Riêng workspace mới có 22 test cho GPA/tín chỉ, điều kiện tiên quyết, dự toán, CSV/ICS, phiên bản dữ liệu, công thức tuyển sinh, kiểm tra nguồn, xác thực và biên tập. Kiểm tra cú pháp và `git diff --check` đạt.
+**634 kiểm thử đạt, 0 lỗi, 0 bỏ qua**: công cụ/shell 241, bảo mật đầy đủ 107, Học tập 130, University/MATHCORE/Pháp luật/gateway/home 156. Riêng workspace mới có 23 test cho GPA/tín chỉ, điều kiện tiên quyết, dự toán, CSV/ICS, phiên bản dữ liệu, công thức tuyển sinh, kiểm tra nguồn, xác thực và biên tập. Kiểm tra cú pháp và `git diff --check` đạt.
 
 Native Chromium full shell: **26 luồng**, **89 lượt đo trạng thái**, **4.702 phép đo tương phản**, đủ **16 theme**, 375/768/1440px, DPR2, zoom 200%, forced colors và bàn phím. Không page error hoặc tràn ngang; kiểm tra tài nguyên offline qua Service Worker, giữ ghi chú cũ, nhập bảng UIT, GPA, bài ôn/câu sai, PDF nguồn thật và PDF blob, CV thoát HTML/in sạch sidebar, từ chối quyền biên tập, hủy AI cũ, phục hồi dữ liệu tương lai và lỗi quota.
 
@@ -73,5 +73,7 @@ node --test tests/hh-university.test.js tests/hh-university-workspace.test.js te
 [Báo cáo kiểm thử](qa-1075/report.json), [luồng trình duyệt](qa-1075/results.json), [tương phản](qa-1075/readability.json), [tìm ngành](qa-1075/workspace-majors.png), [so sánh](qa-1075/workspace-compare.png), [dự toán](qa-1075/workspace-budget.png), [GPA](qa-1075/workspace-gpa.png), [AI fixture](qa-1075/workspace-gemini-fixture.png), [mobile](qa-1075/workspace-mobile.png), [CV khi in](qa-1075/workspace-cv-print.png).
 
 Audit dependency hiện báo **5 high, 1 low** trong cây dependency có sẵn; bản này không thêm/sửa package hoặc lockfile. Không xem kiểm thử chức năng đạt là toàn bộ CI bảo mật đã đạt.
+
+Đã bổ sung kiểm thử glob đóng gói bằng chính `@vercel/build-utils`: mẫu includeFiles 162 ký tự, dưới giới hạn schema 256 của Vercel; 3.225 file, giữ đủ mọi file cần có trước khi rút gọn.
 
 Version: release/cache **1075**, loader **736**, router **300**, University main/CSS **2**, helper workspace **1**. Kết quả deployment và smoke test website thật được xác minh sau push và báo trong chat.
