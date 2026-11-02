@@ -1,8 +1,8 @@
 /* HH Platform workspace adapter. All simulations use the same validated world. */
 (function (root) {
     'use strict';
-    const M = root.HHMultiverseModel, E = root.HHMultiverseEngine, I = root.HHMultiverseInternet, V = root.HHMultiverseViews, S = root.HHMultiverseStore, A = root.HHMultiverseArt;
-    const PANES = ['overview', 'internet', 'timeline', 'butterfly', 'branches', 'characters', 'dna', 'journal', 'settings'];
+    const M = root.HHMultiverseModel, E = root.HHMultiverseEngine, I = root.HHMultiverseInternet, V = root.HHMultiverseViews, S = root.HHMultiverseStore, A = root.HHMultiverseArt, G = root.HHMultiverseGallery, X = root.HHMultiverseExplorer;
+    const PANES = ['overview', 'explorer', 'internet', 'timeline', 'butterfly', 'branches', 'characters', 'dna', 'journal', 'settings'];
     let active = null;
     function mount(host, options = {}) {
         unmount();
@@ -18,6 +18,13 @@
         const ctx = { draft: { premise: '', settings: M.settings(), provider: 'offline' }, rows: [], logged, admin: logged && ['owner', 'super_admin', 'admin', 'moderator'].includes(user.role), service: null, notice: '', motion: !reduce.matches, world: null, record: null, projection: null, view: 'overview', routeView: 'home', readOnly: false, allowClone: false, filters: { q: '', mode: 'all', sort: 'updated' }, cloudRows: null, publicRows: null, publicError: '', decision: { text: '', category: '' }, preview: null, compare: { left: 'main', right: '' }, characterId: '', chatProvider: 'offline', chatDraft: '', share: null, moderation: null };
         ctx.visual = visual;
         ctx.galleryFilter = 'all';
+        ctx.gallery = G.filters();
+        ctx.explorer = X.state();
+        const collectionKey = G.collectionKey(user);
+        let collectionProtected = false;
+        ctx.artCollection = G.collection();
+        try { ctx.artCollection = G.collection(JSON.parse(root.localStorage.getItem(collectionKey) || 'null')); }
+        catch { collectionProtected = true; }
         ctx.lightboxId = '';
         ctx.lightboxIds = [];
         host.innerHTML = '<section class="mv"><div class="mv-generation" role="status"><span class="mv-spinner" aria-hidden="true"></span><h1>Đang mở Reality Engine…</h1><p>Đọc thư viện trên thiết bị.</p></div></section>';
@@ -45,7 +52,7 @@
             if (!move) {
                 if (el.open || modalResolve) return;
                 modalFocus = document.activeElement;
-                ctx.lightboxIds = (ctx.routeView === 'gallery' ? A.list(ctx.galleryFilter) : A.catalog).map(a => a.id);
+                ctx.lightboxIds = (ctx.routeView === 'gallery' ? G.filtered(ctx) : A.catalog).map(a => a.id);
                 if (!ctx.lightboxIds.includes(id)) ctx.lightboxIds = A.catalog.map(a => a.id);
             }
             const focusedAction = move ? document.activeElement?.dataset.mvAction : 'close-art';
@@ -167,7 +174,7 @@
         async function inspectRoute(route) {
             const parts = String(route).split('?')[0].split('/').filter(Boolean), params = new URLSearchParams(String(route).split('?')[1] || '');
             ctx.routeView = parts[1] || 'home';
-            if (['all', 'world', 'experience', 'portrait'].includes(params.get('category'))) ctx.galleryFilter = params.get('category');
+            if (['all', 'world', 'experience', 'portrait', 'scene'].includes(params.get('category'))) ctx.galleryFilter = params.get('category');
             if (parts[1] === 'shared') {
                 sharedToken = M.id(parts[2]);
                 ctx.sharedToken = sharedToken;
@@ -343,15 +350,40 @@
         async function perform(action, node) {
             const id = node?.dataset.id;
             if (action === 'open-art') { showArtwork(id); return; }
+            if (action === 'gallery-random') { const rows = G.filtered(ctx); if (rows.length) showArtwork(rows[Math.floor(Math.random()*rows.length)].id); return; }
             if (action === 'previous-art' || action === 'next-art') { moveArtwork(action === 'previous-art' ? -1 : 1); return; }
             if (action === 'close-art') { const el = host.querySelector('[data-mv-dialog]'); if (el.close) el.close(); else { el.removeAttribute('open'); closeDialog({target:el}); } return; }
             if (action === 'art-create') { host.querySelector('[data-mv-dialog]').close(); navigate('/multiverse/create?sample=' + Number(node.dataset.index)); return; }
             if (action === 'gallery-filter') {
-                if (!['all', 'world', 'experience', 'portrait'].includes(node.dataset.kind)) return;
+                if (!['all', 'world', 'experience', 'portrait', 'scene'].includes(node.dataset.kind)) return;
                 ctx.galleryFilter = node.dataset.kind;
+                ctx.gallery = G.filters({...ctx.gallery, page:1});
                 history.replaceState(null, '', '#/multiverse/gallery?category=' + ctx.galleryFilter);
                 draw();
                 host.querySelector('[data-mv-action="gallery-filter"][data-kind="'+ctx.galleryFilter+'"]')?.focus({preventScroll:true});
+                return;
+            }
+            if (action === 'gallery-favorite') {
+                ctx.artCollection = G.toggleFavorite(ctx.artCollection, id);
+                draw();
+                if (collectionProtected) notice('Đã lưu trong phiên. Bộ sưu tập cũ cần phiên bản khác nên được giữ nguyên trên thiết bị.');
+                else {
+                    try { root.localStorage.setItem(collectionKey, JSON.stringify(ctx.artCollection)); notice('Đã cập nhật bộ sưu tập trên thiết bị theo tài khoản.'); }
+                    catch { notice('Đã cập nhật trong phiên; chưa lưu được bộ sưu tập trên thiết bị.'); }
+                }
+                host.querySelector('[data-mv-action="gallery-favorite"][data-id="'+id+'"]')?.focus({preventScroll:true});
+                return;
+            }
+            if (action === 'gallery-favorites' || action === 'gallery-page') {
+                ctx.gallery = G.filters({...ctx.gallery, ...(action === 'gallery-favorites' ? {favoritesOnly:!ctx.gallery.favoritesOnly,page:1} : {page:Number(node.dataset.page)})});
+                draw();
+                host.querySelector(action === 'gallery-favorites' ? '[data-mv-action="gallery-favorites"]' : '[data-mvg-result]')?.focus({preventScroll:action === 'gallery-favorites'});
+                return;
+            }
+            if (action === 'explorer-location' || action === 'explorer-zoom' || action === 'explorer-reset') {
+                ctx.explorer = X.state({...ctx.explorer, ...(action === 'explorer-location' ? {locationId:id} : {zoom:action === 'explorer-reset'?1:ctx.explorer.zoom+Number(node.dataset.delta)})}, ctx.world);
+                draw();
+                host.querySelector(action === 'explorer-location' ? '[data-mv-action="explorer-location"][data-id="'+ctx.explorer.locationId+'"]' : action === 'explorer-reset' ? '[data-mv-action="explorer-reset"]' : '[data-mv-action="explorer-zoom"][data-delta="'+node.dataset.delta+'"]')?.focus({preventScroll:true});
                 return;
             }
             if (action === 'compact-header') { saveVisual({...ctx.visual, compact:!ctx.visual.compact}); draw(); return; }
@@ -638,6 +670,14 @@
         }
         async function submit(form) {
             const f = Object.fromEntries(new FormData(form)), name = form.dataset.mvForm;
+            if (name === 'gallery-search') {
+                ctx.gallery = G.filters({...ctx.gallery, query:f.q, tone:f.tone, theme:f.theme, page:1});
+                draw(); host.querySelector('[data-mvg-result]')?.focus({preventScroll:true}); return;
+            }
+            if (name === 'explorer-search') {
+                ctx.explorer = X.state({...ctx.explorer, query:f.q, kind:f.kind}, ctx.world);
+                draw(); host.querySelector('[data-mv-form="explorer-search"] [name=q]')?.focus({preventScroll:true}); return;
+            }
             if (name === 'quick-create') {
                 ctx.draft.premise = M.text(f.premise, 2000);
                 navigate('/multiverse/create?premise=' + encodeURIComponent(ctx.draft.premise));

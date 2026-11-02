@@ -262,8 +262,8 @@
       scripts: ["hh-vietnam-law-core.js?v=2", "hh-vietnam-law-manifest.js?v=2", "hh-vietnam-law-data.js?v=1", "hh-vietnam-law-pdf-transport.js?v=1", "hh-vietnam-law-pdf.js?v=1", "hh-vietnam-law.js?v=2"]
     },
     multiverse: {
-      styles: ["hh-multiverse.css?v=2", "hh-multiverse-color.css?v=1"],
-      scripts: ["hh-multiverse-model.js?v=1", "hh-multiverse-engine.js?v=1", "hh-multiverse-internet.js?v=1", "hh-multiverse-store.js?v=1", "hh-multiverse-art.js?v=1", "hh-multiverse-views.js?v=2", "hh-multiverse.js?v=2"]
+      styles: ["hh-multiverse.css?v=2", "hh-multiverse-color.css?v=2", "hh-multiverse-gallery.css?v=1", "hh-multiverse-explorer.css?v=1"],
+      scripts: ["hh-multiverse-model.js?v=1", "hh-multiverse-engine.js?v=1", "hh-multiverse-internet.js?v=1", "hh-multiverse-store.js?v=1", "hh-multiverse-scenes.js?v=1", "hh-multiverse-art.js?v=2", "hh-multiverse-gallery.js?v=1", "hh-multiverse-explorer.js?v=1", "hh-multiverse-views.js?v=3", "hh-multiverse.js?v=3"]
     },
     university: {
       styles: ["hh-university.css?v=3", "hh-university-workspace.css?v=1", "hh-university-experience.css?v=1"],

@@ -494,6 +494,168 @@
           "bytes": 157730
         }
       ]
+    },
+    {
+      "id": "reef",
+      "kind": "landscape",
+      "sourceSha256": "a89cf47efee21d99fbd422b044e6e744dba7f6264dae60bc2e3ce92c5fef0c7e",
+      "generation": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. Asset type: original environment concept artwork for HH MULTIVERSE / GLITCHVERSE, a premium colorful fictional world explorer. Wide16:9 landscape, cinematic polished3D illustration with painterly atmospheric depth and carefully art-directed cyan, electric blue, violet, pink, coral, gold accents. One beautiful strong central composition readable in a small card, meticulous natural and architectural detail, bright inviting light, refined materials. Entirely invented location, no real brands, no text, letters, logos, watermark, frames, charts or UI. A radiant underwater civilization built into a giant living coral reef. Translucent pearl and teal research domes joined by curved glass tunnels, small graceful submersibles, orange and magenta corals, shafts of gold sunlight through clear turquoise water, soft silhouettes of rays and fish. Explore coral architecture in the foreground, distant ocean city blue depth. No castles in the sky, no moons, no humans close up.",
+      "variants": [
+        {
+          "file": "reef-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 21722
+        },
+        {
+          "file": "reef-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 73648
+        },
+        {
+          "file": "reef-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 251670
+        }
+      ]
+    },
+    {
+      "id": "desert",
+      "kind": "landscape",
+      "sourceSha256": "a974d8f0f23b4c52f1c614f0c379763d7891a4ac497f7f65f5acbdd4e51562c7",
+      "generation": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. Asset type: original environment concept artwork for HH MULTIVERSE / GLITCHVERSE, a premium colorful fictional world explorer. Wide16:9 landscape, cinematic polished3D illustration with painterly atmospheric depth and carefully art-directed cyan, electric blue, violet, pink, coral, gold accents. One beautiful strong central composition readable in a small card, meticulous natural and architectural detail, bright inviting light, refined materials. Entirely invented location, no real brands, no text, letters, logos, watermark, frames, charts or UI. An extraordinary desert oasis city at sunset. Sculptural terracotta and rose-sand architecture, intricate golden solar towers, luminous cyan water gardens and shaded public courtyards, sweeping saffron dunes and lavender mountains. Tiny robed travelers cross a long elegant bridge above a turquoise reservoir. Warm tactile stone and modern solar technology, elegant and hopeful, no floating islands or generic space backdrop.",
+      "variants": [
+        {
+          "file": "desert-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 17670
+        },
+        {
+          "file": "desert-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 62142
+        },
+        {
+          "file": "desert-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 233192
+        }
+      ]
+    },
+    {
+      "id": "aurora",
+      "kind": "landscape",
+      "sourceSha256": "47e528c99a95695237ed8d36780e0e85ee9a41c7fcac390c76dbb630380b5be2",
+      "generation": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. Asset type: original environment concept artwork for HH MULTIVERSE / GLITCHVERSE, a premium colorful fictional world explorer. Wide16:9 landscape, cinematic polished3D illustration with painterly atmospheric depth and carefully art-directed cyan, electric blue, violet, pink, coral, gold accents. One beautiful strong central composition readable in a small card, meticulous natural and architectural detail, bright inviting light, refined materials. Entirely invented location, no real brands, no text, letters, logos, watermark, frames, charts or UI. A breathtaking polar observatory settlement beneath flowing vivid green, cyan and violet auroras. Faceted ice mountains, luminous sapphire fjord, warm golden research cabins with panoramic windows, delicate suspended walkways and a great astronomical lens atop a snowy ridge. Bright coral reflections at twilight, rich icy texture and deep atmospheric perspective. No text, no real institutions. Final targeted cleanup: Remove the tiny pale emblem or signature at the very bottom right corner, seamlessly reconstructing only that small patch of snow. Preserve the full composition, colors, aurora, architecture, mountains and every other detail unchanged. Full bleed artwork, absolutely no logos, watermark, corner marks, signature, typography or emblems.",
+      "variants": [
+        {
+          "file": "aurora-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 19706
+        },
+        {
+          "file": "aurora-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 60582
+        },
+        {
+          "file": "aurora-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 187420
+        }
+      ]
+    },
+    {
+      "id": "forest",
+      "kind": "landscape",
+      "sourceSha256": "2f84f3faa9fbf62d167cdf33cd244e09b91a769dac624537ac033c2a40681648",
+      "generation": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. Asset type: original fictional environment concept illustration for premium colorful HH MULTIVERSE / GLITCHVERSE. Wide16:9 cinematic3D landscape, rich luminous color, strong silhouettes and atmospheric depth, imaginative believable materials. Composition important subject central70percent for card crops. Pure clean full-bleed artwork; NO text, typography, letters, numbers, labels, signatures, symbols resembling a watermark, stamps, emblems or logos anywhere, especially in the corners. No UI or real brands. A wondrous bioluminescent forest civilization at blue hour: enormous emerald and violet trees with elegant research libraries nestled in their roots, glowing cyan streams crossed by copper bridges, warm amber lanterns, pink luminous flowers and spiraling leaves. Tiny explorers walk a winding forest path toward a great glass botanical dome. Focus on immersive lush forest, organic architecture and magical light, not generic castles or planets.",
+      "variants": [
+        {
+          "file": "forest-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 22102
+        },
+        {
+          "file": "forest-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 81236
+        },
+        {
+          "file": "forest-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 289084
+        }
+      ]
+    },
+    {
+      "id": "orbital",
+      "kind": "landscape",
+      "sourceSha256": "060d5e4be12b6ee1609f965f7e2e49e04bdccb672e5f118463f08e8080b9b840",
+      "generation": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. Asset type: original fictional environment concept illustration for premium colorful HH MULTIVERSE / GLITCHVERSE. Wide16:9 cinematic3D landscape, rich luminous color, strong silhouettes and atmospheric depth, imaginative believable materials. Composition important subject central70percent for card crops. Pure clean full-bleed artwork; NO text, typography, letters, numbers, labels, signatures, symbols resembling a watermark, stamps, emblems or logos anywhere, especially in the corners. No UI or real brands. A magnificent inhabited orbital garden station above the curved violet-blue limb of an invented planet. Sweeping silver and gold habitat rings with visible luminous green gardens, cyan docking lights and elegant small shuttles, stars and a soft coral nebula. The ring and planet form a grand composition, refined space exploration aesthetics, science-fiction concept not scientific diagram. No recognizable real spacecraft.",
+      "variants": [
+        {
+          "file": "orbital-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 17524
+        },
+        {
+          "file": "orbital-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 59008
+        },
+        {
+          "file": "orbital-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 206588
+        }
+      ]
+    },
+    {
+      "id": "volcano",
+      "kind": "landscape",
+      "sourceSha256": "f196f980eeca73b302636196e466a99d58186dcaf25914b28b0f88ad8588e32f",
+      "generation": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. Asset type: original fictional environment concept illustration for premium colorful HH MULTIVERSE / GLITCHVERSE. Wide16:9 cinematic3D landscape, rich luminous color, strong silhouettes and atmospheric depth, imaginative believable materials. Composition important subject central70percent for card crops. Pure clean full-bleed artwork; NO text, typography, letters, numbers, labels, signatures, symbols resembling a watermark, stamps, emblems or logos anywhere, especially in the corners. No UI or real brands. An extraordinary geothermal research civilization in a black basalt volcanic valley. Radiant orange and coral lava rivers flow safely beneath elegant cobalt-and-gold bridges, turquoise energy collectors and warm glass observation domes. A distant luminous volcanic peak, violet twilight sky, obsidian reflections, tiny fully clothed explorers watching from a safe terrace. Beautiful energetic landscape, no disaster, battle, graphic injury or smoke hiding the scenery.",
+      "variants": [
+        {
+          "file": "volcano-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 19754
+        },
+        {
+          "file": "volcano-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 63468
+        },
+        {
+          "file": "volcano-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 214674
+        }
+      ]
     }
   ]
 }

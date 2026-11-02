@@ -1,7 +1,7 @@
 'use strict';
 // Full HH shell, native Chromium and real feature/handler code. No production writes.
 const fs = require('node:fs'), path = require('node:path'), http = require('node:http'), assert = require('node:assert/strict'), { execFileSync } = require('node:child_process');
-const { chromium } = require(process.env.HH_QA_PLAYWRIGHT || 'playwright'), root = path.resolve(__dirname, '..'), out = path.resolve(root, process.env.HH_QA_OUTPUT || '.study-local/hh-multiverse-1079');
+const { chromium } = require(process.env.HH_QA_PLAYWRIGHT || 'playwright'), root = path.resolve(__dirname, '..'), out = path.resolve(root, process.env.HH_QA_OUTPUT || '.study-local/hh-multiverse-1080');
 const fixture = require('./qa-hh-multiverse-fixture')(), errors = [], results = [], requests = [];
 const csp = JSON.parse(fs.readFileSync(path.join(root, 'vercel.json'), 'utf8')).headers.flatMap(x => x.headers).find(x => x.key === 'Content-Security-Policy').value;
 const server = http.createServer(async (req, res) => { try {
@@ -102,9 +102,9 @@ async function run() {
         const unchangedBefore=JSON.stringify((await state(page)).world);
         await action(page,'compact-header');assert.equal(await page.locator('.mv').getAttribute('data-compact'),'false');assert.equal(JSON.stringify((await state(page)).world),unchangedBefore);
         await page.reload({waitUntil:'domcontentloaded'});await page.locator('.mv-world-header').waitFor({timeout:45000});assert.equal(await page.locator('.mv').getAttribute('data-compact'),'false');await action(page,'compact-header');
-        for(const palette of ['prism','aurora','sunset']){await page.locator('[name=visualPalette]').selectOption(palette);for(const view of ['overview','internet','timeline','butterfly','branches','characters','dna','journal','settings']){await pane(page,view);audits.push(await audit(page,'world-'+palette+'-'+view));}}
+        for(const palette of ['prism','aurora','sunset']){await page.locator('[name=visualPalette]').selectOption(palette);for(const view of ['overview','explorer','internet','timeline','butterfly','branches','characters','dna','journal','settings']){await pane(page,view);audits.push(await audit(page,'world-'+palette+'-'+view));}}
         assert.equal(JSON.stringify((await state(page)).world),unchangedBefore);await page.locator('[name=visualPalette]').selectOption('prism');await pane(page,'overview');
-        pass({visualState:'Compact header and all3palettes survive reload/route changes without changing the saved world;all9panes sampled per palette'});
+        pass({visualState:'Compact header and all3palettes survive reload/route changes without changing the saved world;all10panes sampled per palette'});
         await pane(page, 'internet');
         for (const app of ['news', 'social', 'search', 'market', 'encyclopedia', 'map', 'trends', 'archives']) {
             await action(page, 'browse', '[data-address="sim://' + app + '"]');
@@ -141,6 +141,7 @@ async function run() {
         assert.equal(record.world.branches[0].headId, head);
         await screenshot(page, 'timeline');
         pass({ timeline: 'All6jump presets create actual events; past slider and advance preserve original future' });
+        await require('./qa-hh-multiverse-explorer')({page,world:record.world,out,pass,audit,audits});
         await pane(page, 'butterfly');
         const preview = page.locator('[data-mv-form=preview]');
         await preview.locator('[name=decision]').fill('Giới hạn làm việc6 giờ mỗi ngày');
@@ -200,7 +201,7 @@ async function run() {
         assert.equal(record.world.provenance.kind, 'imported');
         for (const width of [1440, 768, 375]) {
             await page.setViewportSize({ width, height: 1000 });
-            for (const view of ['overview', 'internet', 'timeline', 'butterfly', 'branches', 'characters', 'dna', 'journal', 'settings']) {
+            for (const view of ['overview', 'explorer', 'internet', 'timeline', 'butterfly', 'branches', 'characters', 'dna', 'journal', 'settings']) {
                 await pane(page, view);
                 audits.push(await audit(page, view + '-' + width));
             }
@@ -217,7 +218,7 @@ async function run() {
         await page.keyboard.press('Shift+Tab');
         assert.notEqual(await page.locator('[data-mv-view=internet]').evaluate(e => getComputedStyle(e).outlineStyle), 'none');
         await page.emulateMedia({ forcedColors: 'none' });
-        pass({ responsive: 'All9panes at1440/768/375, DPR2,200%zoom, visible keyboard focus and reduced motion' });
+        pass({ responsive: 'All10panes at1440/768/375, DPR2,200%zoom, visible keyboard focus and reduced motion' });
         // Same browser, explicit authenticated module identity for backend-dependent acceptance paths.
         fixture.state.user = { _id: 'qa-member', role: 'member' };
         await page.evaluate(async (world) => { const store = HHMultiverseStore.create({ id: 'qa-member' }); await store.put(world, { expectedLocalRevision: 0 }); store.close(); HHMultiverse.mount(document.querySelector('[data-hh-multiverse-host]'), { currentUser: { id: 'qa-member', role: 'member' }, route: '/multiverse/universe/' + world.id + '/settings' }); }, record.world);
@@ -241,6 +242,7 @@ async function run() {
         await pane(page, 'timeline');
         assert.equal(await page.locator('[data-mv-action=advance]:not([disabled])').count(), 0);
         assert.equal((await state(page)).world.events.length, record.world.events.length);
+        await require('./qa-hh-multiverse-explorer')({page,world:shared.world,readOnly:true,out,pass,audit,audits});
         await action(page, 'copy-shared');
         assert.notEqual((await state(page)).id, record.id);
         pass({ cloud: 'Real handler fixtures: acknowledged manual sync, frozen private-stripped unlisted snapshot, read-only viewer, clone into own ID' });
@@ -336,7 +338,7 @@ async function run() {
         await page.waitForFunction(() => navigator.serviceWorker.controller !== null, { timeout: 45000 });
         await page.reload({ waitUntil: 'domcontentloaded' });
         await page.locator('.mv-world-header').waitFor({ timeout: 45000 });
-        await page.waitForFunction(async () => Boolean(await caches.match(new URL('hh-multiverse.js?v=2', document.baseURI).href)));
+        await page.waitForFunction(async () => Boolean(await caches.match(new URL('hh-multiverse.js?v=3', document.baseURI).href)));
         await context.setOffline(true);
         await page.reload({ waitUntil: 'domcontentloaded' });
         await page.locator('.mv-world-header').waitFor({ timeout: 45000 });
