@@ -5771,6 +5771,7 @@ function initAppShell() {
       { id: "create", title: "Tạo thực tại", route: "/multiverse/create" },
       { id: "explore", title: "Khám phá vũ trụ", route: "/multiverse/explore" },
       { id: "library", title: "Vũ trụ của tôi", route: "/multiverse/my-universes" },
+      { id: "gallery", title: "Phòng tranh đa vũ trụ", route: "/multiverse/gallery" },
       { id: "atlas", title: "Cosmic Atlas", route: "/multiverse/atlas" }
     ] },
     { id: "university", label: "Đại học & Cao đẳng", icon: "◫", accent: "#67dbc1", route: "/university", items: [], pages: [
@@ -6916,7 +6917,7 @@ function initAppShell() {
     crumbLabels["study-together"] = "Học cùng nhau";
     crumbLabels.platform = "Trang chủ";
     if (crumbs[0] === "multiverse") {
-      Object.assign(crumbLabels, { universe: "Vũ trụ", shared: "Ảnh chia sẻ", timeline: "Timeline", journal: "Nhật ký", settings: "Lưu & chia sẻ", overview: "Tổng quan", internet: "Internet", dna: "Universe DNA" });
+      Object.assign(crumbLabels, { gallery: "Phòng tranh", universe: "Vũ trụ", shared: "Ảnh chia sẻ", timeline: "Timeline", journal: "Nhật ký", settings: "Lưu & chia sẻ", overview: "Tổng quan", internet: "Internet", dna: "Universe DNA" });
       if (["universe", "shared"].includes(crumbs[1]) && crumbs[2]) crumbLabels[crumbs[2]] = "Thực tại";
     }
     if (crumbs[0] === "all-game") { crumbLabels["all-game"] = "All Game"; (groups.find(item => item.id === "all-game")?.pages || []).forEach(item => { crumbLabels[item.id] = item.title; }); }

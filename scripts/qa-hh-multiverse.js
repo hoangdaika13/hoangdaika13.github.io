@@ -1,7 +1,7 @@
 'use strict';
 // Full HH shell, native Chromium and real feature/handler code. No production writes.
 const fs = require('node:fs'), path = require('node:path'), http = require('node:http'), assert = require('node:assert/strict'), { execFileSync } = require('node:child_process');
-const { chromium } = require(process.env.HH_QA_PLAYWRIGHT || 'playwright'), root = path.resolve(__dirname, '..'), out = path.resolve(root, process.env.HH_QA_OUTPUT || '.study-local/hh-multiverse-1078');
+const { chromium } = require(process.env.HH_QA_PLAYWRIGHT || 'playwright'), root = path.resolve(__dirname, '..'), out = path.resolve(root, process.env.HH_QA_OUTPUT || '.study-local/hh-multiverse-1079');
 const fixture = require('./qa-hh-multiverse-fixture')(), errors = [], results = [], requests = [];
 const csp = JSON.parse(fs.readFileSync(path.join(root, 'vercel.json'), 'utf8')).headers.flatMap(x => x.headers).find(x => x.key === 'Content-Security-Policy').value;
 const server = http.createServer(async (req, res) => { try {
@@ -29,20 +29,26 @@ async function pane(page, name) { await page.locator('[data-mv-view="' + name + 
 async function action(page, name, extra = '') { await page.locator('[data-mv-action="' + name + '"]' + extra).first().click(); await settle(page); }
 async function state(page) { return await page.evaluate(async () => { const db = await new Promise((r, j) => { const q = indexedDB.open('hh.multiverse.v1', 1); q.onsuccess = () => r(q.result); q.onerror = j; }); const rows = await new Promise((r, j) => { const q = db.transaction('universes').objectStore('universes').getAll(); q.onsuccess = () => r(q.result); q.onerror = j; }); db.close(); const id = location.hash.match(/\/universe\/([^/?]+)/)?.[1]; return rows.filter(r => !id || r.id === id).sort((a, b) => b.savedAt.localeCompare(a.savedAt))[0]; }); }
 async function screenshot(page, name) { await page.screenshot({ path: path.join(out, name + '.png'), fullPage: false }); }
-async function audit(page, label) { return page.evaluate(label => { const rgb = s => (s.match(/[\d.]+/g) || []).slice(0, 3).map(Number), lum = c => c.map(v => v / 255).map(v => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4).reduce((n, v, i) => n + v * [.2126, .7152, .0722][i], 0), checks = []; for (const el of [...document.querySelectorAll('.mv h1,.mv h2,.mv h3,.mv p,.mv label,.mv button,.mv input,.mv select,.mv a')].filter(e => e.getClientRects().length && !e.disabled).slice(0, 150)) {
-    const cs = getComputedStyle(el);
-    let node = el, bg;
-    while (node && !bg) {
-        const c = getComputedStyle(node), p = c.backgroundColor.match(/[\d.]+/g) || [];
-        if (p.length === 3 || p.length === 4 && +p[3] === 1)
-            bg = rgb(c.backgroundColor);
-        node = node.parentElement;
+async function audit(page,label){return page.evaluate(label=>{
+  const rgb=s=>(s.match(/[\d.]+/g)||[]).slice(0,3).map(Number);
+  const lum=c=>c.map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((n,v,i)=>n+v*[.2126,.7152,.0722][i],0);
+  const ratio=(a,b)=>(Math.max(lum(a),lum(b))+.05)/(Math.min(lum(a),lum(b))+.05),checks=[];
+  for(const el of [...document.querySelectorAll('.mv h1,.mv h2,.mv h3,.mv p,.mv label,.mv button,.mv input,.mv select,.mv a')].filter(e=>e.getClientRects().length&&!e.disabled).slice(0,150)){
+    const cs=getComputedStyle(el);let node=el,backgrounds=[];
+    while(node&&!backgrounds.length){const c=getComputedStyle(node),p=c.backgroundColor.match(/[\d.]+/g)||[];
+      const stops=(c.backgroundImage.match(/rgba?\([^)]*\)/g)||[]).filter(v=>{const n=v.match(/[\d.]+/g)||[];return n.length===3||+n[3]===1;}).map(rgb);
+      // A gradient is the visible surface even when backgroundColor is transparent.
+      if(stops.length){backgrounds=stops.slice();for(let i=1;i<stops.length;i++)for(let j=1;j<10;j++)backgrounds.push(stops[i-1].map((v,k)=>v+(stops[i][k]-v)*j/10));}
+      else if(p.length===3||p.length===4&&+p[3]===1)backgrounds=[rgb(c.backgroundColor)];
+      node=node.parentElement;
     }
-    if (!bg)
-        bg = [8, 14, 28];
-    const fg = rgb(cs.color), contrast = (Math.max(lum(fg), lum(bg)) + .05) / (Math.min(lum(fg), lum(bg)) + .05), size = parseFloat(cs.fontSize), required = size >= 24 || size >= 18.66 && +cs.fontWeight >= 700 ? 3 : 4.5;
-    checks.push({ text: el.textContent.trim().slice(0, 55), contrast, required });
-} return { label, checks, overflow: document.documentElement.scrollWidth > innerWidth + 1 }; }, label); }
+    if(!backgrounds.length)backgrounds=[[8,14,28]];
+    const contrast=Math.min(...backgrounds.map(bg=>ratio(rgb(cs.color),bg))),size=parseFloat(cs.fontSize),required=size>=24||size>=18.66&&+cs.fontWeight>=700?3:4.5;
+    checks.push({text:el.textContent.trim().slice(0,55),contrast,required});
+  }
+  return{label,checks,overflow:document.documentElement.scrollWidth>innerWidth+1};
+},label);}
+
 async function run() {
     fs.mkdirSync(out, { recursive: true });
     await new Promise(r => server.listen(0, '127.0.0.1', r));
@@ -77,6 +83,7 @@ async function run() {
             audits.push(await audit(page, 'home-' + theme));
         }
         await page.evaluate(() => HHAppTheme.apply('aurora', { persist: false }));
+        await require('./qa-hh-multiverse-art')({page,context,out,pass,audit,audits});
         await action(page, 'sample', '[data-index="2"]');
         await page.locator('[data-mv-form=create]').waitFor();
         const create = page.locator('[data-mv-form=create]');
@@ -92,6 +99,12 @@ async function run() {
         assert.equal(record.world.blueprint.characters.length, 6);
         await screenshot(page, 'world-overview');
         pass({ create: 'Offline rich generation; valid structured world; real IndexedDB acknowledgement', id });
+        const unchangedBefore=JSON.stringify((await state(page)).world);
+        await action(page,'compact-header');assert.equal(await page.locator('.mv').getAttribute('data-compact'),'false');assert.equal(JSON.stringify((await state(page)).world),unchangedBefore);
+        await page.reload({waitUntil:'domcontentloaded'});await page.locator('.mv-world-header').waitFor({timeout:45000});assert.equal(await page.locator('.mv').getAttribute('data-compact'),'false');await action(page,'compact-header');
+        for(const palette of ['prism','aurora','sunset']){await page.locator('[name=visualPalette]').selectOption(palette);for(const view of ['overview','internet','timeline','butterfly','branches','characters','dna','journal','settings']){await pane(page,view);audits.push(await audit(page,'world-'+palette+'-'+view));}}
+        assert.equal(JSON.stringify((await state(page)).world),unchangedBefore);await page.locator('[name=visualPalette]').selectOption('prism');await pane(page,'overview');
+        pass({visualState:'Compact header and all3palettes survive reload/route changes without changing the saved world;all9panes sampled per palette'});
         await pane(page, 'internet');
         for (const app of ['news', 'social', 'search', 'market', 'encyclopedia', 'map', 'trends', 'archives']) {
             await action(page, 'browse', '[data-address="sim://' + app + '"]');
@@ -323,7 +336,7 @@ async function run() {
         await page.waitForFunction(() => navigator.serviceWorker.controller !== null, { timeout: 45000 });
         await page.reload({ waitUntil: 'domcontentloaded' });
         await page.locator('.mv-world-header').waitFor({ timeout: 45000 });
-        await page.waitForFunction(async () => Boolean(await caches.match(new URL('hh-multiverse.js?v=1', document.baseURI).href)));
+        await page.waitForFunction(async () => Boolean(await caches.match(new URL('hh-multiverse.js?v=2', document.baseURI).href)));
         await context.setOffline(true);
         await page.reload({ waitUntil: 'domcontentloaded' });
         await page.locator('.mv-world-header').waitFor({ timeout: 45000 });

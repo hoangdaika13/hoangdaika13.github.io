@@ -1,0 +1,499 @@
+{
+  "version": 1,
+  "created": "2026-11-02",
+  "purpose": "Original fictional concept illustrations for HH Multiverse; not simulated world-state evidence.",
+  "items": [
+    {
+      "id": "hero",
+      "kind": "landscape",
+      "sourceSha256": "39b11edaabf51cda6441abec22ac32d8ecc24386cd94b5912e616a4a2f004d5f",
+      "generation": "built-in image_gen",
+      "prompt": "Use case: stylized-concept\nAsset type: original landscape hero artwork for HH MULTIVERSE / GLITCHVERSE, a colorful premium cosmic world-building web experience.\nPrimary request: an inviting, spectacular gateway to many possible realities. A luminous circular portal floats above a crystalline cosmic ocean, with a miniature floating utopian city visible through its center and several distant planetary worlds, sweeping nebula clouds and sparkling stardust. Rich saturated electric blue #4776FF, cyan #25D9F8, violet #9361FF, magenta pink #FF66B3, coral #FF8066 and warm golden sunlight #FFD166. Refined cinematic 3D illustration, polished glass and iridescent metal, beautiful atmospheric depth, crisp silhouettes, luxurious editorial game key art, luminous rather than gloomy.\nComposition: wide 16:9 landscape artwork, portal and architecture in the center-right, softer dark indigo negative space toward the left for real HTML text, important forms inside center 70 percent to allow responsive cropping. Not a website screenshot or interface mockup.\nConstraints: no text, typography, lettering, logos, watermark or UI; no actual brands or recognizable real cities. This is concept illustration of fictional worlds, not a scientific chart.",
+      "variants": [
+        {
+          "file": "hero-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 19030
+        },
+        {
+          "file": "hero-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 65044
+        },
+        {
+          "file": "hero-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 230356
+        },
+        {
+          "file": "hero-v1-1600.webp",
+          "width": 1600,
+          "height": 900,
+          "bytes": 316562
+        }
+      ]
+    },
+    {
+      "id": "sleep",
+      "kind": "landscape",
+      "sourceSha256": "d47bae4d966b3263fbff94371e996910a2340b8e64d0dd93ab712e08f3e2ea0b",
+      "generation": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. Asset type: original landscape key art for a fictional universe card and world cover in HH MULTIVERSE / GLITCHVERSE. Style: premium cinematic 3D environment illustration, sophisticated luminous color, rich electric blue/cyan/violet/pink/coral/gold accents, detailed architecture and atmospheric depth, crisp important silhouettes, not muddy or monotonous. Composition: wide 16:9, one clear story focus inside central 75 percent, full bleed art, suitable for small card crops. No text, lettering, logos, watermark, UI, real cities, real brands, or scientific charts. Scene: a spectacular city where nobody ever needs sleep. Busy illuminated skybridges, terraced gardens and creative studios glow with coral-orange and cyan light under a vivid indigo twilight. Tiny citizens work, learn and relax across the lively city, quiet communal gardens coexist with active night districts. Flowing architecture and transit trails, a hopeful colorful civilization, not an ominous dystopia.",
+      "variants": [
+        {
+          "file": "sleep-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 23234
+        },
+        {
+          "file": "sleep-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 81392
+        },
+        {
+          "file": "sleep-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 286834
+        }
+      ]
+    },
+    {
+      "id": "moons",
+      "kind": "landscape",
+      "sourceSha256": "d6039ceb25e81d385df9069cba7f7715d9e4db6f68565b27684290bcc9278f50",
+      "generation": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. Asset type: original landscape key art for a fictional universe card and world cover in HH MULTIVERSE / GLITCHVERSE. Style: premium cinematic 3D environment illustration, sophisticated luminous color, rich electric blue/cyan/violet/pink/coral/gold accents, detailed architecture and atmospheric depth, crisp important silhouettes, not muddy or monotonous. Composition: wide 16:9, one clear story focus inside central 75 percent, full bleed art, suitable for small card crops. No text, lettering, logos, watermark, UI, real cities, real brands, or scientific charts. Scene: an extraordinary coastal civilization under TWO clearly separate magnificent moons, one lavender and one peach gold, both large and visibly spherical in the upper sky. Curved bridges and white crystalline observatories frame a turquoise bioluminescent bay and twin moon reflections. Pink-violet clouds, cyan water and warm amber windows. Visually communicate two moons, not two suns.",
+      "variants": [
+        {
+          "file": "moons-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 21122
+        },
+        {
+          "file": "moons-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 72742
+        },
+        {
+          "file": "moons-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 252776
+        }
+      ]
+    },
+    {
+      "id": "memory",
+      "kind": "landscape",
+      "sourceSha256": "3603f04370c896463375280c5a7733af08d480565ba58f8782ef0d942f682f09",
+      "generation": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. Asset type: original landscape key art for a fictional universe card and world cover in HH MULTIVERSE / GLITCHVERSE. Style: premium cinematic 3D environment illustration, sophisticated luminous color, rich electric blue/cyan/violet/pink/coral/gold accents, detailed architecture and atmospheric depth, crisp important silhouettes, not muddy or monotonous. Composition: wide 16:9, one clear story focus inside central 75 percent, full bleed art, suitable for small card crops. No text, lettering, logos, watermark, UI, real cities, real brands, or scientific charts. Scene: a beautiful fictional memory market. Intimate winding futuristic bazaar with graceful magenta awnings, merchants and visitors, suspended clear glass orbs containing tiny luminous scenes and colorful memory fragments. Warm golden stalls balanced with teal-blue canal reflections and violet architectural depth. The glass memory orbs are the unmistakable visual focus; no literal letters or signs.",
+      "variants": [
+        {
+          "file": "memory-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 23334
+        },
+        {
+          "file": "memory-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 79254
+        },
+        {
+          "file": "memory-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 267334
+        }
+      ]
+    },
+    {
+      "id": "time",
+      "kind": "landscape",
+      "sourceSha256": "02ed9862c8454dda9f0ce4de51611c6f0543a63601e24f7298c8c7ffbf6ac68b",
+      "generation": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. Asset type: original landscape key art for a fictional universe card and world cover in HH MULTIVERSE / GLITCHVERSE. Style: premium cinematic 3D environment illustration, sophisticated luminous color, rich electric blue/cyan/violet/pink/coral/gold accents, detailed architecture and atmospheric depth, crisp important silhouettes, not muddy or monotonous. Composition: wide 16:9, one clear story focus inside central 75 percent, full bleed art, suitable for small card crops. No text, lettering, logos, watermark, UI, real cities, real brands, or scientific charts. Scene: a utopian clockwork city where time itself is a currency. A monumental sculptural hourglass of glowing golden particles stands in the center of elegant violet and teal terraces, with smaller luminous hourglass tokens traded by tiny citizens. Gleaming arcs, light streams and warm coral clouds; imaginative luxury, crystal and brushed iridescent metal. No numbers or readable clock numerals.",
+      "variants": [
+        {
+          "file": "time-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 22846
+        },
+        {
+          "file": "time-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 80048
+        },
+        {
+          "file": "time-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 278848
+        }
+      ]
+    },
+    {
+      "id": "animals",
+      "kind": "landscape",
+      "sourceSha256": "882a11eec6302d7fcd44a2394fe47dbc802a5f6a879a7119b1fc8c9c6ea83539",
+      "generation": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. Asset type: original wide universe cover for HH MULTIVERSE / GLITCHVERSE. Premium cinematic 3D story illustration, art-directed rich cyan/electric blue/violet/pink/coral/gold with generous luminous color and believable material detail, clear focal point inside central 75 percent, wide 16:9 full bleed. This is a fictional world, no actual brands or cities. No text, logos, typography, watermarks, UI or charts. Scene: nations of intelligent animals cooperating in a spectacular rainforest capital. A wise red panda diplomat and an elegant deer navigator on a wooden canopy bridge in the middle distance, colorful birds and an otter in a turquoise canal below. Organic treehouse towers, warm golden lanterns, flowering vines, large violet leaves, glass observation domes. Rich green and coral dawn light. Distinct animal silhouettes and delightful ecological architecture, not humans in mascot suits.",
+      "variants": [
+        {
+          "file": "animals-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 23764
+        },
+        {
+          "file": "animals-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 82642
+        },
+        {
+          "file": "animals-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 285006
+        }
+      ]
+    },
+    {
+      "id": "network",
+      "kind": "landscape",
+      "sourceSha256": "390e6e5c3e9019f76a412695ecfff8bf6f4bd64ea5cd092d3be8eb77b0d71cfc",
+      "generation": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. Asset type: original wide universe cover for HH MULTIVERSE / GLITCHVERSE. Premium cinematic 3D story illustration, art-directed rich cyan/electric blue/violet/pink/coral/gold with generous luminous color and believable material detail, clear focal point inside central 75 percent, wide 16:9 full bleed. This is a fictional world, no actual brands or cities. No text, logos, typography, watermarks, UI or charts. Scene: an alternate Renaissance in which the Internet already exists in1500. An enormous vaulted scholarly library and open astronomical courtyard, emerald and sapphire books and rolled manuscripts, copper mechanical message hubs and delicate luminous cyan connection threads between faraway medieval towers. A few fictional scholars exchanging scrolls. Warm golden window light and royal violet recesses, historically inspired robes and stone architecture rather than modern screens. No readable writing or modern brand.",
+      "variants": [
+        {
+          "file": "network-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 21664
+        },
+        {
+          "file": "network-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 76690
+        },
+        {
+          "file": "network-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 275498
+        }
+      ]
+    },
+    {
+      "id": "money",
+      "kind": "landscape",
+      "sourceSha256": "4b21d2941781bc2a989ecf45b7c8768684b3e48ddec9fadf54795f9a5b9f9a42",
+      "generation": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. Asset type: original wide universe cover for HH MULTIVERSE / GLITCHVERSE. Premium cinematic 3D story illustration, art-directed rich cyan/electric blue/violet/pink/coral/gold with generous luminous color and believable material detail, clear focal point inside central 75 percent, wide 16:9 full bleed. This is a fictional world, no actual brands or cities. No text, logos, typography, watermarks, UI or charts. Scene: a joyful society organized around sharing rather than money. A beautiful terraced communal garden city in soft sunrise, mint and turquoise canals, rose-coral houses with organic golden roofs, orchards and public greenhouses. Small groups of fictional citizens share baskets of produce and build things together in a welcoming courtyard. Vibrant flowers, golden sun, blue-violet mountains. Sophisticated hopeful solarpunk environment; no coins, currency symbols, luxury trading exchange or literal money.",
+      "variants": [
+        {
+          "file": "money-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 24748
+        },
+        {
+          "file": "money-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 88276
+        },
+        {
+          "file": "money-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 309412
+        }
+      ]
+    },
+    {
+      "id": "sky",
+      "kind": "landscape",
+      "sourceSha256": "a5e80e179bcd26e0814ebcff430d982578ad3c011788c13937fb000b39e1db2f",
+      "generation": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. Asset type: original wide universe cover for HH MULTIVERSE / GLITCHVERSE. Premium cinematic 3D story illustration, art-directed rich cyan/electric blue/violet/pink/coral/gold with generous luminous color and believable material detail, clear focal point inside central 75 percent, wide 16:9 full bleed. This is a fictional world, no actual brands or cities. No text, logos, typography, watermarks, UI or charts. Scene: a breathtaking archipelago of floating cities at peach and pink sunrise. Sleek turquoise and pearl-gold residential terraces with rooftop gardens on several distinct levitating islands; small elegant airships join them along shimmering cyan routes. Waterfalls disappear into bright fluffy clouds and a deep electric blue sky. One large city dominates central-right, smaller cloud islands provide depth. Dreamlike, welcoming, richly colored, not a dark battle scene.",
+      "variants": [
+        {
+          "file": "sky-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 19020
+        },
+        {
+          "file": "sky-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 62576
+        },
+        {
+          "file": "sky-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 212282
+        }
+      ]
+    },
+    {
+      "id": "timeline",
+      "kind": "landscape",
+      "sourceSha256": "551a2b8c005bc7494497ffac8e924951082fd0dcde9fdd7c1bdd077b97c042f0",
+      "generation": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. Asset type: original cinematic feature illustration for HH MULTIVERSE / GLITCHVERSE. Premium detailed 3D concept art, vibrant luminous electric blue, cyan, violet, pink, coral and gold, sophisticated material and atmospheric depth, wide16:9 landscape, clear iconic focus in center70percent. Pure artwork, no text, letters, numbers, logos, watermark, UI, graphs, charts or screenshots. Fictional and imaginative. Scene: a luminous river of time winding through the cosmos, carrying three clearly distinguishable miniature epochs of one civilization: an early copper-and-stone village, a thriving glass garden metropolis, then a radiant floating future city. Elegant clockwork arcs and ribbons connect them through a deep blue and violet nebula; golden light flows forward. Make this a beautiful imaginative landscape, not an informational diagram.",
+      "variants": [
+        {
+          "file": "timeline-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 22994
+        },
+        {
+          "file": "timeline-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 80656
+        },
+        {
+          "file": "timeline-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 282722
+        }
+      ]
+    },
+    {
+      "id": "butterfly",
+      "kind": "landscape",
+      "sourceSha256": "e8aec312d75680a435403add4e06955ba993ec8ccfcf42be1013cd47ec0c5051",
+      "generation": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. Asset type: original cinematic feature illustration for HH MULTIVERSE / GLITCHVERSE. Premium detailed 3D concept art, vibrant luminous electric blue, cyan, violet, pink, coral and gold, sophisticated material and atmospheric depth, wide16:9 landscape, clear iconic focus in center70percent. Pure artwork, no text, letters, numbers, logos, watermark, UI, graphs, charts or screenshots. Fictional and imaginative. Scene: an extraordinary crystalline butterfly hovers above a glowing cosmic pool. Its translucent wings contain tiny alternate worlds in turquoise, electric blue, magenta, coral and sunlit gold. Several elegant luminous trails branch away toward small distant worlds, suggesting a small choice opening many futures. Detailed beautiful facets, soft space dust, balanced negative space, magical yet refined rather than chaotic.",
+      "variants": [
+        {
+          "file": "butterfly-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 20568
+        },
+        {
+          "file": "butterfly-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 69488
+        },
+        {
+          "file": "butterfly-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 243334
+        }
+      ]
+    },
+    {
+      "id": "civilizations",
+      "kind": "landscape",
+      "sourceSha256": "82906504ec8453ed675f0627885ae69c15b71139a85bb42fcb1dc0d60beb0528",
+      "generation": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. Asset type: original cinematic feature illustration for HH MULTIVERSE / GLITCHVERSE. Premium detailed 3D concept art, vibrant luminous electric blue, cyan, violet, pink, coral and gold, sophisticated material and atmospheric depth, wide16:9 landscape, clear iconic focus in center70percent. Pure artwork, no text, letters, numbers, logos, watermark, UI, graphs, charts or screenshots. Fictional and imaginative. Scene: a welcoming gathering of a fictional civilization in a stunning futuristic observatory garden. Six distinct invented adult citizens, engineer, archivist, mediator, researcher, navigator and artist, discuss a small luminous miniature world above a round table. Beautiful diverse faces and practical iridescent clothing, warm friendly expressions, cyan glass, golden light, violet celestial dome and coral flowers. Show a living community and room to explore rather than a stiff formal group portrait. No recognizable actual people.",
+      "variants": [
+        {
+          "file": "civilizations-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 24252
+        },
+        {
+          "file": "civilizations-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 80492
+        },
+        {
+          "file": "civilizations-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 264928
+        }
+      ]
+    },
+    {
+      "id": "portrait-0",
+      "kind": "portrait",
+      "sourceSha256": "fd59e6c2083ae574d69e94a9d973c5429cf894380a6370f6032755cc45728cab",
+      "generation": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. Asset type: square original character portrait for a fictional citizen profile in HH MULTIVERSE / GLITCHVERSE. Polished premium semi-realistic cinematic3D illustration, expressive believable invented adult face, shoulders and upper torso visible, face centered with ample headroom for square or circular cropping, beautiful soft cyan/violet/coral/golden rim light, rich elegant indigo gradient background with a few soft nebula bokeh lights. Practical beautifully detailed future clothing with iridescent accents; friendly thoughtful expression. Clean readable silhouette, no weapon, no real person likeness, no text, lettering, logos, watermark, UI or inset panels. Subject: an inventive young adult woman engineer with warm tan skin, short dark teal-black hair, amber eyes, a subtly luminous cyan tool collar and midnight-blue work jacket with small gold precision details. Curious, approachable, confident.",
+      "variants": [
+        {
+          "file": "portrait-0-v1-160.webp",
+          "width": 160,
+          "height": 160,
+          "bytes": 7120
+        },
+        {
+          "file": "portrait-0-v1-400.webp",
+          "width": 400,
+          "height": 400,
+          "bytes": 28886
+        },
+        {
+          "file": "portrait-0-v1-960.webp",
+          "width": 960,
+          "height": 960,
+          "bytes": 106112
+        }
+      ]
+    },
+    {
+      "id": "portrait-1",
+      "kind": "portrait",
+      "sourceSha256": "9c9bec9515c99f9a355b34fa6ba3b2bf4e38c82d94e40203dbf200c8fad6d3a2",
+      "generation": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. Asset type: square original character portrait for a fictional citizen profile in HH MULTIVERSE / GLITCHVERSE. Polished premium semi-realistic cinematic3D illustration, expressive believable invented adult face, shoulders and upper torso visible, face centered with ample headroom for square or circular cropping, beautiful soft cyan/violet/coral/golden rim light, rich elegant indigo gradient background with a few soft nebula bokeh lights. Practical beautifully detailed future clothing with iridescent accents; friendly thoughtful expression. Clean readable silhouette, no weapon, no real person likeness, no text, lettering, logos, watermark, UI or inset panels. Subject: an adult male archivist with thoughtful brown eyes, medium brown skin, short curly dark hair and a neatly trimmed beard, a refined plum-violet archive robe over a modern practical jacket, a subtle amber-glowing circular brooch. Calm and wise, not elderly.",
+      "variants": [
+        {
+          "file": "portrait-1-v1-160.webp",
+          "width": 160,
+          "height": 160,
+          "bytes": 6062
+        },
+        {
+          "file": "portrait-1-v1-400.webp",
+          "width": 400,
+          "height": 400,
+          "bytes": 25080
+        },
+        {
+          "file": "portrait-1-v1-960.webp",
+          "width": 960,
+          "height": 960,
+          "bytes": 105878
+        }
+      ]
+    },
+    {
+      "id": "portrait-2",
+      "kind": "portrait",
+      "sourceSha256": "3763482f0c8ddb9d14a21f16517dcfa7ffe993a939822d2857a7c66310f6aad0",
+      "generation": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. Asset type: square original character portrait for a fictional citizen profile in HH MULTIVERSE / GLITCHVERSE. Polished premium semi-realistic cinematic3D illustration, expressive believable invented adult face, shoulders and upper torso visible, face centered with ample headroom for square or circular cropping, beautiful soft cyan/violet/coral/golden rim light, rich elegant indigo gradient background with a few soft nebula bokeh lights. Practical beautifully detailed future clothing with iridescent accents; friendly thoughtful expression. Clean readable silhouette, no weapon, no real person likeness, no text, lettering, logos, watermark, UI or inset panels. Subject: an adult woman mediator with deep warm brown skin, elegant silver-white braids tied back, kind expressive eyes and a coral and champagne-gold future jacket with minimal glowing lavender details. Welcoming, thoughtful, confident, natural proportions.",
+      "variants": [
+        {
+          "file": "portrait-2-v1-160.webp",
+          "width": 160,
+          "height": 160,
+          "bytes": 6830
+        },
+        {
+          "file": "portrait-2-v1-400.webp",
+          "width": 400,
+          "height": 400,
+          "bytes": 26402
+        },
+        {
+          "file": "portrait-2-v1-960.webp",
+          "width": 960,
+          "height": 960,
+          "bytes": 92086
+        }
+      ]
+    },
+    {
+      "id": "portrait-3",
+      "kind": "portrait",
+      "sourceSha256": "4ce4e88308ec4f9c18c5c879b00c4a45b39a98549e3a81d67e4a7a5e25a78fe1",
+      "generation": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. Asset type: square original citizen portrait for HH MULTIVERSE / GLITCHVERSE. Premium semi-realistic cinematic3D illustration with a clearly invented adult face, shoulders and upper torso visible, central face with generous headroom for circular cropping, exquisite soft cyan/violet/pink/coral/golden rim lighting. Beautiful rich indigo bokeh cosmic background, crisp practical iridescent future clothing, approachable thoughtful expression and natural proportions. Match an elegant colorful fictional civilization, not a real person. No weapons, text, letters, logos, watermark, UI, border or inset panels. Subject: an adult male researcher with light olive skin, wavy silver-gray hair swept back, attentive blue-gray eyes, fine round transparent glasses, a refined midnight-blue research jacket and subtle violet-gold luminous trim. Curious and meticulous.",
+      "variants": [
+        {
+          "file": "portrait-3-v1-160.webp",
+          "width": 160,
+          "height": 160,
+          "bytes": 8102
+        },
+        {
+          "file": "portrait-3-v1-400.webp",
+          "width": 400,
+          "height": 400,
+          "bytes": 33214
+        },
+        {
+          "file": "portrait-3-v1-960.webp",
+          "width": 960,
+          "height": 960,
+          "bytes": 122886
+        }
+      ]
+    },
+    {
+      "id": "portrait-4",
+      "kind": "portrait",
+      "sourceSha256": "745f04ef5d19a7f62efe060249e154a0253763ae1fa981b2273a9c3c419bf27b",
+      "generation": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. Asset type: square original citizen portrait for HH MULTIVERSE / GLITCHVERSE. Premium semi-realistic cinematic3D illustration with a clearly invented adult face, shoulders and upper torso visible, central face with generous headroom for circular cropping, exquisite soft cyan/violet/pink/coral/golden rim lighting. Beautiful rich indigo bokeh cosmic background, crisp practical iridescent future clothing, approachable thoughtful expression and natural proportions. Match an elegant colorful fictional civilization, not a real person. No weapons, text, letters, logos, watermark, UI, border or inset panels. Subject: an adult woman navigator with medium warm brown skin, long dark hair braided over one shoulder, clear green-hazel eyes and a turquoise flight jacket with amber and coral trim, a small abstract navigation brooch. Confident, adventurous and kind.",
+      "variants": [
+        {
+          "file": "portrait-4-v1-160.webp",
+          "width": 160,
+          "height": 160,
+          "bytes": 8554
+        },
+        {
+          "file": "portrait-4-v1-400.webp",
+          "width": 400,
+          "height": 400,
+          "bytes": 36746
+        },
+        {
+          "file": "portrait-4-v1-960.webp",
+          "width": 960,
+          "height": 960,
+          "bytes": 139678
+        }
+      ]
+    },
+    {
+      "id": "portrait-5",
+      "kind": "portrait",
+      "sourceSha256": "c350198520da0499f0d5cea3467b745244e14bf44e6597857ffbc8eba8d8fe6e",
+      "generation": "built-in image_gen",
+      "prompt": "Use case: stylized-concept. Asset type: square original citizen portrait for HH MULTIVERSE / GLITCHVERSE. Premium semi-realistic cinematic3D illustration with a clearly invented adult face, shoulders and upper torso visible, central face with generous headroom for circular cropping, exquisite soft cyan/violet/pink/coral/golden rim lighting. Beautiful rich indigo bokeh cosmic background, crisp practical iridescent future clothing, approachable thoughtful expression and natural proportions. Match an elegant colorful fictional civilization, not a real person. No weapons, text, letters, logos, watermark, UI, border or inset panels. Subject: an adult male artist with warm copper skin, tousled dark auburn curls, expressive brown eyes and a gentle smile, a creative deep-magenta jacket with cobalt and gold iridescent fabric. Imaginative and welcoming.",
+      "variants": [
+        {
+          "file": "portrait-5-v1-160.webp",
+          "width": 160,
+          "height": 160,
+          "bytes": 8594
+        },
+        {
+          "file": "portrait-5-v1-400.webp",
+          "width": 400,
+          "height": 400,
+          "bytes": 36980
+        },
+        {
+          "file": "portrait-5-v1-960.webp",
+          "width": 960,
+          "height": 960,
+          "bytes": 157730
+        }
+      ]
+    }
+  ]
+}

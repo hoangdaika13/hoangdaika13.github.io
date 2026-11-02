@@ -1,7 +1,7 @@
 /* HH Platform workspace adapter. All simulations use the same validated world. */
 (function (root) {
     'use strict';
-    const M = root.HHMultiverseModel, E = root.HHMultiverseEngine, I = root.HHMultiverseInternet, V = root.HHMultiverseViews, S = root.HHMultiverseStore;
+    const M = root.HHMultiverseModel, E = root.HHMultiverseEngine, I = root.HHMultiverseInternet, V = root.HHMultiverseViews, S = root.HHMultiverseStore, A = root.HHMultiverseArt;
     const PANES = ['overview', 'internet', 'timeline', 'butterfly', 'branches', 'characters', 'dna', 'journal', 'settings'];
     let active = null;
     function mount(host, options = {}) {
@@ -10,8 +10,16 @@
             throw Error('Thiếu vùng hiển thị HH Multiverse.');
         const user = options.currentUser, logged = Boolean(user && !user.guest && (user.id || user._id)), store = S.create(user), life = new AbortController(), pending = new Set();
         const reduce = root.matchMedia('(prefers-reduced-motion: reduce)');
+        let visual = A.preferences(), visualProtected = false;
+        const visualKey = A.preferenceKey(user);
+        try { visual = A.preferences(JSON.parse(root.localStorage.getItem(visualKey) || 'null')); }
+        catch { visualProtected = true; }
         let alive = true, busy = false, portal = null, portalSequence = 0, sharedToken = '', modalResolve = null, modalFocus = null, operationController = null, loaded = false;
         const ctx = { draft: { premise: '', settings: M.settings(), provider: 'offline' }, rows: [], logged, admin: logged && ['owner', 'super_admin', 'admin', 'moderator'].includes(user.role), service: null, notice: '', motion: !reduce.matches, world: null, record: null, projection: null, view: 'overview', routeView: 'home', readOnly: false, allowClone: false, filters: { q: '', mode: 'all', sort: 'updated' }, cloudRows: null, publicRows: null, publicError: '', decision: { text: '', category: '' }, preview: null, compare: { left: 'main', right: '' }, characterId: '', chatProvider: 'offline', chatDraft: '', share: null, moderation: null };
+        ctx.visual = visual;
+        ctx.galleryFilter = 'all';
+        ctx.lightboxId = '';
+        ctx.lightboxIds = [];
         host.innerHTML = '<section class="mv"><div class="mv-generation" role="status"><span class="mv-spinner" aria-hidden="true"></span><h1>Đang mở Reality Engine…</h1><p>Đọc thư viện trên thiết bị.</p></div></section>';
         function assertAlive() { if (!alive)
             throw new DOMException('Workspace closed', 'AbortError'); }
@@ -22,6 +30,38 @@
             el.textContent = ctx.notice;
             el.hidden = !ctx.notice;
         } }
+        function saveVisual(next) {
+            ctx.visual = A.preferences(next);
+            const node = host.querySelector('[data-hh-multiverse]');
+            if (node) { node.dataset.palette = ctx.visual.palette; node.dataset.compact = String(ctx.visual.compact); }
+            if (visualProtected) { notice('Đã áp dụng trong phiên. Tùy chọn cũ cần phiên bản khác nên được giữ nguyên.'); return; }
+            try { root.localStorage.setItem(visualKey, JSON.stringify(ctx.visual)); }
+            catch { notice('Đã áp dụng bộ màu trong phiên; chưa lưu được tùy chọn trên thiết bị.'); }
+        }
+        function showArtwork(id, move = false) {
+            const asset = A.find(id);
+            if (!asset) throw Error('Ảnh không có trong bộ tranh.');
+            const el = host.querySelector('[data-mv-dialog]');
+            if (!move) {
+                if (el.open || modalResolve) return;
+                modalFocus = document.activeElement;
+                ctx.lightboxIds = (ctx.routeView === 'gallery' ? A.list(ctx.galleryFilter) : A.catalog).map(a => a.id);
+                if (!ctx.lightboxIds.includes(id)) ctx.lightboxIds = A.catalog.map(a => a.id);
+            }
+            const focusedAction = move ? document.activeElement?.dataset.mvAction : 'close-art';
+            ctx.lightboxId = id;
+            el.classList.add('mv-art-dialog');
+            el.setAttribute('aria-labelledby', 'mv-art-viewer-title');
+            el.innerHTML = V.artworkViewer(id, ctx.lightboxIds);
+            el.returnValue = '';
+            if (!move) { if (el.showModal) el.showModal(); else el.setAttribute('open', ''); }
+            const focus = ['previous-art', 'next-art', 'close-art'].includes(focusedAction) ? focusedAction : 'close-art';
+            el.querySelector('[data-mv-action="' + focus + '"]')?.focus({ preventScroll: true });
+        }
+        function moveArtwork(delta) {
+            const index = ctx.lightboxIds.indexOf(ctx.lightboxId), count = ctx.lightboxIds.length;
+            if (count) showArtwork(ctx.lightboxIds[(index + delta + count) % count], true);
+        }
         async function api(action, { method = 'GET', body, query = {}, signal } = {}) {
             const cancel = new AbortController(), abort = () => cancel.abort();
             life.signal.addEventListener('abort', abort, { once: true });
@@ -127,6 +167,7 @@
         async function inspectRoute(route) {
             const parts = String(route).split('?')[0].split('/').filter(Boolean), params = new URLSearchParams(String(route).split('?')[1] || '');
             ctx.routeView = parts[1] || 'home';
+            if (['all', 'world', 'experience', 'portrait'].includes(params.get('category'))) ctx.galleryFilter = params.get('category');
             if (parts[1] === 'shared') {
                 sharedToken = M.id(parts[2]);
                 ctx.sharedToken = sharedToken;
@@ -150,7 +191,7 @@
                 if (params.get('branch'))
                     ctx.world = E.select(ctx.world, params.get('branch'), params.get('snapshot') || undefined);
             }
-            else if (!['home', 'create', 'explore', 'my-universes', 'atlas', 'moderation'].includes(ctx.routeView))
+            else if (!['home', 'create', 'explore', 'my-universes', 'atlas', 'moderation', 'gallery'].includes(ctx.routeView))
                 throw Error('Đường dẫn Multiverse chưa được hỗ trợ.');
         }
         function download(name, data, type = 'application/json') {
@@ -167,6 +208,8 @@
             if (modalResolve)
                 modalResolve(null);
             const el = host.querySelector('[data-mv-dialog]');
+            el.classList.remove('mv-art-dialog');
+            el.removeAttribute('aria-labelledby');
             modalFocus = document.activeElement;
             el.returnValue = '';
             el.innerHTML = '<form method="dialog"><h2>' + V.esc(title) + '</h2>' + content + '<div class="mv-actions"><button value="cancel" formnovalidate>Hủy</button><button value="confirm" class="' + (danger ? 'mv-danger' : 'mv-primary') + '">' + V.esc(confirm) + '</button></div></form>';
@@ -177,8 +220,21 @@
                 el.querySelector('button')?.focus();
             } });
         }
-        function closeDialog(e) { const el = e.target; if (!el.matches('[data-mv-dialog]'))
-            return; const values = el.returnValue === 'confirm' ? Object.fromEntries(new FormData(el.querySelector('form'))) : null; const resolve = modalResolve; modalResolve = null; resolve?.(values); modalFocus?.isConnected && modalFocus.focus({ preventScroll: true }); }
+        function closeDialog(e) {
+            const el = e.target;
+            if (!el.matches('[data-mv-dialog]')) return;
+            if (el.classList.contains('mv-art-dialog')) {
+                ctx.lightboxId = '';
+                el.classList.remove('mv-art-dialog');
+                el.removeAttribute('aria-labelledby');
+            } else {
+                const values = el.returnValue === 'confirm' ? Object.fromEntries(new FormData(el.querySelector('form'))) : null;
+                const resolve = modalResolve;
+                modalResolve = null;
+                resolve?.(values);
+            }
+            if (modalFocus?.isConnected) modalFocus.focus({ preventScroll: true });
+        }
         async function sync() {
             writable();
             if (!logged)
@@ -286,6 +342,19 @@
         }
         async function perform(action, node) {
             const id = node?.dataset.id;
+            if (action === 'open-art') { showArtwork(id); return; }
+            if (action === 'previous-art' || action === 'next-art') { moveArtwork(action === 'previous-art' ? -1 : 1); return; }
+            if (action === 'close-art') { const el = host.querySelector('[data-mv-dialog]'); if (el.close) el.close(); else { el.removeAttribute('open'); closeDialog({target:el}); } return; }
+            if (action === 'art-create') { host.querySelector('[data-mv-dialog]').close(); navigate('/multiverse/create?sample=' + Number(node.dataset.index)); return; }
+            if (action === 'gallery-filter') {
+                if (!['all', 'world', 'experience', 'portrait'].includes(node.dataset.kind)) return;
+                ctx.galleryFilter = node.dataset.kind;
+                history.replaceState(null, '', '#/multiverse/gallery?category=' + ctx.galleryFilter);
+                draw();
+                host.querySelector('[data-mv-action="gallery-filter"][data-kind="'+ctx.galleryFilter+'"]')?.focus({preventScroll:true});
+                return;
+            }
+            if (action === 'compact-header') { saveVisual({...ctx.visual, compact:!ctx.visual.compact}); draw(); return; }
             if (action === 'cancel-operation') {
                 operationController?.abort();
                 return;
@@ -672,12 +741,16 @@
             const o = host.querySelector('[data-mv-creativity]');
             if (o)
                 o.textContent = e.target.value;
+        } if (e.target.name === 'premise' && e.target.closest('[data-mv-form="create"]')) {
+            const aside = host.querySelector('[data-mv-draft-art]'), id = A.forWorld({premise:e.target.value}).id;
+            if (aside && aside.dataset.current !== id) { aside.dataset.current = id; aside.innerHTML = V.picture(id,{className:'mv-create-art',sizes:'400px'}); }
         } if (e.target.matches('[data-mv-snapshot-range]') && ctx.world) {
             const path = E.lineage(ctx.world, E.branch(ctx.world).headId), s = path[Number(e.target.value)], o = host.querySelector('[data-mv-snapshot-label]');
             if (o && s)
                 o.textContent = 'Năm ' + E.year(ctx.world, s) + ' · ngày+' + s.day;
         } };
         const changeEvent = e => {
+            if (e.target.name === 'visualPalette') { saveVisual({...ctx.visual,palette:e.target.value}); return; }
             if (e.target.matches('[data-mv-snapshot-range]') && ctx.world) {
                 const path = E.lineage(ctx.world, E.branch(ctx.world).headId), s = path[Number(e.target.value)];
                 if (s)
@@ -697,11 +770,23 @@
         } };
         const motionChange = () => { ctx.motion = !reduce.matches; stopPortal(); if (loaded)
             draw(true); };
+        const imageError = e => {
+            if (e.target?.matches?.('img[data-mv-image]')) {
+                const node = e.target.closest('.mv-art');
+                if (node) { node.classList.add('mv-art-failed'); node.setAttribute('aria-label','Chưa tải được ảnh: '+(A.find(node.dataset.art)?.description||'tranh minh họa')); }
+            }
+        };
+        const artworkKeys = e => {
+            if (!ctx.lightboxId || e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); moveArtwork(e.key === 'ArrowLeft' ? -1 : 1); }
+        };
         host.addEventListener('click', click);
         host.addEventListener('submit', formEvent);
         host.addEventListener('input', input);
         host.addEventListener('change', changeEvent);
         host.addEventListener('close', closeDialog, true);
+        host.addEventListener('error', imageError, true);
+        document.addEventListener('keydown', artworkKeys);
         document.addEventListener('keydown', shortcut);
         reduce.addEventListener('change', motionChange);
         async function initialize() {
@@ -733,7 +818,7 @@
                 c.abort(); stopPortal(); store.close(); if (modalResolve) {
                 modalResolve(null);
                 modalResolve = null;
-            } host.removeEventListener('click', click); host.removeEventListener('submit', formEvent); host.removeEventListener('input', input); host.removeEventListener('change', changeEvent); host.removeEventListener('close', closeDialog, true); document.removeEventListener('keydown', shortcut); reduce.removeEventListener('change', motionChange); host.innerHTML = ''; } };
+            } host.removeEventListener('click', click); host.removeEventListener('submit', formEvent); host.removeEventListener('input', input); host.removeEventListener('change', changeEvent); host.removeEventListener('close', closeDialog, true); host.removeEventListener('error', imageError, true); document.removeEventListener('keydown', artworkKeys); document.removeEventListener('keydown', shortcut); reduce.removeEventListener('change', motionChange); host.innerHTML = ''; } };
         initialize();
         return { unmount };
     }

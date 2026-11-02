@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1078";
+const CACHE = "hh-identity-portal-v1079";
+// Previous release: hh-identity-portal-v1078.
 // Previous release: hh-identity-portal-v1077.
 // Previous release: hh-identity-portal-v1076.
 // Previous release: hh-identity-portal-v1075.
@@ -963,10 +964,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=739",
+  "./performance-loader.js?v=740",
   "./auth-platform.js?v=22",
   "./auth-neon-gateway.js?v=35",
-  "./script.js?v=301"
+  "./script.js?v=302"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime
