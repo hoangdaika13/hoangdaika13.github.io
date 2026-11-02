@@ -1,0 +1,2660 @@
+{
+  "version": 1,
+  "reviewed": "2026-11-02",
+  "purpose": "Actual reference photographs, not fictional world snapshots.",
+  "count": 50,
+  "totalBytes": 5297840,
+  "policyURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+  "items": [
+    {
+      "id": "photo-001",
+      "nasaId": "iss043e155854",
+      "theme": "aurora",
+      "group": "cosmos",
+      "tone": "mint",
+      "title": "Dải cực quang bên Trái Đất",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Dải cực quang bên Trái Đất. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Aurora sequence",
+      "sourceURL": "https://images.nasa.gov/details/iss043e155854",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss043e155854/iss043e155854~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss043e155854/metadata.json",
+      "author": "Terry Virts",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2015-04-27",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "22f3d6e337e9c85b1253864cbcdbb87051bff9aec1f62af1a140b025f1c0ef12",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1277
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-001-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 2256,
+          "sha256": "64fb09088f6554311690b8761bf0af6e28292747e0b7d15d93961487b4812234"
+        },
+        {
+          "file": "photo-001-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 5380,
+          "sha256": "10c4612cbfc44a8855cd2c26dd61c8391bb966f58bf6d9a5ed45122a511c7af0"
+        },
+        {
+          "file": "photo-001-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 17042,
+          "sha256": "7f8fd0bcfb713e70ce3a3078f2e1db746bd0f87b2eca74b2dfa5d37a1329e9fc"
+        }
+      ]
+    },
+    {
+      "id": "photo-002",
+      "nasaId": "iss058e005282",
+      "theme": "aurora",
+      "group": "cosmos",
+      "tone": "mint",
+      "title": "Cực quang bên rìa khí quyển",
+      "description": "Ảnh chụp cực quang bên vành Trái Đất từ Trạm Vũ trụ Quốc tế. Tư liệu NASA tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "View of the Earth's limb with an aurora",
+      "sourceURL": "https://images.nasa.gov/details/iss058e005282",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss058e005282/iss058e005282~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss058e005282/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2019-01-18",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "47881d2a021fa145d65a5e23d89c04eb9c12317d4ccc06b20dca0bb0598ea986",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1280
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-002-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 6162,
+          "sha256": "fea3ad3f11c38f3d4a60447b34c000b11c0c00953e48fc5502ea9b41c351f4f5"
+        },
+        {
+          "file": "photo-002-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 21746,
+          "sha256": "b3e31858c87afbfc1f3ff9cac6e5a56962610640ad9db8068eaaae099fdc7ade"
+        },
+        {
+          "file": "photo-002-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 104996,
+          "sha256": "4e583be5c225dce34d8cc913d6141413827009c8e439661c643063648d1b51f7"
+        }
+      ]
+    },
+    {
+      "id": "photo-003",
+      "nasaId": "iss040e125550",
+      "theme": "aurora",
+      "group": "cosmos",
+      "tone": "mint",
+      "title": "Cực quang giữa nền đêm",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Cực quang giữa nền đêm. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Dark aurora shots",
+      "sourceURL": "https://images.nasa.gov/details/iss040e125550",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss040e125550/iss040e125550~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss040e125550/metadata.json",
+      "author": "Reid Wiseman",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2014-09-02",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "65c36943775336ae6cb69f74bf59cb5f7074c05bbbf7f25aab550c55ab294de3",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1277
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-003-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 1974,
+          "sha256": "2338fe93fa2ed22f2815fc7409cc3ad842c769f46e5707c7ae1bb344e6d10eb0"
+        },
+        {
+          "file": "photo-003-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 4622,
+          "sha256": "3a93837da3423ec3d19eb99e5d7053c4ec851e0dd9583c92b301bd34c5044d37"
+        },
+        {
+          "file": "photo-003-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 18294,
+          "sha256": "eb55ec184e5e01745119c5cec31d61b171beadf86b3718f566784a776e972aaa"
+        }
+      ]
+    },
+    {
+      "id": "photo-004",
+      "nasaId": "iss072e159172",
+      "theme": "aurora",
+      "group": "cosmos",
+      "tone": "mint",
+      "title": "Cực quang phủ vành Trái Đất",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Cực quang phủ vành Trái Đất. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "The aurora borealis blankets the Earth",
+      "sourceURL": "https://images.nasa.gov/details/iss072e159172",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss072e159172/iss072e159172~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss072e159172/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2024-10-30",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "8017f09e2d9c76a95c6a01956f22a4f61953135cfa4300202ddf764d2b918424",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1280
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-004-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 1874,
+          "sha256": "4ba608de79fb4199280b765d87795377c3913bc9869b37151674121354ee9cc8"
+        },
+        {
+          "file": "photo-004-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 5860,
+          "sha256": "5ff198a6f06f8317d2404defd1b8c7ad4148449a3da601e28ee65ba7618dcddd"
+        },
+        {
+          "file": "photo-004-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 25110,
+          "sha256": "b82ebf329bf2c979e1af1c89046d5dc7d415074111c835ec6ab1993708194385"
+        }
+      ]
+    },
+    {
+      "id": "photo-005",
+      "nasaId": "iss072e032577",
+      "theme": "aurora",
+      "group": "cosmos",
+      "tone": "mint",
+      "title": "Ánh sáng qua khí quyển",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Ánh sáng qua khí quyển. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Auroras move through Earth's atmosphere",
+      "sourceURL": "https://images.nasa.gov/details/iss072e032577",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss072e032577/iss072e032577~orig.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss072e032577/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2024-10-07",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "b42df644b8adb158fb5c62251727b9538a24f048e69c4513fa657932f3b9401c",
+      "sourceDimensions": {
+        "width": 5504,
+        "height": 8256
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-005-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 4918,
+          "sha256": "0e3ac6d3b01ece065e77cbef898e874d947670e7e57af0e152ced88ff2034ac4"
+        },
+        {
+          "file": "photo-005-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 12646,
+          "sha256": "4128e8211a3d7cf4ed84b2a18fd1415ae3ae48afe0e7850361a77a5a8bcc058b"
+        },
+        {
+          "file": "photo-005-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 73798,
+          "sha256": "c5dbedbfed0fe12173560c7587ec9cd085b8dd0f361f46a3bec50ce40df5e026"
+        }
+      ]
+    },
+    {
+      "id": "photo-006",
+      "nasaId": "sts072-727-085",
+      "theme": "reef",
+      "group": "nature",
+      "tone": "cyan",
+      "title": "Great Barrier Reef từ quỹ đạo",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Great Barrier Reef từ quỹ đạo. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Great Barrier Reef, Australia",
+      "sourceURL": "https://images.nasa.gov/details/sts072-727-085",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/sts072-727-085/sts072-727-085~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/sts072-727-085/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "1996-01-20",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "48f5a38a4eaa8fefdf36d1fc5725a0af4d2cf25931d43ad1606a955998a050db",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1920
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-006-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 12694,
+          "sha256": "934b3eae07ae06027183b75c9db9ef49420f49918297eabd50c7616de6a6c132"
+        },
+        {
+          "file": "photo-006-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 43638,
+          "sha256": "1877e3cf6c9ff1e0689f97164e18493065edf90be10e5bf8caf15d06aa098575"
+        },
+        {
+          "file": "photo-006-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 133860,
+          "sha256": "24136d40fd25b5c4c803e10cb21752332f689343e6218135d05ff12d1944711a"
+        }
+      ]
+    },
+    {
+      "id": "photo-007",
+      "nasaId": "sts048-151-250",
+      "theme": "reef",
+      "group": "nature",
+      "tone": "cyan",
+      "title": "Bờ san hô Queensland",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Bờ san hô Queensland. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Great Barrier Reef, Queensland, Australia",
+      "sourceURL": "https://images.nasa.gov/details/sts048-151-250",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/sts048-151-250/sts048-151-250~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/sts048-151-250/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "1991-09-18",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "310d930a3e035ee47cdb90542f0ba7ed9615c8a48d1369ea674af1fc3788f0f2",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1504
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-007-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 1978,
+          "sha256": "df6982e943ce2b6319922b840818e295aec4d300b41471a07f5020b43248410f"
+        },
+        {
+          "file": "photo-007-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 5816,
+          "sha256": "29d937dffaa6e7ebe5eed70051461ad38ced1e3c14accaafeead9f3e0dbce171"
+        },
+        {
+          "file": "photo-007-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 17514,
+          "sha256": "0d7cd7f5df781adb1da44b74cd020abc281e569a86b6d2912dfe842ed19ca031"
+        }
+      ]
+    },
+    {
+      "id": "photo-008",
+      "nasaId": "s35-81-0040",
+      "theme": "reef",
+      "group": "nature",
+      "tone": "cyan",
+      "title": "Những sắc xanh của Shark Bay",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Những sắc xanh của Shark Bay. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Algae Reefs in Shark Bay, Western Australia, Australia",
+      "sourceURL": "https://images.nasa.gov/details/s35-81-0040",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/s35-81-0040/s35-81-0040~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/s35-81-0040/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "1990-12-10",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "32aadbf76c6d105457f39062f5c01b54c01d46c74f8237a8831a4b99c0a0cb3e",
+      "sourceDimensions": {
+        "width": 1895,
+        "height": 1920
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-008-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 7616,
+          "sha256": "6a42ba824ba510d0a17c5323302ccaedd03eeff0e765dd78abcbb928e0e096de"
+        },
+        {
+          "file": "photo-008-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 23174,
+          "sha256": "31a9834fb0feac045bfadf1e7e1f7b6ea692b58001f58d8aec88ba17ea9b7879"
+        },
+        {
+          "file": "photo-008-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 79010,
+          "sha256": "a7bbc00bac9d268163e8ff1d1564f27af67713defc677f551eba9ee0add297cd"
+        }
+      ]
+    },
+    {
+      "id": "photo-009",
+      "nasaId": "S32-520-014",
+      "theme": "reef",
+      "group": "nature",
+      "tone": "cyan",
+      "title": "Rạn san hô giữa biển Coral",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Rạn san hô giữa biển Coral. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "STS-32 Earth observation of the western Coral Sea and the Great Barrier Reef",
+      "sourceURL": "https://images.nasa.gov/details/S32-520-014",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/S32-520-014/S32-520-014~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/S32-520-014/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "1990-01-20",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "1ae4fbf944d572fb87e1187dbf9682a4fc749fa1915aa414b683640b27164d23",
+      "sourceDimensions": {
+        "width": 1901,
+        "height": 1920
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-009-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 6950,
+          "sha256": "210db67231ee3470b2aa85fa88dc1ead09b9ff7598048f9194ef2876e6436975"
+        },
+        {
+          "file": "photo-009-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 24442,
+          "sha256": "eb3efec2a3f9ef192dbcd042a938a5c9fa0e6858cb5d493a104a1b35cd96492e"
+        },
+        {
+          "file": "photo-009-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 95076,
+          "sha256": "92da062b319483935ab0bcc80250a68af40091ae0de9b3686d6214766ad67821"
+        }
+      ]
+    },
+    {
+      "id": "photo-010",
+      "nasaId": "sts093-717-066",
+      "theme": "reef",
+      "group": "nature",
+      "tone": "cyan",
+      "title": "Vòng san hô Bora Bora",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Vòng san hô Bora Bora. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Earth observations of Bora-Bora's coral reefs taken during STS-93 mission",
+      "sourceURL": "https://images.nasa.gov/details/sts093-717-066",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/sts093-717-066/sts093-717-066~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/sts093-717-066/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "1999-07-25",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "5efcbc7cdb6187511eade49105fc51b6d1fb9578044a4cc6003951e400ba182a",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1843
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-010-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 7594,
+          "sha256": "bae0f0448e30ec5a4e684d4e029c9479a8479b923ae7f1b82c4a2b01d6bb29c0"
+        },
+        {
+          "file": "photo-010-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 23986,
+          "sha256": "44075492f28aaf11668fd921345c35c379e499efe5ff620f8430cea8f99ac3ad"
+        },
+        {
+          "file": "photo-010-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 109548,
+          "sha256": "d2c9b372de87533fcce7ecd863e59f559a9bf90747d8a364e4d963e5f0f283f5"
+        }
+      ]
+    },
+    {
+      "id": "photo-011",
+      "nasaId": "iss073e0886770",
+      "theme": "desert",
+      "group": "nature",
+      "tone": "gold",
+      "title": "Laguna Salada giữa sa mạc Sonora",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Laguna Salada giữa sa mạc Sonora. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Laguna Salada in the Sonoran Desert",
+      "sourceURL": "https://images.nasa.gov/details/iss073e0886770",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss073e0886770/iss073e0886770~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss073e0886770/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2025-10-01",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "14396de54ac991c285d69afcf669cd7dff54ee20222c8d55ad2d29117f66f7b2",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1280
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-011-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 5576,
+          "sha256": "caa5cb548fe4d71b96f6950b1811b0e8be2830858f2be16495f4b202bbb906ce"
+        },
+        {
+          "file": "photo-011-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 19222,
+          "sha256": "02f26ef163cd2604cefdd1bff8199fe9631da3cb1519b3381dea7363e59f8733"
+        },
+        {
+          "file": "photo-011-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 79574,
+          "sha256": "238de1aaef58c170f252033ab84cc0e272dd96e2980e49cd647d919e9158906b"
+        }
+      ]
+    },
+    {
+      "id": "photo-012",
+      "nasaId": "iss072e068304",
+      "theme": "desert",
+      "group": "nature",
+      "tone": "gold",
+      "title": "Những vân cát In Ghar",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Những vân cát In Ghar. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "In Ghar, Algeria, in the Sahara Desert",
+      "sourceURL": "https://images.nasa.gov/details/iss072e068304",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss072e068304/iss072e068304~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss072e068304/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2024-10-13",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "178e40469d9fe48672748009398d618cf9440aebdcf027bf1a37b3b1d735e6a7",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1280
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-012-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 8632,
+          "sha256": "53302edfcb72e8f9b77fba3845523ad9f4f260d635579b08cb66eda6cde85875"
+        },
+        {
+          "file": "photo-012-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 31164,
+          "sha256": "b59e1e0941d1f29a7877a8a5a9ed4c2e41227d5b3e0b758abddb57fc1e11e246"
+        },
+        {
+          "file": "photo-012-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 125686,
+          "sha256": "e7231888425ab1533494a4695e1dda4c8e10e0251e38e715cdb258b4b274f375"
+        }
+      ]
+    },
+    {
+      "id": "photo-013",
+      "nasaId": "iss072e474251",
+      "theme": "desert",
+      "group": "nature",
+      "tone": "gold",
+      "title": "Sa mạc Libya trên đất Sudan",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Sa mạc Libya trên đất Sudan. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "A portion of the Libyan Desert in Sudan",
+      "sourceURL": "https://images.nasa.gov/details/iss072e474251",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss072e474251/iss072e474251~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss072e474251/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2025-01-14",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "0d16d9b9f674f3ae1b8024f278ef25e61254836310e03f9a4518a531920a070a",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1078
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-013-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 5212,
+          "sha256": "5c8aaf69ad4778b02bab27bd97d6f2c6d6dfd04759096b631fc833fa8531ecaf"
+        },
+        {
+          "file": "photo-013-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 17926,
+          "sha256": "01ffe4ab98067416fbb75677a4f96cb44d9959621ee3e4ef6cb817af9c9a016a"
+        },
+        {
+          "file": "photo-013-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 67416,
+          "sha256": "4f57e86b8c2448d1f8600f309b4ce2ef78053c4bad456733ce3f3f1ccdf5c711"
+        }
+      ]
+    },
+    {
+      "id": "photo-014",
+      "nasaId": "iss072e007016",
+      "theme": "desert",
+      "group": "nature",
+      "tone": "gold",
+      "title": "Miền sa mạc lạnh Kazakhstan",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Miền sa mạc lạnh Kazakhstan. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "The cold desert climate region of Kazakhstan",
+      "sourceURL": "https://images.nasa.gov/details/iss072e007016",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss072e007016/iss072e007016~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss072e007016/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2024-09-30",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "cf4d1e2eb0656a9ea138e69ef9135433784c2d977f720df8fe6dd09035c5d821",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1078
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-014-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 4802,
+          "sha256": "2e0548bd54672bc7fe9edce28a7c3243f9059a1e1409f54fce45a0c181c8ea87"
+        },
+        {
+          "file": "photo-014-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 13730,
+          "sha256": "345b6e82758f110dd3ced022df83940412bc84a9311954b4008bf0d4433d52af"
+        },
+        {
+          "file": "photo-014-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 41920,
+          "sha256": "70eedbaecd870c39b8549dc887be8e471336ef22125aabec09877bacfcf679be"
+        }
+      ]
+    },
+    {
+      "id": "photo-015",
+      "nasaId": "iss072e007019",
+      "theme": "desert",
+      "group": "nature",
+      "tone": "gold",
+      "title": "Bờ biển sa mạc Pilbara",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Bờ biển sa mạc Pilbara. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "The hot desert coast of Western Australia's Pilbara region",
+      "sourceURL": "https://images.nasa.gov/details/iss072e007019",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss072e007019/iss072e007019~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss072e007019/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2024-10-01",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "576af1b5a85c0e6d2e12bb1f6001960f3b95211a49c084059f441deaea62e916",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1078
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-015-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 6638,
+          "sha256": "4660a65fcc127b1e96a7c5a11d85adb6014e4514d9f2b9c42e23740235a6342a"
+        },
+        {
+          "file": "photo-015-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 23094,
+          "sha256": "16c333180e8bc0691306b755eb79caf945117d5a72a4f8cf8689778f89a9d15b"
+        },
+        {
+          "file": "photo-015-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 80346,
+          "sha256": "fb7005b05ef4ad6b10e9dab08a9dee9ff1e2e2a9c870f74978b8ca1ef0a5221f"
+        }
+      ]
+    },
+    {
+      "id": "photo-016",
+      "nasaId": "s73e5274",
+      "theme": "volcano",
+      "group": "nature",
+      "tone": "coral",
+      "title": "Núi lửa Colima nhìn từ không gian",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Núi lửa Colima nhìn từ không gian. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Colima Volcano, Mexico",
+      "sourceURL": "https://images.nasa.gov/details/s73e5274",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/s73e5274/s73e5274~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/s73e5274/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "1995-10-29",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "eec343c45d4456fa29d3c50c5323bf175c4acf8fcbe996ec97d5346cf5b22791",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1280
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-016-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 7636,
+          "sha256": "de63698f59c83e644df42330350193c27d2aa17505468644d2d8eb3fdbde818d"
+        },
+        {
+          "file": "photo-016-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 26902,
+          "sha256": "950c6d43ba61f9bbf64322014438295a93959185d301e528681b83f7eb7ff417"
+        },
+        {
+          "file": "photo-016-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 89648,
+          "sha256": "1d92f30a4fdc1793d4c0eb478c78b62ca267e59e806d08cdf27c3fc9100f7277"
+        }
+      ]
+    },
+    {
+      "id": "photo-017",
+      "nasaId": "sts068-150-045",
+      "theme": "volcano",
+      "group": "nature",
+      "tone": "coral",
+      "title": "Cột tro Kliuchevskoi",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Cột tro Kliuchevskoi. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Eruption of Kliuchevskoi volcano",
+      "sourceURL": "https://images.nasa.gov/details/sts068-150-045",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/sts068-150-045/sts068-150-045~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/sts068-150-045/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "1994-09-30",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "6c821e0232902a4b5b7f1a9ceb9133c292d87b7f46cfdf1bb0fa6086d2a6b81b",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1536
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-017-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 8518,
+          "sha256": "7e2cf5de85cc61adfa3f86de55544c396232d63bbc424cf13fc733eb6f867e04"
+        },
+        {
+          "file": "photo-017-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 27644,
+          "sha256": "9283a741b9d7e4a639439a71d308e53d2f2f2ab8bd5c822ab584ec6e178099cb"
+        },
+        {
+          "file": "photo-017-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 92866,
+          "sha256": "d075ae53054a6e0d68a35a10716ad9a91c78fc2e032a7747ad5ef9f01a7b716f"
+        }
+      ]
+    },
+    {
+      "id": "photo-018",
+      "nasaId": "iss073e0429432",
+      "theme": "volcano",
+      "group": "nature",
+      "tone": "coral",
+      "title": "Đỉnh Etna trên đảo Sicily",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Đỉnh Etna trên đảo Sicily. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Europe's tallest and most active volcano, Mount Etna",
+      "sourceURL": "https://images.nasa.gov/details/iss073e0429432",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss073e0429432/iss073e0429432~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss073e0429432/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2025-08-10",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "431e3d337ec71fcc827653f37f9327134a50b919ac1f2285e383492c2cda293a",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1280
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-018-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 8010,
+          "sha256": "59e5b45dfe13f93199f5a09edcd2f769cddafb4711c8658b24560cba97b888cc"
+        },
+        {
+          "file": "photo-018-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 26440,
+          "sha256": "10a1a0929d47633c7923e420b282f80235e8356732a585c4c2cca04958a19418"
+        },
+        {
+          "file": "photo-018-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 101360,
+          "sha256": "51aff9f565bdaedfb81391fd2f3e36d55ddb33b00c60f28206a729d971894561"
+        }
+      ]
+    },
+    {
+      "id": "photo-019",
+      "nasaId": "iss074e0014317",
+      "theme": "volcano",
+      "group": "nature",
+      "tone": "coral",
+      "title": "Đảo núi lửa Nishinoshima",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Đảo núi lửa Nishinoshima. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Nishinoshima Island, part of Japan's Volcano Islands chain",
+      "sourceURL": "https://images.nasa.gov/details/iss074e0014317",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss074e0014317/iss074e0014317~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss074e0014317/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2025-12-25",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "343117fafb36cda7d4cb8d4dfed8c9abe5d2c9533db9551d60feb63ddcb778f6",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1280
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-019-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 1496,
+          "sha256": "223a347a2d47b00a3ea39a0248243fb25f18a6bfb7a4b13dc0a67228f4022bc7"
+        },
+        {
+          "file": "photo-019-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 4408,
+          "sha256": "8ea4ac2928ad46f81fe4dff249f30243367455fc9bc17a6a6059090782eaa824"
+        },
+        {
+          "file": "photo-019-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 17628,
+          "sha256": "f357d93e5f53c3ad7175f029f0c24c0ab7727ed0152ffdd8e48e0838a53ff5e6"
+        }
+      ]
+    },
+    {
+      "id": "photo-020",
+      "nasaId": "sts064-116-064",
+      "theme": "volcano",
+      "group": "nature",
+      "tone": "coral",
+      "title": "Núi lửa Rabaul từ tàu con thoi",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Núi lửa Rabaul từ tàu con thoi. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "New Guinea volcano (Rabaul) as seen from STS-64",
+      "sourceURL": "https://images.nasa.gov/details/sts064-116-064",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/sts064-116-064/sts064-116-064~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/sts064-116-064/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "1994-09-29",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "1c9f3a24136ec53239a685998571649077f45d243e9306ee861cec89274f3995",
+      "sourceDimensions": {
+        "width": 1918,
+        "height": 1920
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-020-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 6090,
+          "sha256": "f1d49a14463bebf4a5e0835caa9c73e25c440a7926d1f815358785113f78e296"
+        },
+        {
+          "file": "photo-020-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 16742,
+          "sha256": "35d4f950abbd9ed5b8740958a541afe1e1686db092e38b9b30c94814b2fc2256"
+        },
+        {
+          "file": "photo-020-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 50838,
+          "sha256": "96526eb9da854ae9386c0681546fb9d4481f9783b746e9ed9da38030c6b82311"
+        }
+      ]
+    },
+    {
+      "id": "photo-021",
+      "nasaId": "iss069e033689",
+      "theme": "forest",
+      "group": "nature",
+      "tone": "mint",
+      "title": "Dòng Amazon xuyên rừng xanh",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Dòng Amazon xuyên rừng xanh. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "The Amazon River",
+      "sourceURL": "https://images.nasa.gov/details/iss069e033689",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss069e033689/iss069e033689~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss069e033689/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2023-07-19",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "7ab7afb42048e452902bed2f84d017bb3682890d04447b93307b3a05f8705de7",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1280
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-021-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 2694,
+          "sha256": "ab9cddb15552fa0f7f81c24dd69da841635442bc405416e54d2dd7b5173d1c0e"
+        },
+        {
+          "file": "photo-021-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 8538,
+          "sha256": "6c5961c03201bf3956558268afb4f815a4d50baf826bfe09e36fc6198c18cd29"
+        },
+        {
+          "file": "photo-021-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 45328,
+          "sha256": "1987e1fc15f885a65655b543e341158a0a556ebba9baabd2f35a9e1868d3bf01"
+        }
+      ]
+    },
+    {
+      "id": "photo-022",
+      "nasaId": "s43-152-000b",
+      "theme": "forest",
+      "group": "nature",
+      "tone": "mint",
+      "title": "Nơi Amazon gặp sông Tapajos",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Nơi Amazon gặp sông Tapajos. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Confluence of the Amazon and Topajos Rivers, Brazil, South America",
+      "sourceURL": "https://images.nasa.gov/details/s43-152-000b",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/s43-152-000b/s43-152-000b~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/s43-152-000b/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "1991-08-11",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "c287976d51b7ba9bbbe38f487ab0d7c40f2b7b916c1215d854d80c5b38f32369",
+      "sourceDimensions": {
+        "width": 1528,
+        "height": 1920
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-022-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 9894,
+          "sha256": "33d84f7b1d733b04852a68839f8c68cf2ed509fa15c02e39304aa251c3288826"
+        },
+        {
+          "file": "photo-022-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 40604,
+          "sha256": "6eb4afa8224a3fb72cecf3ed5fb928f8c823d1fb69c78521c55f9cb759bfc10a"
+        },
+        {
+          "file": "photo-022-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 146126,
+          "sha256": "321fdcdd507514ea5059f5f912fdeab2366288e4ddaf1439c339929239424ef3"
+        }
+      ]
+    },
+    {
+      "id": "photo-023",
+      "nasaId": "iss074e0492148",
+      "theme": "forest",
+      "group": "nature",
+      "tone": "mint",
+      "title": "Dòng Ucayali giữa rừng Peru",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Dòng Ucayali giữa rừng Peru. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "The Ucayali River in the lowland Amazon rainforest of central Peru",
+      "sourceURL": "https://images.nasa.gov/details/iss074e0492148",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss074e0492148/iss074e0492148~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss074e0492148/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2026-04-15",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "ba9f4b4deb91db3447373b6e89f1d1618e6a6435d5dc5905193b95542c9b95b1",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1280
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-023-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 7984,
+          "sha256": "74ffbfedb3ad6ee5f7b0bcba33bcbeec0832ad4ff484e45b69359978c70e52b9"
+        },
+        {
+          "file": "photo-023-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 23514,
+          "sha256": "5bc1d16360fd4db3b2e06d8f2c282fa61f4b4dff2a93f22d5231518510bf7ffd"
+        },
+        {
+          "file": "photo-023-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 76034,
+          "sha256": "03609e990449f87a8666dc889bd4c52ea689ae7f7a69e6c5825c2942a342488c"
+        }
+      ]
+    },
+    {
+      "id": "photo-024",
+      "nasaId": "iss073e0420598",
+      "theme": "forest",
+      "group": "nature",
+      "tone": "mint",
+      "title": "Miền rừng Bighorn và Custer",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Miền rừng Bighorn và Custer. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "United States' Bighorn National Forest and Custer National Forest",
+      "sourceURL": "https://images.nasa.gov/details/iss073e0420598",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss073e0420598/iss073e0420598~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss073e0420598/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2025-08-03",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "c938c7d96c1b7f0dd691c7e24f6ab65b939cb014ca39a6d95a664ecb1a731af6",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1280
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-024-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 11086,
+          "sha256": "21de3cbff5ca675b81aef18bed628ddca8828bc2483d800e4f2d5eb8e12655e5"
+        },
+        {
+          "file": "photo-024-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 40194,
+          "sha256": "99c9053bd3a8b9c2d41ce318a3606589e746273246734add2013acccb4378e85"
+        },
+        {
+          "file": "photo-024-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 151780,
+          "sha256": "ebcd375643448b9a6b498895e123cbf6c4e5500465c38c4f92a45d431ec87cde"
+        }
+      ]
+    },
+    {
+      "id": "photo-025",
+      "nasaId": "iss028e010043",
+      "theme": "forest",
+      "group": "nature",
+      "tone": "mint",
+      "title": "Làn khói trên một cánh rừng",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Làn khói trên một cánh rừng. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Earth Observation - Forest Fire",
+      "sourceURL": "https://images.nasa.gov/details/iss028e010043",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss028e010043/iss028e010043~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss028e010043/metadata.json",
+      "author": "Mike Fossum",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2011-06-27",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "168a30802c2f202af15a5bfb74464c4c4a4abbc873c5b7ed91412f445ed1653c",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1277
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-025-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 7918,
+          "sha256": "9746599a005873284e7376416e4de7eef9314df393c9b37c25da4af0a012c882"
+        },
+        {
+          "file": "photo-025-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 22614,
+          "sha256": "3ffa98fdcdb315bfff95d71da48c8652e9fdb1fb254f2d7992ff6643e5fc4c1b"
+        },
+        {
+          "file": "photo-025-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 66716,
+          "sha256": "7d92ccff8c2328014d85c0850c1b74ec5855e1579f4deb417895f7c1bce249fd"
+        }
+      ]
+    },
+    {
+      "id": "photo-026",
+      "nasaId": "iss072e000922",
+      "theme": "nightcity",
+      "group": "nature",
+      "tone": "gold",
+      "title": "Ánh đèn bên Địa Trung Hải",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Ánh đèn bên Địa Trung Hải. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Night Lights Along the Mediterranean Sea",
+      "sourceURL": "https://images.nasa.gov/details/iss072e000922",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss072e000922/iss072e000922~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss072e000922/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2024-09-23",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "1f7d843d428eab881cdc10608415378785109fee625a5cc1e1d3d3785a05fa81",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1280
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-026-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 3612,
+          "sha256": "29abf07aea3da697ffc3fdada2f2441efb14a17e570027f5660f031587393574"
+        },
+        {
+          "file": "photo-026-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 11948,
+          "sha256": "7e4f45fb19acdf0a0f12a0c775f353ff48701818595eda11843064c08a0368d5"
+        },
+        {
+          "file": "photo-026-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 45984,
+          "sha256": "4ced015ca4de243093bcda043b8af499ca7f98eb767ec0b9b9d4baeed70c67bf"
+        }
+      ]
+    },
+    {
+      "id": "photo-027",
+      "nasaId": "iss073e1047246",
+      "theme": "nightcity",
+      "group": "nature",
+      "tone": "gold",
+      "title": "Bucharest dưới màn đêm",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Bucharest dưới màn đêm. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Bucharest, Romania—the nation's capital lit at night",
+      "sourceURL": "https://images.nasa.gov/details/iss073e1047246",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss073e1047246/iss073e1047246~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss073e1047246/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2025-11-02",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "fe41b0b31153eb6e34fe340fb5a600c54d18d0f8523d4dbb4de6b02ee66fab13",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1280
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-027-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 3932,
+          "sha256": "ef8a1a66e7c51b2a69cc57fe4c268d46c90393d63bede4a46c239cf8b50121c2"
+        },
+        {
+          "file": "photo-027-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 16684,
+          "sha256": "65663b220e5ddf006fbfdc72019fd9b301a02dbcc5b47e4b36595cde767568a7"
+        },
+        {
+          "file": "photo-027-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 88482,
+          "sha256": "9a258bac2e28cef7ec11e6f7ed83e89f73943049118d66798ef76a66e03aa138"
+        }
+      ]
+    },
+    {
+      "id": "photo-028",
+      "nasaId": "iss020e039932",
+      "theme": "nightcity",
+      "group": "nature",
+      "tone": "gold",
+      "title": "Dubai rực sáng từ quỹ đạo",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Dubai rực sáng từ quỹ đạo. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Night earth observation taken by the Expedition 20 crew",
+      "sourceURL": "https://images.nasa.gov/details/iss020e039932",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss020e039932/iss020e039932~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss020e039932/metadata.json",
+      "author": "Michael Barratt",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2009-09-11",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "33415d7580259b743740d6bb7a6f1ae2febd31934dff34f861e77c178e51dacd",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1314
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-028-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 5782,
+          "sha256": "c4bde9ec87ebadc4d88868a5b3b7074471bc1855abeb563d626637bf1fa29ba0"
+        },
+        {
+          "file": "photo-028-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 15948,
+          "sha256": "dfee04991221eec77468cf91d26902e67799e01ace368277e97b5fdec907daf0"
+        },
+        {
+          "file": "photo-028-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 55464,
+          "sha256": "bb548024185b7731ed2244f688f6dd724f4a36c469e97d199000d2aeb089504b"
+        }
+      ]
+    },
+    {
+      "id": "photo-029",
+      "nasaId": "iss074e0790404",
+      "theme": "nightcity",
+      "group": "nature",
+      "tone": "gold",
+      "title": "Cairo và dòng Nile về đêm",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Cairo và dòng Nile về đêm. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Cairo, Egypt, pictured at night from space",
+      "sourceURL": "https://images.nasa.gov/details/iss074e0790404",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss074e0790404/iss074e0790404~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss074e0790404/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2026-07-01",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "571b884e60758a40408612963ba1df26cdc30e8ef4858badad3924453764012e",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1280
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-029-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 12046,
+          "sha256": "d429845d612c1fe0c675a0fb0f7bfd16dfa1afba698aa847ba6782802201835b"
+        },
+        {
+          "file": "photo-029-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 46760,
+          "sha256": "2866fa59bd3d143957e1b82f212ac5885215f38a96de8b79f1cdd7b6afcb5e36"
+        },
+        {
+          "file": "photo-029-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 205278,
+          "sha256": "c396fb00ef28c33698d24f7388611db6caa186e5a542fc0d600628e4f1414262"
+        }
+      ]
+    },
+    {
+      "id": "photo-030",
+      "nasaId": "iss073e0000808",
+      "theme": "nightcity",
+      "group": "nature",
+      "tone": "gold",
+      "title": "Melbourne trong ánh đèn đêm",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Melbourne trong ánh đèn đêm. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": " Melbourne, the capital of Australia's state of Victoria, pictured at night",
+      "sourceURL": "https://images.nasa.gov/details/iss073e0000808",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss073e0000808/iss073e0000808~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss073e0000808/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2025-04-23",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "26d24c9fd21af4d15c01ae33ce58e6c67d084cca16c472cf9f078ac28960f2d6",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1280
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-030-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 5010,
+          "sha256": "832b601655b01d15e4fea0ebcb01486b315c4cf0b3c843bd455aa249357e986d"
+        },
+        {
+          "file": "photo-030-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 20236,
+          "sha256": "6efb6b8adb15db32cf5111814b178d3f00f1adaa149625b8459fb1fdbdaf5a6f"
+        },
+        {
+          "file": "photo-030-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 103584,
+          "sha256": "775d80df7e64d270f28f6bcc22e3ff25e9cde2a9e47543f0ca89830cb2e1b852"
+        }
+      ]
+    },
+    {
+      "id": "photo-031",
+      "nasaId": "iss071e365062",
+      "theme": "island",
+      "group": "nature",
+      "tone": "cyan",
+      "title": "Những dải cát đảo Acklins",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Những dải cát đảo Acklins. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Acklins Island",
+      "sourceURL": "https://images.nasa.gov/details/iss071e365062",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss071e365062/iss071e365062~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss071e365062/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2024-07-18",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "582fa13759bd247f747cbdbf133d06299c70cb2671125016ed1fcf52eb46749d",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1280
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-031-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 5080,
+          "sha256": "2f4b3e1a0f6ac2764eba432335ceeeb97b80d5ab0c538b02e44c5c4aded957da"
+        },
+        {
+          "file": "photo-031-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 14790,
+          "sha256": "de3753d5ec9b2842ee3472001d2d0a09bde4e3dc4f46a0b4b1ce94658b0d799b"
+        },
+        {
+          "file": "photo-031-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 64948,
+          "sha256": "56344a66c057f7a64ba479259313135ce6e3b07755e173c811176dafcff5000e"
+        }
+      ]
+    },
+    {
+      "id": "photo-032",
+      "nasaId": "iss071e378497",
+      "theme": "island",
+      "group": "nature",
+      "tone": "cyan",
+      "title": "Quần đảo Quirimbas xanh ngọc",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Quần đảo Quirimbas xanh ngọc. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "The Quirimbas Islands",
+      "sourceURL": "https://images.nasa.gov/details/iss071e378497",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss071e378497/iss071e378497~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss071e378497/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2024-07-21",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "1afd334ed700b063b969f94cfbd8d2094278d5a85008e4a282f4f9ed3346eef4",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1280
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-032-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 5474,
+          "sha256": "5ddd2555cb5e6809658e15b026854ccfc63eccc168f9a060d5579e1596bf74c9"
+        },
+        {
+          "file": "photo-032-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 17342,
+          "sha256": "d22d525eff84f90a640fffa4cbe3cdc343d909b8b362227529d2588011d63db9"
+        },
+        {
+          "file": "photo-032-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 60486,
+          "sha256": "f81254e62a0d9e49aa916955f9ab33e6018be3a047c34938845f63d9c1437fa0"
+        }
+      ]
+    },
+    {
+      "id": "photo-033",
+      "nasaId": "iss072e421839",
+      "theme": "island",
+      "group": "nature",
+      "tone": "cyan",
+      "title": "Đảo Hawaii giữa Thái Bình Dương",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Đảo Hawaii giữa Thái Bình Dương. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Hawaii, the largest island in the chain of the Hawaiian Islands",
+      "sourceURL": "https://images.nasa.gov/details/iss072e421839",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss072e421839/iss072e421839~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss072e421839/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2024-12-28",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "4dc5919b657276bcbad7e79c3cc776408332efcd27ece17b765019d78eb69f4e",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1078
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-033-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 7750,
+          "sha256": "52b660c09eaa6b8f919651eebd537f8b9100f1feab1f71b275361b75c6700485"
+        },
+        {
+          "file": "photo-033-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 24446,
+          "sha256": "bbc7c6600adcc26c1450b501883a5c0e1b82ed850d05f0610b3b5917986cd261"
+        },
+        {
+          "file": "photo-033-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 124204,
+          "sha256": "2ebe32168786e84289cc19a3bb135786b0c30666eb1d4c728c7de21b709f9ee1"
+        }
+      ]
+    },
+    {
+      "id": "photo-034",
+      "nasaId": "iss071e046421",
+      "theme": "island",
+      "group": "nature",
+      "tone": "cyan",
+      "title": "Miệng núi lửa trên đảo Onekotan",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Miệng núi lửa trên đảo Onekotan. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Onekotan, an uninhabited volcanic island",
+      "sourceURL": "https://images.nasa.gov/details/iss071e046421",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss071e046421/iss071e046421~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss071e046421/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2024-04-29",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "c7aafb291e69881d3575b36d12c9fe53711f5fa9fcae8bc451a438c056e92106",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1280
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-034-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 9510,
+          "sha256": "09c674b5ebb3d45f9ed9eaa6ddfa816d35617b0c1be518b9a0a345bcc4e6804a"
+        },
+        {
+          "file": "photo-034-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 35142,
+          "sha256": "da7e062bacef9dabbe3d384e9cbb2b9fad774e97151a1363390f34e815c293fb"
+        },
+        {
+          "file": "photo-034-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 126554,
+          "sha256": "5bf71e1133cd622262810722d32df6620ad896bf93922abfce7ca9f9cc0e3d53"
+        }
+      ]
+    },
+    {
+      "id": "photo-035",
+      "nasaId": "iss071e700011",
+      "theme": "island",
+      "group": "nature",
+      "tone": "cyan",
+      "title": "Đảo Crete nhìn từ ISS",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Đảo Crete nhìn từ ISS. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "The Greek Island, Crete",
+      "sourceURL": "https://images.nasa.gov/details/iss071e700011",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss071e700011/iss071e700011~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss071e700011/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2024-09-19",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "3275b74da7d1eecfeaf07a981acd16cd19b4b172fd35a389a5fa0c26272276c1",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1280
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-035-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 7852,
+          "sha256": "1d2cb7285cc039ff4bd6bb376a65978a3a996bef50f6d67747afd2b8c0b1eca1"
+        },
+        {
+          "file": "photo-035-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 26366,
+          "sha256": "5eb0956e22536a80ac1ed9d95de89b0e709d718fb5ea745e4eba303944efadd0"
+        },
+        {
+          "file": "photo-035-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 85440,
+          "sha256": "5b2a3523c1f3ef21091f0e98aec29b91db02110053b5fdec1ffa0f1a9bbb5662"
+        }
+      ]
+    },
+    {
+      "id": "photo-036",
+      "nasaId": "iss058e000188",
+      "theme": "mountain",
+      "group": "nature",
+      "tone": "blue",
+      "title": "Sống núi Andes từ quỹ đạo",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Sống núi Andes từ quỹ đạo. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "The Andes Mountain range",
+      "sourceURL": "https://images.nasa.gov/details/iss058e000188",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss058e000188/iss058e000188~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss058e000188/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2018-12-23",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "56f3133d7c5fc224219ab65772f0b3bf15e6530eaa6fe0ffd2931c90fcf3de3e",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1280
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-036-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 9294,
+          "sha256": "61c7490b89d06cf671eab2fe63b9b3b4c8c67e8e0c5b025755decca7d0fffc1e"
+        },
+        {
+          "file": "photo-036-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 30452,
+          "sha256": "1ae11308920c5f9bba9bed24b1ea69315dec3237272b6d545eb00f791dd6dd6f"
+        },
+        {
+          "file": "photo-036-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 107354,
+          "sha256": "da1a0062c73ebec1c041a6191c2ebfcdd2a9506d46799794ed5641a226378cb2"
+        }
+      ]
+    },
+    {
+      "id": "photo-037",
+      "nasaId": "sts001-012-0350",
+      "theme": "mountain",
+      "group": "nature",
+      "tone": "blue",
+      "title": "Dãy Himalaya trải dài",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Dãy Himalaya trải dài. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Himalayan Mountain Range",
+      "sourceURL": "https://images.nasa.gov/details/sts001-012-0350",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/sts001-012-0350/sts001-012-0350~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/sts001-012-0350/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "1981-04-14",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "9121efea4e7008f3b65f39ea18d2be6ba4baa439723b084bee1c47c696e5d465",
+      "sourceDimensions": {
+        "width": 1916,
+        "height": 1920
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-037-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 18064,
+          "sha256": "2978d722bf7de3e8f880483e8cbe979c77fbf017c3b33f772ac2f6a37b19bd09"
+        },
+        {
+          "file": "photo-037-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 53566,
+          "sha256": "09bcecfa069bfc87bbb5d1b583df1e3bfc29dee9ef3b138bf66ff9d95d84b3f8"
+        },
+        {
+          "file": "photo-037-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 151310,
+          "sha256": "8ca4a5b91f8d480fa0422424c48bd7f5c97bb19373643acfaece5d411cb3147f"
+        }
+      ]
+    },
+    {
+      "id": "photo-038",
+      "nasaId": "iss071e014284",
+      "theme": "mountain",
+      "group": "nature",
+      "tone": "blue",
+      "title": "Hồ Tahoe và Sierra Nevada",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Hồ Tahoe và Sierra Nevada. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Lake Tahoe and the Sierra Nevada Mountains",
+      "sourceURL": "https://images.nasa.gov/details/iss071e014284",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss071e014284/iss071e014284~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss071e014284/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2024-04-20",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "cab87f0a561bbb3bc1c34e8117af91a0b0429c89e0a5c69d7a4907c653a66db9",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1280
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-038-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 12292,
+          "sha256": "b287e223aecbc13e123fe6f5cec8ac0563269b695a2926349db62a43529daa17"
+        },
+        {
+          "file": "photo-038-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 44556,
+          "sha256": "4f12a520de77d946661458402395573d232fb843aea729eab622544faf6c5a3b"
+        },
+        {
+          "file": "photo-038-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 177140,
+          "sha256": "f74d2f38c14390d37c3be5548228a913825a9f4ca688649c5d3d9c6ce22e7368"
+        }
+      ]
+    },
+    {
+      "id": "photo-039",
+      "nasaId": "sl4-138-3875",
+      "theme": "mountain",
+      "group": "nature",
+      "tone": "blue",
+      "title": "Rocky Mountains và miền đồng bằng",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Rocky Mountains và miền đồng bằng. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "View east over the Rocky Mountains and Great Plains",
+      "sourceURL": "https://images.nasa.gov/details/sl4-138-3875",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/sl4-138-3875/sl4-138-3875~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/sl4-138-3875/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "1974-02-01",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "31aea8014c511ef08eff2fcd77440d4c0ecb14a51d688b12baa245cf640a54e7",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1897
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-039-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 12186,
+          "sha256": "5db992b0fabeacb7c74f7f36cd4eb0e46f60bac97205cd61d8754c81f1b4ff40"
+        },
+        {
+          "file": "photo-039-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 47860,
+          "sha256": "ba985de927e70076035f68e54ae2de704f040237dc1e6eec63c3e3f2aaa1436e"
+        },
+        {
+          "file": "photo-039-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 187116,
+          "sha256": "125b5a684380313bc2c07ee14e694924f6639850145c0a5ead4ced3ba63dd8b8"
+        }
+      ]
+    },
+    {
+      "id": "photo-040",
+      "nasaId": "iss074e0315889",
+      "theme": "mountain",
+      "group": "nature",
+      "tone": "blue",
+      "title": "Nếp gấp của dãy Zagros",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Nếp gấp của dãy Zagros. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "A portion of the rugged Zagros Mountain range in western Iran",
+      "sourceURL": "https://images.nasa.gov/details/iss074e0315889",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss074e0315889/iss074e0315889~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss074e0315889/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2026-02-16",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "8b55f6daa6dcff802b3875d05d6fe96680ec35e3eb5333343cbcac93aca1087c",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1280
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-040-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 6994,
+          "sha256": "14b0d603fb62008f89addb710fffcc8cf2287db7946db8c35d6efa1f35c4ca13"
+        },
+        {
+          "file": "photo-040-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 25890,
+          "sha256": "ddfa9752bf826651c014474c18b6f0eb34265051fc8df8e039abe87c77c7391b"
+        },
+        {
+          "file": "photo-040-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 110376,
+          "sha256": "49961d0af76a0b9f22bdae87125967b60dc6efd34c0f12c37d1fd693cd70c7e3"
+        }
+      ]
+    },
+    {
+      "id": "photo-041",
+      "nasaId": "iss040e092688",
+      "theme": "moon",
+      "group": "cosmos",
+      "tone": "violet",
+      "title": "Mặt Trăng lặn sau vành Trái Đất",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Mặt Trăng lặn sau vành Trái Đất. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Moon setting",
+      "sourceURL": "https://images.nasa.gov/details/iss040e092688",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/iss040e092688/iss040e092688~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/iss040e092688/metadata.json",
+      "author": "Reid Wiseman",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2014-08-13",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "d2eb54041e873fa0124f0324616f2d9e565e279b8b758b015f8528d7745ceede",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1277
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-041-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 2508,
+          "sha256": "16893506cf9495dc8e43154b6cda11a1f3127fdc6aceb8011babb127aa3423f3"
+        },
+        {
+          "file": "photo-041-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 6036,
+          "sha256": "a54548a70fa8a21e4ee8a08cd84784190cb803c0739e5c9bebee033b3337b270"
+        },
+        {
+          "file": "photo-041-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 16752,
+          "sha256": "6bb58209826bdf590ca20762426455811cc8e1b679baa14a4f46c732c903494b"
+        }
+      ]
+    },
+    {
+      "id": "photo-042",
+      "nasaId": "art002e009057",
+      "theme": "moon",
+      "group": "cosmos",
+      "tone": "violet",
+      "title": "Mặt gần của Mặt Trăng",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Mặt gần của Mặt Trăng. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "The Nearside of the Moon",
+      "sourceURL": "https://images.nasa.gov/details/art002e009057",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/art002e009057/art002e009057~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/art002e009057/metadata.json",
+      "author": "NASA",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2026-04-05",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "f45ec2b2c45f1d35a00d6183f79590ecc95030cb5a0381a2663f204f1fa4ceec",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1280
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-042-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 932,
+          "sha256": "17be270ff9198ed715557898cf12a457fab1e7db9370dade5d483d80b79191de"
+        },
+        {
+          "file": "photo-042-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 2650,
+          "sha256": "21a1ed2e3097f11c87d29afd319e14a39be9b678139d7263d4d7e226e1e13432"
+        },
+        {
+          "file": "photo-042-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 9206,
+          "sha256": "4dc04a5a98933e64c078c85aecb60d3bd91059ed64ed2921dfd3af2863abb180"
+        }
+      ]
+    },
+    {
+      "id": "photo-043",
+      "nasaId": "art002e020904",
+      "theme": "moon",
+      "group": "cosmos",
+      "tone": "violet",
+      "title": "Đường cong bề mặt Mặt Trăng",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Đường cong bề mặt Mặt Trăng. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "The Curve of the Moon",
+      "sourceURL": "https://images.nasa.gov/details/art002e020904",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/art002e020904/art002e020904~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/art002e020904/metadata.json",
+      "author": "NASA",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2026-04-06",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "db4cfc2f2f0d7e14ae5e6ec47bbb6b978f43318c663156bab968e46e6db0b9a6",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1280
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-043-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 5336,
+          "sha256": "c4d1119dcda529721eb03d40ace75f2298c517ccc5b2a31ffab07fee0b316eb8"
+        },
+        {
+          "file": "photo-043-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 16386,
+          "sha256": "17274d42b2f62d09f46a0d8dac71693a283a19036a947359deef6d0421761e09"
+        },
+        {
+          "file": "photo-043-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 44962,
+          "sha256": "d0c0701e4501726550ff90deb204652e2476412efdc92ce662638d05084677e7"
+        }
+      ]
+    },
+    {
+      "id": "photo-044",
+      "nasaId": "art002e016299",
+      "theme": "moon",
+      "group": "cosmos",
+      "tone": "violet",
+      "title": "Trái Đất mọc từ góc nhìn Orion",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Trái Đất mọc từ góc nhìn Orion. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Earthrise Captured by Orion",
+      "sourceURL": "https://images.nasa.gov/details/art002e016299",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/art002e016299/art002e016299~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/art002e016299/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "2026-04-06",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "70a09c683f9f51f199c34ab92ba94fc63471ae3214fbb85513cb1cef0d107231",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1440
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-044-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 3220,
+          "sha256": "0dd3746fb206e928efe4e34079abb21a23caaceccdf09a719a35ecc3edb6851e"
+        },
+        {
+          "file": "photo-044-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 8972,
+          "sha256": "9d0067fe5931cdd2b9b56263c055d3c01593756a765158fba50914c540749e2c"
+        },
+        {
+          "file": "photo-044-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 24988,
+          "sha256": "d4479810150b5f4a06f096e978bc7060d5bdfe7da17d0c56620e5a7f25cb7e1a"
+        }
+      ]
+    },
+    {
+      "id": "photo-045",
+      "nasaId": "as17-152-23272",
+      "theme": "moon",
+      "group": "cosmos",
+      "tone": "violet",
+      "title": "Trái Đất phía trên chân trời Mặt Trăng",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Trái Đất phía trên chân trời Mặt Trăng. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Apollo 17, Earthrise over Moon",
+      "sourceURL": "https://images.nasa.gov/details/as17-152-23272",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/as17-152-23272/as17-152-23272~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/as17-152-23272/metadata.json",
+      "author": "NASA / Johnson Space Center",
+      "credit": "NASA",
+      "center": "JSC",
+      "captured": "1972-12-07",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "5f730fe49232193be3f0fa4566a148c5233c5b00083a490b417ea13918326a4c",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1920
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.67
+      ],
+      "variants": [
+        {
+          "file": "photo-045-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 3980,
+          "sha256": "97d4c1cabb15dffd00c4e75961eec0ba8fe16f9b7d13fa7fefe138b576c1c693"
+        },
+        {
+          "file": "photo-045-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 11720,
+          "sha256": "309798b7c9bdfc8c30e82b3c94221c026e74341e8d766fadf46409f9e32b9c21"
+        },
+        {
+          "file": "photo-045-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 40518,
+          "sha256": "0ec1d63140c8c64d1ad5f80d2a46459baed0af9be029724470600b58b37fa235"
+        }
+      ]
+    },
+    {
+      "id": "photo-046",
+      "nasaId": "KSC-20240208-PH-KMO07_0013",
+      "theme": "launch",
+      "group": "cosmos",
+      "tone": "coral",
+      "title": "PACE bay lên trong màn đêm",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: PACE bay lên trong màn đêm. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "PACE Launch",
+      "sourceURL": "https://images.nasa.gov/details/KSC-20240208-PH-KMO07_0013",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/KSC-20240208-PH-KMO07_0013/KSC-20240208-PH-KMO07_0013~orig.JPG",
+      "metadataURL": "https://images-assets.nasa.gov/image/KSC-20240208-PH-KMO07_0013/metadata.json",
+      "author": "NASA/Kevin O'Connell and Kevin Davis",
+      "credit": "NASA/Kevin O'Connell and Kevin D",
+      "center": "KSC",
+      "captured": "2024-02-08",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "b727fc27a89b41a856ffcc77949730c4c903b87c86d0d0a7e6c25cc31ccb7b24",
+      "sourceDimensions": {
+        "width": 2832,
+        "height": 4256
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-046-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 1152,
+          "sha256": "5cc5e4763dda1b260a3dae5681fe21b5723fa6360e6c3fdb89be2ebd6fd8e245"
+        },
+        {
+          "file": "photo-046-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 2788,
+          "sha256": "577569c9eee5119576d406503d429406a67aeb4c5292af4ee9a592fb0b886d17"
+        },
+        {
+          "file": "photo-046-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 7722,
+          "sha256": "5f322a86f77491694483293ad2b13decfab71f90aae69fbb9c0a073b6161a3b8"
+        }
+      ]
+    },
+    {
+      "id": "photo-047",
+      "nasaId": "KSC-20231013-PH-KED11_0056",
+      "theme": "launch",
+      "group": "cosmos",
+      "tone": "coral",
+      "title": "Psyche hướng về bầu trời",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Psyche hướng về bầu trời. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Psyche Launch",
+      "sourceURL": "https://images.nasa.gov/details/KSC-20231013-PH-KED11_0056",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/KSC-20231013-PH-KED11_0056/KSC-20231013-PH-KED11_0056~large.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/KSC-20231013-PH-KED11_0056/metadata.json",
+      "author": "NASA/Kevin Davis",
+      "credit": "NASA/Kevin Davis",
+      "center": "KSC",
+      "captured": "2023-10-13",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "a95545690227187a25ce6bb6409c21592530622cd6fe66e1568610ca0197f5d4",
+      "sourceDimensions": {
+        "width": 1281,
+        "height": 1920
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.65
+      ],
+      "variants": [
+        {
+          "file": "photo-047-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 962,
+          "sha256": "4757efbd8b04fcf31a4fbc0a04e344687437eee4324ddb517bf26c810ff3164f"
+        },
+        {
+          "file": "photo-047-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 2424,
+          "sha256": "77337906846f840ae7b57cbaeb7e3b9b18cace131c2438285dfc39da6c7dd2d2"
+        },
+        {
+          "file": "photo-047-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 6424,
+          "sha256": "bac6578a36c92bf9370e33c3092891e976f73dbee5c0e8a1a563903d05173fa3"
+        }
+      ]
+    },
+    {
+      "id": "photo-048",
+      "nasaId": "KSC-314D-0551_0050",
+      "theme": "launch",
+      "group": "cosmos",
+      "tone": "coral",
+      "title": "Orion rời bệ phóng",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Orion rời bệ phóng. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Orion Launch",
+      "sourceURL": "https://images.nasa.gov/details/KSC-314D-0551_0050",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/KSC-314D-0551_0050/KSC-314D-0551_0050~orig.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/KSC-314D-0551_0050/metadata.json",
+      "author": "NASA/KSC - Sandra Joseph (IMCS)",
+      "credit": "NASA/KSC - Sandra Joseph (IMCS)",
+      "center": "KSC",
+      "captured": "2014-12-05",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "6d0294565f543eab610e09d529a513e9429a18e6337175eb76e3b82317c39d35",
+      "sourceDimensions": {
+        "width": 2832,
+        "height": 4256
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-048-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 708,
+          "sha256": "dbf1867ef05f9f1fc6a0b8c3618d91305be01803932af424422ffccc46584247"
+        },
+        {
+          "file": "photo-048-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 1826,
+          "sha256": "57e9597aecce2c9e87d9fcf8747ceccc8c74ff7a6cbb2d898e111e2ee944a3ee"
+        },
+        {
+          "file": "photo-048-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 5666,
+          "sha256": "a11399fee032dc17bcd10ce9e8b47b55bbf870ca31ed7635ec2c10d1e9fdccdd"
+        }
+      ]
+    },
+    {
+      "id": "photo-049",
+      "nasaId": "KSC-20220816-PH-JBS01_0092",
+      "theme": "launch",
+      "group": "cosmos",
+      "tone": "coral",
+      "title": "Artemis I trên đường ra bệ phóng",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Artemis I trên đường ra bệ phóng. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "Artemis I Launch Rollout",
+      "sourceURL": "https://images.nasa.gov/details/KSC-20220816-PH-JBS01_0092",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/KSC-20220816-PH-JBS01_0092/KSC-20220816-PH-JBS01_0092~orig.jpg",
+      "metadataURL": "https://images-assets.nasa.gov/image/KSC-20220816-PH-JBS01_0092/metadata.json",
+      "author": "NASA/Ben Smegelsky",
+      "credit": "NASA/Ben Smegelsky",
+      "center": "KSC",
+      "captured": "2022-08-16",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "fb519860ef1d356ecd661cade216e4e9d0bd8ba9784f836e2ccf06a548bc7980",
+      "sourceDimensions": {
+        "width": 4480,
+        "height": 6720
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.15
+      ],
+      "variants": [
+        {
+          "file": "photo-049-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 14258,
+          "sha256": "04f213bce2c7f98492b6b5875bad778b3eda49cca5cfb56ae75666c39ce4d21a"
+        },
+        {
+          "file": "photo-049-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 42936,
+          "sha256": "aa87d7fabfb5b7688d999dc4c974da1d4171c40090cfafb02885afba3f40c2d1"
+        },
+        {
+          "file": "photo-049-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 135836,
+          "sha256": "36857303b8e701593e1154fe0dfaf6569b4333b98cb2d9a91c00f8e013929bc4"
+        }
+      ]
+    },
+    {
+      "id": "photo-050",
+      "nasaId": "KSC-20240208-PH-KMO02_0005",
+      "theme": "launch",
+      "group": "cosmos",
+      "tone": "coral",
+      "title": "Vệt sáng của sứ mệnh PACE",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Vệt sáng của sứ mệnh PACE. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "sourceTitle": "PACE Launch",
+      "sourceURL": "https://images.nasa.gov/details/KSC-20240208-PH-KMO02_0005",
+      "sourceImageURL": "https://images-assets.nasa.gov/image/KSC-20240208-PH-KMO02_0005/KSC-20240208-PH-KMO02_0005~orig.JPG",
+      "metadataURL": "https://images-assets.nasa.gov/image/KSC-20240208-PH-KMO02_0005/metadata.json",
+      "author": "NASA/Kevin Davis and Kevin O'Connell",
+      "credit": "NASA/Kevin Davis and Kevin O'Con",
+      "center": "KSC",
+      "captured": "2024-02-08",
+      "license": "NASA Media Usage Guidelines",
+      "licenseURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "rightsReview": "NASA-origin photograph; no third-party copyright identified in official record; NASA attribution required; no endorsement implied.",
+      "sourceSha256": "247b47e9dc02b4fd3e674e791d19a9c6ea01fa64ad5eab3a99fad353ab67ffa2",
+      "sourceDimensions": {
+        "width": 2832,
+        "height": 4256
+      },
+      "transform": "Reviewed 16:9 crop, downsample and WebP encoding only; no generative editing.",
+      "focalPoint": [
+        0.5,
+        0.5
+      ],
+      "variants": [
+        {
+          "file": "photo-050-v1-320.webp",
+          "width": 320,
+          "height": 180,
+          "bytes": 5192,
+          "sha256": "d1c27b720c2d514acfbef61f0e83983a2057ac2ce66934bafc65d9766ef29693"
+        },
+        {
+          "file": "photo-050-v1-640.webp",
+          "width": 640,
+          "height": 360,
+          "bytes": 12020,
+          "sha256": "32a606988b777fcd5851e677a71afd30b79c1060f5b48093823c280ebcd66cfd"
+        },
+        {
+          "file": "photo-050-v1-1280.webp",
+          "width": 1280,
+          "height": 720,
+          "bytes": 31414,
+          "sha256": "2691c6633790ca80d414fa43cc241c1aa8533ee9db47f7af7667b1838e7f6eea"
+        }
+      ]
+    }
+  ]
+}

@@ -13,6 +13,9 @@
 .mv .mvg-categories button { min-height: 44px; font-size: 12px; gap: 7px; }
 .mv .mvg-categories button>span { font-size: 10px; opacity: .9; }
 .mv .mvg-categories button[aria-pressed=true] { color: var(--mv-on); background: var(--mv-cyan); }
+.mv .mvg-photo-groups { display: flex; flex-wrap: wrap; gap: 8px; }
+.mv .mvg-photo-groups button { min-height: 44px; font-size: 12px; background: transparent; }
+.mv .mvg-photo-groups button[aria-pressed=true] { color: var(--mv-on); background: var(--mv-cyan); border-color: transparent; }
 .mv .mvg-saved-filter { min-height: 44px; color: var(--mv-ink); background: var(--mv-panel); }
 .mv .mvg-saved-filter>span:first-child { color: var(--mv-pink,#ffb1db); }
 .mv .mvg-saved-filter[aria-pressed=true] { color: var(--mv-on); background: var(--mv-pink,#ffb1db); border-color: transparent; }
@@ -27,6 +30,7 @@
 .mv .mvg-open-picture:hover .mv-art img { transform: scale(1.025); }
 .mv .mvg-card-body { display: flex; flex-direction: column; gap: 12px; padding: 19px; flex: 1; }
 .mv .mvg-source { align-self: start; border: 1px solid var(--mv-line); border-radius: 999px; padding: 4px 9px; color: var(--mv-cyan); font-size: 10px; line-height: 1.5; }
+.mv .mvg-source[data-source=photo] { color: var(--mv-gold); border-color: var(--mv-gold); }
 .mv .mvg-card-body h2 { font-size: 19px; margin: 0; line-height: 1.4; color: var(--mv-ink); }
 .mv .mvg-card-body>p { font-size: 12px; line-height: 1.75; margin: 0; color: var(--mv-muted); }
 .mv .mvg-card-actions { display: flex; align-items: center; justify-content: space-between; gap: 9px; margin-top: auto; padding-top: 10px; }
@@ -50,8 +54,9 @@
 }
 @media(max-width:650px) {
   .mv .mvg { gap: 15px; }
-  .mv .mvg-search { grid-template-columns: 1fr; padding: 15px; gap: 11px; }
-  .mv .mvg-search button { justify-self: stretch; }
+  .mv .mvg-search { grid-template-columns: minmax(0,1fr) minmax(0,1fr); padding: 15px; gap: 11px; }
+  .mv .mvg-search>label:first-child { grid-column: 1/-1; }
+  .mv .mvg-search button { justify-self: stretch; grid-column: 1/-1; }
   .mv .mvg-toolbar { align-items: start; gap: 10px; }
   .mv .mvg-categories { gap: 6px; }
   .mv .mvg-categories button { padding: 9px 10px; font-size: 10px; }

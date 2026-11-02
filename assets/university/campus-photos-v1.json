@@ -1,0 +1,1417 @@
+{
+  "version": 1,
+  "checkedAt": "2026-11-02",
+  "policy": "Only exact, manually matched school/campus photographs with a reusable Commons licence. Names and dates follow the source, not an assertion of present campus condition. Do not substitute generic or AI-generated campuses.",
+  "photos": [
+    {
+      "schoolId": "vn-ts-302",
+      "schoolName": "Đại Học Bách Khoa Hà Nội",
+      "campus": "Khuôn viên Đại học Bách khoa Hà Nội",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:Hanoi_University_of_Science_and_Technology.jpg",
+      "identityNote": "",
+      "officialUrl": "https://hust.edu.vn/",
+      "fileTitle": "File:Hanoi University of Science and Technology.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hanoi_University_of_Science_and_Technology.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f8/Hanoi_University_of_Science_and_Technology.jpg",
+      "sourcePageId": 78309269,
+      "sourceRevisionAt": "2019-04-24T11:43:59Z",
+      "sourceSha1": "98e16d4dfa955b5e66edbde6637177874add6171",
+      "sourceSha256": "2ac6805ccbf5ca51825b84bd7300827912376b03be450b68ce2ce9beeafcd694",
+      "photographer": "CONG_TRANVAN",
+      "credit": "Own work",
+      "attribution": "",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "capturedAt": "2019-03-24",
+      "sourceDescription": "The summer noon at Hanoi University of Science and Technology",
+      "sourceCategories": "Hanoi University of Science and Technology|Self-published work|Uploaded with Mobile/Android|Uploaded with Mobile/Android (Nov 2017-Aug 2019)",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 216,
+          "url": "./assets/university/vn-ts-302-v1-384.webp",
+          "bytes": 18754,
+          "sha256": "a77feaf20f06202d635d76e4f3999ffa7d7b7a7fa7f17e4e3de209e76a026a15"
+        },
+        {
+          "width": 768,
+          "height": 432,
+          "url": "./assets/university/vn-ts-302-v1-768.webp",
+          "bytes": 73956,
+          "sha256": "c92ec937437d63c25d45a24b69a6dcd438bd0830395929901988a73c802e2529"
+        },
+        {
+          "width": 1280,
+          "height": 720,
+          "url": "./assets/university/vn-ts-302-v1-1280.webp",
+          "bytes": 207890,
+          "sha256": "4ec658189e11916908bbb007d6445827ba5df66b08c069497df3587152af3294"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-318",
+      "schoolName": "Đại Học Cần Thơ",
+      "campus": "Cổng Đại học Cần Thơ",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:Cantho_University.JPG",
+      "identityNote": "",
+      "officialUrl": "https://www.ctu.edu.vn/",
+      "fileTitle": "File:Cantho University.JPG",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cantho_University.JPG",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/7/75/Cantho_University.JPG",
+      "sourcePageId": 23172474,
+      "sourceRevisionAt": "2012-12-13T07:13:21Z",
+      "sourceSha1": "f2d447d05111dfde8b3f48a3fb93d54ffeefe731",
+      "sourceSha256": "d9603b7ec30d508e113952c005c6c37dccb8120cb352923acd9e0614941c6ee9",
+      "photographer": "Kauffner",
+      "credit": "Own work",
+      "attribution": "",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "capturedAt": "2012-08-04 08:17:53",
+      "sourceDescription": "The entrance of Can Tho University in Can Tho, Vietnam, 2012",
+      "sourceCategories": "Taken with Panasonic Lumix DMC-TZ7|Can Tho University|Higher education institutions in Vietnam|Self-published work|Buildings in Can Tho|Photographs of flags of Vietnam in Can Tho|Bilingual English-Vietnamese signs",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-318-v1-384.webp",
+          "bytes": 20022,
+          "sha256": "4cc4a9e043883b710666622ab750c5a50a0a715bdfeea49561971665492d4819"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-318-v1-768.webp",
+          "bytes": 67326,
+          "sha256": "f9588c1ec14b2eb556feac8bd8797e5c185c7dbb203be5161c19413f94f62ed2"
+        },
+        {
+          "width": 1280,
+          "height": 960,
+          "url": "./assets/university/vn-ts-318-v1-1280.webp",
+          "bytes": 158428,
+          "sha256": "3f2133e7e2e7e9b5e58b40f8bc2433de8b100e3680dba8de67e371b745009ba2"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-300",
+      "schoolName": "Trường Đại Học Bách Khoa HCM",
+      "campus": "Cơ sở chính Đại học Bách khoa TP.HCM theo nguồn ảnh",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:HCMUT_Library_in_main_campus.jpg",
+      "identityNote": "",
+      "officialUrl": "https://hcmut.edu.vn/",
+      "fileTitle": "File:HCMUT Library in main campus.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:HCMUT_Library_in_main_campus.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/3/38/HCMUT_Library_in_main_campus.jpg",
+      "sourcePageId": 27173380,
+      "sourceRevisionAt": "2013-07-10T03:58:07Z",
+      "sourceSha1": "faa90f4c680bad563d70e4f02279199322023908",
+      "sourceSha256": "9d89032bfa7d9fa63697316965ce1a28f6b7fb4f145da969ae17a777b1d8328b",
+      "photographer": "Nguyen Chi Trung",
+      "credit": "http://my.opera.com/NguyenChiTrung/albums/showpic.dml?album=717483&picture=9696363",
+      "attribution": "",
+      "license": "CC BY-SA 1.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/1.0",
+      "capturedAt": "2009-01-27",
+      "sourceDescription": "Thư viện Trường Đại học Bách khoa",
+      "sourceCategories": "Ho Chi Minh City University of Technology|Uploaded with en.wp upload wizard|Files tagged CC-by-sa-old",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-300-v1-384.webp",
+          "bytes": 18036,
+          "sha256": "12c0ead9738d0cc07918933bd68a9a892082fc872959dd8dbef2ceae367e2739"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-300-v1-768.webp",
+          "bytes": 60874,
+          "sha256": "9c0b4e33d95755a10acfd1bcaa0b739a75c16bc648db967a4c1c93122b910355"
+        },
+        {
+          "width": 1280,
+          "height": 960,
+          "url": "./assets/university/vn-ts-300-v1-1280.webp",
+          "bytes": 149190,
+          "sha256": "186834926d504eec759c6cdd7f6c9283dfa080feebfc018dc96607c01fbe7ad0"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-301",
+      "schoolName": "Trường Đại Học Bách Khoa Đà Nẵng",
+      "campus": "Khu A, Đại học Bách khoa Đà Nẵng",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:Khu_A.jpg",
+      "identityNote": "",
+      "officialUrl": "https://dut.udn.vn/",
+      "fileTitle": "File:Khu A.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Khu_A.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/3/38/Khu_A.jpg",
+      "sourcePageId": 17315461,
+      "sourceRevisionAt": "2011-11-12T12:12:40Z",
+      "sourceSha1": "793ea6d791c135b46ec3ae5054b77ccc3b6deb1e",
+      "sourceSha256": "ef7e2815a32689ead72f8f6d14a02c8650d6f0bc01678a36954d454a1f0de326",
+      "photographer": "Sama at Vietnamese Wikipedia",
+      "credit": "Transferred from vi.wikipedia to Commons.",
+      "attribution": "Sama",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "capturedAt": "24 January 2008 (original upload date)",
+      "sourceDescription": "Da Nang University of Technology",
+      "sourceCategories": "GFDL|Taken with Canon PowerShot A620|License migration redundant|Da Nang University of Technology|Self-published work",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-301-v1-384.webp",
+          "bytes": 26180,
+          "sha256": "3e243d0b3129531d7d6101059c784e1c599c478dcefe2b168de3fa9a56dd59f7"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-301-v1-768.webp",
+          "bytes": 91818,
+          "sha256": "75b4f2aebc717b4b1a6cf93127b70cfd8a5f548b8592b0ed1131784f436f6e39"
+        },
+        {
+          "width": 800,
+          "height": 600,
+          "url": "./assets/university/vn-ts-301-v1-800.webp",
+          "bytes": 100958,
+          "sha256": "bd73c8bc404ab1744d976f5bd14af4e6c66ec79bc3b02f93894a53720ebbe236"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-304",
+      "schoolName": "Trường Đại Học Tôn Đức Thắng",
+      "campus": "Cơ sở Tân Phong, Đại học Tôn Đức Thắng",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:Dai_hoc_Ton_Duc_Thang,_duong_Nguyen_Huu_Tho,_Tan_phong,_q7_hcmvn_-_panoramio.jpg",
+      "identityNote": "",
+      "officialUrl": "https://www.tdtu.edu.vn/",
+      "fileTitle": "File:Dai hoc Ton Duc Thang, duong Nguyen Huu Tho, Tan phong, q7 hcmvn - panoramio.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Dai_hoc_Ton_Duc_Thang,_duong_Nguyen_Huu_Tho,_Tan_phong,_q7_hcmvn_-_panoramio.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/c/c3/Dai_hoc_Ton_Duc_Thang%2C_duong_Nguyen_Huu_Tho%2C_Tan_phong%2C_q7_hcmvn_-_panoramio.jpg",
+      "sourcePageId": 59074885,
+      "sourceRevisionAt": "2017-05-19T13:44:01Z",
+      "sourceSha1": "2ced6388fb8ad32c15100f210617df4335431c2c",
+      "sourceSha256": "233729511534b8dec6b3701d2b2ecadb2557fa5179970681e0d07986d7d502e2",
+      "photographer": "trungydang",
+      "credit": "https://web.archive.org/web/20161031204609/http://www.panoramio.com/photo/115764705",
+      "attribution": "trungydang",
+      "license": "CC BY 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+      "capturedAt": "14 January 2015 (original upload date)",
+      "sourceDescription": "Dai hoc Ton Duc Thang, duong Nguyen Huu Tho, Tan phong, q7 hcmvn",
+      "sourceCategories": "Ton Duc Thang University|Panoramio files uploaded by Panoramio upload bot|Panoramio images reviewed by trusted users|Photos from Panoramio|Files with coordinates missing SDC location of creation|Photos from Panoramio ID 5317517",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 215,
+          "url": "./assets/university/vn-ts-304-v1-384.webp",
+          "bytes": 11804,
+          "sha256": "7868ff761d82c6cc158c8d51565f39296c5a31268422711f27281da4f322d1df"
+        },
+        {
+          "width": 768,
+          "height": 431,
+          "url": "./assets/university/vn-ts-304-v1-768.webp",
+          "bytes": 36680,
+          "sha256": "3d49660a7786287f33557fe2d3983aacb5b3a68b4ae4945919da7b3124de6798"
+        },
+        {
+          "width": 1280,
+          "height": 718,
+          "url": "./assets/university/vn-ts-304-v1-1280.webp",
+          "bytes": 83268,
+          "sha256": "0a81f87ac16a7af99e83941bde49d7eb52d703157aac47b21d988e9bb5e6d166"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-329",
+      "schoolName": "Trường Đại Học FPT",
+      "campus": "Giảng đường cơ sở Hòa Lạc, Đại học FPT",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:Fpt02.jpg",
+      "identityNote": "",
+      "officialUrl": "https://daihoc.fpt.edu.vn/",
+      "fileTitle": "File:Fpt02.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Fpt02.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/6/67/Fpt02.jpg",
+      "sourcePageId": 27588337,
+      "sourceRevisionAt": "2013-08-06T09:36:39Z",
+      "sourceSha1": "1545b03305724a265837cecaa4980adad1944f6a",
+      "sourceSha256": "e3e833f07a2fbe6895471314999b6d16a210b3c1599dc185e12b59827db65238",
+      "photographer": "ThuyNTP",
+      "credit": "Own work",
+      "attribution": "",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "capturedAt": "2012-07-05 15:02:39",
+      "sourceDescription": "Tòa nhà giảng đường tại cơ sở Hòa Lạc của Đại học FPT",
+      "sourceCategories": "Taken with Canon EOS 5D Mark III|FPT University|Self-published work",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 256,
+          "url": "./assets/university/vn-ts-329-v1-384.webp",
+          "bytes": 17822,
+          "sha256": "0871bdef47eefa9aa6b10858ffa20a38f295dc437f6ff94670fc0f9c4bdfddd1"
+        },
+        {
+          "width": 768,
+          "height": 512,
+          "url": "./assets/university/vn-ts-329-v1-768.webp",
+          "bytes": 61832,
+          "sha256": "042dfe215384306501261db9a7628baa54e94402f984cc0c1554028e4398ca59"
+        },
+        {
+          "width": 1280,
+          "height": 853,
+          "url": "./assets/university/vn-ts-329-v1-1280.webp",
+          "bytes": 163062,
+          "sha256": "5704c95d257d4d7f1ca8cf9c3ef06dcf9778fc6703adb2b9de1b34b3168f08ee"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-336",
+      "schoolName": "Trường Đại Học Hà Nội",
+      "campus": "Khuôn viên Trường Đại học Hà Nội",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:Hanoi_University_01.jpg",
+      "identityNote": "",
+      "officialUrl": "https://hanu.edu.vn/",
+      "fileTitle": "File:Hanoi University 01.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hanoi_University_01.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/1/14/Hanoi_University_01.jpg",
+      "sourcePageId": 63464819,
+      "sourceRevisionAt": "2017-10-19T13:15:56Z",
+      "sourceSha1": "2f73160648f38d077914049c941735d3de050005",
+      "sourceSha256": "054f7311b2e50de912b0fe2f3bffa8031a8fd2d4b750cfee292be3c98bbe0a5b",
+      "photographer": "Amenoc",
+      "credit": "Own work",
+      "attribution": "",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "capturedAt": "2017-09-15 10:17:13",
+      "sourceDescription": "Hanoi University",
+      "sourceCategories": "CC-Zero|Hanoi University|Self-published work|Files with coordinates missing SDC location of creation|Bilingual English-Vietnamese signs",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-336-v1-384.webp",
+          "bytes": 22200,
+          "sha256": "675068018b66daa2b1539029f25fe1a06e539f6c4217d6a0918fa97c69172aca"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-336-v1-768.webp",
+          "bytes": 66666,
+          "sha256": "c0d3040b6996fb62a171a571fb9aeefeae9e014a8869709d1453460a72ae0de9"
+        },
+        {
+          "width": 1280,
+          "height": 960,
+          "url": "./assets/university/vn-ts-336-v1-1280.webp",
+          "bytes": 149070,
+          "sha256": "0b7bb88de20d654ce23a54570bf3d7790f1dbb79568a038952ed92204e602a29"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-411",
+      "schoolName": "Trường Đại Học Sư Phạm Hà Nội",
+      "campus": "Mặt tiền Đại học Sư phạm Hà Nội",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:Dh_su_pham.jpg",
+      "identityNote": "",
+      "officialUrl": "https://hnue.edu.vn/",
+      "fileTitle": "File:Dh su pham.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Dh_su_pham.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/0/05/Dh_su_pham.jpg",
+      "sourcePageId": 89175108,
+      "sourceRevisionAt": "2018-03-09T02:27:27Z",
+      "sourceSha1": "0a62bdeea37ad4f90ba42f9e8a0474a45f50237a",
+      "sourceSha256": "e8ba45f9164ea6384c910b7b4ab1b9ea959106ea24fa5afe06ff095624dcd972",
+      "photographer": "Xuân ( thảo luận )",
+      "credit": "Tôi sáng tạo ra toàn bộ tác phẩm",
+      "attribution": "",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "capturedAt": "05:45, ngày 8 tháng 3 năm 2018 (UTC)",
+      "sourceDescription": "Mặt tiền đại học Sư phạm Hà Nội",
+      "sourceCategories": "GFDL|License migration redundant|Hanoi National University of Education|Self-published work",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-411-v1-384.webp",
+          "bytes": 21792,
+          "sha256": "4da0b03d257d61b4c28b68cb2e61ab7e5c311f3b64e724a0f635f761953f66f8"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-411-v1-768.webp",
+          "bytes": 72930,
+          "sha256": "0ab5e1f0e0773fe86b8d119af121e299ccc4a5d18a7e860fad26995b0a9d6192"
+        },
+        {
+          "width": 1280,
+          "height": 960,
+          "url": "./assets/university/vn-ts-411-v1-1280.webp",
+          "bytes": 171866,
+          "sha256": "be18d5ef61d32f87df986c195ecad6342b7802107b8302429f378da4f5cb8697"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-420",
+      "schoolName": "Trường Đại Học Sư Phạm TPHCM",
+      "campus": "Tòa nhà A, Đại học Sư phạm TP.HCM",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:A_SP_HCMUE.jpg",
+      "identityNote": "",
+      "officialUrl": "https://hcmue.edu.vn/",
+      "fileTitle": "File:A SP HCMUE.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:A_SP_HCMUE.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/8/82/A_SP_HCMUE.jpg",
+      "sourcePageId": 138874577,
+      "sourceRevisionAt": "2023-10-14T03:53:17Z",
+      "sourceSha1": "7112ae1b1adcbf4481c9005fd2fa9840526c28d6",
+      "sourceSha256": "a57ec3e50fd4a949b9b1e8077b7f45a39fd2a8dca93baddba227f80667d1fa74",
+      "photographer": "t-h-nam",
+      "credit": "Own work",
+      "attribution": "",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "capturedAt": "2023-10-12 10:29:38",
+      "sourceDescription": "toà nhà a; trường đại học sư phạm thành phố hồ chí minh HCMUE",
+      "sourceCategories": "CC-Zero|Ho Chi Minh City Pedagogical University|Self-published work|Files with coordinates missing SDC location of creation",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-420-v1-384.webp",
+          "bytes": 24054,
+          "sha256": "96468397cb38bd00f9ee289722ef84da66d3c6da8f7637fcb84b97721dba8d7e"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-420-v1-768.webp",
+          "bytes": 86720,
+          "sha256": "7cd2903569da70e565f484e5b96cad0c18ccff6872660fecc65cfd6823bc6850"
+        },
+        {
+          "width": 1280,
+          "height": 960,
+          "url": "./assets/university/vn-ts-420-v1-1280.webp",
+          "bytes": 220862,
+          "sha256": "62bd50131b02a8fe659769dbd7cc86f04c0a88d215333bb34757fc0472918e83"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-357",
+      "schoolName": "Đại Học Kinh Tế Quốc Dân",
+      "campus": "Tòa nhà Thế kỷ, Đại học Kinh tế Quốc dân",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:NEU-toanhatheky.jpg",
+      "identityNote": "",
+      "officialUrl": "https://neu.edu.vn/",
+      "fileTitle": "File:NEU-toanhatheky.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:NEU-toanhatheky.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b9/NEU-toanhatheky.jpg",
+      "sourcePageId": 110797005,
+      "sourceRevisionAt": "2021-10-07T05:27:17Z",
+      "sourceSha1": "c3f2a8064a44879f3da8a484499b7905f7aa2282",
+      "sourceSha256": "3148f0215841fa2348a995564023c6a95ff9175feb29355e12d7a32b668aedca",
+      "photographer": "Linhduong100",
+      "credit": "Own work",
+      "attribution": "",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "capturedAt": "10/07/2021",
+      "sourceDescription": "Tòa nhà thế kỷ",
+      "sourceCategories": "National Economics University (Vietnam)|Self-published work",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 231,
+          "url": "./assets/university/vn-ts-357-v1-384.webp",
+          "bytes": 17730,
+          "sha256": "485a79296e41c68a39f9d6484d9a5d3ec3d1e1098381afa83778315f76207538"
+        },
+        {
+          "width": 768,
+          "height": 461,
+          "url": "./assets/university/vn-ts-357-v1-768.webp",
+          "bytes": 62156,
+          "sha256": "45f69f7a915eb438246fd29eb6a5649a56bd56b904dd2d989110cc4058bd193c"
+        },
+        {
+          "width": 796,
+          "height": 478,
+          "url": "./assets/university/vn-ts-357-v1-796.webp",
+          "bytes": 70396,
+          "sha256": "2ce89303867ea70698e83165e76692d4823bfbb75e4fbfed1d790f01299de8aa"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-358",
+      "schoolName": "Đại Học Kinh Tế TPHCM",
+      "campus": "Giảng đường cơ sở N, Đại học Kinh tế TP.HCM",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:UEH_University_Campus_N_-_Classroom_Building.jpg",
+      "identityNote": "",
+      "officialUrl": "https://ueh.edu.vn/",
+      "fileTitle": "File:UEH University Campus N - Classroom Building.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:UEH_University_Campus_N_-_Classroom_Building.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/8/8f/UEH_University_Campus_N_-_Classroom_Building.jpg",
+      "sourcePageId": 138455971,
+      "sourceRevisionAt": "2023-10-04T08:05:50Z",
+      "sourceSha1": "bf739e08d737374f2f13fe3602d6e65fed270ae6",
+      "sourceSha256": "4965b870af17129770a3182dd9cd61232f302c17d89f014b378441bdc01dfb3e",
+      "photographer": "Tran Trong Nhan",
+      "credit": "Own work",
+      "attribution": "",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "capturedAt": "2023-03-10 12:37:54",
+      "sourceDescription": "Campus N of UEH University, 2023.",
+      "sourceCategories": "CC-Zero|University of Economics Ho Chi Minh City|Self-published work",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 279,
+          "url": "./assets/university/vn-ts-358-v1-384.webp",
+          "bytes": 13530,
+          "sha256": "c32540e0a1c2a592a40268a7dd6a5ad15d7ddbfaf2a97a384874671491a39cc9"
+        },
+        {
+          "width": 768,
+          "height": 558,
+          "url": "./assets/university/vn-ts-358-v1-768.webp",
+          "bytes": 48382,
+          "sha256": "080d82f507c130b07f29df1c2627b226f19615f6489b54b4cd995e772bdd01b3"
+        },
+        {
+          "width": 1280,
+          "height": 929,
+          "url": "./assets/university/vn-ts-358-v1-1280.webp",
+          "bytes": 128374,
+          "sha256": "db0aa268c16820a39c59d18b5954766f2395cd6b9dc74c84b093ad892e1b7099"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-391",
+      "schoolName": "Trường Đại Học Nông Lâm TPHCM",
+      "campus": "Nhà Rạng Đông, Đại học Nông Lâm TP.HCM",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:Nh%C3%A0_R%E1%BA%A1ng_%C4%90%C3%B4ng,_Tr%C6%B0%E1%BB%9Dng_%C4%90%E1%BA%A1i_h%E1%BB%8Dc_N%C3%B4ng_L%C3%A2m_Th%C3%A0nh_ph%E1%BB%91_H%E1%BB%93_Ch%C3%AD_Minh.jpg",
+      "identityNote": "",
+      "officialUrl": "https://www.hcmuaf.edu.vn/",
+      "fileTitle": "File:Nhà Rạng Đông, Trường Đại học Nông Lâm Thành phố Hồ Chí Minh.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Nh%C3%A0_R%E1%BA%A1ng_%C4%90%C3%B4ng,_Tr%C6%B0%E1%BB%9Dng_%C4%90%E1%BA%A1i_h%E1%BB%8Dc_N%C3%B4ng_L%C3%A2m_Th%C3%A0nh_ph%E1%BB%91_H%E1%BB%93_Ch%C3%AD_Minh.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/4/4b/Nh%C3%A0_R%E1%BA%A1ng_%C4%90%C3%B4ng%2C_Tr%C6%B0%E1%BB%9Dng_%C4%90%E1%BA%A1i_h%E1%BB%8Dc_N%C3%B4ng_L%C3%A2m_Th%C3%A0nh_ph%E1%BB%91_H%E1%BB%93_Ch%C3%AD_Minh.jpg",
+      "sourcePageId": 196179677,
+      "sourceRevisionAt": "2026-07-25T12:07:12Z",
+      "sourceSha1": "70fc0b4cc1c3ba2591f9f23c8522b7ea8fa0abe5",
+      "sourceSha256": "69bee5f91010c9a0a9903b2a18aa493543b9574be95446d4bebb42f8a760ae74",
+      "photographer": "Lý Kiến Quốc",
+      "credit": "Own work",
+      "attribution": "",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "capturedAt": "31 May 2026 (according to Exif data)",
+      "sourceDescription": "Trường Đại học Nông Lâm Thành phố Hồ Chí Minh (trường đại học công lập tại Việt Nam)",
+      "sourceCategories": "Vietnam|CC-Zero|Pham Ngu Lao Street, Ho Chi Minh City|Saigon River|Creative Commons CC0 1.0 Universal Public Domain Dedication missing SDC copyright license|Thu Thiem Bridge|Ho Chi Minh City Metro Line 1|Self-published work|Self-published work missing SDC copyright license|Uploaded with Mobile/Android|Files with coordinates missing SDC location of creation|Bến Thành Station|Thu Duc|Photographs taken on 2026-05-31",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 682,
+          "url": "./assets/university/vn-ts-391-v1-384.webp",
+          "bytes": 45790,
+          "sha256": "781df4c8a7ed2325ffcaa06355dbeb4f7eb02244e8addda2265a16ab99452998"
+        },
+        {
+          "width": 768,
+          "height": 1365,
+          "url": "./assets/university/vn-ts-391-v1-768.webp",
+          "bytes": 158896,
+          "sha256": "2b00dc2b08e4a79991233429550959d683edd0e487201a62adbe3cf30df4bd82"
+        },
+        {
+          "width": 1280,
+          "height": 2275,
+          "url": "./assets/university/vn-ts-391-v1-1280.webp",
+          "bytes": 388410,
+          "sha256": "f45d2b3b2866e628004d86b73bc188d2e08624ec48194a1265471e873cbb715a"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-421",
+      "schoolName": "Trường Đại Học Thủy Lợi",
+      "campus": "Nhà A1, Đại học Thủy lợi Hà Nội",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:Nh%C3%A0_A1,_%C4%90%E1%BA%A1i_h%E1%BB%8Dc_Thu%E1%BB%B7_L%E1%BB%A3i,_H%C3%A0_N%E1%BB%99i_006.JPG",
+      "identityNote": "",
+      "officialUrl": "https://www.tlu.edu.vn/",
+      "fileTitle": "File:Nhà A1, Đại học Thuỷ Lợi, Hà Nội 006.JPG",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Nh%C3%A0_A1,_%C4%90%E1%BA%A1i_h%E1%BB%8Dc_Thu%E1%BB%B7_L%E1%BB%A3i,_H%C3%A0_N%E1%BB%99i_006.JPG",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/d/d1/Nh%C3%A0_A1%2C_%C4%90%E1%BA%A1i_h%E1%BB%8Dc_Thu%E1%BB%B7_L%E1%BB%A3i%2C_H%C3%A0_N%E1%BB%99i_006.JPG",
+      "sourcePageId": 58092525,
+      "sourceRevisionAt": "2017-04-17T02:11:50Z",
+      "sourceSha1": "66ce0c11220474feea141295c4ad189d07252a46",
+      "sourceSha256": "6cdefce20959bc0eb87b97f4dd28b08042944d7c1c83a2c971b3e4b9351062a9",
+      "photographer": "Phan Minh Tuấn",
+      "credit": "Own work",
+      "attribution": "",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "capturedAt": "2015-10-03 14:53:19",
+      "sourceDescription": "Đại học Thuỷ Lợi, Hà Nội, Việt Nam.",
+      "sourceCategories": "Thủy Lợi University|Self-published work|Files with coordinates missing SDC location of creation|October 2015 - Phan Minh Tuấn",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-421-v1-384.webp",
+          "bytes": 16314,
+          "sha256": "5229e43fdfd631924b74bda4c50c853368ba1967d6fbecd11297d86ec218f2ea"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-421-v1-768.webp",
+          "bytes": 68330,
+          "sha256": "43841d860508966d0a749780fe6767cc3e31a60ea05bc401ed2d3ed912691eba"
+        },
+        {
+          "width": 1280,
+          "height": 960,
+          "url": "./assets/university/vn-ts-421-v1-1280.webp",
+          "bytes": 199474,
+          "sha256": "69cbf8e7567fecce6c905321a31222e73f34a1f2046c214427e348f6dadb3a18"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-448",
+      "schoolName": "Trường Đại Học Y Hà Nội",
+      "campus": "Ảnh tư liệu Đại học Y Hà Nội theo nguồn Commons",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:Hanoi_dhyk.jpg",
+      "identityNote": "",
+      "officialUrl": "https://hmu.edu.vn/",
+      "fileTitle": "File:Hanoi dhyk.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hanoi_dhyk.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/a/ac/Hanoi_dhyk.jpg",
+      "sourcePageId": 5753535,
+      "sourceRevisionAt": "2009-01-20T14:35:31Z",
+      "sourceSha1": "e5585038992ae04b36be555f4ec2b802fa53f341",
+      "sourceSha256": "560330e416a6baf0c0a36d2b9ce0326779839cc835abbc01e8516ec1f5aa1add",
+      "photographer": "ntt",
+      "credit": "Own work",
+      "attribution": "",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "capturedAt": "2002-10-05",
+      "sourceDescription": "La faculté de Médecine de Hanoï",
+      "sourceCategories": "GFDL|CC-BY-SA-3.0,2.5,2.0,1.0|Hanoi Medical University|License migration redundant|Đống Đa District|Self-published work|2002 in Hanoi",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 282,
+          "url": "./assets/university/vn-ts-448-v1-384.webp",
+          "bytes": 26912,
+          "sha256": "7ed7a62205d9c06cf6dcc67e3c618e2a94a5783603d12ee82505e838b1b76fc0"
+        },
+        {
+          "width": 768,
+          "height": 564,
+          "url": "./assets/university/vn-ts-448-v1-768.webp",
+          "bytes": 86456,
+          "sha256": "b505ccc4f2e582ab1845581cdb835986e176cb3ad13d75908992af2cbba6830b"
+        },
+        {
+          "width": 1280,
+          "height": 940,
+          "url": "./assets/university/vn-ts-448-v1-1280.webp",
+          "bytes": 210884,
+          "sha256": "37ed4df94de853110c4e43f28ccab7407de3a96b4ed3d463f51d6f11347d7d3c"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-326",
+      "schoolName": "Trường Đại Học Văn Lang",
+      "campus": "Đại học Văn Lang, TP.HCM",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:Van_Lang_University.jpg",
+      "identityNote": "",
+      "officialUrl": "https://vlu.edu.vn/",
+      "fileTitle": "File:Van Lang University.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Van_Lang_University.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/f/fb/Van_Lang_University.jpg",
+      "sourcePageId": 143543355,
+      "sourceRevisionAt": "2024-01-05T09:28:55Z",
+      "sourceSha1": "d4af26f99f61f61a97c2864791d4f9f423e61bef",
+      "sourceSha256": "2497fadb572e9a7b6c25af115b94f15f8905adb829c424850243646f832dca3e",
+      "photographer": "Vano111ru",
+      "credit": "Own work",
+      "attribution": "",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "capturedAt": "Taken on 5 January 2024",
+      "sourceDescription": "Van Lang University (in Ho Chi Minh City, Viet Nam)",
+      "sourceCategories": "Văn Lang University|Self-published work|Uploaded with Mobile/Android|Files with coordinates missing SDC location of creation|2024 in Ho Chi Minh City|Vietnam photographs taken on 2024-01-05",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 511,
+          "url": "./assets/university/vn-ts-326-v1-384.webp",
+          "bytes": 24170,
+          "sha256": "b9e3a4a9ee2c60d1e576ef3b35618968a616f500ab729b9c00e6abc1510ed886"
+        },
+        {
+          "width": 768,
+          "height": 1023,
+          "url": "./assets/university/vn-ts-326-v1-768.webp",
+          "bytes": 77890,
+          "sha256": "e149fbd3421a37f5b78fda9b4b5a7f663fa142c81ec56bb8f1c87ae0ec38ba32"
+        },
+        {
+          "width": 1280,
+          "height": 1705,
+          "url": "./assets/university/vn-ts-326-v1-1280.webp",
+          "bytes": 174670,
+          "sha256": "a0757786b30b75eff4465ec1fde1c2a085dc495c4f29224427466f4e5fd39c9e"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-320",
+      "schoolName": "Đại Học Duy Tân",
+      "campus": "Phòng học Đại học Duy Tân",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:Ph%C3%B2ng_h%E1%BB%8Dc_%C4%90H_Duy_T%C3%A2n.jpg",
+      "identityNote": "",
+      "officialUrl": "https://duytan.edu.vn/",
+      "fileTitle": "File:Phòng học ĐH Duy Tân.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ph%C3%B2ng_h%E1%BB%8Dc_%C4%90H_Duy_T%C3%A2n.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b5/Ph%C3%B2ng_h%E1%BB%8Dc_%C4%90H_Duy_T%C3%A2n.jpg",
+      "sourcePageId": 100268509,
+      "sourceRevisionAt": "2021-02-24T03:55:38Z",
+      "sourceSha1": "c86d542d500816613a4aa4fec15a8e44002646d9",
+      "sourceSha256": "28e36483158956ee2528c0a4f2afa7d40a9f966cfca0d3b84d2e32922d1941e3",
+      "photographer": "Truyenthong.wkp",
+      "credit": "Own work",
+      "attribution": "",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "capturedAt": "2021-02-03 15:03:24",
+      "sourceDescription": "Phòng học",
+      "sourceCategories": "Self-published work|Duy Tan University",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 216,
+          "url": "./assets/university/vn-ts-320-v1-384.webp",
+          "bytes": 11804,
+          "sha256": "142e66480bdb513aaeeb8dd6a7a43f0340fbf8be72ece059f2b8684808430144"
+        },
+        {
+          "width": 768,
+          "height": 433,
+          "url": "./assets/university/vn-ts-320-v1-768.webp",
+          "bytes": 34126,
+          "sha256": "b43e1ae9cf389b29bc2a66a7e906cf95a87939c365931b533ed995677a9c4ceb"
+        },
+        {
+          "width": 1280,
+          "height": 721,
+          "url": "./assets/university/vn-ts-320-v1-1280.webp",
+          "bytes": 71584,
+          "sha256": "aad69a24cbb8c2992d2afaed11fa505c465c9351ddffb9b54590cfb75d47c8f8"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-399",
+      "schoolName": "Trường Đại Học Quy Nhơn",
+      "campus": "Khuôn viên Đại học Quy Nhơn",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:Quy_Nhon_University,_Binh_Dinh,_Viet_Nam.JPG",
+      "identityNote": "",
+      "officialUrl": "https://qnu.edu.vn/",
+      "fileTitle": "File:Quy Nhon University, Binh Dinh, Viet Nam.JPG",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Quy_Nhon_University,_Binh_Dinh,_Viet_Nam.JPG",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/4/4f/Quy_Nhon_University%2C_Binh_Dinh%2C_Viet_Nam.JPG",
+      "sourcePageId": 20638514,
+      "sourceRevisionAt": "2012-08-12T17:38:35Z",
+      "sourceSha1": "f2bd7430409dbd08cd6029011434785ecb141c32",
+      "sourceSha256": "6328892203a895f3091510715e03174e678946eb92b7cee23dd1a95966933cb4",
+      "photographer": "Phó Nháy ( talk )",
+      "credit": "Own work",
+      "attribution": "",
+      "license": "Public domain",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/",
+      "capturedAt": "2011-09-15",
+      "sourceDescription": "Quy Nhon University, Quy Nhon, Binh Dinh, Viet Nam",
+      "sourceCategories": "Taken with Canon PowerShot G9|PD-user|Higher education institutions in Vietnam|Buildings in Quy Nhon|Images by Phó Nháy",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-399-v1-384.webp",
+          "bytes": 15478,
+          "sha256": "d7bcaa71a749d4f610f077eda8a0d3d57a02baff74f01fd421979370d30a9af3"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-399-v1-768.webp",
+          "bytes": 50004,
+          "sha256": "100ad82352770302af3173ee3572567cf9ba392ae471b42940677631c211b3f4"
+        },
+        {
+          "width": 1280,
+          "height": 960,
+          "url": "./assets/university/vn-ts-399-v1-1280.webp",
+          "bytes": 121376,
+          "sha256": "e30f4ddb64a741b702d65ac7fffafa641ff66c07a8f6bb3d6bbf9c26f375332d"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-456",
+      "schoolName": "Trường Đại Học Đà Lạt",
+      "campus": "Khuôn viên Đại học Đà Lạt",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:Da_Lat_University_-_panoramio.jpg",
+      "identityNote": "",
+      "officialUrl": "https://dlu.edu.vn/",
+      "fileTitle": "File:Da Lat University - panoramio.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Da_Lat_University_-_panoramio.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/5/53/Da_Lat_University_-_panoramio.jpg",
+      "sourcePageId": 60263950,
+      "sourceRevisionAt": "2017-06-22T15:04:21Z",
+      "sourceSha1": "ebb2a24e27661730da6e7298d8d8e946a2b743b3",
+      "sourceSha256": "87aa911ac4fd66647663d55055034c784326069df0a7b3baf641d28937d9828e",
+      "photographer": "Fox Travels",
+      "credit": "https://web.archive.org/web/20161031044859/http://www.panoramio.com/photo/124664345",
+      "attribution": "Fox Travels",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "capturedAt": "17 October 2015 (original upload date)",
+      "sourceDescription": "Da Lat University",
+      "sourceCategories": "Brick buildings|Panoramio files uploaded by Panoramio upload bot|Panoramio images reviewed by trusted users|Photos from Panoramio|Files with coordinates missing SDC location of creation|Photos from Panoramio ID 8872914",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 256,
+          "url": "./assets/university/vn-ts-456-v1-384.webp",
+          "bytes": 23942,
+          "sha256": "cf8f0cc5dec98d3f30a2e7e59bb1e7bfb469679ce0597a6f97654249f67de8f2"
+        },
+        {
+          "width": 768,
+          "height": 512,
+          "url": "./assets/university/vn-ts-456-v1-768.webp",
+          "bytes": 65776,
+          "sha256": "4ef5f5a61a9892345d95926eda85085315a7dd4b96c0d7d939ecb90844df0c35"
+        },
+        {
+          "width": 1200,
+          "height": 800,
+          "url": "./assets/university/vn-ts-456-v1-1200.webp",
+          "bytes": 116460,
+          "sha256": "646ed461a7cd4496ff820a0992dc823d3d10d127e8a8acb1e46c46e8414b2fff"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-297",
+      "schoolName": "Trường Đại Học An Giang",
+      "campus": "Khu mới Đại học An Giang tại Long Xuyên theo nguồn",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:%C4%90%E1%BA%A1i_h%E1%BB%8Dc_An_Giang_(khu_m%E1%BB%9Bi).jpg",
+      "identityNote": "",
+      "officialUrl": "https://www.agu.edu.vn/",
+      "fileTitle": "File:Đại học An Giang (khu mới).jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:%C4%90%E1%BA%A1i_h%E1%BB%8Dc_An_Giang_(khu_m%E1%BB%9Bi).jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f7/%C4%90%E1%BA%A1i_h%E1%BB%8Dc_An_Giang_%28khu_m%E1%BB%9Bi%29.jpg",
+      "sourcePageId": 27915076,
+      "sourceRevisionAt": "2013-08-28T05:05:23Z",
+      "sourceSha1": "2239bf9e9a1f34cdaee29b44363b4873df8c4c1d",
+      "sourceSha256": "d01bbbdfc09d17bcf9f86282bc1ce3c81f3b66156880c48c441d9e8d2c3b62cb",
+      "photographer": "Bùi Thụy Đào Nguyên",
+      "credit": "Own work",
+      "attribution": "",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "capturedAt": "2010-02-24 17:31:54",
+      "sourceDescription": "Đại học An Giang (khu mới) nằm trên địa bàn phường Đông Xuyên, thuộc thành phố Long Xuyên, tỉnh An Giang, Việt Nam.",
+      "sourceCategories": "Taken with Fujifilm FinePix A800|Long Xuyen|Higher education institutions in Vietnam|Self-published work|Pictures by Bùi Thụy Đào Nguyên 3",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-297-v1-384.webp",
+          "bytes": 11468,
+          "sha256": "2f3968c93cd922fbb43342585596d53a4127c70745caf330b094963f8d5f2b24"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-297-v1-768.webp",
+          "bytes": 32936,
+          "sha256": "341ffca6cf35fee72ab185b3367af8116122e28cd76d8b8c925b7fa53f80c6bc"
+        },
+        {
+          "width": 1280,
+          "height": 960,
+          "url": "./assets/university/vn-ts-297-v1-1280.webp",
+          "bytes": 68870,
+          "sha256": "e397b128fbad9da573bddaede33f51e0207db7cc015d87fbc88a01165099619e"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-386",
+      "schoolName": "Trường Đại Học Nha Trang",
+      "campus": "Một góc khuôn viên Đại học Nha Trang",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:MotgoctruongDHNT.jpg",
+      "identityNote": "",
+      "officialUrl": "https://ntu.edu.vn/",
+      "fileTitle": "File:MotgoctruongDHNT.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:MotgoctruongDHNT.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/4/44/MotgoctruongDHNT.jpg",
+      "sourcePageId": 16063130,
+      "sourceRevisionAt": "2011-08-11T14:17:24Z",
+      "sourceSha1": "b648bb5b835f097c3aa9d96289f5b17778f3215c",
+      "sourceSha256": "6fe1ab49b9c092d033931fdf86e09a72b00e55dbe898ad2768e322a176ec04b8",
+      "photographer": "Original Uploader was Thái Nhi ( talk ) at vi.wikipedia .",
+      "credit": "Transferred from en.wikipedia ; transferred to Commons by Zeugma fr ( talk ).",
+      "attribution": "",
+      "license": "Public domain",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/",
+      "capturedAt": "Taken on 1 October 2009 23 December 2010 (original upload date)",
+      "sourceDescription": "Nha Trang University campus.",
+      "sourceCategories": "Taken with Nikon D80|Self-published work|PD-self|Files transferred to commons by User:Zeugma fr|Photographs taken on 2009-10-01|Buildings in Nha Trang|Education in Nha Trang",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 257,
+          "url": "./assets/university/vn-ts-386-v1-384.webp",
+          "bytes": 14920,
+          "sha256": "6e040f218e6fdaa60e3e45c1737cd5018cc26a6c9b6f7b91953add56337c45d3"
+        },
+        {
+          "width": 768,
+          "height": 514,
+          "url": "./assets/university/vn-ts-386-v1-768.webp",
+          "bytes": 48276,
+          "sha256": "900ec668dc477d752fa39beba91804b408ad0cc94c43b4aff180a8e40dfb49c0"
+        },
+        {
+          "width": 1280,
+          "height": 857,
+          "url": "./assets/university/vn-ts-386-v1-1280.webp",
+          "bytes": 108646,
+          "sha256": "ef1e9a76c8deae6ae5abf7e2cdbd6e6dfa497af0c8fc8fc883fbd5ba1eb0e746"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-435",
+      "schoolName": "Trường Đại Học Vinh",
+      "campus": "Đại học Vinh, Nghệ An",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:Vinh_University.jpg",
+      "identityNote": "",
+      "officialUrl": "https://vinhuni.edu.vn/",
+      "fileTitle": "File:Vinh University.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Vinh_University.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/8/85/Vinh_University.jpg",
+      "sourcePageId": 15194220,
+      "sourceRevisionAt": "2011-05-13T16:19:32Z",
+      "sourceSha1": "1ceb707567d0786d9d8b378dd8fc9b3770ccfaa2",
+      "sourceSha256": "7f3ee7e8239fcc59c7dcd3b407770e4403f95607ac4b3659c4ffdf62dc09f9d7",
+      "photographer": "Phó Nháy ( talk )",
+      "credit": "Own work",
+      "attribution": "",
+      "license": "Public domain",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/",
+      "capturedAt": "2011-05-09",
+      "sourceDescription": "Vinh University, Vinh City, Nghe An Province, North Central Vietnam",
+      "sourceCategories": "Taken with Canon PowerShot G9|PD-user|Vinh|Higher education institutions in Vietnam|Images by Phó Nháy",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-435-v1-384.webp",
+          "bytes": 16004,
+          "sha256": "39b4c9dffff821f5cbea75f76420fe739fb7af212c9ae34e950bb4064a75cbc8"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-435-v1-768.webp",
+          "bytes": 49872,
+          "sha256": "ecbe4521f5f06d0a2662c37aae54fb31c155b8edd2376325f61e2afe4259f2cf"
+        },
+        {
+          "width": 1024,
+          "height": 768,
+          "url": "./assets/university/vn-ts-435-v1-1024.webp",
+          "bytes": 82800,
+          "sha256": "0935e89c2122c8ff02a9babc857f05814036b658570830175fe774eadc3e2981"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-407",
+      "schoolName": "Trường Đại Học Sài Gòn",
+      "campus": "Cổng Đại học Sài Gòn",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:202401SaigonUniversity-9533-jst.jpg",
+      "identityNote": "",
+      "officialUrl": "https://www.sgu.edu.vn/",
+      "fileTitle": "File:202401SaigonUniversity-9533-jst.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:202401SaigonUniversity-9533-jst.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5d/202401SaigonUniversity-9533-jst.jpg",
+      "sourcePageId": 146571641,
+      "sourceRevisionAt": "2024-03-19T18:35:57Z",
+      "sourceSha1": "8515a6c7efb6c3d54ecd3fdac0bcae2fd4185e1e",
+      "sourceSha256": "f7b259e2dc65a75703ef148723b67417d4180b885700eb37952fbe6f4918b4df",
+      "photographer": "Jonashtand",
+      "credit": "Own work",
+      "attribution": "",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "capturedAt": "2024-01-26 17:42:41",
+      "sourceDescription": "Entrance of Saigon University , Ho Chi Minh City , in Jan 2024",
+      "sourceCategories": "Saigon University|Self-published work|2024 in Ho Chi Minh City|Files uploaded by Jonashtand",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 256,
+          "url": "./assets/university/vn-ts-407-v1-384.webp",
+          "bytes": 29356,
+          "sha256": "2968bfe4146e9227dccb168c17e380748110af021e5448466d9b2af6f6f363e7"
+        },
+        {
+          "width": 768,
+          "height": 512,
+          "url": "./assets/university/vn-ts-407-v1-768.webp",
+          "bytes": 100298,
+          "sha256": "e7c4a9695afcc60c3607d3a01e34bcd5cc40785c25be5a3be70c2f379cf794e1"
+        },
+        {
+          "width": 1280,
+          "height": 853,
+          "url": "./assets/university/vn-ts-407-v1-1280.webp",
+          "bytes": 234462,
+          "sha256": "be0b75c1df0f5ed8850e708d1687ad706efd49a9e40b1abca427688db5d5d86f"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-328",
+      "schoolName": "Trường Đại Học Dược Hà Nội",
+      "campus": "Đại học Dược Hà Nội",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:Hanoi_University_of_Pharmacy.jpg",
+      "identityNote": "",
+      "officialUrl": "https://hup.edu.vn/",
+      "fileTitle": "File:Hanoi University of Pharmacy.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hanoi_University_of_Pharmacy.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/e/e8/Hanoi_University_of_Pharmacy.jpg",
+      "sourcePageId": 88455078,
+      "sourceRevisionAt": "2020-03-22T14:16:32Z",
+      "sourceSha1": "54fa4629e0849b1522eb113e6e4d62c9675fb9a3",
+      "sourceSha256": "7c8cc14063ab920b1386177c050ab188dc5f0283f30753ca57ec5c24366ea5a6",
+      "photographer": "Christophe95",
+      "credit": "Own work",
+      "attribution": "",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "capturedAt": "2018-08-03 16:51:19",
+      "sourceDescription": "The Hanoi University of Pharmacy in 2018.",
+      "sourceCategories": "Vietnam National University, Hanoi|Hanoi University of Pharmacy|Self-published work|Files with coordinates missing SDC location of creation|Images by Christophe95/Vietnam",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-328-v1-384.webp",
+          "bytes": 20340,
+          "sha256": "3711ef68e68668fa99916fdd11389bad9d33aeb86ecd49b468b98ef0b3e2b16a"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-328-v1-768.webp",
+          "bytes": 68414,
+          "sha256": "56e06b0503dfb94243a7523647792111280179d0850f3c6320c4fef5e819bbad"
+        },
+        {
+          "width": 1280,
+          "height": 960,
+          "url": "./assets/university/vn-ts-328-v1-1280.webp",
+          "bytes": 155286,
+          "sha256": "6ec8dd39f7a501796d8e4d4d96bc1894d547a45d5069cf74ec2d76fdd4d9b09b"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-382",
+      "schoolName": "Trường Đại học Ngoại thương",
+      "campus": "Cơ sở Hà Nội, Đại học Ngoại thương",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:M%E1%BB%99t_g%C3%B3c_FTU_(A).jpg",
+      "identityNote": "",
+      "officialUrl": "https://ftu.edu.vn/",
+      "fileTitle": "File:Một góc FTU (A).jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:M%E1%BB%99t_g%C3%B3c_FTU_(A).jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/d/d0/M%E1%BB%99t_g%C3%B3c_FTU_%28A%29.jpg",
+      "sourcePageId": 102886964,
+      "sourceRevisionAt": "2021-04-02T10:15:48Z",
+      "sourceSha1": "8b8b04b3c0cfe348810d63cfecb3ff29ca223232",
+      "sourceSha256": "dc46154fa962bbe15d5cfda28943d47d6653d517234515121c23b9dfbb36da3d",
+      "photographer": "19",
+      "credit": "Own work",
+      "attribution": "",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "capturedAt": "2018-04-28 12:12:48",
+      "sourceDescription": "A corner of Foreign Trade University (FTU) in 2018.",
+      "sourceCategories": "Trường Đại học Ngoại thương|Self-published work",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-382-v1-384.webp",
+          "bytes": 21586,
+          "sha256": "cc32fbd9e992ba8c36d7a227510240679a80e09a79576ca33e90b740e813bc3f"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-382-v1-768.webp",
+          "bytes": 70204,
+          "sha256": "78d00fed172a62d994b3ee52e4e3c6f055e6cd62ba798baa47d7f9bf4b3f7082"
+        },
+        {
+          "width": 1280,
+          "height": 960,
+          "url": "./assets/university/vn-ts-382-v1-1280.webp",
+          "bytes": 169758,
+          "sha256": "c70c1d6359e1fb48c8bc1cc0f009d805d816ee6083d42896604905f1fc01c362"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-383",
+      "schoolName": "Trường Đại học Ngoại thương (Cơ sở II)",
+      "campus": "Cơ sở II TP.HCM, Đại học Ngoại thương",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:FTU_c%C6%A1_s%E1%BB%9F_II.jpg",
+      "identityNote": "",
+      "officialUrl": "https://cs2.ftu.edu.vn/",
+      "fileTitle": "File:FTU cơ sở II.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:FTU_c%C6%A1_s%E1%BB%9F_II.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/e/eb/FTU_c%C6%A1_s%E1%BB%9F_II.jpg",
+      "sourcePageId": 102889857,
+      "sourceRevisionAt": "2021-04-02T11:07:35Z",
+      "sourceSha1": "0e038f6bc8f3e53f6ae415a5f16f05bc0825bd94",
+      "sourceSha256": "7be0f4ce7fadcea11f517cc0f35626e45e1965ded7dbb07009962a22e4e4c896",
+      "photographer": "19",
+      "credit": "Own work",
+      "attribution": "",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "capturedAt": "2017-12-13 17:06:07",
+      "sourceDescription": "Foreign Trade University Ho Chi Minh City Campus in 2018.",
+      "sourceCategories": "Trường Đại học Ngoại thương|Self-published work",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-383-v1-384.webp",
+          "bytes": 20068,
+          "sha256": "9b81141140095250ca025ac74fd39ed1712c42e380b3e6c42d06aad46f39c350"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-383-v1-768.webp",
+          "bytes": 62066,
+          "sha256": "76fe55ecea36e97c02b9a3ff9caae085fbd286c5938cae2fecd3f9209c4e4c5f"
+        },
+        {
+          "width": 1280,
+          "height": 960,
+          "url": "./assets/university/vn-ts-383-v1-1280.webp",
+          "bytes": 137840,
+          "sha256": "7a126e8794a4988aab81b69241a1b2a820f900f82436523fecd3538bb9d315e0"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-313",
+      "schoolName": "Trường Đại Học Công Nghệ Thông Tin - ĐHQG TPHCM",
+      "campus": "Đại học Công nghệ Thông tin, ĐHQG TP.HCM",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:%C4%90%E1%BA%A1i_h%E1%BB%8Dc_c%C3%B4ng_ngh%E1%BB%87_th%C3%B4ng_tin.JPG",
+      "identityNote": "",
+      "officialUrl": "https://www.uit.edu.vn/",
+      "fileTitle": "File:Đại học công nghệ thông tin.JPG",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:%C4%90%E1%BA%A1i_h%E1%BB%8Dc_c%C3%B4ng_ngh%E1%BB%87_th%C3%B4ng_tin.JPG",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/6/63/%C4%90%E1%BA%A1i_h%E1%BB%8Dc_c%C3%B4ng_ngh%E1%BB%87_th%C3%B4ng_tin.JPG",
+      "sourcePageId": 17937303,
+      "sourceRevisionAt": "2012-01-06T10:18:48Z",
+      "sourceSha1": "b5e897b8eb8b27663cf27aa9203d42453748c30f",
+      "sourceSha256": "a2dc0b973dacaf24ce451e4373234c3328a4bb286060ed00271d800770acb5e2",
+      "photographer": "nguyentandao",
+      "credit": "Own work",
+      "attribution": "",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "capturedAt": "2011-10-18",
+      "sourceDescription": "University of Information Technology, VNU",
+      "sourceCategories": "Taken with Sony DSC-WX5|Universities and colleges in Ho Chi Minh City|Higher education institutions in Vietnam|Self-published work",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 84,
+          "url": "./assets/university/vn-ts-313-v1-384.webp",
+          "bytes": 9750,
+          "sha256": "ce356f913f0e02208651d4dee6466546e0455ddb1ec22e26fc941ce1944823bd"
+        },
+        {
+          "width": 768,
+          "height": 169,
+          "url": "./assets/university/vn-ts-313-v1-768.webp",
+          "bytes": 34764,
+          "sha256": "a43335515d7582a455e67f6b6ac6afb3682c2b5a7c9d9202f9ee33bd50d56234"
+        },
+        {
+          "width": 1280,
+          "height": 281,
+          "url": "./assets/university/vn-ts-313-v1-1280.webp",
+          "bytes": 87854,
+          "sha256": "b72e0261d2c4b9316481e0c2b05f15ce022665b03764bdd5b2fc3ab7e4241cae"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-247",
+      "schoolName": "Học Viện Ngân Hàng",
+      "campus": "Toàn cảnh Học viện Ngân hàng",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:To%C3%A0n_c%E1%BA%A3nh_H%E1%BB%8Dc_vi%E1%BB%87n_Ng%C3%A2n_h%C3%A0ng.jpg",
+      "identityNote": "",
+      "officialUrl": "https://hvnh.edu.vn/",
+      "fileTitle": "File:Toàn cảnh Học viện Ngân hàng.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:To%C3%A0n_c%E1%BA%A3nh_H%E1%BB%8Dc_vi%E1%BB%87n_Ng%C3%A2n_h%C3%A0ng.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/e/e8/To%C3%A0n_c%E1%BA%A3nh_H%E1%BB%8Dc_vi%E1%BB%87n_Ng%C3%A2n_h%C3%A0ng.jpg",
+      "sourcePageId": 139588549,
+      "sourceRevisionAt": "2023-10-26T17:12:22Z",
+      "sourceSha1": "582fed78fe449793b8dd11f54124b84621ea1ccf",
+      "sourceSha256": "74fcce22057f991461fe5897dcb45a80548fcdd2afbdd7d0369ad0557ef631ae",
+      "photographer": "Học viện Ngân hàng (Banking Academy of Vietnam - BAV)",
+      "credit": "Own work",
+      "attribution": "",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "capturedAt": "2023-08-02",
+      "sourceDescription": "The panorama of the Banking Academy of Vietnam (2023).",
+      "sourceCategories": "Panoramas|Self-published work|Unidentified cities",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 216,
+          "url": "./assets/university/vn-ts-247-v1-384.webp",
+          "bytes": 22654,
+          "sha256": "57577c3a0d062d0da7e68c46a43e8d8ab988696042835d2085076378cd9025a1"
+        },
+        {
+          "width": 768,
+          "height": 432,
+          "url": "./assets/university/vn-ts-247-v1-768.webp",
+          "bytes": 74158,
+          "sha256": "c8b3f3c99567db1f57202d02d569d7a71652736c61838b6586d2539fc594fe74"
+        },
+        {
+          "width": 1280,
+          "height": 720,
+          "url": "./assets/university/vn-ts-247-v1-1280.webp",
+          "bytes": 167758,
+          "sha256": "f9d26fef471d9fe88e9a6edff8ec59f4122293adfa2fd80e5f3c00227a9425b8"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-459",
+      "schoolName": "Trường Đại Học Đồng Tháp",
+      "campus": "Đại học Đồng Tháp",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:Tr%C6%B0%E1%BB%9Dng_%C4%90%E1%BA%A1i_h%E1%BB%8Dc_%C4%90%E1%BB%93ng_Th%C3%A1p.jpg",
+      "identityNote": "",
+      "officialUrl": "https://dthu.edu.vn/",
+      "fileTitle": "File:Trường Đại học Đồng Tháp.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tr%C6%B0%E1%BB%9Dng_%C4%90%E1%BA%A1i_h%E1%BB%8Dc_%C4%90%E1%BB%93ng_Th%C3%A1p.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/0/06/Tr%C6%B0%E1%BB%9Dng_%C4%90%E1%BA%A1i_h%E1%BB%8Dc_%C4%90%E1%BB%93ng_Th%C3%A1p.jpg",
+      "sourcePageId": 16978129,
+      "sourceRevisionAt": "2012-02-07T06:59:30Z",
+      "sourceSha1": "dac9e1fec698b7273180a39f4bcd4ae2c4ccc6fe",
+      "sourceSha256": "61b4a7383ce38c70cfccdd07caa6cdfd4d53fb17a7bdba2b4818ea7b5f544fb9",
+      "photographer": "Bùi Thụy Đào Nguyên",
+      "credit": "Own work",
+      "attribution": "",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "capturedAt": "2011-10-13",
+      "sourceDescription": "Trường Đại học tỉnh Đồng Tháp, Việt Nam.",
+      "sourceCategories": "Taken with Canon PowerShot A490|Dong Thap|Higher education institutions in Vietnam|Self-published work|Pictures by Bùi Thụy Đào Nguyên",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-459-v1-384.webp",
+          "bytes": 10674,
+          "sha256": "24adc8099904e4f4ba25fdd543e7afc24988ac34a7c59b66389bbc85d0d097bd"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-459-v1-768.webp",
+          "bytes": 35600,
+          "sha256": "08e924ba2319e67c8ceaf7874edea685a466debee66b23c084c87468a949ae70"
+        },
+        {
+          "width": 1280,
+          "height": 960,
+          "url": "./assets/university/vn-ts-459-v1-1280.webp",
+          "bytes": 83510,
+          "sha256": "db46833bd0cdf6d4dcfff620179e8875870cbafae9139ac0b52ce0fddb837280"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-hocmai-798f9fedfe6a9e",
+      "schoolName": "Cao Đẳng Sư Phạm Đà Lạt",
+      "campus": "Tòa nhà chính Cao đẳng Sư phạm Đà Lạt; ảnh tư liệu theo tên tại nguồn",
+      "identityEvidenceUrl": "https://cddl.edu.vn/pages/gioi-thieu-truong.html",
+      "identityNote": "Hồ sơ giữ tên cũ trong danh mục. Trường Cao đẳng Đà Lạt hiện kế thừa trường Cao đẳng Sư phạm; ảnh năm 2012 không xác nhận tên hoặc tình trạng tuyển sinh hiện tại.",
+      "officialUrl": "https://cddl.edu.vn/",
+      "fileTitle": "File:Truong Cao dang Su pham Da Lat - Tran Huy Phuong 1.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Truong_Cao_dang_Su_pham_Da_Lat_-_Tran_Huy_Phuong_1.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/c/c3/Truong_Cao_dang_Su_pham_Da_Lat_-_Tran_Huy_Phuong_1.jpg",
+      "sourcePageId": 18828348,
+      "sourceRevisionAt": "2012-03-25T08:08:49Z",
+      "sourceSha1": "448fdcb7b54d247857030ac14eabb65e7e61b7a8",
+      "sourceSha256": "dc20df24a88989057fd498362bab94e7265a638b421da9080afe44ae16cf54fd",
+      "photographer": "Trần Huy Phương",
+      "credit": "Own work",
+      "attribution": "",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "capturedAt": "2012-03-25",
+      "sourceDescription": "Trường Cao đẳng Sư phạm Đà Lạt, Tòa nhà chính.",
+      "sourceCategories": "Pedagogical College of Da Lat|Self-published work|Files with coordinates missing SDC location of creation",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 238,
+          "url": "./assets/university/vn-hocmai-798f9fedfe6a9e-v1-384.webp",
+          "bytes": 15750,
+          "sha256": "2f09b8d9d802a852697f11ed7e3f8ec0b92f3e885959efc119d90c2dcc3c284c"
+        },
+        {
+          "width": 768,
+          "height": 476,
+          "url": "./assets/university/vn-hocmai-798f9fedfe6a9e-v1-768.webp",
+          "bytes": 57236,
+          "sha256": "bc0ff71fe2d3fb01f5a19689675c0551c778d7ef6166700b5858f841dd93e4a2"
+        },
+        {
+          "width": 1280,
+          "height": 794,
+          "url": "./assets/university/vn-hocmai-798f9fedfe6a9e-v1-1280.webp",
+          "bytes": 152002,
+          "sha256": "d5c9f1bf92191c9b06ed38c302487a7ff07ed828eea1a91e8a7b4bdb1fb3bc62"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-389",
+      "schoolName": "Trường Đại Học Nông Lâm Huế",
+      "campus": "Khuôn viên Đại học Nông Lâm Huế",
+      "identityEvidenceUrl": "https://commons.wikimedia.org/wiki/File:%C4%90%E1%BA%A1i_h%E1%BB%8Dc_n%C3%B4ng_l%C3%A2m_hu%E1%BA%BF_b%C3%AAn_trong.png",
+      "identityNote": "",
+      "officialUrl": "https://huaf.edu.vn/",
+      "fileTitle": "File:Đại học nông lâm huế bên trong.png",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:%C4%90%E1%BA%A1i_h%E1%BB%8Dc_n%C3%B4ng_l%C3%A2m_hu%E1%BA%BF_b%C3%AAn_trong.png",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/7/79/%C4%90%E1%BA%A1i_h%E1%BB%8Dc_n%C3%B4ng_l%C3%A2m_hu%E1%BA%BF_b%C3%AAn_trong.png",
+      "sourcePageId": 117728153,
+      "sourceRevisionAt": "2022-05-06T08:10:06Z",
+      "sourceSha1": "54fd430c14e30930d57f8200d7a3c59d8cd884c4",
+      "sourceSha256": "ac82f4d71974b7ab358dd9e19c6e96bb6298738c644669ce6837eb87008e039a",
+      "photographer": "Adsconex",
+      "credit": "Own work",
+      "attribution": "",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "capturedAt": "2022-05-05",
+      "sourceDescription": "Đại học nông lâm huế bên trong",
+      "sourceCategories": "Education in Vietnam|Hue University|Self-published work",
+      "changes": "Chuyển sang WebP, thu nhỏ; khung hiển thị có thể cắt ảnh. Giấy phép ảnh gốc tiếp tục áp dụng.",
+      "assets": [
+        {
+          "width": 384,
+          "height": 216,
+          "url": "./assets/university/vn-ts-389-v1-384.webp",
+          "bytes": 17752,
+          "sha256": "057380887293c8dc76ca4369617c36d974eb11488d3bd252e665b18e906b3f98"
+        },
+        {
+          "width": 768,
+          "height": 433,
+          "url": "./assets/university/vn-ts-389-v1-768.webp",
+          "bytes": 58590,
+          "sha256": "f0518fa886f9ba26d8ec78984eecbd99dbf91bad78fcb516799c7e8048d9937d"
+        },
+        {
+          "width": 1280,
+          "height": 721,
+          "url": "./assets/university/vn-ts-389-v1-1280.webp",
+          "bytes": 127062,
+          "sha256": "509469767dab3e9aefdea76d67f637400a34d47a566965f2215439343c5dad4f"
+        }
+      ]
+    }
+  ]
+}

@@ -174,7 +174,7 @@
         async function inspectRoute(route) {
             const parts = String(route).split('?')[0].split('/').filter(Boolean), params = new URLSearchParams(String(route).split('?')[1] || '');
             ctx.routeView = parts[1] || 'home';
-            if (['all', 'world', 'experience', 'portrait', 'scene'].includes(params.get('category'))) ctx.galleryFilter = params.get('category');
+            if (G.CATEGORIES.includes(params.get('category'))) ctx.galleryFilter = params.get('category');
             if (parts[1] === 'shared') {
                 sharedToken = M.id(parts[2]);
                 ctx.sharedToken = sharedToken;
@@ -355,7 +355,7 @@
             if (action === 'close-art') { const el = host.querySelector('[data-mv-dialog]'); if (el.close) el.close(); else { el.removeAttribute('open'); closeDialog({target:el}); } return; }
             if (action === 'art-create') { host.querySelector('[data-mv-dialog]').close(); navigate('/multiverse/create?sample=' + Number(node.dataset.index)); return; }
             if (action === 'gallery-filter') {
-                if (!['all', 'world', 'experience', 'portrait', 'scene'].includes(node.dataset.kind)) return;
+                if (!G.CATEGORIES.includes(node.dataset.kind)) return;
                 ctx.galleryFilter = node.dataset.kind;
                 ctx.gallery = G.filters({...ctx.gallery, page:1});
                 history.replaceState(null, '', '#/multiverse/gallery?category=' + ctx.galleryFilter);

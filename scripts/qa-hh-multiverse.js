@@ -1,7 +1,7 @@
 'use strict';
 // Full HH shell, native Chromium and real feature/handler code. No production writes.
 const fs = require('node:fs'), path = require('node:path'), http = require('node:http'), assert = require('node:assert/strict'), { execFileSync } = require('node:child_process');
-const { chromium } = require(process.env.HH_QA_PLAYWRIGHT || 'playwright'), root = path.resolve(__dirname, '..'), out = path.resolve(root, process.env.HH_QA_OUTPUT || '.study-local/hh-multiverse-1080');
+const { chromium } = require(process.env.HH_QA_PLAYWRIGHT || 'playwright'), root = path.resolve(__dirname, '..'), out = path.resolve(root, process.env.HH_QA_OUTPUT || '.study-local/hh-multiverse-1081');
 const fixture = require('./qa-hh-multiverse-fixture')(), errors = [], results = [], requests = [];
 const csp = JSON.parse(fs.readFileSync(path.join(root, 'vercel.json'), 'utf8')).headers.flatMap(x => x.headers).find(x => x.key === 'Content-Security-Policy').value;
 const server = http.createServer(async (req, res) => { try {
@@ -73,10 +73,10 @@ async function run() {
         assert.equal(requests.some(x => x.includes('hh-multiverse-portal')), false);
         await page.locator('[data-php-route="/multiverse"]').first().click();
         await page.locator('.mv-hero').waitFor({ timeout: 45000 });
-        assert.equal(await page.evaluate(() => document.querySelector('.app-shell').dataset.activeSection), 'hh-multiverse');
+        assert.equal(await page.evaluate(() => document.querySelector('.app-shell').dataset.activeSection), 'entertainment');
         assert.equal(requests.some(x => x.includes('hh-multiverse-portal')), false);
         await screenshot(page, 'home-desktop');
-        pass({ navigation: 'Primary section, Platform catalog, native route, reduced-motion CSS portal; no eager Three portal' });
+        pass({ navigation: 'HH Multiverse in Entertainment, Platform catalog, native route, reduced-motion CSS portal; no eager Three portal' });
         const audits = [], themes = await page.evaluate(() => HHAppTheme.themes);
         for (const theme of themes) {
             await page.evaluate(t => HHAppTheme.apply(t, { persist: false }), theme);
@@ -338,7 +338,7 @@ async function run() {
         await page.waitForFunction(() => navigator.serviceWorker.controller !== null, { timeout: 45000 });
         await page.reload({ waitUntil: 'domcontentloaded' });
         await page.locator('.mv-world-header').waitFor({ timeout: 45000 });
-        await page.waitForFunction(async () => Boolean(await caches.match(new URL('hh-multiverse.js?v=3', document.baseURI).href)));
+        await page.waitForFunction(async () => Boolean(await caches.match(new URL('hh-multiverse.js?v=4', document.baseURI).href)));
         await context.setOffline(true);
         await page.reload({ waitUntil: 'domcontentloaded' });
         await page.locator('.mv-world-header').waitFor({ timeout: 45000 });

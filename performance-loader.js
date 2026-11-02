@@ -258,16 +258,16 @@
       scripts: ["hh-mathcore-core.js?v=3", "hh-mathcore-engine.js?v=1", "hh-mathcore-practice.js?v=1", "hh-mathcore-image.js?v=1", "hh-mathcore-content.js?v=2", "hh-mathcore-graphics.js?v=1", "hh-mathcore-ocr.js?v=1", "hh-mathcore-ai.js?v=3"]
     },
     "vietnam-law": {
-      styles: ["hh-vietnam-law.css?v=2"],
-      scripts: ["hh-vietnam-law-core.js?v=2", "hh-vietnam-law-manifest.js?v=2", "hh-vietnam-law-data.js?v=1", "hh-vietnam-law-pdf-transport.js?v=1", "hh-vietnam-law-pdf.js?v=1", "hh-vietnam-law.js?v=2"]
+      styles: ["hh-vietnam-law.css?v=3"],
+      scripts: ["hh-vietnam-law-core.js?v=3", "hh-vietnam-law-manifest.js?v=3", "hh-vietnam-law-data.js?v=1", "hh-vietnam-law-pdf-transport.js?v=1", "hh-vietnam-law-pdf.js?v=1", "hh-vietnam-law.js?v=3"]
     },
     multiverse: {
-      styles: ["hh-multiverse.css?v=2", "hh-multiverse-color.css?v=2", "hh-multiverse-gallery.css?v=1", "hh-multiverse-explorer.css?v=1"],
-      scripts: ["hh-multiverse-model.js?v=1", "hh-multiverse-engine.js?v=1", "hh-multiverse-internet.js?v=1", "hh-multiverse-store.js?v=1", "hh-multiverse-scenes.js?v=1", "hh-multiverse-art.js?v=2", "hh-multiverse-gallery.js?v=1", "hh-multiverse-explorer.js?v=1", "hh-multiverse-views.js?v=3", "hh-multiverse.js?v=3"]
+      styles: ["hh-multiverse.css?v=2", "hh-multiverse-color.css?v=3", "hh-multiverse-gallery.css?v=2", "hh-multiverse-explorer.css?v=1"],
+      scripts: ["hh-multiverse-model.js?v=1", "hh-multiverse-engine.js?v=1", "hh-multiverse-internet.js?v=1", "hh-multiverse-store.js?v=1", "hh-multiverse-scenes.js?v=1", "hh-multiverse-photos.js?v=1", "hh-multiverse-art.js?v=3", "hh-multiverse-gallery.js?v=2", "hh-multiverse-explorer.js?v=1", "hh-multiverse-views.js?v=4", "hh-multiverse.js?v=4"]
     },
     university: {
-      styles: ["hh-university.css?v=3", "hh-university-workspace.css?v=1", "hh-university-experience.css?v=1"],
-      scripts: ["hh-university-core.js?v=1", "hh-university-manifest.js?v=1", "hh-university-data.js?v=1", "hh-university-experience-core.js?v=1", "hh-university-tools.js?v=2", "hh-university-workspace-data.js?v=3", "hh-university-experience.js?v=1", "hh-university-workspace.js?v=2", "hh-university.js?v=4"]
+      styles: ["hh-university.css?v=4", "hh-university-workspace.css?v=1", "hh-university-experience.css?v=1"],
+      scripts: ["hh-university-core.js?v=1", "hh-university-manifest.js?v=1", "hh-university-data.js?v=1", "hh-university-experience-core.js?v=2", "hh-university-tools.js?v=2", "hh-university-workspace-data.js?v=3", "hh-university-experience.js?v=1", "hh-university-workspace.js?v=2", "hh-university-campus.js?v=1", "hh-university.js?v=5"]
     },
     "focus-study-room": {
       styles: ["focus-room.css?v=14"],

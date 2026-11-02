@@ -1,9 +1,9 @@
-/* Original illustrated collection. Visual choices never alter simulated facts. */
+/* Verified reference photos and original illustrations. Visual choices never alter simulated facts. */
 (function (root, factory) {
-  const api = factory(typeof module === 'object' && module.exports ? require('./hh-multiverse-engine') : root.HHMultiverseEngine, typeof module === 'object' && module.exports ? require('./hh-multiverse-scenes') : root.HHMultiverseScenes);
+  const api = factory(typeof module === 'object' && module.exports ? require('./hh-multiverse-engine') : root.HHMultiverseEngine, typeof module === 'object' && module.exports ? require('./hh-multiverse-scenes') : root.HHMultiverseScenes, typeof module === 'object' && module.exports ? require('./hh-multiverse-photos') : root.HHMultiversePhotos);
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.HHMultiverseArt = api;
-})(typeof globalThis !== 'undefined' ? globalThis : this, function (E, Scenes) {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (E, Scenes, Photos) {
   'use strict';
   const rows = [
     ['hero', 'Cánh cổng vô hạn', 'Cổng pha lê mở ra nhiều thực tại giữa đại dương vũ trụ.', 'experience', 'violet'],
@@ -31,11 +31,16 @@
     ['portrait-4', 'Người vượt chân trời', 'Chân dung minh họa một hoa tiêu nhiều trải nghiệm.', 'portrait', 'mint'],
     ['portrait-5', 'Người dệt sắc màu', 'Chân dung minh họa một nghệ sĩ giàu tưởng tượng.', 'portrait', 'pink']
   ];
-  const catalog = Object.freeze(rows.map(([id, title, description, kind, tone, sampleIndex]) => Object.freeze({
+  const featuredPhotoIds = ['photo-010', 'photo-004', 'photo-031', 'photo-038', 'photo-045', 'photo-028'];
+  const photoRows = (Photos?.catalog || []).slice().sort((a,b) => {
+    const first = featuredPhotoIds.indexOf(a.id), second = featuredPhotoIds.indexOf(b.id);
+    return (first < 0 ? 100 : first) - (second < 0 ? 100 : second);
+  });
+  const catalog = Object.freeze(photoRows.concat(rows.map(([id, title, description, kind, tone, sampleIndex]) => Object.freeze({
     id, title, description, kind, tone, sampleIndex,
     widths: Object.freeze(kind === 'portrait' ? [160, 400, 960] : id === 'hero' ? [320, 640, 1280, 1600] : [320, 640, 1280]),
     caption: kind === 'portrait' ? 'Chân dung minh họa' : 'Tranh ý tưởng · không tái hiện snapshot'
-  })).concat(Scenes?.catalog || []));
+  })), Scenes?.catalog || []));
   const byId = new Map(catalog.map(row => [row.id, row]));
   const palettes = Object.freeze([
     Object.freeze({ id: 'prism', name: 'Lăng kính', description: 'Xanh điện, tím và hồng' }),
@@ -48,6 +53,7 @@
     const art = find(id);
     if (!art || !art.widths.includes(width)) throw Error('Ảnh hoặc kích thước không có trong bộ tranh.');
     if (art.kind === 'scene') return Scenes.url(id, width);
+    if (art.kind === 'photo') return Photos.url(id, width);
     return './assets/multiverse/' + art.id + '-v1-' + width + '.webp';
   }
   function forWorld(world = {}) {

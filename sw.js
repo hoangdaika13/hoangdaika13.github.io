@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1080";
+const CACHE = "hh-identity-portal-v1081";
+// Previous release: hh-identity-portal-v1080.
 // Previous release: hh-identity-portal-v1079.
 // Previous release: hh-identity-portal-v1078.
 // Previous release: hh-identity-portal-v1077.
@@ -846,14 +847,29 @@ const RUNTIME_ASSETS = [
   "./hh-mathcore-ocr.js?v=1",
   "./vendor/tesseract-core-simd-lstm.wasm.js",
   "./hh-mathcore-ai.js?v=3",
-  "./hh-vietnam-law.css?v=2",
-  "./hh-vietnam-law-core.js?v=2",
-  "./hh-vietnam-law-manifest.js?v=2",
+  "./hh-vietnam-law.css?v=3",
+  "./hh-vietnam-law-core.js?v=3",
+  "./hh-vietnam-law-manifest.js?v=3",
   "./hh-vietnam-law-data.js?v=1",
   "./hh-vietnam-law-pdf-transport.js?v=1",
   "./hh-vietnam-law-pdf.js?v=1",
-  "./hh-vietnam-law.js?v=2",
-  "./hh-university.css?v=3",
+  "./hh-vietnam-law.js?v=3",
+  "./hh-multiverse.css?v=2",
+  "./hh-multiverse-color.css?v=3",
+  "./hh-multiverse-gallery.css?v=2",
+  "./hh-multiverse-explorer.css?v=1",
+  "./hh-multiverse-model.js?v=1",
+  "./hh-multiverse-engine.js?v=1",
+  "./hh-multiverse-internet.js?v=1",
+  "./hh-multiverse-store.js?v=1",
+  "./hh-multiverse-scenes.js?v=1",
+  "./hh-multiverse-photos.js?v=1",
+  "./hh-multiverse-art.js?v=3",
+  "./hh-multiverse-gallery.js?v=2",
+  "./hh-multiverse-explorer.js?v=1",
+  "./hh-multiverse-views.js?v=4",
+  "./hh-multiverse.js?v=4",
+  "./hh-university.css?v=4",
   "./hh-university-core.js?v=1",
   "./hh-university-manifest.js?v=1",
   "./hh-university-data.js?v=1",
@@ -861,10 +877,11 @@ const RUNTIME_ASSETS = [
   "./hh-university-workspace-data.js?v=3",
   "./hh-university-workspace.js?v=2",
   "./hh-university-workspace.css?v=1",
-  "./hh-university-experience-core.js?v=1",
+  "./hh-university-experience-core.js?v=2",
   "./hh-university-experience.js?v=1",
   "./hh-university-experience.css?v=1",
-  "./hh-university.js?v=4",
+  "./hh-university-campus.js?v=1",
+  "./hh-university.js?v=5",
   "./study-together.css?v=7",
   "./study-classroom.css?v=1",
   "./study-campus.css?v=1",
@@ -965,10 +982,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=741",
+  "./performance-loader.js?v=742",
   "./auth-platform.js?v=22",
   "./auth-neon-gateway.js?v=35",
-  "./script.js?v=303"
+  "./script.js?v=304"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

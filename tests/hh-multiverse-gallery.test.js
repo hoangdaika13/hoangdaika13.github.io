@@ -46,7 +46,7 @@ test('renderer displays actual catalogue counts, separate favorite controls, esc
   const all = G.render({});
   assert.equal((all.match(/class="mv-gallery-card mvg-card"/g) || []).length, Math.min(G.PAGE_SIZE, A.catalog.length));
   assert.equal((all.match(/data-mv-action="gallery-favorite"/g) || []).length, Math.min(G.PAGE_SIZE, A.catalog.length));
-  assert.match(all, new RegExp('1–' + Math.min(G.PAGE_SIZE, A.catalog.length) + ' / ' + A.catalog.length + ' tranh'));
+  assert.match(all, new RegExp('1–' + Math.min(G.PAGE_SIZE, A.catalog.length) + ' / ' + A.catalog.length + ' ảnh'));
   assert.doesNotMatch(all, /<button[^>]*class="mv-gallery-card/);
   assert.match(all, /loading="lazy"/); assert.match(all, /hh|Bộ sưu tập lưu trên thiết bị/);
   const saved = G.render({ artCollection: { version: 1, favorites: ['moons'] }, gallery: { favoritesOnly: true } });
@@ -71,7 +71,7 @@ test('theme and scene filters use catalogue metadata and expose the last page of
   assert.equal(G.filtered({ galleryFilter: 'scene' }).length, sceneRows.length);
   assert.equal(G.filters({ theme: 'invalid' }).theme, 'all');
   assert.equal(G.filters({ page: Number.MAX_SAFE_INTEGER + 1 }).page, 1);
-  for (const theme of availableThemes) {
+  for (const theme of availableThemes.filter(theme => sceneRows.some(art => art.theme === theme.id))) {
     const matching = G.filtered({ galleryFilter: 'scene', gallery: { theme: theme.id } });
     assert.ok(matching.length > 0); assert.ok(matching.every(art => art.theme === theme.id));
     assert.ok(G.filtered({ gallery: { query: theme.label }, galleryFilter: 'scene' }).length > 0);

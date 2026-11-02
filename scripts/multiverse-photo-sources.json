@@ -1,0 +1,469 @@
+{
+  "version": 1,
+  "reviewed": "2026-11-02",
+  "policyURL": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+  "items": [
+    {
+      "id": "photo-001",
+      "nasaId": "iss043e155854",
+      "theme": "aurora",
+      "group": "cosmos",
+      "tone": "mint",
+      "title": "Dải cực quang bên Trái Đất",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Dải cực quang bên Trái Đất. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-002",
+      "nasaId": "iss058e005282",
+      "theme": "aurora",
+      "group": "cosmos",
+      "tone": "mint",
+      "title": "Cực quang bên rìa khí quyển",
+      "description": "Ảnh chụp cực quang bên vành Trái Đất từ Trạm Vũ trụ Quốc tế. Tư liệu NASA tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-003",
+      "nasaId": "iss040e125550",
+      "theme": "aurora",
+      "group": "cosmos",
+      "tone": "mint",
+      "title": "Cực quang giữa nền đêm",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Cực quang giữa nền đêm. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-004",
+      "nasaId": "iss072e159172",
+      "theme": "aurora",
+      "group": "cosmos",
+      "tone": "mint",
+      "title": "Cực quang phủ vành Trái Đất",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Cực quang phủ vành Trái Đất. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-005",
+      "nasaId": "iss072e032577",
+      "theme": "aurora",
+      "group": "cosmos",
+      "tone": "mint",
+      "title": "Ánh sáng qua khí quyển",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Ánh sáng qua khí quyển. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-006",
+      "nasaId": "sts072-727-085",
+      "theme": "reef",
+      "group": "nature",
+      "tone": "cyan",
+      "title": "Great Barrier Reef từ quỹ đạo",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Great Barrier Reef từ quỹ đạo. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-007",
+      "nasaId": "sts048-151-250",
+      "theme": "reef",
+      "group": "nature",
+      "tone": "cyan",
+      "title": "Bờ san hô Queensland",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Bờ san hô Queensland. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-008",
+      "nasaId": "s35-81-0040",
+      "theme": "reef",
+      "group": "nature",
+      "tone": "cyan",
+      "title": "Những sắc xanh của Shark Bay",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Những sắc xanh của Shark Bay. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-009",
+      "nasaId": "S32-520-014",
+      "theme": "reef",
+      "group": "nature",
+      "tone": "cyan",
+      "title": "Rạn san hô giữa biển Coral",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Rạn san hô giữa biển Coral. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-010",
+      "nasaId": "sts093-717-066",
+      "theme": "reef",
+      "group": "nature",
+      "tone": "cyan",
+      "title": "Vòng san hô Bora Bora",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Vòng san hô Bora Bora. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-011",
+      "nasaId": "iss073e0886770",
+      "theme": "desert",
+      "group": "nature",
+      "tone": "gold",
+      "title": "Laguna Salada giữa sa mạc Sonora",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Laguna Salada giữa sa mạc Sonora. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-012",
+      "nasaId": "iss072e068304",
+      "theme": "desert",
+      "group": "nature",
+      "tone": "gold",
+      "title": "Những vân cát In Ghar",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Những vân cát In Ghar. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-013",
+      "nasaId": "iss072e474251",
+      "theme": "desert",
+      "group": "nature",
+      "tone": "gold",
+      "title": "Sa mạc Libya trên đất Sudan",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Sa mạc Libya trên đất Sudan. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-014",
+      "nasaId": "iss072e007016",
+      "theme": "desert",
+      "group": "nature",
+      "tone": "gold",
+      "title": "Miền sa mạc lạnh Kazakhstan",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Miền sa mạc lạnh Kazakhstan. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-015",
+      "nasaId": "iss072e007019",
+      "theme": "desert",
+      "group": "nature",
+      "tone": "gold",
+      "title": "Bờ biển sa mạc Pilbara",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Bờ biển sa mạc Pilbara. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-016",
+      "nasaId": "s73e5274",
+      "theme": "volcano",
+      "group": "nature",
+      "tone": "coral",
+      "title": "Núi lửa Colima nhìn từ không gian",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Núi lửa Colima nhìn từ không gian. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-017",
+      "nasaId": "sts068-150-045",
+      "theme": "volcano",
+      "group": "nature",
+      "tone": "coral",
+      "title": "Cột tro Kliuchevskoi",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Cột tro Kliuchevskoi. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-018",
+      "nasaId": "iss073e0429432",
+      "theme": "volcano",
+      "group": "nature",
+      "tone": "coral",
+      "title": "Đỉnh Etna trên đảo Sicily",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Đỉnh Etna trên đảo Sicily. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-019",
+      "nasaId": "iss074e0014317",
+      "theme": "volcano",
+      "group": "nature",
+      "tone": "coral",
+      "title": "Đảo núi lửa Nishinoshima",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Đảo núi lửa Nishinoshima. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-020",
+      "nasaId": "sts064-116-064",
+      "theme": "volcano",
+      "group": "nature",
+      "tone": "coral",
+      "title": "Núi lửa Rabaul từ tàu con thoi",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Núi lửa Rabaul từ tàu con thoi. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-021",
+      "nasaId": "iss069e033689",
+      "theme": "forest",
+      "group": "nature",
+      "tone": "mint",
+      "title": "Dòng Amazon xuyên rừng xanh",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Dòng Amazon xuyên rừng xanh. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-022",
+      "nasaId": "s43-152-000b",
+      "theme": "forest",
+      "group": "nature",
+      "tone": "mint",
+      "title": "Nơi Amazon gặp sông Tapajos",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Nơi Amazon gặp sông Tapajos. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-023",
+      "nasaId": "iss074e0492148",
+      "theme": "forest",
+      "group": "nature",
+      "tone": "mint",
+      "title": "Dòng Ucayali giữa rừng Peru",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Dòng Ucayali giữa rừng Peru. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-024",
+      "nasaId": "iss073e0420598",
+      "theme": "forest",
+      "group": "nature",
+      "tone": "mint",
+      "title": "Miền rừng Bighorn và Custer",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Miền rừng Bighorn và Custer. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-025",
+      "nasaId": "iss028e010043",
+      "theme": "forest",
+      "group": "nature",
+      "tone": "mint",
+      "title": "Làn khói trên một cánh rừng",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Làn khói trên một cánh rừng. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-026",
+      "nasaId": "iss072e000922",
+      "theme": "nightcity",
+      "group": "nature",
+      "tone": "gold",
+      "title": "Ánh đèn bên Địa Trung Hải",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Ánh đèn bên Địa Trung Hải. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-027",
+      "nasaId": "iss073e1047246",
+      "theme": "nightcity",
+      "group": "nature",
+      "tone": "gold",
+      "title": "Bucharest dưới màn đêm",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Bucharest dưới màn đêm. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-028",
+      "nasaId": "iss020e039932",
+      "theme": "nightcity",
+      "group": "nature",
+      "tone": "gold",
+      "title": "Dubai rực sáng từ quỹ đạo",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Dubai rực sáng từ quỹ đạo. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-029",
+      "nasaId": "iss074e0790404",
+      "theme": "nightcity",
+      "group": "nature",
+      "tone": "gold",
+      "title": "Cairo và dòng Nile về đêm",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Cairo và dòng Nile về đêm. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-030",
+      "nasaId": "iss073e0000808",
+      "theme": "nightcity",
+      "group": "nature",
+      "tone": "gold",
+      "title": "Melbourne trong ánh đèn đêm",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Melbourne trong ánh đèn đêm. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-031",
+      "nasaId": "iss071e365062",
+      "theme": "island",
+      "group": "nature",
+      "tone": "cyan",
+      "title": "Những dải cát đảo Acklins",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Những dải cát đảo Acklins. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-032",
+      "nasaId": "iss071e378497",
+      "theme": "island",
+      "group": "nature",
+      "tone": "cyan",
+      "title": "Quần đảo Quirimbas xanh ngọc",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Quần đảo Quirimbas xanh ngọc. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-033",
+      "nasaId": "iss072e421839",
+      "theme": "island",
+      "group": "nature",
+      "tone": "cyan",
+      "title": "Đảo Hawaii giữa Thái Bình Dương",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Đảo Hawaii giữa Thái Bình Dương. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-034",
+      "nasaId": "iss071e046421",
+      "theme": "island",
+      "group": "nature",
+      "tone": "cyan",
+      "title": "Miệng núi lửa trên đảo Onekotan",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Miệng núi lửa trên đảo Onekotan. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-035",
+      "nasaId": "iss071e700011",
+      "theme": "island",
+      "group": "nature",
+      "tone": "cyan",
+      "title": "Đảo Crete nhìn từ ISS",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Đảo Crete nhìn từ ISS. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-036",
+      "nasaId": "iss058e000188",
+      "theme": "mountain",
+      "group": "nature",
+      "tone": "blue",
+      "title": "Sống núi Andes từ quỹ đạo",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Sống núi Andes từ quỹ đạo. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-037",
+      "nasaId": "sts001-012-0350",
+      "theme": "mountain",
+      "group": "nature",
+      "tone": "blue",
+      "title": "Dãy Himalaya trải dài",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Dãy Himalaya trải dài. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-038",
+      "nasaId": "iss071e014284",
+      "theme": "mountain",
+      "group": "nature",
+      "tone": "blue",
+      "title": "Hồ Tahoe và Sierra Nevada",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Hồ Tahoe và Sierra Nevada. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-039",
+      "nasaId": "sl4-138-3875",
+      "theme": "mountain",
+      "group": "nature",
+      "tone": "blue",
+      "title": "Rocky Mountains và miền đồng bằng",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Rocky Mountains và miền đồng bằng. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-040",
+      "nasaId": "iss074e0315889",
+      "theme": "mountain",
+      "group": "nature",
+      "tone": "blue",
+      "title": "Nếp gấp của dãy Zagros",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Nếp gấp của dãy Zagros. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-041",
+      "nasaId": "iss040e092688",
+      "theme": "moon",
+      "group": "cosmos",
+      "tone": "violet",
+      "title": "Mặt Trăng lặn sau vành Trái Đất",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Mặt Trăng lặn sau vành Trái Đất. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-042",
+      "nasaId": "art002e009057",
+      "theme": "moon",
+      "group": "cosmos",
+      "tone": "violet",
+      "title": "Mặt gần của Mặt Trăng",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Mặt gần của Mặt Trăng. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-043",
+      "nasaId": "art002e020904",
+      "theme": "moon",
+      "group": "cosmos",
+      "tone": "violet",
+      "title": "Đường cong bề mặt Mặt Trăng",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Đường cong bề mặt Mặt Trăng. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-044",
+      "nasaId": "art002e016299",
+      "theme": "moon",
+      "group": "cosmos",
+      "tone": "violet",
+      "title": "Trái Đất mọc từ góc nhìn Orion",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Trái Đất mọc từ góc nhìn Orion. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-045",
+      "nasaId": "as17-152-23272",
+      "theme": "moon",
+      "group": "cosmos",
+      "tone": "violet",
+      "title": "Trái Đất phía trên chân trời Mặt Trăng",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Trái Đất phía trên chân trời Mặt Trăng. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "focalPoint": [
+        0.5,
+        0.67
+      ]
+    },
+    {
+      "id": "photo-046",
+      "nasaId": "KSC-20240208-PH-KMO07_0013",
+      "theme": "launch",
+      "group": "cosmos",
+      "tone": "coral",
+      "title": "PACE bay lên trong màn đêm",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: PACE bay lên trong màn đêm. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-047",
+      "nasaId": "KSC-20231013-PH-KED11_0056",
+      "theme": "launch",
+      "group": "cosmos",
+      "tone": "coral",
+      "title": "Psyche hướng về bầu trời",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Psyche hướng về bầu trời. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "focalPoint": [
+        0.5,
+        0.65
+      ]
+    },
+    {
+      "id": "photo-048",
+      "nasaId": "KSC-314D-0551_0050",
+      "theme": "launch",
+      "group": "cosmos",
+      "tone": "coral",
+      "title": "Orion rời bệ phóng",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Orion rời bệ phóng. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    },
+    {
+      "id": "photo-049",
+      "nasaId": "KSC-20220816-PH-JBS01_0092",
+      "theme": "launch",
+      "group": "cosmos",
+      "tone": "coral",
+      "title": "Artemis I trên đường ra bệ phóng",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Artemis I trên đường ra bệ phóng. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu.",
+      "focalPoint": [
+        0.5,
+        0.15
+      ]
+    },
+    {
+      "id": "photo-050",
+      "nasaId": "KSC-20240208-PH-KMO02_0005",
+      "theme": "launch",
+      "group": "cosmos",
+      "tone": "coral",
+      "title": "Vệt sáng của sứ mệnh PACE",
+      "description": "Ảnh chụp thực tế từ kho ảnh NASA: Vệt sáng của sứ mệnh PACE. Dùng làm tư liệu tham khảo, không mô tả thế giới hư cấu."
+    }
+  ]
+}

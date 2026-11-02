@@ -3,8 +3,8 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const root=path.resolve(__dirname,'..');
 test('all24 AI artworks have local responsive WebP files matching the published prompt manifest alongside1000 coded scenes',()=>{
   const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/multiverse/artwork-manifest-v1.json'),'utf8'));
-  const illustrated=A.catalog.filter(a=>a.kind!=='scene');
-  assert.equal(illustrated.length,24);assert.equal(A.list('scene').length,1000);assert.equal(A.catalog.length,1024);assert.equal(A.list('world').length,8);assert.equal(A.list('experience').length,10);assert.equal(A.list('portrait').length,6);
+  const illustrated=A.catalog.filter(a=>!['scene','photo'].includes(a.kind));
+  assert.equal(illustrated.length,24);assert.equal(A.list('scene').length,1000);assert.equal(A.list('photo').length,50);assert.equal(A.catalog.length,1074);assert.equal(A.list('world').length,8);assert.equal(A.list('experience').length,10);assert.equal(A.list('portrait').length,6);
   assert.equal(new Set(A.catalog.map(a=>a.id)).size,A.catalog.length);
   assert.deepEqual(new Set(illustrated.map(a=>a.id)),new Set(manifest.items.map(a=>a.id)));
   let files=0,total=0;

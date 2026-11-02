@@ -24,11 +24,11 @@
     return {schoolId: r.schoolId, programId: r.programId || '', note: text(r.note, 2000)};
   }
   function filters(raw = {}) {
-    return {q: text(raw.q, 200), family: text(raw.family, 60) || 'all', province: text(raw.province, 160) || 'all', level: ['university', 'college'].includes(raw.level) ? raw.level : 'all', year: /^(202[0-6])$/.test(String(raw.year)) ? String(raw.year) : 'all'};
+    return {q: text(raw.q, 200), family: text(raw.family, 60) || 'all', province: text(raw.province, 160) || 'all', level: ['university', 'college'].includes(raw.level) ? raw.level : 'all', year: /^(202[0-6])$/.test(String(raw.year)) ? String(raw.year) : 'all', ...(raw.photos==='verified'?{photos:'verified'}:{})};
   }
   function searchURL(raw, kind='majors') {
     const f = filters(raw), p = new URLSearchParams();
-    for (const [k, v] of Object.entries(f)) if (v && v !== 'all' && (kind!=='schools'||['q','level','province'].includes(k))) p.set(k, v);
+    for (const [k, v] of Object.entries(f)) if (v && v !== 'all' && (kind!=='schools'||['q','level','province','photos'].includes(k)) && (kind==='schools'||k!=='photos')) p.set(k, v);
     return (kind==='schools'?'/university':'/university/majors') + (p.size ? '?' + p : '');
   }
   function defaults() {

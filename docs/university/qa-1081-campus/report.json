@@ -1,0 +1,156 @@
+{
+  "at": "2026-11-02T10:20:52.720Z",
+  "bootstrap": "Native release loader",
+  "results": [
+    {
+      "hero": "Three real, correctly named school photographs; local responsive assets and attached credits"
+    },
+    {
+      "filters": "Photo filter combines accent-insensitive search and pagination;30 results in24+6; shareable URL"
+    },
+    {
+      "profile": "Campus header, programme introduction, original author/licence/change declaration; saved school and all7score years still work"
+    },
+    {
+      "responsive": "375/768/1440px,DPR2,200% zoom,keyboard focus and reduced-motion"
+    },
+    {
+      "failure": "404 shows a labelled fallback and keeps source credits accessible"
+    }
+  ],
+  "errors": [],
+  "imageRequests": [
+    {
+      "url": "/assets/university/vn-ts-302-v1-1280.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-hocmai-798f9fedfe6a9e-v1-1280.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-ts-304-v1-1280.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-hocmai-798f9fedfe6a9e-v1-1280.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-ts-302-v1-1280.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-ts-318-v1-1280.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-ts-304-v1-1280.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-ts-420-v1-1280.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-ts-421-v1-1280.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-ts-326-v1-1280.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-ts-435-v1-1024.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-ts-448-v1-1280.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-hocmai-798f9fedfe6a9e-v1-1280.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-ts-302-v1-1280.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-ts-318-v1-1280.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-ts-320-v1-1280.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-ts-357-v1-796.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-ts-358-v1-1280.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-ts-302-v1-1280.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-ts-301-v1-800.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-ts-300-v1-1280.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-ts-302-v1-1280.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-ts-302-v1-1280.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-ts-302-v1-1280.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-ts-302-v1-768.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-ts-304-v1-768.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-hocmai-798f9fedfe6a9e-v1-768.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-ts-318-v1-768.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-hocmai-798f9fedfe6a9e-v1-768.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-ts-320-v1-768.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-ts-302-v1-768.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-ts-302-v1-768.webp",
+      "status": 200
+    },
+    {
+      "url": "/assets/university/vn-ts-302-v1-768.webp",
+      "status": 404
+    }
+  ]
+}

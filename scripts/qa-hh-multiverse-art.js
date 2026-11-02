@@ -13,7 +13,7 @@ module.exports = async function ({ page, out, pass, audit, audits }) {
   let catalogue;
   try {
     await page.locator('.mv-topbar a[href="#/multiverse/gallery"]').click(); await page.locator('.mvg').waitFor();
-    catalogue = await page.evaluate(() => ({ total: HHMultiverseArt.catalog.length, sizes: Object.fromEntries(['world', 'experience', 'portrait', 'scene'].map(k => [k, HHMultiverseArt.list(k).length])), pageSize: HHMultiverseGallery.PAGE_SIZE }));
+    catalogue = await page.evaluate(() => ({ total: HHMultiverseArt.catalog.length, sizes: Object.fromEntries(['photo', 'world', 'experience', 'portrait', 'scene'].map(k => [k, HHMultiverseArt.list(k).length])), pageSize: HHMultiverseGallery.PAGE_SIZE }));
     assert.equal(await page.locator('.mv-gallery-card').count(), Math.min(catalogue.pageSize, catalogue.total));
     const images = await page.evaluate(() => HHMultiverseArt.catalog.flatMap(a => a.widths.map(w => ({ url: HHMultiverseArt.url(a.id, w), width: w }))));
     const decoded = await page.evaluate(async images => {
@@ -31,6 +31,26 @@ module.exports = async function ({ page, out, pass, audit, audits }) {
       await page.evaluate(() => HHAppTheme.apply('aurora', { persist: false })); await page.screenshot({ path: path.join(out, 'gallery-' + palette + '.png') });
     }
     await reload(); assert.equal(await page.locator('.mv').getAttribute('data-palette'), 'sunset');
+
+    await category('photo'); assert.equal(await page.locator('.mv-gallery-card').count(), catalogue.pageSize);
+    assert.equal(catalogue.sizes.photo, 50); assert.ok(await page.locator('.mv-gallery-card').evaluateAll(rows => rows.every(e => e.dataset.id.startsWith('photo-'))));
+    await category('photo-nature'); assert.match(await page.locator('[data-mvg-result]').innerText(), /35/);
+    await category('photo-cosmos'); assert.equal(await page.locator('.mv-gallery-card').count(), 15);
+    await search('', 'all', 'photo-aurora'); assert.equal(await page.locator('.mv-gallery-card').count(), 5);
+    await action('open-art', '[data-id=photo-001]'); await page.locator('.mv-art-dialog[open]').waitFor();
+    assert.match(await page.locator('.mv-photo-credits').innerText(), /Terry Virts/);
+    assert.match(await page.locator('.mv-photo-credits').innerText(), /không tái hiện thế giới hư cấu/);
+    assert.equal(await page.locator('.mv-photo-credits a').first().getAttribute('href'), 'https://images.nasa.gov/details/iss043e155854');
+    assert.equal(await page.locator('.mv-art-dialog [data-mv-action=art-create]').count(), 0);
+    await page.locator('.mv-art-dialog img').evaluate(img => img.decode());
+    await page.screenshot({path:path.join(out,'real-photo-viewer.png')});
+    const photoDownload=page.waitForEvent('download');await page.locator('.mv-download-art').click();const downloadedPhoto=await photoDownload;
+    await downloadedPhoto.saveAs(path.join(out,'real-photo-download.webp'));assert.equal(fs.readFileSync(path.join(out,'real-photo-download.webp')).toString('ascii',8,12),'WEBP');
+    await page.keyboard.press('Escape');await search();await category('photo');
+    await page.setViewportSize({width:375,height:900});await page.locator('.mvg').scrollIntoViewIfNeeded();
+    audits.push(await audit(page,'real-photos-375'));await page.screenshot({path:path.join(out,'real-photos-mobile.png')});
+    await page.setViewportSize({width:1440,height:1000});
+    pass({realPhotos:'50 original NASA photographs; nature/cosmos/theme filters, honest source and license credits, real WebP download and375px gallery'});
 
     await category('world'); assert.equal(await page.locator('.mv-gallery-card').count(), catalogue.sizes.world);
     await search('MAT TRANG', 'cyan'); assert.equal(await page.locator('.mv-gallery-card').count(), 1); assert.equal(await page.locator('.mv-gallery-card').getAttribute('data-id'), 'moons');

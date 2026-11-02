@@ -5767,11 +5767,12 @@ function initAppShell() {
       { id: "updates", title: "Cập nhật & nguồn", route: "/vietnam-law/updates" },
       { id: "saved", title: "Văn bản đã lưu", route: "/vietnam-law/saved" }
     ] },
-    { id: "multiverse", label: "GLITCHVERSE", icon: "◎", accent: "#76e2ed", route: "/multiverse", items: [], pages: [
+    { id: "multiverse", label: "HH MULTIVERSE", icon: "◎", accent: "#76e2ed", route: "/multiverse", items: [], pages: [
       { id: "create", title: "Tạo thực tại", route: "/multiverse/create" },
       { id: "explore", title: "Khám phá vũ trụ", route: "/multiverse/explore" },
       { id: "library", title: "Vũ trụ của tôi", route: "/multiverse/my-universes" },
       { id: "gallery", title: "Phòng tranh đa vũ trụ", route: "/multiverse/gallery" },
+      { id: "photos", title: "Ảnh chụp thực tế", route: "/multiverse/gallery?category=photo" },
       { id: "atlas", title: "Cosmic Atlas", route: "/multiverse/atlas" }
     ] },
     { id: "university", label: "Đại học & Cao đẳng", icon: "◫", accent: "#67dbc1", route: "/university", items: [], pages: [
@@ -5885,7 +5886,7 @@ function initAppShell() {
       icon: "▶",
       accent: "#ff6f82",
       accentSecondary: "#ffc65c",
-      groupIds: ["cosmic-observatory", "play-center", "all-game", "eonwild-game", "comic-reader", "cinema", "music-library", "patin", "fortune"]
+      groupIds: ["cosmic-observatory", "play-center", "all-game", "multiverse", "eonwild-game", "comic-reader", "cinema", "music-library", "patin", "fortune"]
     },
     {
       id: "work-tech",
@@ -5905,9 +5906,6 @@ function initAppShell() {
     },
     {
       id: "vietnam-law-hub", label: "Pháp Luật Việt Nam", icon: "§", accent: "#67dbc1", accentSecondary: "#699cff", groupIds: ["vietnam-law"]
-    },
-    {
-      id: "hh-multiverse", label: "HH MULTIVERSE", icon: "◎", accent: "#76e2ed", accentSecondary: "#b4a0ff", groupIds: ["multiverse"]
     },
     {
       id: "higher-education",

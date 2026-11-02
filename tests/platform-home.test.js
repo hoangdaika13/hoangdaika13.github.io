@@ -40,10 +40,10 @@ test("the canonical Platform home is directly accessible without a second naviga
   assert.equal(gateway.resolveRoute("/galaxy/learning", { storage }).allowed, true);
 });
 
-test("catalog mirrors all ten registry groups and all 42 functions without duplicate routes", () => {
+test("catalog mirrors all nine registry groups and all 42 functions without duplicate routes", () => {
   const groups = catalog();
-  assert.equal(groups.length, 10);
-  assert.deepEqual(groups.map((group) => group.items.length), [1, 7, 5, 9, 6, 8, 1, 1, 1, 3]);
+  assert.equal(groups.length, 9);
+  assert.deepEqual(groups.map((group) => group.items.length), [1, 7, 5, 10, 6, 8, 1, 1, 3]);
   const entries = groups.flatMap((group) => group.items);
   assert.equal(entries.length, 42);
   assert.equal(new Set(entries.map((item) => item.route)).size, 42);
@@ -52,6 +52,16 @@ test("catalog mirrors all ten registry groups and all 42 functions without dupli
   const admin = entries.find((item) => item.id === "admin");
   assert.equal(admin.locked, true);
   assert.equal(catalog(true).flatMap((group) => group.items).find((item) => item.id === "admin").locked, false);
+});
+
+test("HH Multiverse belongs to Entertainment with its route and child workspaces preserved", () => {
+  const owner = real.navigationSections.filter(section => section.groupIds.includes('multiverse'));
+  assert.deepEqual(owner.map(section => section.id), ['entertainment']);
+  assert.equal(real.navigationSections.some(section => section.id === 'hh-multiverse'), false);
+  const multiverse = catalog().find(section => section.id === 'entertainment').items.find(item => item.id === 'multiverse');
+  assert.equal(multiverse.label, 'HH MULTIVERSE');
+  assert.equal(multiverse.route, '/multiverse');
+  assert.ok(multiverse.children.some(child => child.route === '/multiverse/gallery'));
 });
 
 test("future registry changes update names, counts, categories and child tools automatically", () => {
