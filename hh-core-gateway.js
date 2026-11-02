@@ -33,6 +33,7 @@
     "/galaxy/settings"
   ]);
   const CORE_ROUTE_PREFIXES = Object.freeze([
+    "/multiverse",
     "/platform",
     "/home/dashboard",
     "/create",

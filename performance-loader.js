@@ -28,7 +28,7 @@
   const groups = Object.freeze({
     brand: {
       styles: [],
-      scripts: ["brand-galaxy-logo.js?v=2", "galaxy-favicon-controller.js?v=2", "hh-core-gateway.js?v=12", "galaxy-shell.js?v=11"]
+      scripts: ["brand-galaxy-logo.js?v=2", "galaxy-favicon-controller.js?v=2", "hh-core-gateway.js?v=13", "galaxy-shell.js?v=11"]
     },
     "auth-effects": {
       /*
@@ -65,7 +65,7 @@
     },
     "platform-home": {
       styles: ["platform-home.css?v=9", "home-cosmos-motion.css?v=5"],
-      scripts: ["home-cosmos-motion.js?v=3", "platform-home.js?v=23"]
+      scripts: ["home-cosmos-motion.js?v=3", "platform-home.js?v=24"]
     },
     "galaxy-home-ai": {
       styles: ["galaxy-home-ai.css?v=25", "home-cosmos-motion.css?v=5"],
@@ -92,7 +92,7 @@
     },
     "galaxy-planet-hubs": {
       styles: ["galaxy-planet-hubs.css?v=1"],
-      scripts: ["galaxy-planet-hubs.js?v=2"]
+      scripts: ["galaxy-planet-hubs.js?v=3"]
     },
     platform: {
       styles: [
@@ -260,6 +260,10 @@
     "vietnam-law": {
       styles: ["hh-vietnam-law.css?v=2"],
       scripts: ["hh-vietnam-law-core.js?v=2", "hh-vietnam-law-manifest.js?v=2", "hh-vietnam-law-data.js?v=1", "hh-vietnam-law-pdf-transport.js?v=1", "hh-vietnam-law-pdf.js?v=1", "hh-vietnam-law.js?v=2"]
+    },
+    multiverse: {
+      styles: ["hh-multiverse.css?v=1"],
+      scripts: ["hh-multiverse-model.js?v=1", "hh-multiverse-engine.js?v=1", "hh-multiverse-internet.js?v=1", "hh-multiverse-store.js?v=1", "hh-multiverse-views.js?v=1", "hh-multiverse.js?v=1"]
     },
     university: {
       styles: ["hh-university.css?v=3", "hh-university-workspace.css?v=1", "hh-university-experience.css?v=1"],
@@ -439,6 +443,7 @@
     if (value === "/mathcore" || value.startsWith("/mathcore/")) return ["mathcore"];
     if (value === "/vietnam-law" || value.startsWith("/vietnam-law/")) return ["vietnam-law"];
     if (value === "/university" || value.startsWith("/university/")) return ["university"];
+    if (value === "/multiverse" || value.startsWith("/multiverse/")) return ["multiverse"];
     if (value.startsWith("/learn")) return ["learning"];
     if (value.startsWith("/english")) return ["english"];
     if (value.startsWith("/japanese")) return ["japanese"];

@@ -39,7 +39,8 @@
         card("chat", "HH AI Copilot", "Hỏi đáp, lập kế hoạch và làm việc với hội thoại", "✦", "/chat-ai", "local", ["chat", "assistant"]),
         card("center", "AI Center", "Điều phối các tác vụ AI trong một workspace", "AI", "/create/ai-center", "local", ["workspace", "orchestration"]),
         card("prompt", "Prompt Studio", "Tạo prompt có cấu trúc, phiên bản và biến đầu vào", "⌘", "/create/prompt-studio", "local", ["prompt", "template"]),
-        card("image", "AI Task Center", "Quản lý tác vụ hình ảnh và trạng thái provider", "▧", "/media-design/ai-task-center", "provider", ["image", "provider"])
+        card("image", "AI Task Center", "Quản lý tác vụ hình ảnh và trạng thái provider", "▧", "/media-design/ai-task-center", "provider", ["image", "provider"]),
+        card("multiverse", "GLITCHVERSE", "Tạo thực tại, khám phá Internet hư cấu và phân nhánh lịch sử", "◎", "/multiverse", "local", ["simulation", "world", "gemini"])
       ])
     }),
     "/galaxy/music": Object.freeze({

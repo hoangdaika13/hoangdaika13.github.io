@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1077";
+const CACHE = "hh-identity-portal-v1078";
+// Previous release: hh-identity-portal-v1077.
 // Previous release: hh-identity-portal-v1076.
 // Previous release: hh-identity-portal-v1075.
 // Previous release: hh-identity-portal-v1074.
@@ -276,7 +277,7 @@ const RUNTIME_ASSETS = [
   "./home-cosmos-motion.css?v=5",
   "./home-cosmos-motion.js?v=3",
   "./platform-home.css?v=9",
-  "./platform-home.js?v=23",
+  "./platform-home.js?v=24",
   "./focus-study-room.css?v=2",
   "./focus-study-room.js?v=1",
   "./",
@@ -513,7 +514,7 @@ const RUNTIME_ASSETS = [
   "./galaxy-design-system.css?v=1",
   "./galaxy-shell.css?v=9",
   "./galaxy-shell.js?v=11",
-  "./hh-core-gateway.js?v=12",
+  "./hh-core-gateway.js?v=13",
   "./galaxy-home-ai.css?v=23",
   "./galaxy-home-ai.css?v=24",
   "./galaxy-home-ai.css?v=25",
@@ -557,7 +558,7 @@ const RUNTIME_ASSETS = [
   "./galaxy-web-desktop.css?v=10",
   "./galaxy-web-desktop.js?v=5",
   "./galaxy-planet-hubs.css?v=1",
-  "./galaxy-planet-hubs.js?v=2",
+  "./galaxy-planet-hubs.js?v=3",
   "./assets/galaxy/hh-ambient-room-rainy-v1.png?v=1",
   "./focus-room.css?v=14",
   "./focus-room.js?v=20",
@@ -962,10 +963,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=738",
+  "./performance-loader.js?v=739",
   "./auth-platform.js?v=22",
   "./auth-neon-gateway.js?v=35",
-  "./script.js?v=300"
+  "./script.js?v=301"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

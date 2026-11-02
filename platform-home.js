@@ -10,6 +10,7 @@
   // Descriptions explain scope, not service readiness. Routes, names, counts
   // and children come exclusively from the application's navigation registry.
   const DESCRIPTIONS = Object.freeze({
+    multiverse: "Tạo vũ trụ giả tưởng, khám phá Internet của thế giới và phân nhánh lịch sử.",
     "hh-galaxy": "Bản đồ 3D cùng AI, âm nhạc, video, Creator Studio, trò chơi, lập trình và học tập. Mở Galaxy ngay trong HH Platform.",
     "chat-ai": "Hội thoại nhiều lượt, nghiên cứu có nguồn, phân tích ảnh/PDF, viết và hỗ trợ lập trình.",
     create: "Biến ý tưởng thành nội dung: brief, kịch bản, prompt, media, cộng tác và xuất bản.",

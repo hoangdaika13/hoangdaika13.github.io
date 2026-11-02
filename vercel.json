@@ -25,6 +25,10 @@
   ],
   "rewrites": [
     {
+      "source": "/api/multiverse/:action",
+      "destination": "/api/modules/multiverse/actions?multiverseAction=:action"
+    },
+    {
       "source": "/api/university/:resource",
       "destination": "/api/modules/university/actions?universityResource=:resource"
     },
