@@ -3,8 +3,9 @@
 // guest identity, no production write, external services intentionally unavailable.
 const fs = require('node:fs'), path = require('node:path'), http = require('node:http');
 const assert = require('node:assert/strict'), { execFileSync } = require('node:child_process');
+const C=require('../hh-university-core'), P=require('../hh-university-campus'), directory=require('../data/hh-university/directory.json');
 const { chromium } = require(process.env.HH_QA_PLAYWRIGHT || 'playwright');
-const root = path.resolve(__dirname, '..'), out = path.join(root, 'docs/university/qa-1081-campus');
+const root = path.resolve(__dirname, '..'), out = path.resolve(root, process.env.HH_QA_OUTPUT || '.study-local/hh-university-campus-1082');
 const csp = JSON.parse(fs.readFileSync(path.join(root, 'vercel.json'))).headers.flatMap(row => row.headers).find(row => row.key === 'Content-Security-Policy').value;
 const results = [], errors = [], imageRequests = [];
 const server = http.createServer((req, res) => {
@@ -52,15 +53,21 @@ async function run() {
     assert.equal(await page.locator('.hhu-school-card').count(),24);
     assert.equal(await page.locator('.hhu-school-card img').count(),24);
     assert.ok((await page.evaluate(() => location.hash)).includes('photos=verified'));
+    const totalPhotos = await page.evaluate(() => HHUniversityCampus.catalog.length);
     await page.locator('[data-hhu-action=page]').filter({hasText:'Sau'}).click();
-    assert.equal(await page.locator('.hhu-school-card').count(),6);
-    await page.locator('[data-hhu-action=page]').filter({hasText:'Trước'}).click();
+    assert.equal(await page.locator('.hhu-school-card').count(),Math.min(24,totalPhotos-24));
+    await page.locator('[data-hhu-action=page][data-hhu-page="'+Math.floor((totalPhotos-1)/24)+'"]').last().click();
+    assert.equal(await page.locator('.hhu-school-card').count(),totalPhotos%24||24);
+    await page.locator('.hhu-school-card img').evaluateAll(images=>Promise.all(images.map(image=>{image.loading='eager';return image.decode();})));
+    await page.locator('[data-hhu-action=page][data-hhu-page="0"]').first().click();
     const form = page.locator('[data-hhu-directory-form]');
     if (!await form.isVisible()) await page.locator('.ue-filter-drawer summary').click();
     await form.locator('[name=query]').fill('Bach khoa'); await form.locator('button[type=submit]').click();
-    assert.equal(await page.locator('.hhu-school-card').count(),3);
-    assert.equal(await page.locator('.hhu-school-card img').count(),3);
-    pass({filters:'Photo filter combines accent-insensitive search and pagination;30 results in24+6; shareable URL'});
+    const matchedPhotos = C.filterSchools(directory.schools,{query:'Bach khoa'}).filter(school=>P.find(school.id)).length;
+    const photoSearchCount = await page.locator('.hhu-school-card').count();
+    assert.equal(photoSearchCount,matchedPhotos);
+    assert.equal(await page.locator('.hhu-school-card img').count(),photoSearchCount);
+    pass({filters:'Photo filter combines accent-insensitive search and pagination; '+totalPhotos+' verified results; shareable URL'});
     await page.locator('[data-hhu-action=reset]').click();
     assert.equal(await page.locator('[data-hhu-action=campus-filter]').getAttribute('aria-pressed'),'false');
 

@@ -6,7 +6,7 @@ const root = path.resolve(__dirname, '..'), directory = require('../data/hh-univ
 const manifest = require('../assets/university/campus-photos-v1.json'), selected = require('../docs/university/campus-photo-selections-v1.json');
 
 test('real photographs bind only reviewed exact school IDs, including a clearly historical college record', () => {
-  assert.equal(P.VERSION, 1); assert.equal(P.catalog.length, 30); assert.equal(manifest.photos.length, selected.selections.length);
+  assert.equal(P.VERSION, 1); assert.equal(P.catalog.length, 57); assert.equal(P.CHECKED_AT, '2026-11-04'); assert.equal(manifest.photos.length, selected.selections.length);
   assert.equal(new Set(P.catalog.map(photo => photo.schoolId)).size, P.catalog.length);
   assert.ok(Object.isFrozen(P.catalog)); assert.ok(Object.isFrozen(P.catalog[0].assets));
   for (const photo of P.catalog) {
@@ -21,6 +21,7 @@ test('real photographs bind only reviewed exact school IDs, including a clearly 
   assert.ok(college); assert.match(college.identityNote, /tên cũ/); assert.match(college.capturedAt, /2012/);
   assert.equal(P.find('vn-ts-1476'), null, 'Do not silently attach the old-college photo to another institution record');
   assert.equal(P.find('vn-ts-422'), null, 'Thuyloi Hanoi photograph must not become a photograph of its southern campus');
+  assert.equal(P.catalog.filter(photo => directory.schools.find(s => s.id === photo.schoolId).level === 'college').length,12);
 });
 
 test('every distributed photograph has plain-text author, open licence, source and declared changes', () => {
@@ -35,10 +36,10 @@ test('every distributed photograph has plain-text author, open licence, source a
   assert.equal(P.credit({sourceUrl:'javascript:alert(1)',licenseUrl:'https://creativecommons.org/licenses/by/4.0/'}), '');
 });
 
-test('all 90 local variants match pinned checksums and retain proportional dimensions without upscaling', () => {
+test('all 170 local variants match pinned checksums and retain proportional dimensions without upscaling', () => {
   let variants = 0, bytes = 0;
   for (const photo of P.catalog) {
-    assert.equal(photo.assets.length, 3);
+    assert.ok(photo.assets.length >= 2 && photo.assets.length <= 3);
     let previous = 0;
     for (const asset of photo.assets) {
       assert.ok(asset.width > previous && asset.width <= 1280); previous = asset.width;
@@ -50,8 +51,22 @@ test('all 90 local variants match pinned checksums and retain proportional dimen
       variants++; bytes += binary.length;
     }
   }
-  assert.equal(variants, 90); assert.ok(bytes < 8 * 1024 * 1024);
+  assert.equal(variants, 170); assert.ok(bytes < 15 * 1024 * 1024);
   for (const [id, width] of [['../outside',768],['vn-ts-302',123],['https://evil.example/photo',768]]) assert.throws(() => P.url(id,width));
+});
+
+test('the 30 released campus photographs and all 90 original variants remain byte-identical', () => {
+  const baseline = require('../docs/university/campus-photo-baseline-1081.json');
+  assert.equal(baseline.release,1081); assert.equal(baseline.photos.length,30);
+  let variants=0;
+  for(const old of baseline.photos){
+    const current=manifest.photos.find(photo=>photo.schoolId===old.schoolId);
+    assert.ok(current); assert.equal(current.fileTitle,old.fileTitle); assert.deepEqual(current.assets,old.assets);
+    for(const asset of old.assets){assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(root,asset.url))).digest('hex'),asset.sha256);variants++;}
+  }
+  assert.equal(variants,90);
+  const published=new Set(manifest.photos.flatMap(photo=>photo.assets.map(asset=>path.basename(asset.url))));
+  for(const name of fs.readdirSync(path.join(root,'assets/university')).filter(name=>name.endsWith('.webp')))assert.ok(published.has(name),'Unattributed campus asset: '+name);
 });
 
 test('responsive pictures have exact campus alt text, local lazy images, accessible source and honest fallback', () => {

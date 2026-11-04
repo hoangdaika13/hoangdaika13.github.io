@@ -1,0 +1,815 @@
+{
+  "release": 1081,
+  "photos": [
+    {
+      "schoolId": "vn-ts-302",
+      "fileTitle": "File:Hanoi University of Science and Technology.jpg",
+      "assets": [
+        {
+          "width": 384,
+          "height": 216,
+          "url": "./assets/university/vn-ts-302-v1-384.webp",
+          "bytes": 18754,
+          "sha256": "a77feaf20f06202d635d76e4f3999ffa7d7b7a7fa7f17e4e3de209e76a026a15"
+        },
+        {
+          "width": 768,
+          "height": 432,
+          "url": "./assets/university/vn-ts-302-v1-768.webp",
+          "bytes": 73956,
+          "sha256": "c92ec937437d63c25d45a24b69a6dcd438bd0830395929901988a73c802e2529"
+        },
+        {
+          "width": 1280,
+          "height": 720,
+          "url": "./assets/university/vn-ts-302-v1-1280.webp",
+          "bytes": 207890,
+          "sha256": "4ec658189e11916908bbb007d6445827ba5df66b08c069497df3587152af3294"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-318",
+      "fileTitle": "File:Cantho University.JPG",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-318-v1-384.webp",
+          "bytes": 20022,
+          "sha256": "4cc4a9e043883b710666622ab750c5a50a0a715bdfeea49561971665492d4819"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-318-v1-768.webp",
+          "bytes": 67326,
+          "sha256": "f9588c1ec14b2eb556feac8bd8797e5c185c7dbb203be5161c19413f94f62ed2"
+        },
+        {
+          "width": 1280,
+          "height": 960,
+          "url": "./assets/university/vn-ts-318-v1-1280.webp",
+          "bytes": 158428,
+          "sha256": "3f2133e7e2e7e9b5e58b40f8bc2433de8b100e3680dba8de67e371b745009ba2"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-300",
+      "fileTitle": "File:HCMUT Library in main campus.jpg",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-300-v1-384.webp",
+          "bytes": 18036,
+          "sha256": "12c0ead9738d0cc07918933bd68a9a892082fc872959dd8dbef2ceae367e2739"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-300-v1-768.webp",
+          "bytes": 60874,
+          "sha256": "9c0b4e33d95755a10acfd1bcaa0b739a75c16bc648db967a4c1c93122b910355"
+        },
+        {
+          "width": 1280,
+          "height": 960,
+          "url": "./assets/university/vn-ts-300-v1-1280.webp",
+          "bytes": 149190,
+          "sha256": "186834926d504eec759c6cdd7f6c9283dfa080feebfc018dc96607c01fbe7ad0"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-301",
+      "fileTitle": "File:Khu A.jpg",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-301-v1-384.webp",
+          "bytes": 26180,
+          "sha256": "3e243d0b3129531d7d6101059c784e1c599c478dcefe2b168de3fa9a56dd59f7"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-301-v1-768.webp",
+          "bytes": 91818,
+          "sha256": "75b4f2aebc717b4b1a6cf93127b70cfd8a5f548b8592b0ed1131784f436f6e39"
+        },
+        {
+          "width": 800,
+          "height": 600,
+          "url": "./assets/university/vn-ts-301-v1-800.webp",
+          "bytes": 100958,
+          "sha256": "bd73c8bc404ab1744d976f5bd14af4e6c66ec79bc3b02f93894a53720ebbe236"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-304",
+      "fileTitle": "File:Dai hoc Ton Duc Thang, duong Nguyen Huu Tho, Tan phong, q7 hcmvn - panoramio.jpg",
+      "assets": [
+        {
+          "width": 384,
+          "height": 215,
+          "url": "./assets/university/vn-ts-304-v1-384.webp",
+          "bytes": 11804,
+          "sha256": "7868ff761d82c6cc158c8d51565f39296c5a31268422711f27281da4f322d1df"
+        },
+        {
+          "width": 768,
+          "height": 431,
+          "url": "./assets/university/vn-ts-304-v1-768.webp",
+          "bytes": 36680,
+          "sha256": "3d49660a7786287f33557fe2d3983aacb5b3a68b4ae4945919da7b3124de6798"
+        },
+        {
+          "width": 1280,
+          "height": 718,
+          "url": "./assets/university/vn-ts-304-v1-1280.webp",
+          "bytes": 83268,
+          "sha256": "0a81f87ac16a7af99e83941bde49d7eb52d703157aac47b21d988e9bb5e6d166"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-329",
+      "fileTitle": "File:Fpt02.jpg",
+      "assets": [
+        {
+          "width": 384,
+          "height": 256,
+          "url": "./assets/university/vn-ts-329-v1-384.webp",
+          "bytes": 17822,
+          "sha256": "0871bdef47eefa9aa6b10858ffa20a38f295dc437f6ff94670fc0f9c4bdfddd1"
+        },
+        {
+          "width": 768,
+          "height": 512,
+          "url": "./assets/university/vn-ts-329-v1-768.webp",
+          "bytes": 61832,
+          "sha256": "042dfe215384306501261db9a7628baa54e94402f984cc0c1554028e4398ca59"
+        },
+        {
+          "width": 1280,
+          "height": 853,
+          "url": "./assets/university/vn-ts-329-v1-1280.webp",
+          "bytes": 163062,
+          "sha256": "5704c95d257d4d7f1ca8cf9c3ef06dcf9778fc6703adb2b9de1b34b3168f08ee"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-336",
+      "fileTitle": "File:Hanoi University 01.jpg",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-336-v1-384.webp",
+          "bytes": 22200,
+          "sha256": "675068018b66daa2b1539029f25fe1a06e539f6c4217d6a0918fa97c69172aca"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-336-v1-768.webp",
+          "bytes": 66666,
+          "sha256": "c0d3040b6996fb62a171a571fb9aeefeae9e014a8869709d1453460a72ae0de9"
+        },
+        {
+          "width": 1280,
+          "height": 960,
+          "url": "./assets/university/vn-ts-336-v1-1280.webp",
+          "bytes": 149070,
+          "sha256": "0b7bb88de20d654ce23a54570bf3d7790f1dbb79568a038952ed92204e602a29"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-411",
+      "fileTitle": "File:Dh su pham.jpg",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-411-v1-384.webp",
+          "bytes": 21792,
+          "sha256": "4da0b03d257d61b4c28b68cb2e61ab7e5c311f3b64e724a0f635f761953f66f8"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-411-v1-768.webp",
+          "bytes": 72930,
+          "sha256": "0ab5e1f0e0773fe86b8d119af121e299ccc4a5d18a7e860fad26995b0a9d6192"
+        },
+        {
+          "width": 1280,
+          "height": 960,
+          "url": "./assets/university/vn-ts-411-v1-1280.webp",
+          "bytes": 171866,
+          "sha256": "be18d5ef61d32f87df986c195ecad6342b7802107b8302429f378da4f5cb8697"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-420",
+      "fileTitle": "File:A SP HCMUE.jpg",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-420-v1-384.webp",
+          "bytes": 24054,
+          "sha256": "96468397cb38bd00f9ee289722ef84da66d3c6da8f7637fcb84b97721dba8d7e"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-420-v1-768.webp",
+          "bytes": 86720,
+          "sha256": "7cd2903569da70e565f484e5b96cad0c18ccff6872660fecc65cfd6823bc6850"
+        },
+        {
+          "width": 1280,
+          "height": 960,
+          "url": "./assets/university/vn-ts-420-v1-1280.webp",
+          "bytes": 220862,
+          "sha256": "62bd50131b02a8fe659769dbd7cc86f04c0a88d215333bb34757fc0472918e83"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-357",
+      "fileTitle": "File:NEU-toanhatheky.jpg",
+      "assets": [
+        {
+          "width": 384,
+          "height": 231,
+          "url": "./assets/university/vn-ts-357-v1-384.webp",
+          "bytes": 17730,
+          "sha256": "485a79296e41c68a39f9d6484d9a5d3ec3d1e1098381afa83778315f76207538"
+        },
+        {
+          "width": 768,
+          "height": 461,
+          "url": "./assets/university/vn-ts-357-v1-768.webp",
+          "bytes": 62156,
+          "sha256": "45f69f7a915eb438246fd29eb6a5649a56bd56b904dd2d989110cc4058bd193c"
+        },
+        {
+          "width": 796,
+          "height": 478,
+          "url": "./assets/university/vn-ts-357-v1-796.webp",
+          "bytes": 70396,
+          "sha256": "2ce89303867ea70698e83165e76692d4823bfbb75e4fbfed1d790f01299de8aa"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-358",
+      "fileTitle": "File:UEH University Campus N - Classroom Building.jpg",
+      "assets": [
+        {
+          "width": 384,
+          "height": 279,
+          "url": "./assets/university/vn-ts-358-v1-384.webp",
+          "bytes": 13530,
+          "sha256": "c32540e0a1c2a592a40268a7dd6a5ad15d7ddbfaf2a97a384874671491a39cc9"
+        },
+        {
+          "width": 768,
+          "height": 558,
+          "url": "./assets/university/vn-ts-358-v1-768.webp",
+          "bytes": 48382,
+          "sha256": "080d82f507c130b07f29df1c2627b226f19615f6489b54b4cd995e772bdd01b3"
+        },
+        {
+          "width": 1280,
+          "height": 929,
+          "url": "./assets/university/vn-ts-358-v1-1280.webp",
+          "bytes": 128374,
+          "sha256": "db0aa268c16820a39c59d18b5954766f2395cd6b9dc74c84b093ad892e1b7099"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-391",
+      "fileTitle": "File:Nhà Rạng Đông, Trường Đại học Nông Lâm Thành phố Hồ Chí Minh.jpg",
+      "assets": [
+        {
+          "width": 384,
+          "height": 682,
+          "url": "./assets/university/vn-ts-391-v1-384.webp",
+          "bytes": 45790,
+          "sha256": "781df4c8a7ed2325ffcaa06355dbeb4f7eb02244e8addda2265a16ab99452998"
+        },
+        {
+          "width": 768,
+          "height": 1365,
+          "url": "./assets/university/vn-ts-391-v1-768.webp",
+          "bytes": 158896,
+          "sha256": "2b00dc2b08e4a79991233429550959d683edd0e487201a62adbe3cf30df4bd82"
+        },
+        {
+          "width": 1280,
+          "height": 2275,
+          "url": "./assets/university/vn-ts-391-v1-1280.webp",
+          "bytes": 388410,
+          "sha256": "f45d2b3b2866e628004d86b73bc188d2e08624ec48194a1265471e873cbb715a"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-421",
+      "fileTitle": "File:Nhà A1, Đại học Thuỷ Lợi, Hà Nội 006.JPG",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-421-v1-384.webp",
+          "bytes": 16314,
+          "sha256": "5229e43fdfd631924b74bda4c50c853368ba1967d6fbecd11297d86ec218f2ea"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-421-v1-768.webp",
+          "bytes": 68330,
+          "sha256": "43841d860508966d0a749780fe6767cc3e31a60ea05bc401ed2d3ed912691eba"
+        },
+        {
+          "width": 1280,
+          "height": 960,
+          "url": "./assets/university/vn-ts-421-v1-1280.webp",
+          "bytes": 199474,
+          "sha256": "69cbf8e7567fecce6c905321a31222e73f34a1f2046c214427e348f6dadb3a18"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-448",
+      "fileTitle": "File:Hanoi dhyk.jpg",
+      "assets": [
+        {
+          "width": 384,
+          "height": 282,
+          "url": "./assets/university/vn-ts-448-v1-384.webp",
+          "bytes": 26912,
+          "sha256": "7ed7a62205d9c06cf6dcc67e3c618e2a94a5783603d12ee82505e838b1b76fc0"
+        },
+        {
+          "width": 768,
+          "height": 564,
+          "url": "./assets/university/vn-ts-448-v1-768.webp",
+          "bytes": 86456,
+          "sha256": "b505ccc4f2e582ab1845581cdb835986e176cb3ad13d75908992af2cbba6830b"
+        },
+        {
+          "width": 1280,
+          "height": 940,
+          "url": "./assets/university/vn-ts-448-v1-1280.webp",
+          "bytes": 210884,
+          "sha256": "37ed4df94de853110c4e43f28ccab7407de3a96b4ed3d463f51d6f11347d7d3c"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-326",
+      "fileTitle": "File:Van Lang University.jpg",
+      "assets": [
+        {
+          "width": 384,
+          "height": 511,
+          "url": "./assets/university/vn-ts-326-v1-384.webp",
+          "bytes": 24170,
+          "sha256": "b9e3a4a9ee2c60d1e576ef3b35618968a616f500ab729b9c00e6abc1510ed886"
+        },
+        {
+          "width": 768,
+          "height": 1023,
+          "url": "./assets/university/vn-ts-326-v1-768.webp",
+          "bytes": 77890,
+          "sha256": "e149fbd3421a37f5b78fda9b4b5a7f663fa142c81ec56bb8f1c87ae0ec38ba32"
+        },
+        {
+          "width": 1280,
+          "height": 1705,
+          "url": "./assets/university/vn-ts-326-v1-1280.webp",
+          "bytes": 174670,
+          "sha256": "a0757786b30b75eff4465ec1fde1c2a085dc495c4f29224427466f4e5fd39c9e"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-320",
+      "fileTitle": "File:Phòng học ĐH Duy Tân.jpg",
+      "assets": [
+        {
+          "width": 384,
+          "height": 216,
+          "url": "./assets/university/vn-ts-320-v1-384.webp",
+          "bytes": 11804,
+          "sha256": "142e66480bdb513aaeeb8dd6a7a43f0340fbf8be72ece059f2b8684808430144"
+        },
+        {
+          "width": 768,
+          "height": 433,
+          "url": "./assets/university/vn-ts-320-v1-768.webp",
+          "bytes": 34126,
+          "sha256": "b43e1ae9cf389b29bc2a66a7e906cf95a87939c365931b533ed995677a9c4ceb"
+        },
+        {
+          "width": 1280,
+          "height": 721,
+          "url": "./assets/university/vn-ts-320-v1-1280.webp",
+          "bytes": 71584,
+          "sha256": "aad69a24cbb8c2992d2afaed11fa505c465c9351ddffb9b54590cfb75d47c8f8"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-399",
+      "fileTitle": "File:Quy Nhon University, Binh Dinh, Viet Nam.JPG",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-399-v1-384.webp",
+          "bytes": 15478,
+          "sha256": "d7bcaa71a749d4f610f077eda8a0d3d57a02baff74f01fd421979370d30a9af3"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-399-v1-768.webp",
+          "bytes": 50004,
+          "sha256": "100ad82352770302af3173ee3572567cf9ba392ae471b42940677631c211b3f4"
+        },
+        {
+          "width": 1280,
+          "height": 960,
+          "url": "./assets/university/vn-ts-399-v1-1280.webp",
+          "bytes": 121376,
+          "sha256": "e30f4ddb64a741b702d65ac7fffafa641ff66c07a8f6bb3d6bbf9c26f375332d"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-456",
+      "fileTitle": "File:Da Lat University - panoramio.jpg",
+      "assets": [
+        {
+          "width": 384,
+          "height": 256,
+          "url": "./assets/university/vn-ts-456-v1-384.webp",
+          "bytes": 23942,
+          "sha256": "cf8f0cc5dec98d3f30a2e7e59bb1e7bfb469679ce0597a6f97654249f67de8f2"
+        },
+        {
+          "width": 768,
+          "height": 512,
+          "url": "./assets/university/vn-ts-456-v1-768.webp",
+          "bytes": 65776,
+          "sha256": "4ef5f5a61a9892345d95926eda85085315a7dd4b96c0d7d939ecb90844df0c35"
+        },
+        {
+          "width": 1200,
+          "height": 800,
+          "url": "./assets/university/vn-ts-456-v1-1200.webp",
+          "bytes": 116460,
+          "sha256": "646ed461a7cd4496ff820a0992dc823d3d10d127e8a8acb1e46c46e8414b2fff"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-297",
+      "fileTitle": "File:Đại học An Giang (khu mới).jpg",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-297-v1-384.webp",
+          "bytes": 11468,
+          "sha256": "2f3968c93cd922fbb43342585596d53a4127c70745caf330b094963f8d5f2b24"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-297-v1-768.webp",
+          "bytes": 32936,
+          "sha256": "341ffca6cf35fee72ab185b3367af8116122e28cd76d8b8c925b7fa53f80c6bc"
+        },
+        {
+          "width": 1280,
+          "height": 960,
+          "url": "./assets/university/vn-ts-297-v1-1280.webp",
+          "bytes": 68870,
+          "sha256": "e397b128fbad9da573bddaede33f51e0207db7cc015d87fbc88a01165099619e"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-386",
+      "fileTitle": "File:MotgoctruongDHNT.jpg",
+      "assets": [
+        {
+          "width": 384,
+          "height": 257,
+          "url": "./assets/university/vn-ts-386-v1-384.webp",
+          "bytes": 14920,
+          "sha256": "6e040f218e6fdaa60e3e45c1737cd5018cc26a6c9b6f7b91953add56337c45d3"
+        },
+        {
+          "width": 768,
+          "height": 514,
+          "url": "./assets/university/vn-ts-386-v1-768.webp",
+          "bytes": 48276,
+          "sha256": "900ec668dc477d752fa39beba91804b408ad0cc94c43b4aff180a8e40dfb49c0"
+        },
+        {
+          "width": 1280,
+          "height": 857,
+          "url": "./assets/university/vn-ts-386-v1-1280.webp",
+          "bytes": 108646,
+          "sha256": "ef1e9a76c8deae6ae5abf7e2cdbd6e6dfa497af0c8fc8fc883fbd5ba1eb0e746"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-435",
+      "fileTitle": "File:Vinh University.jpg",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-435-v1-384.webp",
+          "bytes": 16004,
+          "sha256": "39b4c9dffff821f5cbea75f76420fe739fb7af212c9ae34e950bb4064a75cbc8"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-435-v1-768.webp",
+          "bytes": 49872,
+          "sha256": "ecbe4521f5f06d0a2662c37aae54fb31c155b8edd2376325f61e2afe4259f2cf"
+        },
+        {
+          "width": 1024,
+          "height": 768,
+          "url": "./assets/university/vn-ts-435-v1-1024.webp",
+          "bytes": 82800,
+          "sha256": "0935e89c2122c8ff02a9babc857f05814036b658570830175fe774eadc3e2981"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-407",
+      "fileTitle": "File:202401SaigonUniversity-9533-jst.jpg",
+      "assets": [
+        {
+          "width": 384,
+          "height": 256,
+          "url": "./assets/university/vn-ts-407-v1-384.webp",
+          "bytes": 29356,
+          "sha256": "2968bfe4146e9227dccb168c17e380748110af021e5448466d9b2af6f6f363e7"
+        },
+        {
+          "width": 768,
+          "height": 512,
+          "url": "./assets/university/vn-ts-407-v1-768.webp",
+          "bytes": 100298,
+          "sha256": "e7c4a9695afcc60c3607d3a01e34bcd5cc40785c25be5a3be70c2f379cf794e1"
+        },
+        {
+          "width": 1280,
+          "height": 853,
+          "url": "./assets/university/vn-ts-407-v1-1280.webp",
+          "bytes": 234462,
+          "sha256": "be0b75c1df0f5ed8850e708d1687ad706efd49a9e40b1abca427688db5d5d86f"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-328",
+      "fileTitle": "File:Hanoi University of Pharmacy.jpg",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-328-v1-384.webp",
+          "bytes": 20340,
+          "sha256": "3711ef68e68668fa99916fdd11389bad9d33aeb86ecd49b468b98ef0b3e2b16a"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-328-v1-768.webp",
+          "bytes": 68414,
+          "sha256": "56e06b0503dfb94243a7523647792111280179d0850f3c6320c4fef5e819bbad"
+        },
+        {
+          "width": 1280,
+          "height": 960,
+          "url": "./assets/university/vn-ts-328-v1-1280.webp",
+          "bytes": 155286,
+          "sha256": "6ec8dd39f7a501796d8e4d4d96bc1894d547a45d5069cf74ec2d76fdd4d9b09b"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-382",
+      "fileTitle": "File:Một góc FTU (A).jpg",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-382-v1-384.webp",
+          "bytes": 21586,
+          "sha256": "cc32fbd9e992ba8c36d7a227510240679a80e09a79576ca33e90b740e813bc3f"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-382-v1-768.webp",
+          "bytes": 70204,
+          "sha256": "78d00fed172a62d994b3ee52e4e3c6f055e6cd62ba798baa47d7f9bf4b3f7082"
+        },
+        {
+          "width": 1280,
+          "height": 960,
+          "url": "./assets/university/vn-ts-382-v1-1280.webp",
+          "bytes": 169758,
+          "sha256": "c70c1d6359e1fb48c8bc1cc0f009d805d816ee6083d42896604905f1fc01c362"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-383",
+      "fileTitle": "File:FTU cơ sở II.jpg",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-383-v1-384.webp",
+          "bytes": 20068,
+          "sha256": "9b81141140095250ca025ac74fd39ed1712c42e380b3e6c42d06aad46f39c350"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-383-v1-768.webp",
+          "bytes": 62066,
+          "sha256": "76fe55ecea36e97c02b9a3ff9caae085fbd286c5938cae2fecd3f9209c4e4c5f"
+        },
+        {
+          "width": 1280,
+          "height": 960,
+          "url": "./assets/university/vn-ts-383-v1-1280.webp",
+          "bytes": 137840,
+          "sha256": "7a126e8794a4988aab81b69241a1b2a820f900f82436523fecd3538bb9d315e0"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-313",
+      "fileTitle": "File:Đại học công nghệ thông tin.JPG",
+      "assets": [
+        {
+          "width": 384,
+          "height": 84,
+          "url": "./assets/university/vn-ts-313-v1-384.webp",
+          "bytes": 9750,
+          "sha256": "ce356f913f0e02208651d4dee6466546e0455ddb1ec22e26fc941ce1944823bd"
+        },
+        {
+          "width": 768,
+          "height": 169,
+          "url": "./assets/university/vn-ts-313-v1-768.webp",
+          "bytes": 34764,
+          "sha256": "a43335515d7582a455e67f6b6ac6afb3682c2b5a7c9d9202f9ee33bd50d56234"
+        },
+        {
+          "width": 1280,
+          "height": 281,
+          "url": "./assets/university/vn-ts-313-v1-1280.webp",
+          "bytes": 87854,
+          "sha256": "b72e0261d2c4b9316481e0c2b05f15ce022665b03764bdd5b2fc3ab7e4241cae"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-247",
+      "fileTitle": "File:Toàn cảnh Học viện Ngân hàng.jpg",
+      "assets": [
+        {
+          "width": 384,
+          "height": 216,
+          "url": "./assets/university/vn-ts-247-v1-384.webp",
+          "bytes": 22654,
+          "sha256": "57577c3a0d062d0da7e68c46a43e8d8ab988696042835d2085076378cd9025a1"
+        },
+        {
+          "width": 768,
+          "height": 432,
+          "url": "./assets/university/vn-ts-247-v1-768.webp",
+          "bytes": 74158,
+          "sha256": "c8b3f3c99567db1f57202d02d569d7a71652736c61838b6586d2539fc594fe74"
+        },
+        {
+          "width": 1280,
+          "height": 720,
+          "url": "./assets/university/vn-ts-247-v1-1280.webp",
+          "bytes": 167758,
+          "sha256": "f9d26fef471d9fe88e9a6edff8ec59f4122293adfa2fd80e5f3c00227a9425b8"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-459",
+      "fileTitle": "File:Trường Đại học Đồng Tháp.jpg",
+      "assets": [
+        {
+          "width": 384,
+          "height": 288,
+          "url": "./assets/university/vn-ts-459-v1-384.webp",
+          "bytes": 10674,
+          "sha256": "24adc8099904e4f4ba25fdd543e7afc24988ac34a7c59b66389bbc85d0d097bd"
+        },
+        {
+          "width": 768,
+          "height": 576,
+          "url": "./assets/university/vn-ts-459-v1-768.webp",
+          "bytes": 35600,
+          "sha256": "08e924ba2319e67c8ceaf7874edea685a466debee66b23c084c87468a949ae70"
+        },
+        {
+          "width": 1280,
+          "height": 960,
+          "url": "./assets/university/vn-ts-459-v1-1280.webp",
+          "bytes": 83510,
+          "sha256": "db46833bd0cdf6d4dcfff620179e8875870cbafae9139ac0b52ce0fddb837280"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-hocmai-798f9fedfe6a9e",
+      "fileTitle": "File:Truong Cao dang Su pham Da Lat - Tran Huy Phuong 1.jpg",
+      "assets": [
+        {
+          "width": 384,
+          "height": 238,
+          "url": "./assets/university/vn-hocmai-798f9fedfe6a9e-v1-384.webp",
+          "bytes": 15750,
+          "sha256": "2f09b8d9d802a852697f11ed7e3f8ec0b92f3e885959efc119d90c2dcc3c284c"
+        },
+        {
+          "width": 768,
+          "height": 476,
+          "url": "./assets/university/vn-hocmai-798f9fedfe6a9e-v1-768.webp",
+          "bytes": 57236,
+          "sha256": "bc0ff71fe2d3fb01f5a19689675c0551c778d7ef6166700b5858f841dd93e4a2"
+        },
+        {
+          "width": 1280,
+          "height": 794,
+          "url": "./assets/university/vn-hocmai-798f9fedfe6a9e-v1-1280.webp",
+          "bytes": 152002,
+          "sha256": "d5c9f1bf92191c9b06ed38c302487a7ff07ed828eea1a91e8a7b4bdb1fb3bc62"
+        }
+      ]
+    },
+    {
+      "schoolId": "vn-ts-389",
+      "fileTitle": "File:Đại học nông lâm huế bên trong.png",
+      "assets": [
+        {
+          "width": 384,
+          "height": 216,
+          "url": "./assets/university/vn-ts-389-v1-384.webp",
+          "bytes": 17752,
+          "sha256": "057380887293c8dc76ca4369617c36d974eb11488d3bd252e665b18e906b3f98"
+        },
+        {
+          "width": 768,
+          "height": 433,
+          "url": "./assets/university/vn-ts-389-v1-768.webp",
+          "bytes": 58590,
+          "sha256": "f0518fa886f9ba26d8ec78984eecbd99dbf91bad78fcb516799c7e8048d9937d"
+        },
+        {
+          "width": 1280,
+          "height": 721,
+          "url": "./assets/university/vn-ts-389-v1-1280.webp",
+          "bytes": 127062,
+          "sha256": "509469767dab3e9aefdea76d67f637400a34d47a566965f2215439343c5dad4f"
+        }
+      ]
+    }
+  ]
+}

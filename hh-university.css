@@ -61,3 +61,45 @@ body.app-university-route :is(#appPageHeader,#appBreadcrumb,#appContextBar){disp
 @media(max-width:760px){.hhu .hhu-photo-hero{padding:22px;gap:18px}.hhu-campus-mosaic{grid-template-columns:minmax(0,1fr);gap:12px}.hhu-campus-mosaic-tile:first-child{grid-row:auto}.hhu-campus-mosaic-tile:not(:first-child){display:none}.hhu-campus-mosaic-tile:first-child .hhu-campus-image{aspect-ratio:16/10}.hhu-school-card-body{padding:18px}.hhu-campus-filter{align-items:stretch;flex-direction:column;padding:16px;gap:12px}.hhu-campus-profile .hhu-campus-image{aspect-ratio:4/3}.hhu-campus-profile .hhu-campus-unavailable{aspect-ratio:2/1}.hhu-campus-profile figcaption{padding:9px 18px;align-items:start;flex-direction:column;gap:2px}.hhu-campus-profile figcaption>p{max-width:100%}.hhu-school-profile .hhu-school-header{padding:20px 18px 16px}.hhu-campus-introduction{padding:0 18px 20px;gap:14px}.hhu .hhu-photo-card:hover{transform:none}}
 @media(prefers-reduced-motion:reduce){.hhu .hhu-photo-card,.hhu .hhu-campus-image img{transition:none;transform:none!important}}
 @media(forced-colors:active){.hhu-campus-media,.hhu-campus-placeholder,.hhu-campus-filter,.hhu-school-profile{background:Canvas!important;border-color:ButtonText!important;color:CanvasText!important}.hhu-campus-error{background:Canvas!important;color:CanvasText!important}.hhu-campus-image img{forced-color-adjust:none}}
+
+/* School discovery: practical filters and a compact alternative to image cards. */
+.hhu .ue-filter-drawer .hhu-discovery-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:end;padding-top:16px;min-width:0}
+.hhu .hhu-discovery-form .hhu-search{grid-column:1/-1}
+.hhu .hhu-discovery-form>button{min-height:46px;align-self:end}
+.hhu-discovery-facets{display:flex;gap:8px;flex-wrap:wrap}
+.hhu .hhu-discovery-facets button{min-height:44px;padding:10px 14px;font-size:12px}
+.hhu .hhu-discovery-facets button[aria-pressed=true]{color:var(--u-on);background:var(--u-accent);border-color:var(--u-accent)}
+.hhu-discovery-results{padding-block:8px;scroll-margin-top:100px}
+.hhu-discovery-results:focus{outline:3px solid var(--u-accent);outline-offset:6px;border-radius:6px}
+.hhu .hhu-discovery-results h2{font-size:21px;margin:0}
+.hhu .hhu-discovery-results p{margin:5px 0 0;font-size:12px;color:var(--u-muted);max-width:70ch}
+.hhu-directory-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.hhu-directory-tools>[role=group]{display:flex;gap:5px}
+.hhu .hhu-directory-tools button{min-height:44px;font-size:12px}
+.hhu .hhu-directory-tools [aria-pressed=true]{background:var(--u-soft);border-color:var(--u-accent)}
+.hhu-saved-search-panel>summary{display:flex;gap:10px;align-items:center;font-size:13px}
+.hhu-saved-search-panel>summary>span{color:var(--u-muted);font-size:11px}
+.hhu-saved-search-panel>form{margin-top:12px;flex-wrap:wrap}
+.hhu .hhu-saved-search-panel .ue-saved-searches{display:grid;grid-template-columns:minmax(0,1fr);gap:9px}
+.hhu .hhu-saved-search-panel .ue-saved-searches>div{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-width:0}
+.hhu .hhu-saved-search-panel .ue-saved-searches a{display:block;flex:1;min-width:0;overflow-wrap:anywhere;line-height:1.5}
+.hhu .hhu-saved-search-panel .ue-saved-searches button{flex:0 0 auto;min-width:64px;white-space:nowrap;word-break:normal;padding:9px 12px}
+@container hhu (max-width:300px){.hhu .hhu-saved-search-panel .ue-saved-searches>div{flex-direction:column;align-items:stretch;gap:4px}.hhu .hhu-saved-search-panel .ue-saved-searches a{flex:none;width:100%;padding:8px}.hhu .hhu-saved-search-panel .ue-saved-searches button{align-self:flex-end}}
+.hhu-school-grid[data-hhu-layout=list]{grid-template-columns:minmax(0,1fr)}
+.hhu-school-grid[data-hhu-layout=list] .hhu-school-card{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr);align-items:stretch;gap:0}
+.hhu-school-grid[data-hhu-layout=list] .hhu-campus-media{height:100%;border-right:1px solid var(--u-line)}
+.hhu-school-grid[data-hhu-layout=list] .hhu-campus-image{min-height:150px;aspect-ratio:16/10}
+.hhu-school-grid[data-hhu-layout=list] .hhu-school-card-body{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 20px;align-content:center}
+.hhu-school-grid[data-hhu-layout=list] .hhu-card-heading,.hhu-school-grid[data-hhu-layout=list] .hhu-school-card h2{grid-column:1/-1}
+.hhu-school-grid[data-hhu-layout=list] .hhu-school-card h2{font-size:19px}
+.hhu-school-grid[data-hhu-layout=list] .hhu-location{grid-column:1/-1}
+.hhu-school-grid[data-hhu-layout=list] .hhu-school-card dl{margin:0;padding-top:8px;gap:28px}
+.hhu-school-grid[data-hhu-layout=list] .hhu-card-actions{display:flex;align-self:end;gap:8px;flex-wrap:wrap;margin:0}
+.hhu-school-grid[data-hhu-layout=list] .hhu-card-actions a{width:auto}
+.hhu .hhu-pagination{gap:8px}
+.hhu .hhu-pagination button{min-width:44px}
+.hhu .hhu-pagination>span{padding-inline:8px;text-align:center}
+@media(max-width:1000px){.hhu-school-grid[data-hhu-layout=list] .hhu-school-card-body{grid-template-columns:minmax(0,1fr)}.hhu-school-grid[data-hhu-layout=list] .hhu-school-card dl,.hhu-school-grid[data-hhu-layout=list] .hhu-card-actions{grid-column:1/-1}.hhu-school-grid[data-hhu-layout=list] .hhu-school-card{grid-template-columns:minmax(0,185px) minmax(0,1fr)}}
+@media(max-width:760px){.hhu .ue-filter-drawer .hhu-discovery-form{grid-template-columns:minmax(0,1fr);gap:12px}.hhu .hhu-discovery-facets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.hhu .hhu-discovery-facets button{padding:10px 9px;font-size:11px}.hhu-directory-tools{width:100%;justify-content:space-between}.hhu .hhu-discovery-results h2{font-size:19px}.hhu .hhu-pagination{gap:6px}.hhu .hhu-pagination>span{order:-1;flex-basis:100%;padding-bottom:5px}.hhu-school-grid[data-hhu-layout=list] .hhu-school-card{grid-template-columns:minmax(0,1fr)}.hhu-school-grid[data-hhu-layout=list] .hhu-campus-media{border-right:0}.hhu-school-grid[data-hhu-layout=list] .hhu-campus-image,.hhu-school-grid[data-hhu-layout=list] .hhu-campus-unavailable{aspect-ratio:21/7;min-height:100px}.hhu-school-grid[data-hhu-layout=list] .hhu-school-card-body{padding:16px}.hhu-school-grid[data-hhu-layout=list] .hhu-school-card h2{font-size:17px}.hhu-saved-search-panel .hhu-inline-form{display:grid;grid-template-columns:minmax(0,1fr)}.hhu-saved-search-panel .hhu-inline-form button{width:100%}}
+@media(prefers-reduced-motion:reduce){.hhu-school-grid[data-hhu-layout=list] .hhu-school-card{transition:none;transform:none}}
+@media(forced-colors:active){.hhu .hhu-discovery-facets button[aria-pressed=true],.hhu .hhu-directory-tools [aria-pressed=true]{background:Highlight!important;color:HighlightText!important;border:2px solid Highlight!important}.hhu-school-grid[data-hhu-layout=list] .hhu-campus-media{border-color:CanvasText}}

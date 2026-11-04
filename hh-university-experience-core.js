@@ -24,11 +24,11 @@
     return {schoolId: r.schoolId, programId: r.programId || '', note: text(r.note, 2000)};
   }
   function filters(raw = {}) {
-    return {q: text(raw.q, 200), family: text(raw.family, 60) || 'all', province: text(raw.province, 160) || 'all', level: ['university', 'college'].includes(raw.level) ? raw.level : 'all', year: /^(202[0-6])$/.test(String(raw.year)) ? String(raw.year) : 'all', ...(raw.photos==='verified'?{photos:'verified'}:{})};
+    return {q: text(raw.q, 200), family: text(raw.family, 60) || 'all', province: text(raw.province, 160) || 'all', level: ['university', 'college'].includes(raw.level) ? raw.level : 'all', year: /^(202[0-6])$/.test(String(raw.year)) ? String(raw.year) : 'all', ...(raw.photos==='verified'?{photos:'verified'}:{}),...(raw.coverage&&['programmes','scores','missing'].includes(raw.coverage)?{coverage:raw.coverage}:{}),...(raw.source==='website'?{source:'website'}:{}),...(raw.sort&&['programmes','province'].includes(raw.sort)?{sort:raw.sort}:{}),...(raw.layout==='list'?{layout:'list'}:{}),...(Number(raw.size)===48?{size:48}:{}),...(Number.isSafeInteger(Number(raw.page))&&Number(raw.page)>0?{page:Math.min(1000,Number(raw.page))}:{})};
   }
   function searchURL(raw, kind='majors') {
     const f = filters(raw), p = new URLSearchParams();
-    for (const [k, v] of Object.entries(f)) if (v && v !== 'all' && (kind!=='schools'||['q','level','province','photos'].includes(k)) && (kind==='schools'||k!=='photos')) p.set(k, v);
+    for (const [k, v] of Object.entries(f)) if (v && v !== 'all' && (kind!=='schools'||['q','level','province','photos','coverage','source','sort','layout','size','page'].includes(k)) && (kind==='schools'||!['photos','coverage','source','sort','layout','size','page'].includes(k))) p.set(k, v);
     return (kind==='schools'?'/university':'/university/majors') + (p.size ? '?' + p : '');
   }
   function defaults() {

@@ -5,7 +5,7 @@
   else root.HHUniversityCampus = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
-  const VERSION = 1, CHECKED_AT = '2026-11-02';
+  const VERSION = 1, CHECKED_AT = '2026-11-04';
   const raw = /* CAMPUS_PHOTOS */[];
   const freeze = value => { if (value && typeof value === 'object' && !Object.isFrozen(value)) { Object.values(value).forEach(freeze); Object.freeze(value); } return value; };
   const catalog = freeze(raw), bySchool = new Map(catalog.map(photo => [photo.schoolId, photo]));

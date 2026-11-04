@@ -1,0 +1,57 @@
+/* School-profile facts share the University colour tokens. */
+.hhu .hup { margin: 18px 0; min-width: 0; }
+.hhu .hup-overview { border: 1px solid var(--u-line); background: var(--u-panel); border-radius: 18px; overflow: hidden; }
+.hhu .hup-overview>summary { display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 60px; padding: 17px 20px; cursor: pointer; list-style: none; }
+.hhu .hup-overview>summary::-webkit-details-marker,.hhu .hup-sources>summary::-webkit-details-marker { display: none; }
+.hhu .hup-overview>summary>span { display: grid; gap: 3px; min-width: 0; }
+.hhu .hup-overview>summary strong { font-size: 17px; color: var(--u-ink); }
+.hhu .hup-overview>summary small { font-size: 12px; color: var(--u-muted); }
+.hhu .hup-overview>summary>b { font-size: 24px; line-height: 1; color: var(--u-ink); transition: transform .15s; }
+.hhu .hup-overview[open]>summary>b { transform: rotate(180deg); }
+.hhu .hup-content { border-top: 1px solid var(--u-line); padding: 20px; }
+.hhu .hup-metrics { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+.hhu .hup-metrics>div { display: grid; gap: 3px; padding: 15px 17px; border: 1px solid var(--u-line); border-radius: 13px; background: var(--u-raised); }
+.hhu .hup-metrics strong { font-size: 26px; color: var(--u-ink); line-height: 1.25; font-variant-numeric: tabular-nums; }
+.hhu .hup-metrics span { color: var(--u-muted); font-size: 12px; overflow-wrap: anywhere; }
+.hhu .hup .hup-note { color: var(--u-muted); font-size: 12px; line-height: 1.75; margin: 12px 0 20px; }
+.hhu .hup-year-heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin: 22px 0 12px; }
+.hhu .hup-year-heading h2 { margin: 0; font-size: 17px; }
+.hhu .hup-year-heading>span { color: var(--u-muted); font-size: 12px; }
+.hhu .hup-years { display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); gap: 8px; }
+.hhu .hup-year { display: grid; gap: 4px; justify-items: start; align-content: center; min-height: 76px; padding: 12px; text-align: left; background: var(--u-field); }
+.hhu .hup-year strong { font-size: 17px; font-variant-numeric: tabular-nums; }
+.hhu .hup-year span { color: var(--u-muted); font-size: 11px; font-weight: 500; line-height: 1.5; }
+.hhu .hup-year-present { border-top: 3px solid var(--u-accent); }
+.hhu .hup-year-missing { border-style: dashed; }
+.hhu .hup-year[aria-pressed=true] { border-color: var(--u-accent); background: var(--u-raised); box-shadow: inset 0 0 0 1px var(--u-accent); }
+.hhu .hup-steps { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin-top: 18px; }
+.hhu .hup-step { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 6px 10px; align-content: start; justify-items: start; padding: 16px; text-align: left; min-height: 112px; }
+.hhu .hup-step strong { color: var(--u-ink); font-size: 14px; }
+.hhu .hup-step>span { grid-column: 1; color: var(--u-muted); font-weight: 400; font-size: 12px; line-height: 1.7; }
+.hhu .hup-step>b { grid-column: 2; grid-row: 1 / span 2; font-size: 20px; color: var(--u-ink); }
+.hhu .hup-sources { margin-top: 18px; border-top: 1px solid var(--u-line); padding-top: 4px; }
+.hhu .hup-sources>summary { min-height: 44px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 13px; font-weight: 650; cursor: pointer; }
+.hhu .hup-sources>summary span { font-size: 11px; font-weight: 400; color: var(--u-muted); }
+.hhu .hup-sources ul { margin: 8px 0; padding-left: 21px; }
+.hhu .hup-sources li { color: var(--u-muted); }
+.hhu .hup-sources a { display: inline-flex; align-items: center; min-height: 44px; gap: 6px; font-size: 12px; overflow-wrap: anywhere; }
+.hhu .hup :is(button,summary,a):focus-visible { outline: 3px solid var(--u-accent); outline-offset: 3px; }
+@media(max-width:1050px) { .hhu .hup-years { grid-template-columns: repeat(4,minmax(0,1fr)); } }
+@media(max-width:650px) {
+  .hhu .hup-content { padding: 15px; }
+  .hhu .hup-overview>summary { padding: 15px; gap: 10px; }
+  .hhu .hup-metrics { grid-template-columns: 1fr; gap: 8px; }
+  .hhu .hup-metrics>div { grid-template-columns: auto minmax(0,1fr); align-items: baseline; gap: 12px; padding: 12px; }
+  .hhu .hup-metrics strong { font-size: 24px; }
+  .hhu .hup-years { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .hhu .hup-years button:last-child { grid-column: 1 / -1; }
+  .hhu .hup-year { min-height: 76px; }
+  .hhu .hup-steps { grid-template-columns: 1fr; }
+  .hhu .hup-step { min-height: 90px; }
+}
+@media(prefers-reduced-motion:reduce) { .hhu .hup * { transition: none!important; animation: none!important; } }
+@media(forced-colors:active) {
+  .hhu .hup :is(button,details,.hup-metrics>div) { background: Canvas; color: CanvasText; border-color: ButtonText; }
+  .hhu .hup-year[aria-pressed=true] { outline: 2px solid Highlight; }
+  .hhu .hup :focus-visible { outline-color: Highlight; }
+}

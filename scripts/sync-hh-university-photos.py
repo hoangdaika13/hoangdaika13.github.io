@@ -26,6 +26,24 @@ MAX_BYTES = 25 * 1024 * 1024
 Image.MAX_IMAGE_PIXELS = 100_000_000
 DOWNLOAD_LOCK = threading.Lock()
 last_download = 0
+PUBLISHED_PATH = DEST / 'campus-photos-v1.json'
+PUBLISHED = {photo['schoolId']: photo for photo in json.loads(PUBLISHED_PATH.read_text(encoding='utf-8'))['photos']} if PUBLISHED_PATH.exists() else {}
+
+
+def retained(row):
+    """Keep released variants byte-for-byte; never silently replace pinned work."""
+    photo = PUBLISHED.get(row['schoolId'])
+    if not photo:
+        return None
+    if photo['fileTitle'] != 'File:' + row['file'] or any(photo.get(key, '') != row.get(key, '') for key in ('campus','officialUrl','identityNote')):
+        raise ValueError('Published photograph changed; use a new asset version: ' + row['schoolId'])
+    for asset in photo['assets']:
+        if not re.fullmatch(r'\./assets/university/' + re.escape(row['schoolId']) + r'-v1-[0-9]{2,4}\.webp', asset['url']):
+            raise ValueError('Unapproved published asset path')
+        target = ROOT / asset['url']
+        if not target.is_file() or hashlib.sha256(target.read_bytes()).hexdigest() != asset['sha256']:
+            raise ValueError('Restore the pinned released asset before syncing: ' + asset['url'])
+    return photo
 
 
 def plain(value):
@@ -68,6 +86,9 @@ def build(row):
     school = next((s for s in directory['schools'] if s['id'] == school_id), None)
     if not school:
         raise ValueError('School is absent from directory: ' + school_id)
+    old = retained(row)
+    if old:
+        return old
     params = {'action': 'query', 'format': 'json', 'titles': 'File:' + row['file'],
               'prop': 'imageinfo', 'iiprop': 'url|extmetadata|size|sha1|timestamp'}
     data = json.loads(request('https://commons.wikimedia.org/w/api.php?' + urllib.parse.urlencode(params)))
@@ -107,7 +128,7 @@ def build(row):
         binary = target.read_bytes()
         assets.append({'width': width, 'height': height, 'url': './assets/university/' + target.name,
                        'bytes': len(binary), 'sha256': hashlib.sha256(binary).hexdigest()})
-    return {'schoolId': school_id, 'schoolName': school['name'], 'campus': row['campus'],
+    return {'schoolId': school_id, 'schoolName': school['name'], 'campus': row['campus'], 'releaseAdded': 1082,
             'identityEvidenceUrl': row.get('identityEvidenceUrl', info['descriptionurl']), 'identityNote': row.get('identityNote', ''),
             'officialUrl': row['officialUrl'], 'fileTitle': page['title'], 'sourceUrl': info['descriptionurl'],
             'originalUrl': source, 'sourcePageId': page['pageid'], 'sourceRevisionAt': info['timestamp'],
@@ -126,6 +147,9 @@ def main():
     ids = [row['schoolId'] for row in curated['selections']]
     if len(set(ids)) != len(ids):
         raise ValueError('Duplicate school selections')
+    baseline = json.loads((ROOT / 'docs/university/campus-photo-baseline-1081.json').read_text(encoding='utf-8'))
+    if not {row['schoolId'] for row in baseline['photos']}.issubset(ids):
+        raise ValueError('The original 1081 photographs must remain selected')
     DEST.mkdir(exist_ok=True)
     CACHE.mkdir(exist_ok=True, parents=True)
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:

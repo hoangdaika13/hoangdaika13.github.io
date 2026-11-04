@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1081";
+const CACHE = "hh-identity-portal-v1082";
+// Previous release: hh-identity-portal-v1081.
 // Previous release: hh-identity-portal-v1080.
 // Previous release: hh-identity-portal-v1079.
 // Previous release: hh-identity-portal-v1078.
@@ -869,7 +870,7 @@ const RUNTIME_ASSETS = [
   "./hh-multiverse-explorer.js?v=1",
   "./hh-multiverse-views.js?v=4",
   "./hh-multiverse.js?v=4",
-  "./hh-university.css?v=4",
+  "./hh-university.css?v=5",
   "./hh-university-core.js?v=1",
   "./hh-university-manifest.js?v=1",
   "./hh-university-data.js?v=1",
@@ -877,11 +878,14 @@ const RUNTIME_ASSETS = [
   "./hh-university-workspace-data.js?v=3",
   "./hh-university-workspace.js?v=2",
   "./hh-university-workspace.css?v=1",
-  "./hh-university-experience-core.js?v=2",
+  "./hh-university-discovery.js?v=1",
+  "./hh-university-experience-core.js?v=3",
   "./hh-university-experience.js?v=1",
   "./hh-university-experience.css?v=1",
-  "./hh-university-campus.js?v=1",
-  "./hh-university.js?v=5",
+  "./hh-university-campus.js?v=2",
+  "./hh-university-profile.js?v=1",
+  "./hh-university-profile.css?v=1",
+  "./hh-university.js?v=6",
   "./study-together.css?v=7",
   "./study-classroom.css?v=1",
   "./study-campus.css?v=1",
@@ -982,10 +986,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=742",
+  "./performance-loader.js?v=743",
   "./auth-platform.js?v=22",
   "./auth-neon-gateway.js?v=35",
-  "./script.js?v=304"
+  "./script.js?v=305"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime
