@@ -6,15 +6,16 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
-test("HH Neon Gateway assets are wired into the application shell", () => {
+test("the optional HH explorer loads the versioned planet gateway and its renderer", () => {
   const html = read("index.html");
   const worker = read("sw.js");
   assert.match(html, /auth-neon-gateway\.css\?v=9/);
   assert.match(html, /auth-h-galaxy\.css\?v=13/);
   assert.match(read("auth-neon-gateway.js"), /auth-h-galaxy\.js\?v=15/);
   assert.match(read("auth-neon-gateway.js"), /auth-living-galaxy-3d\.js\?v=21/);
-  const executableHtml=html.replace(/<!--[\s\S]*?-->/g, ""),gatewayAsset=executableHtml.match(/src="(auth-neon-gateway\.js\?v=\d+)"/)?.[1];
-  assert.ok(gatewayAsset,"the executable shell loads a versioned authentication gateway");
+  const atlas = html.match(/<template id="spiral-atlas-template">([\s\S]*?)<\/template>/)?.[1];
+  const gatewayAsset = atlas?.match(/src="(auth-neon-gateway\.js\?v=\d+)"/)?.[1];
+  assert.ok(gatewayAsset, "opening the explorer loads its planet gateway");
   assert.match(worker, /auth-neon-gateway\.css\?v=9/);
   assert.match(worker, /auth-h-galaxy\.css\?v=13/);
   assert.match(worker, /auth-h-galaxy\.js\?v=15/);

@@ -421,7 +421,8 @@
       releaseAuthSurfaceWhenReady();
     });
 
-    const setStatus = (message, kind = "info") => {
+    const setStatus = (message, kind = "info", quiet = false) => {
+      statusNode?.classList.toggle("is-quiet", quiet);
       if (statusText) statusText.textContent = message;
       statusNode?.classList.toggle("is-error", kind === "error");
       statusNode?.classList.toggle("is-success", kind === "success");
@@ -443,7 +444,7 @@
     setStatus("Cổng đăng nhập đã sẵn sàng · đang khôi phục phiên nền.", "info");
     sessionWatchdog = window.setTimeout(() => {
       if (gate.dataset.authSession !== "background" || user) return;
-      setStatus("Sẵn sàng đăng nhập an toàn.", "info");
+      setStatus("Sẵn sàng đăng nhập an toàn.", "info", true);
     }, SESSION_VISUAL_TIMEOUT);
 
     const setOAuthError = (message) => {
@@ -482,7 +483,7 @@
       const input = form?.querySelector(`[name="${name}"]`);
       const error = form?.querySelector(`[data-field-error="${name}"]`) || input?.closest(".auth-field")?.querySelector("[data-field-error]");
       if (input) input.setAttribute("aria-invalid", "true");
-      if (error) error.textContent = message;
+      if (error) { error.textContent = message; error.hidden = false; }
       input?.focus();
       setStatus(message, "error");
       return false;
@@ -578,6 +579,7 @@
       const recovery = gate.querySelector("[data-forgot-panel]");
       const qr = gate.querySelector("[data-qr-panel]");
       const emailVerify = gate.querySelector("[data-email-verify-panel]");
+      const previous = gate.dataset.authView;
       const special = name === "recovery" || name === "qr" || name === "verify-email";
       gate.dataset.authView = name;
       [authForms, social, divider, tabs].forEach((node) => { if (node) node.hidden = special; });
@@ -590,6 +592,12 @@
         qr: "Đăng nhập an toàn bằng thiết bị khác.",
         "verify-email": "Nhập mã 6 số để hoàn tất xác minh email."
       }[name]);
+      const focusSelector = {
+        recovery: "[data-recovery-email]",
+        "verify-email": "[data-email-verify-code]",
+        qr: "[data-qr-close]"
+      }[name] || (previous === "recovery" ? "[data-forgot-open]" : "");
+      if (focusSelector) gate.querySelector(focusSelector)?.focus({ preventScroll: true });
     };
 
     const selectAuthPanel = (name) => {
@@ -601,12 +609,15 @@
       });
       gate.querySelectorAll("[data-auth-panel]").forEach((panel) => { panel.hidden = panel.dataset.authPanel !== name; });
       clearErrors(name === "login" ? loginForm : registerForm);
-      setStatus(name === "register" ? "Tạo HH ID miễn phí trong 3 bước." : "Sẵn sàng đăng nhập an toàn.");
+      setStatus(name === "register" ? "Tạo HH ID miễn phí trong 3 bước." : "Sẵn sàng đăng nhập an toàn.", "info", name === "login");
     };
 
     const setSignupStep = (step) => {
       signupStep = Math.min(3, Math.max(1, Number(step) || 1));
-      registerForm.querySelectorAll("[data-signup-step]").forEach((panel) => { panel.hidden = Number(panel.dataset.signupStep) !== signupStep; });
+      registerForm.querySelectorAll("[data-signup-step]").forEach((panel) => {
+        panel.hidden = Number(panel.dataset.signupStep) !== signupStep;
+        panel.setAttribute("aria-hidden", String(panel.hidden));
+      });
       registerForm.querySelectorAll("[data-signup-step-nav]").forEach((button) => {
         const current = Number(button.dataset.signupStepNav);
         button.classList.toggle("active", current === signupStep);
@@ -745,7 +756,7 @@
         if (user) {
           writePublicProfile(user);
           setStatus(`Chào mừng ${user.name || user.email} quay lại.`, "success");
-        } else setStatus("Sẵn sàng đăng nhập an toàn.");
+        } else setStatus("Sẵn sàng đăng nhập an toàn.", "info", true);
       } catch (error) {
         if (restoreEpoch !== authEpoch) return;
         setToken("");

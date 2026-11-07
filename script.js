@@ -8305,6 +8305,7 @@ function initAppShell() {
     legacyMain.hidden = true;
   };
   const renderRouteSafely = () => {
+    if (!isUnlocked()) return false;
     const requestedRoute = routeFromHash();
     const loader = window.HHAssetLoader;
     if (loader && !loader.isRouteReady(requestedRoute)) {
@@ -8319,6 +8320,7 @@ function initAppShell() {
         }).catch((error) => {
           if (routeFromHash() !== requestedRoute) return;
           pendingAssetRoute = "";
+          if (!isUnlocked()) return;
           const attempts = routeAssetRetries.get(requestedRoute) || 0;
           if (attempts < 1) {
             routeAssetRetries.set(requestedRoute, attempts + 1);
@@ -8360,10 +8362,10 @@ function initAppShell() {
     const motion = cosmicMotionMode();
     const minimumDeparture = motion === "cinematic" ? 240 : motion === "balanced" ? 180 : 0;
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      if (request !== routeTransitionRequest || routeFromHash() !== route) return;
+      if (!isUnlocked() || request !== routeTransitionRequest || routeFromHash() !== route) return;
       const remaining = Math.max(0, minimumDeparture - (Date.now() - startedAt));
       window.setTimeout(() => {
-        if (request !== routeTransitionRequest || routeFromHash() !== route) return;
+        if (!isUnlocked() || request !== routeTransitionRequest || routeFromHash() !== route) return;
         callback();
       }, remaining);
     }));

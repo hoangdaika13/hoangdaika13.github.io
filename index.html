@@ -76,22 +76,16 @@
   </style>
   <!-- Compatibility: app-shell.css?v=64 app-shell.css?v=65 app-shell.css?v=66 -->
   <link rel="stylesheet" href="app-shell.css?v=67">
-  <link rel="stylesheet" href="auth-experience.css?v=6">
-  <link rel="stylesheet" href="auth-zoom-resilience.css?v=3">
-  <link rel="stylesheet" href="auth-typography-unified.css?v=2">
   <link rel="stylesheet" href="sidebar-navigation-pro.css?v=31" data-compat-href="sidebar-navigation-pro.css?v=30 sidebar-navigation-pro.css?v=29">
   <link rel="stylesheet" href="app-theme-system.css?v=9">
   <link rel="stylesheet" href="privacy-consent-center.css?v=3">
   <link rel="stylesheet" href="motion-comfort.css?v=1">
   <link rel="stylesheet" href="auth-login-repair.css?v=4">
-  <link rel="stylesheet" href="auth-neon-gateway.css?v=9">
-  <link rel="stylesheet" href="auth-h-galaxy.css?v=13">
-  <link rel="stylesheet" href="auth-living-galaxy-3d.css?v=13">
-  <link rel="stylesheet" href="auth-solar-secret.css?v=8">
   <link rel="stylesheet" href="workspace-feature-explorer.css?v=4">
   <link rel="stylesheet" href="brand-galaxy-logo.css?v=1">
   <link rel="stylesheet" href="galaxy-design-system.css?v=1">
   <link rel="stylesheet" href="galaxy-shell.css?v=9">
+  <link rel="stylesheet" href="auth-spiral.css?v=1">
   <!-- Lazy workspace assets are loaded by performance-loader.js. HH School v1 owns /learn; HH English and HH Japanese remain independent routes. -->
   <script src="vercel-observability.js?v=2" defer></script>
   <!-- Compatibility: config.js?v=8 config.js?v=9 -->
@@ -105,6 +99,7 @@
   <script src="all-game-exp-catalog-story.js?v=1" defer></script>
   <script src="all-game-expansion-catalog.js?v=1" defer></script>
   <script src="all-game-catalog.js?v=3" defer></script>
+  <!-- Release v1083: spiral-galaxy sign-in and on-demand HH explorer. -->
   <!-- Release v1082 University discovery: verified campus photo expansion, shareable data filters and layouts, school profile overview and seven-year coverage; performance-loader.js?v=743 script.js?v=305. -->
   <!-- Release v1081 Real photography and expanded official catalogues: HH Multiverse in Entertainment with NASA photographs, verified campus photography and complete imported legal catalogue browsing; performance-loader.js?v=742 script.js?v=304. -->
   <!-- Release v1080 HH Multiverse Expanded Realities: 24 original AI artworks and 1000 seeded graphic scenes, searchable paged gallery, account favorites and snapshot-aware world explorer; performance-loader.js?v=741 script.js?v=303. -->
@@ -311,7 +306,118 @@
   <div class="neon-grid-bg" aria-hidden="true"></div>
   <div class="cursor-glow" aria-hidden="true"></div>
 
-  <section class="auth-gate" id="authGate" aria-label="Đăng nhập để vào trang chủ">
+  <section id="authGate" class="auth-gate hh-spiral-gate" aria-label="Tài khoản hoang8.com">
+    <div class="spiral-layout">
+      <header class="spiral-mast">
+        <span class="spiral-wordmark"><img src="assets/brand/hh-galaxy-star-static.svg?v=2" width="36" height="36" alt="">hoang8<span>.com</span></span>
+        <button class="spiral-discover" type="button" data-spiral-explore aria-haspopup="dialog">Khám phá HH <span aria-hidden="true">↗</span></button>
+      </header>
+      <section class="spiral-sky" aria-label="Thiên hà xoắn ốc ba nhánh">
+        <div class="spiral-view" tabindex="0" role="group" aria-label="Xoay góc nhìn thiên hà" aria-describedby="spiral-drag-hint">
+          <canvas class="spiral-canvas" aria-hidden="true"></canvas>
+        </div>
+        <div class="spiral-tools">
+          <span id="spiral-drag-hint">Kéo hoặc dùng phím mũi tên để xoay</span>
+          <button type="button" class="spiral-motion" data-spiral-motion aria-label="Tạm dừng chuyển động" title="Tạm dừng chuyển động" hidden><span aria-hidden="true">Ⅱ</span></button>
+        </div>
+      </section>
+    <section class="spiral-card" data-auth-card data-auth-state="idle" aria-labelledby="spiral-title">
+      <header class="spiral-heading"><h1 id="spiral-title">Chào bạn trở lại.</h1></header>
+      <div class="auth-gate-status is-loading" id="authGateStatus" role="status" aria-live="polite"><i></i><span>Đang chuẩn bị cổng đăng nhập...</span></div>
+
+      <section class="auth-returning-card" data-returning-user data-auth-returning hidden>
+        <span class="auth-returning-avatar" data-returning-avatar>HH</span>
+        <div><small>CHÀO MỪNG TRỞ LẠI</small><strong>Chào mừng <span data-returning-name>bạn</span> quay lại</strong><p><span data-returning-workspace data-auth-recent-workspace>Trung tâm điều khiển</span> · <span data-returning-device data-auth-last-device>Thiết bị gần nhất</span></p><button type="button" class="auth-returning-project" data-auth-recent-project data-auth-continue-project>Tiếp tục dự án gần đây →</button></div>
+        <button type="button" class="auth-mini-action" data-switch-account>Đổi tài khoản</button>
+      </section>
+
+      <div class="auth-mode-tabs" role="tablist" aria-label="Tài khoản"><button class="active" id="spiral-tab-login" type="button" role="tab" aria-selected="true" aria-controls="gateLoginForm" data-auth-tab="login">Đăng nhập</button><button id="spiral-tab-register" type="button" role="tab" aria-selected="false" aria-controls="gateRegisterForm" data-auth-tab="register">Tạo tài khoản</button></div>
+      <div class="auth-social-row">
+        <button class="auth-provider" type="button" data-oauth-provider="google" data-google-official><svg viewBox="0 0 24 24" aria-hidden="true" width="19" height="19"><path fill="#4285f4" d="M21.8 12.2c0-.7-.1-1.4-.2-2.1H12v4h5.5a4.8 4.8 0 0 1-2 3.1v2.6h3.3c1.9-1.8 3-4.4 3-7.6z"/><path fill="#34a853" d="M12 22c2.7 0 5-.9 6.8-2.4l-3.3-2.6c-.9.6-2.1 1-3.5 1a6 6 0 0 1-5.6-4.1H3v2.7A10 10 0 0 0 12 22z"/><path fill="#fbbc05" d="M6.4 13.9a6.1 6.1 0 0 1 0-3.8V7.4H3a10.1 10.1 0 0 0 0 9.2z"/><path fill="#ea4335" d="M12 6c1.5 0 2.8.5 3.8 1.5l2.9-2.9A9.6 9.6 0 0 0 12 2a10 10 0 0 0-9 5.4l3.4 2.7A6 6 0 0 1 12 6z"/></svg>Tiếp tục với Google</button>
+        <span class="auth-oauth-skeleton" data-auth-loading hidden aria-hidden="true"></span>
+      </div>
+      <div class="auth-divider"><span>hoặc dùng email</span></div>
+
+      <div class="auth-gate-forms">
+        <form id="gateLoginForm" data-auth-panel="login" aria-label="Đăng nhập bằng email">
+          <label class="auth-field"><span>Email</span><span class="auth-input-shell"><input name="email" type="email" inputmode="email" placeholder="ban@example.com" autocomplete="email" aria-describedby="loginEmailError" required></span><small class="auth-inline-error" id="loginEmailError" data-field-error="email"></small></label>
+          <label class="auth-field"><span>Mật khẩu</span><span class="auth-password auth-input-shell"><input name="password" type="password" placeholder="Nhập mật khẩu" autocomplete="current-password" aria-describedby="loginPasswordError loginCapsWarning" required><button type="button" data-password-toggle aria-label="Hiện mật khẩu">Hiện</button></span><small class="auth-caps-warning" id="loginCapsWarning" data-caps-warning hidden>Caps Lock đang bật</small><small class="auth-inline-error" id="loginPasswordError" data-field-error="password"></small></label>
+          <div class="auth-captcha" data-auth-captcha hidden><div data-turnstile-widget></div><small>Chỉ xuất hiện khi hệ thống phát hiện nhiều lần đăng nhập bất thường.</small></div>
+          <div class="auth-form-options"><label><input name="remember" type="checkbox"> <span>Ghi nhớ đăng nhập</span></label><button type="button" data-forgot-open data-auth-forgot>Quên mật khẩu?</button></div>
+          <button class="button primary interactive auth-submit" type="submit"><span>Đăng nhập</span><i aria-hidden="true">→</i></button>
+        </form>
+        <form id="gateRegisterForm" data-auth-panel="register" aria-label="Tạo tài khoản mới" hidden novalidate>
+          <p class="auth-provider-notice" data-register-provider-notice role="status" aria-live="polite" hidden></p>
+          <nav class="auth-signup-steps" aria-label="Tiến trình tạo tài khoản"><button class="active" type="button" data-signup-step-nav="1"><i>1</i><span>Tài khoản</span></button><button type="button" data-signup-step-nav="2"><i>2</i><span>Hồ sơ</span></button><button type="button" data-signup-step-nav="3"><i>3</i><span>Sở thích</span></button></nav>
+
+          <section class="auth-step-panel" data-signup-step="1">
+            <label class="auth-field"><span>Email <small>Kiểm tra theo thời gian thực</small></span><span class="auth-input-shell"><input name="email" type="email" inputmode="email" placeholder="ban@example.com" autocomplete="email" aria-describedby="registerEmailError registerEmailStatus" required data-register-email></span><small id="registerEmailStatus" class="auth-field-hint" data-email-availability></small><small class="auth-inline-error" id="registerEmailError" data-field-error="email"></small></label>
+            <label class="auth-field"><span>Mật khẩu <small>Tối thiểu 12 ký tự</small></span><span class="auth-password auth-input-shell"><input name="password" type="password" placeholder="Ít nhất 12 ký tự" autocomplete="new-password" aria-describedby="registerPasswordError" minlength="12" maxlength="72" required data-register-password><button type="button" data-password-toggle aria-label="Hiện mật khẩu">Hiện</button></span><small class="auth-caps-warning" data-caps-warning hidden>Caps Lock đang bật</small><small class="auth-inline-error" id="registerPasswordError" data-field-error="password"></small></label>
+            <div class="password-strength" data-password-strength data-score="0"><i></i><span>Độ mạnh mật khẩu</span></div>
+            <ul class="auth-password-rules" data-password-rules><li data-rule="length">Ít nhất 12 ký tự</li><li data-rule="case">Có chữ hoa và chữ thường</li><li data-rule="number">Có ít nhất một số</li><li data-rule="symbol">Có ký tự đặc biệt</li></ul>
+            <label class="auth-field"><span>Xác nhận mật khẩu <small>Nhập lại chính xác</small></span><span class="auth-password auth-input-shell"><input name="confirmPassword" type="password" placeholder="Nhập lại mật khẩu" autocomplete="new-password" aria-describedby="registerConfirmError" minlength="12" maxlength="72" required><button type="button" data-password-toggle aria-label="Hiện mật khẩu">Hiện</button></span><small class="auth-inline-error" id="registerConfirmError" data-field-error="confirmPassword"></small></label>
+            <button class="button secondary interactive auth-step-next" type="button" data-auth-next-step="2"><span>Tiếp tục tạo hồ sơ</span><i>→</i></button>
+          </section>
+
+          <section class="auth-step-panel" data-signup-step="2" hidden>
+            <div class="auth-avatar-picker"><button type="button" data-avatar-trigger aria-label="Chọn ảnh đại diện"><span data-avatar-preview>HH</span><i>＋</i></button><input name="avatarFile" type="file" accept="image/png,image/jpeg,image/webp" data-avatar-input hidden><div><strong>Ảnh đại diện</strong><small>PNG, JPG hoặc WebP tối đa 2 MB</small></div></div>
+            <input name="avatar" type="hidden" data-avatar-value>
+            <label class="auth-field"><span>Tên hiển thị <small>Mọi người sẽ nhìn thấy</small></span><span class="auth-input-shell"><i>◇</i><input name="name" type="text" placeholder="Tên hiển thị của bạn" autocomplete="name" minlength="2" maxlength="160" required></span><small class="auth-inline-error" data-field-error="name"></small></label>
+            <label class="auth-field"><span>Biệt danh <small>Dùng trong Community</small></span><span class="auth-input-shell"><i>#</i><input name="nickname" type="text" placeholder="Ví dụ: hoangcreative" autocomplete="nickname" minlength="2" maxlength="40"></span></label>
+            <label class="auth-color-field"><span>Màu nhận diện cá nhân</span><input name="creativeColor" type="color" value="#f05caf" aria-label="Chọn màu đại diện"></label>
+            <div class="auth-step-actions"><button type="button" data-auth-prev-step="1" data-signup-previous>← Quay lại</button><button class="button secondary interactive" type="button" data-auth-next-step="3">Chọn sở thích →</button></div>
+          </section>
+
+          <section class="auth-step-panel" data-signup-step="3" hidden>
+            <fieldset class="auth-interest-fieldset"><legend>Cá nhân hóa HH cho bạn</legend><p>Chọn ít nhất một lĩnh vực. Bạn có thể đổi sau trong Settings.</p><div class="auth-interest-grid"><label><input type="checkbox" name="interests" value="ai"><span>AI & Prompt</span></label><label><input type="checkbox" name="interests" value="music"><span>Âm nhạc</span></label><label><input type="checkbox" name="interests" value="design"><span>Thiết kế</span></label><label><input type="checkbox" name="interests" value="video"><span>Video</span></label><label><input type="checkbox" name="interests" value="developer"><span>Lập trình</span></label><label><input type="checkbox" name="interests" value="learning"><span>Học tập</span></label><label><input type="checkbox" name="interests" value="community"><span>Cộng đồng</span></label><label><input type="checkbox" name="interests" value="projects"><span>Dự án</span></label></div></fieldset>
+            <label class="consent-line"><input name="consent" type="checkbox" required> <span>Tôi đồng ý với điều khoản và chỉ chia sẻ dữ liệu do tôi chủ động gửi.</span></label>
+            <div class="auth-step-actions"><button type="button" data-auth-prev-step="2" data-signup-previous>← Quay lại</button><button class="button secondary interactive auth-submit" type="submit"><span>Tạo tài khoản miễn phí</span><i>→</i></button></div>
+            <p class="auth-form-note">Mật khẩu được băm một chiều. Email cần được xác minh trước khi dùng tính năng online.</p>
+          </section>
+        </form>
+      </div>
+
+      <section class="auth-recovery-panel" data-forgot-panel hidden aria-label="Khôi phục mật khẩu">
+        <header><button type="button" data-forgot-close aria-label="Quay lại đăng nhập">←</button><div><strong>Khôi phục tài khoản</strong><p>Dùng OTP email hoặc mã khôi phục đã lưu.</p></div></header>
+        <label class="auth-field"><span>Email</span><span class="auth-input-shell"><input type="email" data-recovery-email autocomplete="email" placeholder="ban@example.com"></span></label>
+        <div class="auth-recovery-otp" data-recovery-verify hidden><input type="text" inputmode="text" maxlength="20" autocapitalize="characters" data-recovery-code placeholder="OTP 6 số hoặc HH-XXXX-XXXX-XXXX" aria-label="Mã OTP hoặc mã khôi phục"><input type="password" minlength="12" maxlength="72" data-recovery-password autocomplete="new-password" placeholder="Mật khẩu mới (ít nhất 12 ký tự)" aria-label="Mật khẩu mới"></div>
+        <button class="button primary" type="button" data-recovery-action>Gửi mã xác minh</button>
+        <button class="auth-mini-action" type="button" data-recovery-use-code>Dùng mã khôi phục đã lưu</button>
+        <small data-recovery-status aria-live="polite"></small>
+      </section>
+
+      <section class="auth-qr-panel" data-qr-panel hidden aria-label="Đăng nhập bằng thiết bị khác">
+        <header><button type="button" data-qr-close aria-label="Quay lại đăng nhập">←</button><div><strong>Đăng nhập bằng điện thoại</strong><p>Quét mã bằng thiết bị đã đăng nhập. Mã hết hạn sau 5 phút.</p></div></header>
+        <div class="auth-qr-code" data-qr-code><span>QR</span></div><code data-qr-code-text>Đang tạo mã...</code><small data-qr-status aria-live="polite"></small>
+      </section>
+
+      <section class="auth-email-verify-panel" data-email-verify-panel hidden aria-label="Xác minh email">
+        <header><span>✉</span><div><strong>Xác minh email</strong><p>Mã 6 số đã gửi tới <b data-email-verify-address></b>.</p></div></header>
+        <label class="auth-field"><span>Mã xác minh</span><span class="auth-input-shell"><i>#</i><input type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" data-email-verify-code placeholder="000000"></span></label>
+        <button class="button primary" type="button" data-email-verify-action>Xác minh và vào HH Platform</button>
+        <button class="auth-mini-action" type="button" data-email-verify-resend>Gửi lại mã</button>
+        <small data-email-verify-status aria-live="polite"></small>
+      </section>
+
+      <div class="auth-guest-row"><button type="button" data-guest-login data-auth-guest>Tiếp tục với tư cách khách <span aria-hidden="true">↗</span></button></div>
+      <details class="auth-privacy-panel" data-auth-privacy><summary>Quyền riêng tư</summary><p>HH lưu hồ sơ công khai, lựa chọn cá nhân hóa và hoạt động bạn chủ động đồng bộ. Mật khẩu và API key không được lưu trong trình duyệt. Bạn có thể quản lý phiên và thu hồi thiết bị trong Trung tâm bảo mật.</p></details>
+    </section>
+    </div>
+    <dialog class="spiral-explorer" aria-labelledby="spiral-explorer-title">
+      <header><h2 id="spiral-explorer-title">Khám phá HH</h2><button type="button" data-spiral-close>Đóng</button></header>
+      <div class="spiral-explorer-content"></div>
+    </dialog>
+  </section>
+  <template id="spiral-atlas-template">
+    <link rel="stylesheet" href="auth-experience.css?v=6">
+    <link rel="stylesheet" href="auth-zoom-resilience.css?v=3">
+    <link rel="stylesheet" href="auth-typography-unified.css?v=2">
+    <link rel="stylesheet" href="auth-neon-gateway.css?v=9">
+    <link rel="stylesheet" href="auth-h-galaxy.css?v=13">
+    <link rel="stylesheet" href="auth-living-galaxy-3d.css?v=13">
+    <link rel="stylesheet" href="auth-solar-secret.css?v=8">
+    <link rel="stylesheet" href="auth-spiral.css?v=1">
+    <main id="authGate" class="spiral-atlas">
     <div class="auth-spectrum" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
     <div class="auth-motion-field" aria-hidden="true">
       <span class="auth-orbit auth-orbit--one"><i></i></span>
@@ -388,7 +494,7 @@
         <div class="hh-galaxy-sun" aria-hidden="true"><span></span><small>SOLAR CREATIVE CORE</small></div>
         <div class="hh-galaxy-signature" aria-hidden="true"><span>HH GALAXY</span><b>25 LĨNH VỰC · MỘT VŨ TRỤ</b></div>
       </div>
-      <aside class="hh-galaxy-inspector" id="hhGalaxyInspector" role="tabpanel" aria-live="polite" hidden aria-hidden="true">
+      <aside class="hh-galaxy-inspector" id="hhGalaxyInspector" role="tabpanel" data-auth-card aria-label="Lĩnh vực đang chọn" aria-live="polite">
         <header><span data-hh-galaxy-index>HÀNH TINH 01 / 25</span><small>DI CHUỘT · CHẠM · PHÍM MŨI TÊN</small></header>
         <div><i data-hh-galaxy-icon>⌂</i><span><small data-hh-galaxy-kicker>TRUNG TÂM ĐIỀU KHIỂN</small><strong data-hh-galaxy-title>Trang chủ</strong></span><b data-hh-galaxy-count>1 MỤC</b></div>
         <p data-hh-galaxy-description>Tổng quan ngày, Command Center, thời tiết, thiết bị và các lối tắt quan trọng.</p>
@@ -398,94 +504,11 @@
       </aside>
     </section>
     <button class="auth-motion-toggle" type="button" data-auth-motion-toggle aria-pressed="false"><i></i><span>Hiệu ứng: Cao</span></button>
-    <div class="auth-gate-card interactive-card" data-auth-card data-auth-state="idle">
-      <header class="auth-card-heading">
-        <span data-hh-galaxy-logo data-galaxy-logo-size="46px"><img class="hh-galaxy-logo-fallback" src="assets/brand/hh-galaxy-star-static.svg?v=2" alt="" width="46" height="46"></span>
-        <div><small>CHÀO MỪNG ĐẾN HH</small><strong>Chào mừng bạn trở lại</strong><p>Đăng nhập hoặc tạo tài khoản miễn phí</p></div>
-        <b class="auth-secure-badge"><i></i> Bảo mật</b>
-      </header>
-      <div class="auth-gate-status is-loading" id="authGateStatus" role="status" aria-live="polite"><i></i><span>Đang chuẩn bị cổng đăng nhập...</span></div>
+    </main>
+    <script src="auth-neon-gateway.js?v=35" data-compat-src="auth-neon-gateway.js?v=34 auth-neon-gateway.js?v=33 auth-neon-gateway.js?v=32 auth-neon-gateway.js?v=31 auth-neon-gateway.js?v=30 auth-neon-gateway.js?v=29 auth-neon-gateway.js?v=28 auth-neon-gateway.js?v=27 auth-neon-gateway.js?v=26 auth-neon-gateway.js?v=25 auth-neon-gateway.js?v=24 auth-neon-gateway.js?v=23 auth-neon-gateway.js?v=22 auth-neon-gateway.js?v=21 auth-neon-gateway.js?v=20 auth-neon-gateway.js?v=19 auth-neon-gateway.js?v=18 auth-neon-gateway.js?v=17 auth-neon-gateway.js?v=16 auth-neon-gateway.js?v=15 auth-neon-gateway.js?v=14" defer></script>
+  <script src="auth-solar-secret.js?v=6" defer></script>
+  </template>
 
-      <section class="auth-returning-card" data-returning-user data-auth-returning hidden>
-        <span class="auth-returning-avatar" data-returning-avatar>HH</span>
-        <div><small>CHÀO MỪNG TRỞ LẠI</small><strong>Chào mừng <span data-returning-name>bạn</span> quay lại</strong><p><span data-returning-workspace data-auth-recent-workspace>Trung tâm điều khiển</span> · <span data-returning-device data-auth-last-device>Thiết bị gần nhất</span></p><button type="button" class="auth-returning-project" data-auth-recent-project data-auth-continue-project>Tiếp tục dự án gần đây →</button></div>
-        <button type="button" class="auth-mini-action" data-switch-account>Đổi tài khoản</button>
-      </section>
-
-      <div class="auth-mode-tabs" role="tablist" aria-label="Chọn hình thức xác thực"><button class="active" type="button" role="tab" aria-selected="true" data-auth-tab="login"><i>→</i> Đăng nhập</button><button type="button" role="tab" aria-selected="false" data-auth-tab="register"><i>＋</i> Tạo tài khoản</button></div>
-      <div class="auth-social-row">
-        <button class="auth-provider auth-provider--google interactive" type="button" data-oauth-provider="google" data-google-official><b>G</b><span><small>Tiếp tục với</small>Google</span><i>→</i></button>
-        <span class="auth-oauth-skeleton" data-auth-loading hidden aria-hidden="true"></span>
-      </div>
-      <div class="auth-divider"><span>hoặc dùng email của bạn</span></div>
-
-      <div class="auth-gate-forms">
-        <form id="gateLoginForm" data-auth-panel="login" aria-label="Đăng nhập bằng email">
-          <label class="auth-field"><span>Email <small>Tài khoản của bạn</small></span><span class="auth-input-shell"><i>@</i><input name="email" type="email" inputmode="email" placeholder="you@gmail.com" autocomplete="email" aria-describedby="loginEmailError" required></span><small class="auth-inline-error" id="loginEmailError" data-field-error="email"></small></label>
-          <label class="auth-field"><span>Mật khẩu <small>Cho phép dán và password manager</small></span><span class="auth-password auth-input-shell"><i>●</i><input name="password" type="password" placeholder="Nhập mật khẩu" autocomplete="current-password" aria-describedby="loginPasswordError loginCapsWarning" required><button type="button" data-password-toggle aria-label="Hiện mật khẩu">Hiện</button></span><small class="auth-caps-warning" id="loginCapsWarning" data-caps-warning hidden>Caps Lock đang bật</small><small class="auth-inline-error" id="loginPasswordError" data-field-error="password"></small></label>
-          <div class="auth-captcha" data-auth-captcha hidden><div data-turnstile-widget></div><small>Chỉ xuất hiện khi hệ thống phát hiện nhiều lần đăng nhập bất thường.</small></div>
-          <div class="auth-form-options"><label><input name="remember" type="checkbox"> <span>Ghi nhớ đăng nhập</span></label><button type="button" data-forgot-open data-auth-forgot>Quên mật khẩu?</button></div>
-          <button class="button primary interactive auth-submit" type="submit"><span>Đăng nhập vào HH Platform</span><i>→</i></button>
-          <div class="auth-trust-row"><span><i></i> Phiên bảo mật 12 giờ</span><span><i></i> Theo quyền cho phép</span></div>
-        </form>
-        <form id="gateRegisterForm" data-auth-panel="register" aria-label="Tạo tài khoản mới" hidden novalidate>
-          <p class="auth-provider-notice" data-register-provider-notice role="status" aria-live="polite" hidden></p>
-          <nav class="auth-signup-steps" aria-label="Tiến trình tạo tài khoản"><button class="active" type="button" data-signup-step-nav="1"><i>1</i><span>Tài khoản</span></button><button type="button" data-signup-step-nav="2"><i>2</i><span>Hồ sơ</span></button><button type="button" data-signup-step-nav="3"><i>3</i><span>Sở thích</span></button></nav>
-
-          <section class="auth-step-panel" data-signup-step="1">
-            <label class="auth-field"><span>Email <small>Kiểm tra theo thời gian thực</small></span><span class="auth-input-shell"><i>@</i><input name="email" type="email" inputmode="email" placeholder="you@gmail.com" autocomplete="email" aria-describedby="registerEmailError registerEmailStatus" required data-register-email></span><small id="registerEmailStatus" class="auth-field-hint" data-email-availability></small><small class="auth-inline-error" id="registerEmailError" data-field-error="email"></small></label>
-            <label class="auth-field"><span>Mật khẩu <small>Tối thiểu 12 ký tự</small></span><span class="auth-password auth-input-shell"><i>●</i><input name="password" type="password" placeholder="Ít nhất 12 ký tự" autocomplete="new-password" minlength="12" maxlength="72" required data-register-password><button type="button" data-password-toggle aria-label="Hiện mật khẩu">Hiện</button></span><small class="auth-caps-warning" data-caps-warning hidden>Caps Lock đang bật</small><small class="auth-inline-error" data-field-error="password"></small></label>
-            <div class="password-strength" data-password-strength data-score="0"><i></i><span>Độ mạnh mật khẩu</span></div>
-            <ul class="auth-password-rules" data-password-rules><li data-rule="length">Ít nhất 12 ký tự</li><li data-rule="case">Có chữ hoa và chữ thường</li><li data-rule="number">Có ít nhất một số</li><li data-rule="symbol">Có ký tự đặc biệt</li></ul>
-            <label class="auth-field"><span>Xác nhận mật khẩu <small>Nhập lại chính xác</small></span><span class="auth-password auth-input-shell"><i>●</i><input name="confirmPassword" type="password" placeholder="Nhập lại mật khẩu" autocomplete="new-password" minlength="12" maxlength="72" required><button type="button" data-password-toggle aria-label="Hiện mật khẩu">Hiện</button></span><small class="auth-inline-error" data-field-error="confirmPassword"></small></label>
-            <button class="button secondary interactive auth-step-next" type="button" data-auth-next-step="2"><span>Tiếp tục tạo hồ sơ</span><i>→</i></button>
-          </section>
-
-          <section class="auth-step-panel" data-signup-step="2" hidden>
-            <div class="auth-avatar-picker"><button type="button" data-avatar-trigger aria-label="Chọn ảnh đại diện"><span data-avatar-preview>HH</span><i>＋</i></button><input name="avatarFile" type="file" accept="image/png,image/jpeg,image/webp" data-avatar-input hidden><div><strong>Ảnh đại diện</strong><small>PNG, JPG hoặc WebP tối đa 2 MB</small></div></div>
-            <input name="avatar" type="hidden" data-avatar-value>
-            <label class="auth-field"><span>Tên hiển thị <small>Mọi người sẽ nhìn thấy</small></span><span class="auth-input-shell"><i>◇</i><input name="name" type="text" placeholder="Tên hiển thị của bạn" autocomplete="name" minlength="2" maxlength="160" required></span><small class="auth-inline-error" data-field-error="name"></small></label>
-            <label class="auth-field"><span>Biệt danh <small>Dùng trong Community</small></span><span class="auth-input-shell"><i>#</i><input name="nickname" type="text" placeholder="Ví dụ: hoangcreative" autocomplete="nickname" minlength="2" maxlength="40"></span></label>
-            <label class="auth-color-field"><span>Màu nhận diện cá nhân</span><input name="creativeColor" type="color" value="#f05caf" aria-label="Chọn màu đại diện"></label>
-            <div class="auth-step-actions"><button type="button" data-auth-prev-step="1" data-signup-previous>← Quay lại</button><button class="button secondary interactive" type="button" data-auth-next-step="3">Chọn sở thích →</button></div>
-          </section>
-
-          <section class="auth-step-panel" data-signup-step="3" hidden>
-            <fieldset class="auth-interest-fieldset"><legend>Cá nhân hóa HH cho bạn</legend><p>Chọn ít nhất một lĩnh vực. Bạn có thể đổi sau trong Settings.</p><div class="auth-interest-grid"><label><input type="checkbox" name="interests" value="ai"><span>AI & Prompt</span></label><label><input type="checkbox" name="interests" value="music"><span>Âm nhạc</span></label><label><input type="checkbox" name="interests" value="design"><span>Thiết kế</span></label><label><input type="checkbox" name="interests" value="video"><span>Video</span></label><label><input type="checkbox" name="interests" value="developer"><span>Lập trình</span></label><label><input type="checkbox" name="interests" value="learning"><span>Học tập</span></label><label><input type="checkbox" name="interests" value="community"><span>Cộng đồng</span></label><label><input type="checkbox" name="interests" value="projects"><span>Dự án</span></label></div></fieldset>
-            <label class="consent-line"><input name="consent" type="checkbox" required> <span>Tôi đồng ý với điều khoản và chỉ chia sẻ dữ liệu do tôi chủ động gửi.</span></label>
-            <div class="auth-step-actions"><button type="button" data-auth-prev-step="2" data-signup-previous>← Quay lại</button><button class="button secondary interactive auth-submit" type="submit"><span>Tạo tài khoản miễn phí</span><i>→</i></button></div>
-            <p class="auth-form-note">Mật khẩu được băm một chiều. Email cần được xác minh trước khi dùng tính năng online.</p>
-          </section>
-        </form>
-      </div>
-
-      <section class="auth-recovery-panel" data-forgot-panel hidden aria-label="Khôi phục mật khẩu">
-        <header><button type="button" data-forgot-close aria-label="Quay lại đăng nhập">←</button><div><strong>Khôi phục tài khoản</strong><p>Dùng OTP email hoặc mã khôi phục đã lưu.</p></div></header>
-        <label class="auth-field"><span>Email</span><span class="auth-input-shell"><i>@</i><input type="email" data-recovery-email autocomplete="email" placeholder="you@gmail.com"></span></label>
-        <div class="auth-recovery-otp" data-recovery-verify hidden><input type="text" inputmode="text" maxlength="20" autocapitalize="characters" data-recovery-code placeholder="OTP 6 số hoặc HH-XXXX-XXXX-XXXX" aria-label="Mã OTP hoặc mã khôi phục"><input type="password" minlength="12" maxlength="72" data-recovery-password autocomplete="new-password" placeholder="Mật khẩu mới (ít nhất 12 ký tự)" aria-label="Mật khẩu mới"></div>
-        <button class="button primary" type="button" data-recovery-action>Gửi mã xác minh</button>
-        <button class="auth-mini-action" type="button" data-recovery-use-code>Dùng mã khôi phục đã lưu</button>
-        <small data-recovery-status aria-live="polite"></small>
-      </section>
-
-      <section class="auth-qr-panel" data-qr-panel hidden aria-label="Đăng nhập bằng thiết bị khác">
-        <header><button type="button" data-qr-close aria-label="Quay lại đăng nhập">←</button><div><strong>Đăng nhập bằng điện thoại</strong><p>Quét mã bằng thiết bị đã đăng nhập. Mã hết hạn sau 5 phút.</p></div></header>
-        <div class="auth-qr-code" data-qr-code><span>QR</span></div><code data-qr-code-text>Đang tạo mã...</code><small data-qr-status aria-live="polite"></small>
-      </section>
-
-      <section class="auth-email-verify-panel" data-email-verify-panel hidden aria-label="Xác minh email">
-        <header><span>✉</span><div><strong>Xác minh email</strong><p>Mã 6 số đã gửi tới <b data-email-verify-address></b>.</p></div></header>
-        <label class="auth-field"><span>Mã xác minh</span><span class="auth-input-shell"><i>#</i><input type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" data-email-verify-code placeholder="000000"></span></label>
-        <button class="button primary" type="button" data-email-verify-action>Xác minh và vào HH Platform</button>
-        <button class="auth-mini-action" type="button" data-email-verify-resend>Gửi lại mã</button>
-        <small data-email-verify-status aria-live="polite"></small>
-      </section>
-
-      <div class="auth-guest-row"><button type="button" data-guest-login data-auth-guest><i>◎</i><span><b>Tiếp tục với tư cách khách</b><small>Dùng các công cụ local, không đồng bộ dữ liệu</small></span><strong>Thử ngay →</strong></button></div>
-      <details class="auth-privacy-panel" data-auth-privacy><summary><span>Trung tâm quyền riêng tư</span> <small>Dữ liệu nào được lưu?</small></summary><p>HH lưu hồ sơ công khai, lựa chọn cá nhân hóa và hoạt động bạn chủ động đồng bộ. Mật khẩu và API key không được lưu trong trình duyệt. Bạn có thể quản lý phiên và thu hồi thiết bị trong Trung tâm bảo mật.</p></details>
-      <footer class="auth-card-footer"><span>HH ID</span><span>Ưu tiên riêng tư</span><span>Đồng bộ trực tuyến</span></footer>
-    </div>
-  </section>
 
   <section class="app-cosmic-loader" id="appCosmicLoader" aria-hidden="true" hidden>
     <div class="app-cosmic-loader__space" aria-hidden="true">
@@ -1304,18 +1327,17 @@
   </footer>
   <!-- Feature scripts are route-lazy and versioned in performance-loader.js; script.js remains the application router. -->
   <script src="realtime-core.js?v=1" defer></script>
-  <script src="auth-platform.js?v=22" data-compat-src="auth-platform.js?v=21" defer></script>
-<script src="script.js?v=305" data-compat-src="script.js?v=294 script.js?v=293 script.js?v=292 script.js?v=291 script.js?v=290 script.js?v=289 script.js?v=288 script.js?v=287 script.js?v=286 script.js?v=285 script.js?v=284 script.js?v=283 script.js?v=282 script.js?v=281 script.js?v=280 script.js?v=279 script.js?v=278 script.js?v=277 script.js?v=276 script.js?v=275 script.js?v=274 script.js?v=273 script.js?v=272 script.js?v=271 script.js?v=268 script.js?v=266 script.js?v=265 script.js?v=264 script.js?v=263 script.js?v=262 script.js?v=261 script.js?v=260 script.js?v=259 script.js?v=258 script.js?v=257 script.js?v=256 script.js?v=255 script.js?v=254 script.js?v=253 script.js?v=252 script.js?v=251 script.js?v=250 script.js?v=249 script.js?v=247 script.js?v=245 script.js?v=244 script.js?v=243 script.js?v=242 script.js?v=241 script.js?v=240 script.js?v=239 script.js?v=238 script.js?v=237 script.js?v=236 script.js?v=235 script.js?v=234 script.js?v=233 script.js?v=232" defer></script>
+  <script src="auth-platform.js?v=23" data-compat-src="auth-platform.js?v=22 auth-platform.js?v=21" defer></script>
+<script src="script.js?v=306" data-compat-src="script.js?v=305 script.js?v=294 script.js?v=293 script.js?v=292 script.js?v=291 script.js?v=290 script.js?v=289 script.js?v=288 script.js?v=287 script.js?v=286 script.js?v=285 script.js?v=284 script.js?v=283 script.js?v=282 script.js?v=281 script.js?v=280 script.js?v=279 script.js?v=278 script.js?v=277 script.js?v=276 script.js?v=275 script.js?v=274 script.js?v=273 script.js?v=272 script.js?v=271 script.js?v=268 script.js?v=266 script.js?v=265 script.js?v=264 script.js?v=263 script.js?v=262 script.js?v=261 script.js?v=260 script.js?v=259 script.js?v=258 script.js?v=257 script.js?v=256 script.js?v=255 script.js?v=254 script.js?v=253 script.js?v=252 script.js?v=251 script.js?v=250 script.js?v=249 script.js?v=247 script.js?v=245 script.js?v=244 script.js?v=243 script.js?v=242 script.js?v=241 script.js?v=240 script.js?v=239 script.js?v=238 script.js?v=237 script.js?v=236 script.js?v=235 script.js?v=234 script.js?v=233 script.js?v=232" defer></script>
 <!-- Compatibility router URL retained for older clients:
 <script src="script.js?v=229" data-compat-src="script.js?v=228 script.js?v=227 script.js?v=226 script.js?v=225 script.js?v=224 script.js?v=223 script.js?v=222 script.js?v=221 script.js?v=220 script.js?v=219 script.js?v=218 script.js?v=217 script.js?v=216 script.js?v=215 script.js?v=214 script.js?v=213 script.js?v=212 script.js?v=211 script.js?v=210 script.js?v=209 script.js?v=208 script.js?v=207 script.js?v=206 script.js?v=205 script.js?v=203 script.js?v=202 script.js?v=201 script.js?v=200 script.js?v=199 script.js?v=198 script.js?v=197 script.js?v=196 script.js?v=195 script.js?v=194 script.js?v=193 script.js?v=192 script.js?v=191 script.js?v=190 script.js?v=189 script.js?v=188 script.js?v=187 script.js?v=186 script.js?v=185 script.js?v=184 script.js?v=183 script.js?v=182 script.js?v=181 script.js?v=180 script.js?v=179 script.js?v=178 script.js?v=177 script.js?v=176" defer></script>
 -->
   <!-- Test/offline contract aliases only; these files are not loaded twice:
        performance-loader.js?v=53 auth-platform.js?v=12 script.js?v=144 -->
-  <script src="auth-experience.js?v=9" defer></script>
-<script src="auth-neon-gateway.js?v=35" data-compat-src="auth-neon-gateway.js?v=34 auth-neon-gateway.js?v=33 auth-neon-gateway.js?v=32 auth-neon-gateway.js?v=31 auth-neon-gateway.js?v=30 auth-neon-gateway.js?v=29 auth-neon-gateway.js?v=28 auth-neon-gateway.js?v=27 auth-neon-gateway.js?v=26 auth-neon-gateway.js?v=25 auth-neon-gateway.js?v=24 auth-neon-gateway.js?v=23 auth-neon-gateway.js?v=22 auth-neon-gateway.js?v=21 auth-neon-gateway.js?v=20 auth-neon-gateway.js?v=19 auth-neon-gateway.js?v=18 auth-neon-gateway.js?v=17 auth-neon-gateway.js?v=16 auth-neon-gateway.js?v=15 auth-neon-gateway.js?v=14" defer></script>
-  <script src="auth-solar-secret.js?v=6" defer></script>
+  <script src="auth-experience.js?v=10" defer></script>
+  <script src="auth-spiral.js?v=1" defer></script>
   <!-- Deferred auth effects: auth-creative-universe.js?v=8 auth-living-background.js?v=1 auth-identity-constellation.js?v=2 auth-universe-memory.js?v=4 auth-logo-motion.js?v=1 auth-emotional-logo.js?v=1 auth-form-motion.js?v=3 auth-transition-runtime.js?v=2 auth-quantum-flow.js?v=2 auth-trust-director.js?v=2 auth-spatial-aurora.js?v=1 auth-cosmic-prism-background.js?v=3 auth-cosmic-prism-form.js?v=3 auth-cosmic-prism-interactions.js?v=3 -->
   <script src="auth-zoom-resilience.js?v=4" defer></script>
-  <script src="privacy-consent-center.js?v=2" defer></script>
+  <script src="privacy-consent-center.js?v=3" defer></script>
 </body>
 </html>

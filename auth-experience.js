@@ -315,9 +315,11 @@
     else scheduleDemo();
   };
 
-  gate.addEventListener("pointermove", queuePointerEffects, { passive: true });
-  gate.addEventListener("pointerleave", resetPointerEffects);
-  desktopPointer.addEventListener?.("change", resetPointerEffects);
+  if (panels.length || card || previewShell) {
+    gate.addEventListener("pointermove", queuePointerEffects, { passive: true });
+    gate.addEventListener("pointerleave", resetPointerEffects);
+    desktopPointer.addEventListener?.("change", resetPointerEffects);
+  }
 
   demoButtons.forEach((button) => {
     button.addEventListener("click", () => renderDemo(button.dataset.authDemo, true));
@@ -431,7 +433,7 @@
   });
 
   renderDemo(demoButtons[0]?.dataset.authDemo || "ai");
-  setSignupStep(0, false);
+  if (!window.HHAuthPlatform?.init) setSignupStep(0, false);
   scheduleDemo();
 
   window.HHAuthExperience = Object.freeze({

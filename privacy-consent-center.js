@@ -103,10 +103,9 @@
     banner.innerHTML = `<div><small>HH PRIVACY</small><strong>Bạn kiểm soát dữ liệu của mình.</strong><p>Cookie thiết yếu giúp website hoạt động. Phân tích và cá nhân hóa chỉ bật khi bạn chọn.</p></div><div><button type="button" data-banner-customize>Tùy chỉnh</button><button type="button" data-banner-refuse>Từ chối tùy chọn</button><button type="button" class="primary" data-banner-accept>Cho phép phân tích</button></div>`;
     document.body.append(banner);
     const close = (preferences, source) => {
-      apply(preferences);
       sync(preferences, source)
-        .catch(() => window.HHCommunity?.notice?.("Đã lưu lựa chọn trên thiết bị; máy chủ sẽ đồng bộ khi kết nối lại.", "warning"))
-        .finally(() => banner.remove());
+        .catch(() => window.HHCommunity?.notice?.("Đã lưu lựa chọn trên thiết bị. Bạn có thể thử đồng bộ lại trong Quyền riêng tư.", "warning"));
+      banner.remove();
     };
     const customize = () => {
       banner.classList.add("is-customizing");
