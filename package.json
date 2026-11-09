@@ -55,6 +55,11 @@
     "pdfjs-dist": "6.4.299",
     "qrcode": "^1.5.4"
   },
+  "overrides": {
+    "@vercel/oidc@3.8.10": {
+      "@vercel/cli-config": "0.3.7"
+    }
+  },
   "devDependencies": {
     "vercel": "^56.2.0"
   }
