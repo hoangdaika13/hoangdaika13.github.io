@@ -1,269 +1,625 @@
-(function installSpiralGate() {
-  "use strict";
+import {
+  HOME,
+  SYSTEMS,
+  getSystem,
+  getBody,
+  basis,
+  newMap,
+  projection,
+  entries,
+  visit,
+  overview,
+  orbit,
+  pan,
+  zoomAt,
+  setSpread,
+  advance,
+  settle
+} from "./auth-spiral-map.mjs?v=1";
+import { planetCards } from "./auth-spiral-facts.mjs?v=1";
 
-  const gate = document.querySelector("#authGate.hh-spiral-gate");
-  if (!gate) return;
-  const view = gate.querySelector(".spiral-view");
-  let canvas = view.querySelector("canvas");
-  const motion = gate.querySelector("[data-spiral-motion]");
-  const hint = gate.querySelector("#spiral-drag-hint");
-  const dialog = gate.querySelector(".spiral-explorer");
-  const title = gate.querySelector("#spiral-title");
-  const reduce = matchMedia("(prefers-reduced-motion: reduce)");
-  const dragHint = matchMedia("(pointer: coarse)").matches ? "Vuốt ngang để xoay" : hint.textContent;
-  hint.textContent = dragHint;
+const gate = document.querySelector("#authGate.hh-spiral-gate");
+if (gate) install(gate);
+
+function install(gate) {
+  const find = (selector) => gate.querySelector(selector);
+  const space = (key) => find("[data-space-" + key + "]");
+  const view = find(".spiral-view"),
+    stage = find(".spiral-sky");
+  const paths = find(".orrery-paths"),
+    targets = find(".orrery-targets");
+  const controls = find("#space-controls"),
+    motion = find("[data-spiral-motion]");
+  const hint = find("#spiral-drag-hint"),
+    dialog = find(".spiral-explorer"),
+    facts = find(".spiral-facts");
+  const title = find("#spiral-title"),
+    reduce = matchMedia("(prefers-reduced-motion: reduce)");
   const motionKey = "hh.auth.motion.v1";
   const headings = {
-    login: "Chào bạn trở lại.", register: "Tạo tài khoản.", recovery: "Khôi phục mật khẩu.",
-    qr: "Đăng nhập bằng điện thoại.", "verify-email": "Xác minh email."
+    login: "Chào bạn trở lại.",
+    register: "Tạo tài khoản.",
+    recovery: "Khôi phục mật khẩu.",
+    qr: "Đăng nhập bằng điện thoại.",
+    "verify-email": "Xác minh email."
   };
-
+  const systemList = space("system"),
+    bodyList = space("planet"),
+    scope = space("scope"),
+    spread = space("spread");
+  const state = newMap(),
+    nodes = new Map(),
+    suns = new Map(),
+    strokes = new Map(),
+    moons = new Map(),
+    pointers = new Map();
+  const baseAxes = basis(HOME.yaw, HOME.tilt);
+  let canvas = view.querySelector("canvas"),
+    sky,
+    frame = 0,
+    previous = 0,
+    busy = false;
+  let inView = false,
+    onPage = true,
+    interacted = false,
+    unavailable = false,
+    panning = false;
+  let paused = reduce.matches || savedMotion() === "off",
+    hits = [],
+    currentFocus = null;
+  let width = 1,
+    height = 1,
+    pendingHit = null;
+  if (matchMedia("(pointer: coarse)").matches) hint.textContent = "Vuốt để xoay · Chụm hai ngón để thu phóng";
   function savedMotion() {
-    try { return localStorage.getItem(motionKey); } catch { return null; }
+    try {
+      return localStorage.getItem(motionKey);
+    } catch {
+      return null;
+    }
   }
-
-  let paused = reduce.matches || savedMotion() === "off";
-  let tilt = .90, angle = -.43;
-  let sky = null, frame = 0, previousTime = 0, busy = false;
-  let inView = false, onPage = true, interacted = false, unavailable = false;
-  let drag = null;
-
-  // Three spiral density waves share a thin disc and a thicker central bulge.
-  // The buffers never change; rotation and camera angle are independent of the form.
-  function createSky(THREE) {
-    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false, powerPreference: "low-power" });
-    renderer.setClearColor(0x000000, 0);
-    const world = new THREE.Scene();
-    const camera = new THREE.OrthographicCamera(-6, 6, 4, -4, .1, 60);
-    camera.position.z = 20;
-    const tiltGroup = new THREE.Group();
-    const disc = new THREE.Group();
-    world.add(tiltGroup);
-    tiltGroup.add(disc);
-    tiltGroup.rotation.z = .19;
-
-    let seed = 14832;
-    const random = () => (seed = seed * 16807 % 2147483647) / 2147483647;
-    const normal = () => Math.sqrt(-2 * Math.log(Math.max(.00001, random()))) * Math.cos(2 * Math.PI * random());
-    const positions = [], colors = [], sizes = [], strengths = [];
-    const small = matchMedia("(max-width: 850px)").matches || navigator.connection?.saveData;
-    const stars = small ? 9200 : 19500;
-    const palette = [[1, .81, .61], [1, .58, .36], [.86, .43, .52], [.59, .36, .87], [.45, .39, .93]];
-    function addPoint(x, y, z, size, color, strength) {
-      positions.push(x, y, z);
-      colors.push(...color);
-      sizes.push(size);
-      strengths.push(strength);
-    }
-    function arm(i, mist) {
-      const r = .13 + Math.pow(random(), .82) * 5.12;
-      const t = r / 5.25;
-      const halo = random() < (mist ? .19 : .13);
-      const theta = halo ? random() * Math.PI * 2 : i % 3 * 2 * Math.PI / 3 + .87 * r + normal() * (.13 + .10 * t);
-      const spread = (.085 + .16 * t) * (mist ? 1.3 : 1);
-      const x = r * Math.cos(theta) + normal() * spread;
-      const y = r * Math.sin(theta) + normal() * spread;
-      const z = normal() * (.07 + .15 * (1 - t));
-      const band = Math.min(3.999, Math.max(0, 4.6 * t + normal() * .21));
-      const lower = Math.floor(band), fraction = band - lower;
-      const tint = palette[lower].map((v, k) => v + (palette[lower + 1][k] - v) * fraction);
-      if (!mist && random() < .12) tint.forEach((v, k) => { tint[k] = v + (.96 - v) * .57; });
-      addPoint(x, y, z, mist ? 26 + random() * 62 : 1.5 + Math.pow(random(), 2.9) * 4.5,
-        tint, (mist ? .024 + random() * .033 : .29 + random() * .63) * Math.min(1, (1 - t) * 5 + .08));
-    }
-    for (let i = 0; i < stars; i++) arm(i, false);
-    for (let i = 0; i < Math.floor(stars / 17); i++) arm(i, true);
-    for (let i = 0; i < Math.floor(stars / 5); i++) {
-      const r = Math.pow(random(), 1.8) * 1.65, a = random() * Math.PI * 2;
-      addPoint(r * Math.cos(a), r * Math.sin(a), normal() * (.065 + .18 * (1 - r / 1.65)),
-        2.1 + random() * 3.8, [1, .72 + random() * .15, .53 + random() * .16], .32 + random() * .50);
-    }
-    // Sparse foreground and background stars give the tilt visible depth.
-    for (let i = 0; i < Math.floor(stars / 23); i++) {
-      const a = random() * Math.PI * 2, r = Math.sqrt(random()) * 6.3;
-      addPoint(r * Math.cos(a), r * Math.sin(a), normal() * .74, 1.7 + random() * 4.4, [.74, .72, .99], .18 + random() * .49);
-    }
-    addPoint(0, 0, 0, 85, [1, .64, .38], .51);
-    addPoint(0, 0, .01, 30, [1, .83, .63], .88);
-
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-    geometry.setAttribute("starColor", new THREE.Float32BufferAttribute(colors, 3));
-    geometry.setAttribute("size", new THREE.Float32BufferAttribute(sizes, 1));
-    geometry.setAttribute("strength", new THREE.Float32BufferAttribute(strengths, 1));
-    const material = new THREE.ShaderMaterial({
-      uniforms: { pixelScale: { value: 1 } },
-      transparent: true, premultipliedAlpha: true, blending: THREE.AdditiveBlending,
-      depthWrite: false, depthTest: false,
-      vertexShader: `
-        attribute vec3 starColor;
-        attribute float size, strength;
-        uniform float pixelScale;
-        varying vec3 tint;
-        varying float power;
-        void main() {
-          vec4 mv = modelViewMatrix * vec4(position, 1.);
-          gl_Position = projectionMatrix * mv;
-          gl_PointSize = max(1., size * pixelScale * clamp(20. / -mv.z, .78, 1.32));
-          tint = starColor;
-          power = strength;
-        }`,
-      fragmentShader: `
-        varying vec3 tint;
-        varying float power;
-        void main() {
-          vec2 p = gl_PointCoord * 2. - 1.;
-          float r = dot(p,p);
-          if(r >= 1.) discard;
-          float a = (exp(-6.5 * r) - .00150) * power;
-          gl_FragColor = vec4(tint * a, a);
-        }`
-    });
-    disc.add(new THREE.Points(geometry, material));
-    function resize() {
-      const w = Math.max(1, view.clientWidth), h = Math.max(1, view.clientHeight);
-      const ratio = Math.min(window.devicePixelRatio || 1, small ? 1.5 : 2);
-      renderer.setPixelRatio(ratio);
-      renderer.setSize(w, h, false);
-      const extent = Math.max(11.85, (w / h) * 7.25);
-      camera.left = -extent / 2; camera.right = extent / 2;
-      camera.top = extent * h / (2 * w); camera.bottom = -camera.top;
-      camera.updateProjectionMatrix();
-      material.uniforms.pixelScale.value = ratio * Math.max(.51, w / (extent * 51)) * (small ? 1.16 : 1);
-    }
-    function render() {
-      tiltGroup.rotation.x = tilt;
-      disc.rotation.z = angle;
-      renderer.render(world, camera);
-    }
-    function dispose(loseContext) {
-      geometry.dispose();
-      material.dispose();
-      renderer.dispose();
-      if (loseContext) renderer.forceContextLoss();
-    }
-    return { resize, render, dispose };
-  }
-
   function gateVisible() {
-    return onPage && !gate.hidden && !gate.inert &&
-      (document.body.classList.contains("auth-locked") || document.body.classList.contains("auth-panel-open"));
+    return (
+      onPage &&
+      !gate.hidden &&
+      !gate.inert &&
+      (document.body.classList.contains("auth-locked") || document.body.classList.contains("auth-panel-open"))
+    );
   }
   function canDraw() {
     return gateVisible() && inView && !document.hidden && !dialog.open;
   }
+  function moving() {
+    return (
+      sky &&
+      !paused &&
+      !pointers.size &&
+      !facts.open &&
+      !targets.contains(document.activeElement) &&
+      !state.pointed
+    );
+  }
   function stopFrame() {
     cancelAnimationFrame(frame);
-    frame = 0; previousTime = 0;
-  }
-  function draw(time) {
     frame = 0;
-    if (!sky || !canDraw()) return;
-    if (!paused && !drag && previousTime) angle += Math.min((time - previousTime) / 1000, .08) * .047;
-    previousTime = time;
-    sky.render();
-    if (view.dataset.renderer !== "three") view.dataset.renderer = "three";
-    if (!paused && !drag) frame = requestAnimationFrame(draw);
+    previous = 0;
   }
   function requestDraw() {
-    if (!frame && sky && canDraw()) frame = requestAnimationFrame(draw);
+    if (!frame && canDraw()) frame = requestAnimationFrame(draw);
   }
-  function releaseRenderer(loseContext = true) {
+  function createTarget(item, type) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.hit = item.id;
+    button.dataset[type] = "";
+    if (item.ring) button.dataset.ring = "";
+    button.style.setProperty("--body-color", item.color || item.tint);
+    button.setAttribute("aria-label", item.name);
+    if (type === "body") button.setAttribute("aria-haspopup", "dialog");
+    const disc = document.createElement("i");
+    disc.setAttribute("aria-hidden", "true");
+    const label = document.createElement("span");
+    label.textContent = item.name;
+    button.append(disc, label);
+    button.hidden = true;
+    targets.append(button);
+    nodes.set(item.id, button);
+  }
+  for (const sys of SYSTEMS) {
+    const sun = document.createElement("i");
+    sun.className = "orrery-sun";
+    sun.setAttribute("aria-hidden", "true");
+    sun.style.setProperty("--star-color", sys.tint);
+    sun.hidden = true;
+    targets.prepend(sun);
+    suns.set(sys.id, sun);
+    createTarget(sys, "system");
+    systemList.add(new Option(sys.name, sys.id));
+    const group = document.createElement("optgroup");
+    group.label = sys.name;
+    for (const body of sys.bodies) {
+      createTarget(body, "body");
+      group.append(new Option(body.name, body.id));
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      path.setAttribute("r", "1");
+      path.style.display = "none";
+      paths.append(path);
+      strokes.set(body.id, path);
+      if (body.moon) {
+        const dot = document.createElement("i");
+        dot.className = "orrery-moon";
+        dot.setAttribute("aria-hidden", "true");
+        dot.hidden = true;
+        targets.append(dot);
+        moons.set(body.id, dot);
+      }
+    }
+    bodyList.append(group);
+  }
+
+  function keepTarget(id, pt, shown, alpha = 1, radius = 5) {
+    const b = nodes.get(id);
+    const inside = pt.x >= 8 && pt.y >= 8 && pt.x <= width - 8 && pt.y <= height - 8;
+    const hidden = !shown || !inside;
+    if (b.hidden !== hidden) b.hidden = hidden;
+    if (hidden) return;
+    b.style.transform = "translate(" + (pt.x - 22).toFixed(2) + "px," + (pt.y - 22).toFixed(2) + "px)";
+    b.style.opacity = alpha.toFixed(2);
+    b.style.setProperty("--disc", (radius * 2).toFixed(1) + "px");
+    b.classList.toggle("is-active", id === state.pointed || id === state.selected || id === currentFocus);
+    hits.push({ id, x: pt.x, y: pt.y });
+  }
+  function poster(fr) {
+    const a = fr.axes,
+      b = baseAxes,
+      determinant = b[1] * b[3] - b[0] * b[4],
+      z = state.camera.zoom;
+    const matrix = [
+      ((-a[0] * b[4] + a[1] * b[3]) * z) / determinant,
+      ((a[3] * b[4] - a[4] * b[3]) * z) / determinant,
+      ((-a[0] * b[1] + a[1] * b[0]) * z) / determinant,
+      ((a[3] * b[1] - a[4] * b[0]) * z) / determinant,
+      fr.offsetX * fr.scale,
+      -fr.offsetY * fr.scale
+    ];
+    view.style.setProperty("--map-poster", "matrix(" + matrix.map((v) => v.toFixed(4)).join(",") + ")");
+    view.style.setProperty("--map-mist", (1 - 0.92 * state.camera.detail).toFixed(2));
+  }
+  let stillOverview;
+  function paint() {
+    // Signing in normally leaves the camera at rest. Only the GPU star clock
+    // changes there, so the accessible layer can keep its last projection.
+    const c = state.camera;
+    const key =
+      !state.system && !state.travel && c.detail === 0 && c.zoom <= 1.8
+        ? [
+            width,
+            height,
+            c.yaw,
+            c.tilt,
+            c.zoom,
+            c.panX,
+            c.panY,
+            state.globalSpread,
+            state.pointed,
+            currentFocus
+          ].join("/")
+        : null;
+    if (key && stillOverview?.key === key && stillOverview.sky === sky) {
+      if (sky) sky.render(state, stillOverview.fr, stillOverview.groups);
+      return;
+    }
+    const fr = projection(state, width, height),
+      groups = entries(state, fr);
+    stillOverview = key ? { key, fr, groups, sky } : null;
+    hits = [];
+    if (sky) sky.render(state, fr, groups);
+    else poster(fr);
+    for (const { system, anchor, opacity, planets } of groups) {
+      keepTarget(system.id, anchor, !state.system || state.camera.detail < 0.48, 1);
+      const sun = suns.get(system.id);
+      sun.hidden = opacity < 0.03;
+      if (!sun.hidden) {
+        const size = Math.max(6, Math.min(10, 0.12 * fr.scale)) * 2;
+        sun.style.width = sun.style.height = size.toFixed(1) + "px";
+        sun.style.transform = "translate(" + (anchor.x - size / 2) + "px," + (anchor.y - size / 2) + "px)";
+        sun.style.opacity = opacity.toFixed(2);
+      }
+      const labels = [];
+      for (const p of planets) {
+        const id = p.body.id,
+          path = strokes.get(id),
+          dot = moons.get(id);
+        keepTarget(id, p.pt, opacity > 0.3, opacity, p.radius);
+        if (!nodes.get(id).hidden) {
+          const crowded = labels.some(
+            (pt) => Math.abs(pt.x - p.pt.x) < (width < 430 ? 73 : 85) && Math.abs(pt.y - p.pt.y) < 19
+          );
+          nodes.get(id).classList.toggle("crowded", crowded);
+          if (!crowded) labels.push(p.pt);
+        }
+        path.style.display = opacity > 0.02 ? "" : "none";
+        if (opacity > 0.02) {
+          const a = fr.axes,
+            k = p.r * fr.scale,
+            c = Math.cos(p.inclination),
+            s = Math.sin(p.inclination);
+          path.setAttribute(
+            "transform",
+            "matrix(" +
+              [a[0] * k, -a[3] * k, (a[1] * c + a[2] * s) * k, -(a[4] * c + a[5] * s) * k, anchor.x, anchor.y]
+                .map((v) => v.toFixed(3))
+                .join(" ") +
+              ")"
+          );
+          const active = id === state.pointed || id === state.selected || id === currentFocus;
+          path.classList.toggle("is-active", active);
+          path.style.opacity = (opacity * (active ? 0.94 : 0.38)).toFixed(2);
+        }
+        if (dot) {
+          dot.hidden = opacity < 0.35;
+          if (!dot.hidden)
+            dot.style.transform =
+              "translate(" + (p.moonScreen.x - 2).toFixed(2) + "px," + (p.moonScreen.y - 2).toFixed(2) + "px)";
+        }
+      }
+    }
+  }
+  function draw(now) {
+    frame = 0;
+    if (!canDraw()) return;
+    const dt = previous ? Math.min(0.1, (now - previous) / 1000) : 0;
+    previous = now;
+    advance(state, dt, moving());
+    paint();
+    if (moving() || state.travel) requestDraw();
+    else previous = 0;
+  }
+  function release(lose = true) {
+    stillOverview = null;
     stopFrame();
     if (sky) {
-      if (loseContext) {
-        const replacement = canvas.cloneNode(false);
-        canvas.replaceWith(replacement);
-        canvas = replacement;
+      if (lose) {
+        const next = canvas.cloneNode(false);
+        canvas.replaceWith(next);
+        canvas = next;
       }
-      sky.dispose(loseContext);
+      sky.dispose(lose);
       sky = null;
     }
-    if (unavailable) view.dataset.renderer = "poster";
-    else delete view.dataset.renderer;
-  }
-  function updateMotionControl() {
-    const label = paused ? "Bật chuyển động" : "Tạm dừng chuyển động";
-    motion.hidden = unavailable;
-    motion.setAttribute("aria-label", label);
-    motion.title = label;
-    motion.firstElementChild.textContent = paused ? "▶" : "Ⅱ";
-  }
-  function posterOnly() {
-    unavailable = true;
-    releaseRenderer(false);
     view.dataset.renderer = "poster";
-    view.removeAttribute("tabindex");
-    view.setAttribute("aria-label", "Thiên hà xoắn ốc ba nhánh");
-    hint.textContent = "Ảnh tĩnh của thiên hà";
-    updateMotionControl();
+  }
+  function updateMotion() {
+    const action = paused ? "Bật chuyển động" : "Tạm dừng chuyển động";
+    motion.hidden = false;
+    motion.disabled = unavailable;
+    motion.setAttribute("aria-label", unavailable ? "Đang dùng bản đồ tĩnh" : action);
+    motion.title = motion.getAttribute("aria-label");
+    motion.firstElementChild.textContent = paused || unavailable ? "▷" : "Ⅱ";
+    motion.lastElementChild.textContent = unavailable ? "Bản đồ tĩnh" : paused ? "Bật chuyển động" : "Tạm dừng";
   }
   async function sync() {
     if (!gateVisible()) {
+      if (facts.open) cards.close();
       if (dialog.open) dialog.close();
-      releaseRenderer();
+      pointers.clear();
+      release();
       return;
     }
-    if (!canDraw()) { stopFrame(); return; }
-    if (unavailable) return;
-    if (sky) { requestDraw(); return; }
-    if (busy || (paused && !interacted)) return;
+    if (!canDraw()) {
+      stopFrame();
+      return;
+    }
+    requestDraw();
+    if (sky || busy || unavailable || (paused && !interacted)) return;
     busy = true;
     try {
-      const THREE = await import("./vendor/three.module.min.js");
+      const { createSky } = await import("./auth-spiral-space.mjs?v=1");
       if (!canDraw() || (paused && !interacted)) return;
-      sky = createSky(THREE);
+      sky = createSky(canvas, view);
       sky.resize();
+      view.dataset.renderer = "three";
+    } catch {
+      unavailable = true;
+      release(false);
+      updateMotion();
+    } finally {
+      busy = false;
       requestDraw();
-    } catch { posterOnly(); }
-    finally { busy = false; }
+    }
   }
-  function rotate(dx, dy) {
-    angle += dx * .009;
-    tilt = Math.max(.18, Math.min(1.40, tilt + dy * .007));
+  function interact() {
     interacted = true;
     sync();
   }
-  view.addEventListener("pointerdown", event => {
-    if (unavailable || !event.isPrimary || event.button !== 0) return;
-    drag = { id: event.pointerId, x: event.clientX, y: event.clientY };
-    view.setPointerCapture(event.pointerId);
-    previousTime = 0;
-  });
-  view.addEventListener("pointermove", event => {
-    if (!drag || drag.id !== event.pointerId) return;
-    rotate(event.clientX - drag.x, event.clientY - drag.y);
-    drag.x = event.clientX; drag.y = event.clientY;
-  });
-  function endDrag(event) {
-    if (drag?.id !== event.pointerId) return;
-    drag = null; previousTime = 0; requestDraw();
+  function updateControls() {
+    systemList.value = state.system || "";
+    scope.options[1].disabled = !state.system;
+    if (!state.system) scope.value = "all";
+    spread.value = scope.value === "local" ? state.localSpread[state.system] : state.globalSpread;
+    const value = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 }).format(Number(spread.value)) + "×";
+    space("value").textContent = value;
+    spread.setAttribute("aria-valuetext", value);
+    space("fit").disabled = !state.system;
   }
-  view.addEventListener("pointerup", endDrag);
-  view.addEventListener("pointercancel", endDrag);
-  view.addEventListener("lostpointercapture", endDrag);
-  view.addEventListener("keydown", event => {
-    const keys = { ArrowLeft: [-14, 0], ArrowRight: [14, 0], ArrowUp: [0, -12], ArrowDown: [0, 12] };
-    if (!keys[event.key] || unavailable) return;
-    event.preventDefault(); rotate(...keys[event.key]);
+  function dimensions() {
+    width = Math.max(1, view.clientWidth);
+    height = Math.max(1, view.clientHeight);
+    if (sky) sky.resize();
+  }
+  function expanded(value) {
+    controls.hidden = !value;
+    stage.toggleAttribute("data-expanded", value);
+    space("open").setAttribute("aria-expanded", String(value));
+    space("open").lastElementChild.textContent = value ? "Thu gọn bản đồ" : "Khám phá hệ sao";
+    dimensions();
+    if (value) cards.warm();
+  }
+  function focusSystem(id) {
+    expanded(true);
+    visit(state, id, width, height, paused || unavailable);
+    currentFocus = null;
+    updateControls();
+    interact();
+    requestDraw();
+  }
+  function showOverview(reset = false) {
+    overview(state, width, height, paused || unavailable, reset);
+    currentFocus = null;
+    updateControls();
+    requestDraw();
+  }
+  const cards = planetCards(facts, (id) => {
+    if (!gateVisible()) return;
+    settle(state);
+    paint();
+    const target = nodes.get(id);
+    if (target.hidden && state.system) {
+      visit(state, state.system, width, height, true);
+      state.selected = id;
+      paint();
+    }
+    target.focus({ preventScroll: true });
+    previous = 0;
+    sync();
   });
+  function choose(id) {
+    const sys = getSystem(id);
+    if (sys) {
+      focusSystem(id);
+      return;
+    }
+    const body = getBody(id);
+    if (!body) return;
+    const owner = SYSTEMS.find((item) => item.bodies.includes(body));
+    if (state.system !== owner.id || nodes.get(id).hidden) focusSystem(owner.id);
+    state.selected = id;
+    cards.open(body, owner);
+    requestDraw();
+  }
+  space("open").addEventListener("click", () => {
+    if (controls.hidden) focusSystem("sol");
+    else {
+      expanded(false);
+      showOverview();
+    }
+  });
+  systemList.addEventListener("change", () => (systemList.value ? focusSystem(systemList.value) : showOverview()));
+  bodyList.addEventListener("change", () => {
+    const id = bodyList.value;
+    bodyList.value = "";
+    choose(id);
+  });
+  scope.addEventListener("change", updateControls);
+  spread.addEventListener("input", () => {
+    setSpread(state, scope.value, Number(spread.value));
+    updateControls();
+    requestDraw();
+  });
+  space("fit").addEventListener("click", () => focusSystem(state.system));
+  space("overview").addEventListener("click", () => showOverview());
+  space("reset").addEventListener("click", () => showOverview(true));
+  space("pan").addEventListener("click", () => {
+    panning = !panning;
+    space("pan").setAttribute("aria-pressed", String(panning));
+  });
+  for (const button of gate.querySelectorAll("[data-space-zoom]"))
+    button.addEventListener("click", () => {
+      zoomAt(state, button.dataset.spaceZoom === "in" ? 1.3 : 1 / 1.3, width / 2, height / 2, width, height);
+      interact();
+    });
   motion.addEventListener("click", () => {
     paused = !paused;
-    try { localStorage.setItem(motionKey, paused ? "off" : "high"); } catch { /* Optional preference. */ }
-    previousTime = 0; updateMotionControl(); sync();
+    try {
+      localStorage.setItem(motionKey, paused ? "off" : "high");
+    } catch {
+      /* Storage is optional. */
+    }
+    previous = 0;
+    updateMotion();
+    interact();
   });
   reduce.addEventListener("change", () => {
     paused = reduce.matches || savedMotion() === "off";
-    previousTime = 0; updateMotionControl(); sync();
+    if (reduce.matches) settle(state);
+    previous = 0;
+    updateMotion();
+    sync();
   });
-  view.addEventListener("webglcontextlost", event => { event.preventDefault(); posterOnly(); }, true);
-  view.addEventListener("webglcontextrestored", () => {
-    unavailable = false; view.tabIndex = 0;
-    view.setAttribute("aria-label", "Xoay góc nhìn thiên hà");
-    hint.textContent = dragHint;
-    updateMotionControl(); sync();
-  }, true);
 
+  function localPoint(event) {
+    const rect = view.getBoundingClientRect();
+    return {
+      x: ((event.clientX - rect.left) * width) / rect.width,
+      y: ((event.clientY - rect.top) * height) / rect.height
+    };
+  }
+  function nearest(pt) {
+    let id = null,
+      distance = 23;
+    for (const hit of hits) {
+      const d = Math.hypot(hit.x - pt.x, hit.y - pt.y);
+      if (d < distance) {
+        id = hit.id;
+        distance = d;
+      }
+    }
+    return id;
+  }
+  function pair() {
+    const [a, b] = pointers.values();
+    return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, d: Math.hypot(a.x - b.x, a.y - b.y) };
+  }
+  view.addEventListener("pointerdown", (event) => {
+    if (![0, 1, 2].includes(event.button) || pointers.size >= 2) return;
+    pendingHit = null;
+    const p = localPoint(event);
+    pointers.set(event.pointerId, {
+      ...p,
+      startX: p.x,
+      startY: p.y,
+      moved: false,
+      hit: nearest(p),
+      pan: panning || event.shiftKey || event.button !== 0
+    });
+    if (pointers.size > 1) for (const finger of pointers.values()) finger.moved = true;
+    view.setPointerCapture(event.pointerId);
+    state.pointed = null;
+    currentFocus = null;
+    interact();
+  });
+  view.addEventListener("pointermove", (event) => {
+    const p = localPoint(event),
+      finger = pointers.get(event.pointerId);
+    if (!finger) {
+      if (event.pointerType !== "touch") {
+        const id = nearest(p);
+        if (id !== state.pointed) {
+          state.pointed = id;
+          previous = 0;
+          requestDraw();
+        }
+      }
+      return;
+    }
+    const before = pointers.size === 2 ? pair() : null;
+    const dx = p.x - finger.x,
+      dy = p.y - finger.y;
+    Object.assign(finger, p);
+    if (before) {
+      const after = pair();
+      pan(state, after.x - before.x, after.y - before.y, projection(state, width, height));
+      if (before.d > 4 && after.d > 4) zoomAt(state, after.d / before.d, after.x, after.y, width, height);
+    } else {
+      const started = !finger.moved && Math.hypot(p.x - finger.startX, p.y - finger.startY) > 5;
+      if (started) finger.moved = true;
+      if (!finger.moved) return;
+      const x = started ? p.x - finger.startX : dx,
+        y = started ? p.y - finger.startY : dy;
+      if (finger.pan || event.shiftKey) pan(state, x, y, projection(state, width, height));
+      else orbit(state, x, y);
+    }
+    requestDraw();
+  });
+  function end(event) {
+    const finger = pointers.get(event.pointerId);
+    if (!finger) return;
+    pointers.delete(event.pointerId);
+    if (view.hasPointerCapture(event.pointerId)) view.releasePointerCapture(event.pointerId);
+    const p = localPoint(event),
+      id = nearest(p);
+    if (
+      event.type === "pointerup" &&
+      !finger.pan &&
+      !finger.moved &&
+      Math.hypot(p.x - finger.startX, p.y - finger.startY) <= 5 &&
+      id &&
+      id === finger.hit
+    )
+      pendingHit = id;
+    previous = 0;
+    requestDraw();
+  }
+  for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) view.addEventListener(name, end);
+  view.addEventListener("contextmenu", (e) => e.preventDefault());
+  view.addEventListener("pointerleave", () => {
+    state.pointed = null;
+    previous = 0;
+    requestDraw();
+  });
+  // Open on the final click so a touchscreen's compatibility mouse events
+  // cannot move focus behind a newly opened dialog.
+  view.addEventListener("click", (event) => {
+    const keyboard = event.detail === 0;
+    const id = keyboard ? event.target.closest("[data-hit]")?.dataset.hit : pendingHit;
+    pendingHit = null;
+    if (id) {
+      choose(id);
+      if (keyboard && getSystem(id)) view.focus({ preventScroll: true });
+    }
+  });
+  targets.addEventListener("focusin", (event) => {
+    currentFocus = event.target.closest("[data-hit]")?.dataset.hit;
+    requestDraw();
+  });
+  targets.addEventListener("focusout", () => {
+    currentFocus = null;
+    previous = 0;
+    requestDraw();
+  });
+  view.addEventListener(
+    "wheel",
+    (event) => {
+      event.preventDefault();
+      const p = localPoint(event),
+        unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? height : 1;
+      zoomAt(
+        state,
+        Math.exp(-Math.max(-230, Math.min(230, event.deltaY * unit)) * 0.0026),
+        p.x,
+        p.y,
+        width,
+        height
+      );
+      interact();
+    },
+    { passive: false }
+  );
+  view.addEventListener("keydown", (event) => {
+    const keys = { ArrowLeft: [-14, 0], ArrowRight: [14, 0], ArrowUp: [0, -12], ArrowDown: [0, 12] };
+    if (keys[event.key]) {
+      event.preventDefault();
+      if (event.shiftKey || panning) pan(state, ...keys[event.key], projection(state, width, height));
+      else orbit(state, ...keys[event.key]);
+    } else if (["+", "=", "-"].includes(event.key)) {
+      event.preventDefault();
+      zoomAt(state, event.key === "-" ? 0.8 : 1.25, width / 2, height / 2, width, height);
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      showOverview(true);
+    } else return;
+    interact();
+  });
+  view.addEventListener(
+    "webglcontextlost",
+    (event) => {
+      event.preventDefault();
+      unavailable = true;
+      release(false);
+      updateMotion();
+      requestDraw();
+    },
+    true
+  );
+  view.addEventListener(
+    "webglcontextrestored",
+    () => {
+      unavailable = false;
+      updateMotion();
+      sync();
+    },
+    true
+  );
   const explore = gate.querySelector("[data-spiral-explore]");
   const frameHost = dialog.querySelector(".spiral-explorer-content");
   explore.addEventListener("click", () => {
@@ -273,44 +629,71 @@
     const atlas = document.createElement("iframe");
     atlas.title = "Bản đồ các lĩnh vực HH";
     // The trusted, inert template owns its assets and all of its event listeners.
-    atlas.srcdoc = '<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><body class="home-neon auth-locked">' + document.getElementById("spiral-atlas-template").innerHTML + '</body></html>';
+    atlas.srcdoc =
+      '<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><body class="home-neon auth-locked">' +
+      document.getElementById("spiral-atlas-template").innerHTML +
+      "</body></html>";
     frameHost.replaceChildren(atlas);
   });
   dialog.querySelector("[data-spiral-close]").addEventListener("click", () => dialog.close());
-  dialog.addEventListener("close", () => { frameHost.replaceChildren(); sync(); });
+  dialog.addEventListener("close", () => {
+    frameHost.replaceChildren();
+    sync();
+  });
 
   function updateView() {
     const name = gate.dataset.authView || "login";
     title.textContent = headings[name] || headings.login;
-    gate.querySelectorAll("[data-auth-tab]").forEach(tab => { tab.tabIndex = tab.dataset.authTab === name ? 0 : -1; });
+    gate.querySelectorAll("[data-auth-tab]").forEach((tab) => {
+      tab.tabIndex = tab.dataset.authTab === name ? 0 : -1;
+    });
   }
-  gate.querySelector(".auth-mode-tabs").addEventListener("keydown", event => {
+  gate.querySelector(".auth-mode-tabs").addEventListener("keydown", (event) => {
     if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
     const tabs = [...gate.querySelectorAll("[data-auth-tab]")];
-    const next = event.key === "Home" ? tabs[0] : event.key === "End" ? tabs[1] : tabs.find(tab => tab !== event.target);
-    if (next) { event.preventDefault(); next.click(); next.focus(); }
+    const next =
+      event.key === "Home" ? tabs[0] : event.key === "End" ? tabs[1] : tabs.find((tab) => tab !== event.target);
+    if (next) {
+      event.preventDefault();
+      next.click();
+      next.focus();
+    }
   });
   new MutationObserver(updateView).observe(gate, { attributes: true, attributeFilter: ["data-auth-view"] });
   new MutationObserver(sync).observe(gate, { attributes: true, attributeFilter: ["hidden", "inert"] });
   new MutationObserver(sync).observe(document.body, { attributes: true, attributeFilter: ["class"] });
   function resizeSky() {
-    if (sky && view.clientWidth && view.clientHeight) {
-      sky.resize();
-      requestDraw();
+    if (!view.clientWidth || !view.clientHeight) return;
+    const oldWidth = width,
+      oldHeight = height;
+    dimensions();
+    if (state.system && (oldWidth !== width || oldHeight !== height)) {
+      const selected = state.selected;
+      visit(state, state.system, width, height, true);
+      state.selected = selected;
     }
+    requestDraw();
   }
   if (window.ResizeObserver) new ResizeObserver(resizeSky).observe(view);
   else window.addEventListener("resize", resizeSky);
-  if (window.IntersectionObserver) {
+  if (window.IntersectionObserver)
     new IntersectionObserver(([entry]) => {
       inView = entry.isIntersecting;
       sync();
     }).observe(view);
-  } else inView = true;
+  else inView = true;
   document.addEventListener("visibilitychange", sync);
-  window.addEventListener("pagehide", () => { onPage = false; sync(); });
-  window.addEventListener("pageshow", () => { onPage = true; sync(); });
+  window.addEventListener("pagehide", () => {
+    onPage = false;
+    sync();
+  });
+  window.addEventListener("pageshow", () => {
+    onPage = true;
+    sync();
+  });
+  dimensions();
   updateView();
-  updateMotionControl();
+  updateControls();
+  updateMotion();
   sync();
-})();
+}

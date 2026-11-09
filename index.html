@@ -85,7 +85,7 @@
   <link rel="stylesheet" href="brand-galaxy-logo.css?v=1">
   <link rel="stylesheet" href="galaxy-design-system.css?v=1">
   <link rel="stylesheet" href="galaxy-shell.css?v=9">
-  <link rel="stylesheet" href="auth-spiral.css?v=1">
+  <link rel="stylesheet" href="auth-spiral.css?v=2">
   <!-- Lazy workspace assets are loaded by performance-loader.js. HH School v1 owns /learn; HH English and HH Japanese remain independent routes. -->
   <script src="vercel-observability.js?v=2" defer></script>
   <!-- Compatibility: config.js?v=8 config.js?v=9 -->
@@ -99,6 +99,7 @@
   <script src="all-game-exp-catalog-story.js?v=1" defer></script>
   <script src="all-game-expansion-catalog.js?v=1" defer></script>
   <script src="all-game-catalog.js?v=3" defer></script>
+  <!-- Release v1084: explorable planetary systems on the spiral sign-in. -->
   <!-- Release v1083: spiral-galaxy sign-in and on-demand HH explorer. -->
   <!-- Release v1082 University discovery: verified campus photo expansion, shareable data filters and layouts, school profile overview and seven-year coverage; performance-loader.js?v=743 script.js?v=305. -->
   <!-- Release v1081 Real photography and expanded official catalogues: HH Multiverse in Entertainment with NASA photographs, verified campus photography and complete imported legal catalogue browsing; performance-loader.js?v=742 script.js?v=304. -->
@@ -313,13 +314,36 @@
         <button class="spiral-discover" type="button" data-spiral-explore aria-haspopup="dialog">Khám phá HH <span aria-hidden="true">↗</span></button>
       </header>
       <section class="spiral-sky" aria-label="Thiên hà xoắn ốc ba nhánh">
-        <div class="spiral-view" tabindex="0" role="group" aria-label="Xoay góc nhìn thiên hà" aria-describedby="spiral-drag-hint">
+        <div class="spiral-view" tabindex="0" role="group" aria-label="Bản đồ thiên hà tương tác" aria-describedby="spiral-drag-hint">
           <canvas class="spiral-canvas" aria-hidden="true"></canvas>
+          <svg class="orrery-paths" aria-hidden="true"></svg>
+          <div class="orrery-targets"></div>
         </div>
         <div class="spiral-tools">
-          <span id="spiral-drag-hint">Kéo hoặc dùng phím mũi tên để xoay</span>
-          <button type="button" class="spiral-motion" data-spiral-motion aria-label="Tạm dừng chuyển động" title="Tạm dừng chuyển động" hidden><span aria-hidden="true">Ⅱ</span></button>
+          <button class="orrery-open" type="button" data-space-open aria-expanded="false" aria-controls="space-controls"><span aria-hidden="true">✧</span> <b>Khám phá hệ sao</b></button>
+          <button type="button" class="spiral-motion" data-spiral-motion aria-label="Tạm dừng chuyển động" hidden><span aria-hidden="true">Ⅱ</span><b>Tạm dừng</b></button>
         </div>
+        <div id="space-controls" class="orrery-controls" hidden>
+          <div class="orrery-selects">
+            <label>Hệ sao<select data-space-system><option value="">Toàn cảnh</option></select></label>
+            <label>Chọn hành tinh<select data-space-planet><option value="">Chọn hành tinh…</option></select></label>
+          </div>
+          <div class="orrery-spread">
+            <label for="space-spread">Độ giãn hệ hành tinh <output for="space-spread" data-space-value>1×</output></label>
+            <input id="space-spread" type="range" min="0.7" max="2.4" step="0.05" value="1" data-space-spread>
+            <label class="orrery-scope">Áp dụng cho<select data-space-scope><option value="all">Toàn thiên hà</option><option value="local">Hệ đang xem</option></select></label>
+          </div>
+          <div class="orrery-actions">
+            <button type="button" data-space-overview>Xem toàn cảnh</button>
+            <button type="button" data-space-fit>Căn vừa hệ</button>
+            <button type="button" data-space-reset>Đặt lại góc nhìn</button>
+            <button type="button" data-space-pan aria-pressed="false">Di chuyển tâm</button>
+            <button type="button" data-space-zoom="out" aria-label="Thu nhỏ">−</button>
+            <button type="button" data-space-zoom="in" aria-label="Phóng to">+</button>
+          </div>
+          <p>Khoảng cách, kích thước và tốc độ trong hình được điều chỉnh để dễ quan sát.</p>
+        </div>
+        <p id="spiral-drag-hint">Kéo để xoay · Cuộn để thu phóng · Phím mũi tên để đổi góc</p>
       </section>
     <section class="spiral-card" data-auth-card data-auth-state="idle" aria-labelledby="spiral-title">
       <header class="spiral-heading"><h1 id="spiral-title">Chào bạn trở lại.</h1></header>
@@ -403,6 +427,19 @@
       <details class="auth-privacy-panel" data-auth-privacy><summary>Quyền riêng tư</summary><p>HH lưu hồ sơ công khai, lựa chọn cá nhân hóa và hoạt động bạn chủ động đồng bộ. Mật khẩu và API key không được lưu trong trình duyệt. Bạn có thể quản lý phiên và thu hồi thiết bị trong Trung tâm bảo mật.</p></details>
     </section>
     </div>
+    <dialog class="spiral-facts" aria-labelledby="space-fact-title">
+      <header><div><small data-fact-system></small><h2 id="space-fact-title"></h2></div><button type="button" data-fact-close autofocus aria-label="Đóng thông tin hành tinh">Đóng <span aria-hidden="true">×</span></button></header>
+      <div class="orrery-fact-status" role="status" data-fact-status></div>
+      <button type="button" data-fact-retry hidden>Thử tải lại</button>
+      <div data-fact-content hidden>
+        <figure><div class="orrery-portrait"><img data-fact-image alt=""></div><figcaption><a data-fact-credit target="_blank" rel="noopener noreferrer"></a></figcaption></figure>
+        <p data-fact-summary></p>
+        <dl><div><dt data-fact-distance-label></dt><dd data-fact-distance></dd></div><div><dt data-fact-diameter-label></dt><dd data-fact-diameter></dd></div><div><dt>Chu kỳ quỹ đạo</dt><dd data-fact-period></dd></div></dl>
+        <small class="orrery-unit">1 AU ≈ 149,6 triệu km. Chu kỳ tính theo ngày Trái Đất.</small>
+        <p class="orrery-feature" data-fact-feature></p>
+        <div class="orrery-sources" role="group" aria-label="Nguồn dữ liệu"><a data-fact-source target="_blank" rel="noopener noreferrer">Hồ sơ NASA ↗</a><a data-fact-numbers target="_blank" rel="noopener noreferrer">Số liệu quỹ đạo ↗</a><a data-fact-physical target="_blank" rel="noopener noreferrer">Thông số JPL ↗</a></div>
+      </div>
+    </dialog>
     <dialog class="spiral-explorer" aria-labelledby="spiral-explorer-title">
       <header><h2 id="spiral-explorer-title">Khám phá HH</h2><button type="button" data-spiral-close>Đóng</button></header>
       <div class="spiral-explorer-content"></div>
@@ -416,7 +453,7 @@
     <link rel="stylesheet" href="auth-h-galaxy.css?v=13">
     <link rel="stylesheet" href="auth-living-galaxy-3d.css?v=13">
     <link rel="stylesheet" href="auth-solar-secret.css?v=8">
-    <link rel="stylesheet" href="auth-spiral.css?v=1">
+    <link rel="stylesheet" href="auth-spiral.css?v=2">
     <main id="authGate" class="spiral-atlas">
     <div class="auth-spectrum" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
     <div class="auth-motion-field" aria-hidden="true">
@@ -1335,7 +1372,7 @@
   <!-- Test/offline contract aliases only; these files are not loaded twice:
        performance-loader.js?v=53 auth-platform.js?v=12 script.js?v=144 -->
   <script src="auth-experience.js?v=10" defer></script>
-  <script src="auth-spiral.js?v=1" defer></script>
+  <script type="module" src="auth-spiral.js?v=2"></script>
   <!-- Deferred auth effects: auth-creative-universe.js?v=8 auth-living-background.js?v=1 auth-identity-constellation.js?v=2 auth-universe-memory.js?v=4 auth-logo-motion.js?v=1 auth-emotional-logo.js?v=1 auth-form-motion.js?v=3 auth-transition-runtime.js?v=2 auth-quantum-flow.js?v=2 auth-trust-director.js?v=2 auth-spatial-aurora.js?v=1 auth-cosmic-prism-background.js?v=3 auth-cosmic-prism-form.js?v=3 auth-cosmic-prism-interactions.js?v=3 -->
   <script src="auth-zoom-resilience.js?v=4" defer></script>
   <script src="privacy-consent-center.js?v=3" defer></script>
