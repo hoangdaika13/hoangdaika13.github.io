@@ -228,7 +228,7 @@ body.home-neon.auth-locked:has(>.hh-spiral-gate) > aside[data-privacy-banner] bu
 .orrery-paths circle { fill: none; stroke: #bab2e0; stroke-width: .8px; vector-effect: non-scaling-stroke; }
 .orrery-paths circle.is-active { stroke: #ffcd9e; stroke-width: 1.65px; }
 .orrery-targets button { position: absolute; top: 0; left: 0; width: 44px; height: 44px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; color: #fff7ea; background: transparent; pointer-events: auto; cursor: pointer; }
-.orrery-targets i,.orrery-portrait.no-image::before { position: relative; width: var(--disc, 12px); height: var(--disc, 12px); border-radius: 50%; background: radial-gradient(circle at 28% 25%, #fff3d9, var(--body-color) 35%, #252236 78%); box-shadow: 0 0 8px #c4acff39; }
+.orrery-targets button > i,.orrery-portrait.no-image::before { position: relative; width: var(--disc, 12px); height: var(--disc, 12px); border-radius: 50%; background: radial-gradient(circle at 28% 25%, #fff3d9, var(--body-color) 35%, #252236 78%); box-shadow: 0 0 8px #c4acff39; }
 .orrery-targets [data-ring] i::after { content: ""; position: absolute; inset: 22% -50%; border: 2px solid #ebce95; border-radius: 50%; transform: rotate(-26deg); }
 .spiral-view[data-renderer="three"] .orrery-targets [data-body] i { visibility: hidden; }
 .orrery-targets [data-system] i { width: 9px; height: 9px; border: 1px solid #ffe7ce; background: var(--body-color); box-shadow: 0 0 0 4px #edc3a514,0 0 0 7px #edc3a52e,0 0 16px var(--body-color); }
@@ -302,3 +302,17 @@ body.home-neon.auth-locked:has(>.hh-spiral-gate) > aside[data-privacy-banner] bu
 .orrery-sun { position:absolute; top:0; left:0; border-radius:50%; background:radial-gradient(circle at 39% 38%,#fff9d6 8%,var(--star-color) 58%,#e77b45 100%); box-shadow:0 0 9px 3px #ffb67775,0 0 28px 6px #ff985b38; }
 .spiral-facts .orrery-sources { border-top:1px solid #79658255; }
 .orrery-unit { display:block; margin-top:3px; color:#c5b9d1; font-size:11px; }
+
+.spiral-tools { flex-wrap: wrap; }
+.spiral-tools .orrery-return {
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 44px;
+  padding: 6px 13px; border: 1px solid #a48283; border-radius: 24px; background: #332735;
+  color: #ffe1c7; font-size: 13px; font-weight: 580;
+}
+@media (max-width: 430px) {
+  .spiral-sky[data-expanded] .spiral-tools { gap: 4px; }
+  .spiral-sky[data-expanded] .spiral-tools button { padding-inline: 9px; font-size: 12px; }
+}
+
+.orrery-targets [data-body] span { left:calc(50% + var(--label-x,0px)); bottom:calc(50% + var(--label-gap,12px)); }
+.orrery-targets .label-below span { top:calc(50% + var(--label-gap,12px)); bottom:auto; }

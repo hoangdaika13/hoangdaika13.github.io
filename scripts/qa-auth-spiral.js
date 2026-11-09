@@ -63,6 +63,25 @@ async function check(browser, { mobile, reduced, poster }) {
       await page.locator(".spiral-view[data-renderer=three]").waitFor();
       if (!reduced) await page.locator("[data-spiral-motion]").click();
     }
+    if (poster) {
+      await page.locator("[data-hit=saturn]").waitFor();
+      const labels = await page
+        .locator("[data-body]:not([hidden]) span")
+        .evaluateAll((items) =>
+          items.filter((node) => getComputedStyle(node).visibility === "visible").map((node) => node.textContent)
+        );
+      assert.deepEqual(
+        labels,
+        solar.map(([, fact]) => fact.name)
+      );
+      const satellites = await page
+        .locator(".orrery-moon:not([hidden])")
+        .evaluateAll(
+          (items) =>
+            items.filter((node) => getComputedStyle(node).position === "absolute" && node.offsetWidth > 0).length
+        );
+      assert.equal(satellites, 2);
+    }
     const spread = page.locator("[data-space-spread]");
     await spread.focus();
     await page.keyboard.press("End");
@@ -98,7 +117,28 @@ async function check(browser, { mobile, reduced, poster }) {
     await page.locator("[data-space-overview]").click();
     await page.locator("[data-hit=sol]").waitFor();
     await page.locator("[data-hit=trappist]").waitFor();
+    await page.locator("[data-space-login]").click();
+    assert.equal(await page.locator("#space-controls").isVisible(), false);
+    assert.ok(
+      await page.locator('#gateLoginForm [name="password"]').evaluate((input) => input === document.activeElement)
+    );
     assert.equal(await email.inputValue(), "orbital-qa@example.test");
+    if (mobile) {
+      const form = page.locator("#gateLoginForm");
+      await form.locator('[name="password"]').fill("Local-demo-1234");
+      await page.locator("[data-space-open]").click();
+      await page.locator("[data-space-login]").click();
+      assert.ok(await form.locator('[type="submit"]').evaluate((button) => button === document.activeElement));
+      await email.fill("");
+      await page.locator("[data-space-open]").click();
+      await page.locator("[data-space-login]").click();
+      assert.ok(
+        await email.evaluate((input) => {
+          const rect = input.getBoundingClientRect();
+          return input === document.activeElement && rect.top >= 0 && rect.bottom <= innerHeight;
+        })
+      );
+    }
     await page.locator("[data-auth-guest]").click();
     await page.waitForFunction(
       () => document.getElementById("authGate").hidden && sessionStorage.getItem("hh.auth.guest") === "1"

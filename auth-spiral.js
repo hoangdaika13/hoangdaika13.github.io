@@ -49,6 +49,7 @@ function install(gate) {
     spread = space("spread");
   const state = newMap(),
     nodes = new Map(),
+    labelSizes = new Map(),
     suns = new Map(),
     strokes = new Map(),
     moons = new Map(),
@@ -169,6 +170,42 @@ function install(gate) {
     b.classList.toggle("is-active", id === state.pointed || id === state.selected || id === currentFocus);
     hits.push({ id, x: pt.x, y: pt.y });
   }
+  function placeLabel(planet, planets, occupied) {
+    const button = nodes.get(planet.body.id);
+    if (button.hidden) return;
+    let size = labelSizes.get(button);
+    if (!size) {
+      const label = button.lastElementChild;
+      size = { width: label.offsetWidth, height: label.offsetHeight };
+      labelSizes.set(button, size);
+    }
+    const { x, y } = planet.pt;
+    const gap = Math.max(12, planet.radius + 3);
+    const left = Math.max(2, Math.min(x - size.width / 2, width - size.width - 2));
+    const right = left + size.width;
+    const rows = [y - gap - size.height, y + gap];
+    const slot = rows.findIndex((top) => {
+      const bottom = top + size.height;
+      if (top < 1 || bottom > height - 1) return false;
+      const overlapsLabel = occupied.some(
+        (box) => left < box.right + 2 && right > box.left - 2 && top < box.bottom + 2 && bottom > box.top - 2
+      );
+      const coversBody = planets.some(
+        (other) =>
+          other !== planet &&
+          other.pt.x >= left - 3 &&
+          other.pt.x <= right + 3 &&
+          other.pt.y >= top - 3 &&
+          other.pt.y <= bottom + 3
+      );
+      return !overlapsLabel && !coversBody;
+    });
+    button.style.setProperty("--label-x", (left + size.width / 2 - x).toFixed(1) + "px");
+    button.style.setProperty("--label-gap", gap.toFixed(1) + "px");
+    button.classList.toggle("label-below", slot === 1);
+    button.classList.toggle("crowded", slot < 0);
+    if (slot >= 0) occupied.push({ left, right, top: rows[slot], bottom: rows[slot] + size.height });
+  }
   function poster(fr) {
     const a = fr.axes,
       b = baseAxes,
@@ -231,13 +268,7 @@ function install(gate) {
           path = strokes.get(id),
           dot = moons.get(id);
         keepTarget(id, p.pt, opacity > 0.3, opacity, p.radius);
-        if (!nodes.get(id).hidden) {
-          const crowded = labels.some(
-            (pt) => Math.abs(pt.x - p.pt.x) < (width < 430 ? 73 : 85) && Math.abs(pt.y - p.pt.y) < 19
-          );
-          nodes.get(id).classList.toggle("crowded", crowded);
-          if (!crowded) labels.push(p.pt);
-        }
+        placeLabel(p, planets, labels);
         path.style.display = opacity > 0.02 ? "" : "none";
         if (opacity > 0.02) {
           const a = fr.axes,
@@ -343,12 +374,14 @@ function install(gate) {
     space("fit").disabled = !state.system;
   }
   function dimensions() {
+    if (width !== view.clientWidth) labelSizes.clear();
     width = Math.max(1, view.clientWidth);
     height = Math.max(1, view.clientHeight);
     if (sky) sky.resize();
   }
   function expanded(value) {
     controls.hidden = !value;
+    space("login").hidden = !value;
     stage.toggleAttribute("data-expanded", value);
     space("open").setAttribute("aria-expanded", String(value));
     space("open").lastElementChild.textContent = value ? "Thu gọn bản đồ" : "Khám phá hệ sao";
@@ -380,6 +413,7 @@ function install(gate) {
       paint();
     }
     target.focus({ preventScroll: true });
+    target.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" });
     previous = 0;
     sync();
   });
@@ -403,6 +437,19 @@ function install(gate) {
       expanded(false);
       showOverview();
     }
+  });
+  space("login").addEventListener("click", () => {
+    expanded(false);
+    showOverview();
+    if (gate.dataset.authView !== "login") find('[data-auth-tab="login"]').click();
+    const form = find("#gateLoginForm");
+    const email = form.elements.namedItem("email");
+    const password = form.elements.namedItem("password");
+    const submit = form.querySelector('[type="submit"]');
+    const field = [email, password].find((input) => !input.disabled && !input.validity.valid);
+    const target = field || (submit.disabled ? find('[data-auth-tab="login"]') : submit);
+    target.focus({ preventScroll: true });
+    target.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" });
   });
   systemList.addEventListener("change", () => (systemList.value ? focusSystem(systemList.value) : showOverview()));
   bodyList.addEventListener("change", () => {
@@ -682,6 +729,10 @@ function install(gate) {
       sync();
     }).observe(view);
   else inView = true;
+  document.fonts?.addEventListener("loadingdone", () => {
+    labelSizes.clear();
+    requestDraw();
+  });
   document.addEventListener("visibilitychange", sync);
   window.addEventListener("pagehide", () => {
     onPage = false;
