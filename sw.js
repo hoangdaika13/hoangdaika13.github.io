@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1085";
+const CACHE = "hh-identity-portal-v1086";
+// Previous release: hh-identity-portal-v1085.
 // Previous release: hh-identity-portal-v1084.
 // Previous release: hh-identity-portal-v1083.
 // Previous release: hh-identity-portal-v1082.
@@ -289,13 +290,13 @@ const RUNTIME_ASSETS = [
   "./focus-study-room.js?v=1",
   "./",
   "./index.html",
-  "./auth-spiral.css?v=3",
-  "./auth-spiral.js?v=3",
-  "./auth-spiral-map.mjs?v=1",
+  "./auth-spiral.css?v=4",
+  "./auth-spiral.js?v=4",
+  "./auth-spiral-map.mjs?v=2",
   "./auth-spiral-facts.mjs?v=1",
-  "./auth-spiral-space.mjs?v=1",
+  "./auth-spiral-space.mjs?v=2",
   "./data/auth-planets/catalog.json?v=1",
-  "./assets/brand/hh-spiral-galaxy.webp",
+  "./assets/brand/hh-spiral-galaxy.webp?v=2",
   "./app-shell.css?v=67",
   "./workspace-feature-explorer.css?v=4",
   "./app-theme-system.css?v=9",
@@ -981,11 +982,11 @@ const CORE = [
   "./all-game-expansion-catalog.js?v=1",
   "./all-game-catalog.js?v=3",
   "./index.html",
-  "./auth-spiral.css?v=3",
-  "./auth-spiral.js?v=3",
-  "./auth-spiral-map.mjs?v=1",
+  "./auth-spiral.css?v=4",
+  "./auth-spiral.js?v=4",
+  "./auth-spiral-map.mjs?v=2",
   "./auth-spiral-facts.mjs?v=1",
-  "./assets/brand/hh-spiral-galaxy.webp",
+  "./assets/brand/hh-spiral-galaxy.webp?v=2",
   "./app-shell.css?v=67",
   "./app-theme-system.css?v=9",
   "./sidebar-navigation-pro.css?v=31",

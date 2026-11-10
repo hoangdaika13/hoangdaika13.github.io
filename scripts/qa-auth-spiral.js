@@ -14,6 +14,22 @@ async function center(target) {
   return [rect.x + rect.width / 2, rect.y + rect.height / 2];
 }
 
+async function assertFullSky(page) {
+  const bounds = await page.locator(".spiral-canvas").evaluate((canvas) => {
+    const rect = canvas.getBoundingClientRect();
+    return [
+      Math.abs(rect.left),
+      Math.abs(rect.top),
+      Math.abs(rect.right - innerWidth),
+      Math.abs(rect.bottom - innerHeight)
+    ];
+  });
+  assert.ok(
+    bounds.every((edge) => edge <= 1),
+    "the sky must reach all four viewport edges: " + bounds
+  );
+}
+
 function disableWebGL() {
   const original = HTMLCanvasElement.prototype.getContext;
   HTMLCanvasElement.prototype.getContext = function (kind, ...args) {
@@ -48,6 +64,7 @@ async function check(browser, { mobile, reduced, poster }) {
     await page.locator("body.auth-locked:not(.hh-surface-pending) .spiral-card").waitFor();
     await page.locator("[data-banner-refuse]").click();
     await page.locator("[data-privacy-banner]").waitFor({ state: "hidden" });
+    await assertFullSky(page);
     const email = page.locator("#gateLoginForm [name=email]");
     await email.fill("orbital-qa@example.test");
     assert.equal(
@@ -123,6 +140,10 @@ async function check(browser, { mobile, reduced, poster }) {
       await page.locator('#gateLoginForm [name="password"]').evaluate((input) => input === document.activeElement)
     );
     assert.equal(await email.inputValue(), "orbital-qa@example.test");
+    await assertFullSky(page);
+    await page.locator('[data-auth-tab="register"]').click();
+    await assertFullSky(page);
+    await page.locator('[data-auth-tab="login"]').click();
     if (mobile) {
       const form = page.locator("#gateLoginForm");
       await form.locator('[name="password"]').fill("Local-demo-1234");

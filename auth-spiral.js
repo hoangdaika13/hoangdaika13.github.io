@@ -6,6 +6,7 @@ import {
   basis,
   newMap,
   projection,
+  galaxyFrame,
   entries,
   visit,
   overview,
@@ -15,7 +16,7 @@ import {
   setSpread,
   advance,
   settle
-} from "./auth-spiral-map.mjs?v=1";
+} from "./auth-spiral-map.mjs?v=2";
 import { planetCards } from "./auth-spiral-facts.mjs?v=1";
 
 const gate = document.querySelector("#authGate.hh-spiral-gate");
@@ -24,6 +25,7 @@ if (gate) install(gate);
 function install(gate) {
   const find = (selector) => gate.querySelector(selector);
   const space = (key) => find("[data-space-" + key + "]");
+  const backdrop = find(".spiral-backdrop");
   const view = find(".spiral-view"),
     stage = find(".spiral-sky");
   const paths = find(".orrery-paths"),
@@ -55,7 +57,8 @@ function install(gate) {
     moons = new Map(),
     pointers = new Map();
   const baseAxes = basis(HOME.yaw, HOME.tilt);
-  let canvas = view.querySelector("canvas"),
+  const surface = { width: 1, height: 1, map: { visible: false } };
+  let canvas = backdrop.querySelector("canvas"),
     sky,
     frame = 0,
     previous = 0,
@@ -94,6 +97,7 @@ function install(gate) {
     return (
       sky &&
       !paused &&
+      surface.map.visible &&
       !pointers.size &&
       !facts.open &&
       !targets.contains(document.activeElement) &&
@@ -206,32 +210,39 @@ function install(gate) {
     button.classList.toggle("crowded", slot < 0);
     if (slot >= 0) occupied.push({ left, right, top: rows[slot], bottom: rows[slot] + size.height });
   }
-  function poster(fr) {
+  function poster(fr, skyFrame) {
     const a = fr.axes,
       b = baseAxes,
       determinant = b[1] * b[3] - b[0] * b[4],
-      z = state.camera.zoom;
+      z = skyFrame.zoom;
     const matrix = [
       ((-a[0] * b[4] + a[1] * b[3]) * z) / determinant,
       ((a[3] * b[4] - a[4] * b[3]) * z) / determinant,
       ((-a[0] * b[1] + a[1] * b[0]) * z) / determinant,
       ((a[3] * b[1] - a[4] * b[0]) * z) / determinant,
-      fr.offsetX * fr.scale,
-      -fr.offsetY * fr.scale
+      0,
+      0
     ];
-    view.style.setProperty("--map-poster", "matrix(" + matrix.map((v) => v.toFixed(4)).join(",") + ")");
-    view.style.setProperty("--map-mist", (1 - 0.92 * state.camera.detail).toFixed(2));
+    backdrop.style.setProperty("--sky-roll", -skyFrame.roll + "rad");
+    backdrop.style.setProperty("--poster-width", (11.85 * skyFrame.scale) / skyFrame.zoom + "px");
+    backdrop.style.setProperty("--sky-x", skyFrame.x + "px");
+    backdrop.style.setProperty("--sky-y", skyFrame.y + "px");
+    backdrop.style.setProperty("--map-poster", "matrix(" + matrix.map((v) => v.toFixed(4)).join(",") + ")");
+    backdrop.style.setProperty("--map-mist", skyFrame.light.toFixed(2));
   }
   let stillOverview;
   function paint() {
     // Signing in normally leaves the camera at rest. Only the GPU star clock
     // changes there, so the accessible layer can keep its last projection.
     const c = state.camera;
+    const framing = galaxyFrame(c, surface.width, surface.height, surface.map.visible);
     const key =
       !state.system && !state.travel && c.detail === 0 && c.zoom <= 1.8
         ? [
             width,
             height,
+            surface.width,
+            surface.height,
             c.yaw,
             c.tilt,
             c.zoom,
@@ -243,15 +254,15 @@ function install(gate) {
           ].join("/")
         : null;
     if (key && stillOverview?.key === key && stillOverview.sky === sky) {
-      if (sky) sky.render(state, stillOverview.fr, stillOverview.groups);
+      if (sky) sky.render(state, stillOverview.fr, stillOverview.groups, surface, framing);
       return;
     }
     const fr = projection(state, width, height),
       groups = entries(state, fr);
     stillOverview = key ? { key, fr, groups, sky } : null;
     hits = [];
-    if (sky) sky.render(state, fr, groups);
-    else poster(fr);
+    if (sky) sky.render(state, fr, groups, surface, framing);
+    else poster(fr, framing);
     for (const { system, anchor, opacity, planets } of groups) {
       keepTarget(system.id, anchor, !state.system || state.camera.detail < 0.48, 1);
       const sun = suns.get(system.id);
@@ -345,10 +356,10 @@ function install(gate) {
     if (sky || busy || unavailable || (paused && !interacted)) return;
     busy = true;
     try {
-      const { createSky } = await import("./auth-spiral-space.mjs?v=1");
+      const { createSky } = await import("./auth-spiral-space.mjs?v=2");
       if (!canDraw() || (paused && !interacted)) return;
-      sky = createSky(canvas, view);
-      sky.resize();
+      sky = createSky(canvas);
+      sky.resize(surface.width, surface.height);
       view.dataset.renderer = "three";
     } catch {
       unavailable = true;
@@ -373,11 +384,38 @@ function install(gate) {
     spread.setAttribute("aria-valuetext", value);
     space("fit").disabled = !state.system;
   }
+  function locateMap() {
+    const bounds = backdrop.getBoundingClientRect(),
+      rect = view.getBoundingClientRect();
+    const kx = surface.width / (bounds.width || 1),
+      ky = surface.height / (bounds.height || 1);
+    // Three's viewport uses bottom-left CSS pixels. Ratios also cover page zoom.
+    surface.map = {
+      left: (rect.left - bounds.left) * kx,
+      bottom: (bounds.bottom - rect.bottom) * ky,
+      width: rect.width * kx,
+      height: rect.height * ky,
+      visible:
+        rect.width > 0 &&
+        rect.height > 0 &&
+        rect.bottom > bounds.top &&
+        rect.top < bounds.bottom &&
+        rect.right > bounds.left &&
+        rect.left < bounds.right
+    };
+  }
   function dimensions() {
     if (width !== view.clientWidth) labelSizes.clear();
     width = Math.max(1, view.clientWidth);
     height = Math.max(1, view.clientHeight);
-    if (sky) sky.resize();
+    const w = Math.max(1, backdrop.clientWidth),
+      h = Math.max(1, backdrop.clientHeight);
+    if (w !== surface.width || h !== surface.height) {
+      surface.width = w;
+      surface.height = h;
+      if (sky) sky.resize(w, h);
+    }
+    locateMap();
   }
   function expanded(value) {
     controls.hidden = !value;
@@ -517,7 +555,10 @@ function install(gate) {
     const [a, b] = pointers.values();
     return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, d: Math.hypot(a.x - b.x, a.y - b.y) };
   }
-  view.addEventListener("pointerdown", (event) => {
+  function startDrag(event) {
+    const outsideMap = event.currentTarget === backdrop;
+    if (outsideMap && (event.pointerType !== "mouse" || !surface.map.visible)) return;
+    if (outsideMap) event.preventDefault();
     if (![0, 1, 2].includes(event.button) || pointers.size >= 2) return;
     pendingHit = null;
     const p = localPoint(event);
@@ -526,7 +567,7 @@ function install(gate) {
       startX: p.x,
       startY: p.y,
       moved: false,
-      hit: nearest(p),
+      hit: outsideMap ? null : nearest(p),
       pan: panning || event.shiftKey || event.button !== 0
     });
     if (pointers.size > 1) for (const finger of pointers.values()) finger.moved = true;
@@ -534,7 +575,9 @@ function install(gate) {
     state.pointed = null;
     currentFocus = null;
     interact();
-  });
+  }
+  view.addEventListener("pointerdown", startDrag);
+  backdrop.addEventListener("pointerdown", startDrag);
   view.addEventListener("pointermove", (event) => {
     const p = localPoint(event),
       finger = pointers.get(event.pointerId);
@@ -647,7 +690,7 @@ function install(gate) {
     } else return;
     interact();
   });
-  view.addEventListener(
+  backdrop.addEventListener(
     "webglcontextlost",
     (event) => {
       event.preventDefault();
@@ -658,7 +701,7 @@ function install(gate) {
     },
     true
   );
-  view.addEventListener(
+  backdrop.addEventListener(
     "webglcontextrestored",
     () => {
       unavailable = false;
@@ -710,24 +753,34 @@ function install(gate) {
   new MutationObserver(sync).observe(gate, { attributes: true, attributeFilter: ["hidden", "inert"] });
   new MutationObserver(sync).observe(document.body, { attributes: true, attributeFilter: ["class"] });
   function resizeSky() {
-    if (!view.clientWidth || !view.clientHeight) return;
+    if (!backdrop.clientWidth || !backdrop.clientHeight) return;
     const oldWidth = width,
       oldHeight = height;
     dimensions();
-    if (state.system && (oldWidth !== width || oldHeight !== height)) {
+    if (state.system && surface.map.visible && (oldWidth !== width || oldHeight !== height)) {
       const selected = state.selected;
       visit(state, state.system, width, height, true);
       state.selected = selected;
     }
     requestDraw();
   }
-  if (window.ResizeObserver) new ResizeObserver(resizeSky).observe(view);
-  else window.addEventListener("resize", resizeSky);
+  if (window.ResizeObserver) {
+    const observer = new ResizeObserver(resizeSky);
+    for (const node of [backdrop, view, find(".spiral-layout"), find(".spiral-card")]) observer.observe(node);
+  } else window.addEventListener("resize", resizeSky);
+  gate.addEventListener(
+    "scroll",
+    () => {
+      locateMap();
+      requestDraw();
+    },
+    { passive: true }
+  );
   if (window.IntersectionObserver)
     new IntersectionObserver(([entry]) => {
       inView = entry.isIntersecting;
       sync();
-    }).observe(view);
+    }).observe(backdrop);
   else inView = true;
   document.fonts?.addEventListener("loadingdone", () => {
     labelSizes.clear();

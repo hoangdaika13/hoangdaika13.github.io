@@ -179,6 +179,23 @@ export function projection(state, width, height) {
     offsetY: c.panY - dot(axes, 3, center)
   };
 }
+// The distant stellar disc covers the viewport. Panning or zooming a nearby
+// planetary system introduces only a slight parallax in the background.
+export function galaxyFrame(camera, width, height, mapVisible = true) {
+  const stacked = width <= 850;
+  const portrait = height > width;
+  const zoom = clamp(camera.zoom ** 0.12, 0.9, 1.2);
+  const x = width * ((stacked ? 0.5 : 0.46) + Math.tanh(camera.panX * 0.22 - camera.x * 0.08) * 0.055);
+  const y = height * ((stacked ? 0.21 : 0.49) - Math.tanh(camera.panY * 0.22 - camera.y * 0.08) * 0.04);
+  return {
+    x,
+    y,
+    zoom,
+    roll: portrait ? -0.95 : 0,
+    scale: Math.max(width / 8.6, height / (portrait ? 8.1 : 5.6)) * zoom,
+    light: 1 - (mapVisible ? camera.detail * 0.88 : 0)
+  };
+}
 export function screen(p, fr) {
   return {
     x: fr.width / 2 + (dot(fr.axes, 0, p) + fr.offsetX) * fr.scale,

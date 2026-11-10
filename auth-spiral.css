@@ -25,11 +25,38 @@
   overflow: auto;
   scrollbar-gutter: auto;
   overscroll-behavior: contain;
+  isolation: isolate;
 }
 #authGate.hh-spiral-gate *, .spiral-explorer * { box-sizing: border-box; }
 #authGate.hh-spiral-gate [hidden] { display: none !important; }
 #authGate.hh-spiral-gate::before, #authGate.hh-spiral-gate::after { content: none; }
+.spiral-backdrop {
+  position: fixed; inset: 0; z-index: 0; overflow: hidden; isolation: isolate;
+  user-select: none; cursor: grab;
+  background: radial-gradient(ellipse at 82% 22%, #33294b99, transparent 57%),
+    radial-gradient(ellipse at 12% 72%, #39223c80, transparent 65%),
+    linear-gradient(145deg, #0c1021, #12101f 52%, #0a0b16);
+}
+.spiral-backdrop:active { cursor: grabbing; }
+/* Independent sky specks keep the whole surface visible before WebGL loads. */
+.spiral-backdrop::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image: radial-gradient(1px 1px at 23px 41px, #f7e6dbb8 65%, transparent),
+    radial-gradient(1.4px 1.4px at 87px 17px, #c7c6f2b5 50%, transparent),
+    radial-gradient(1px 1px at 39px 107px, #b0bbf79c 60%, transparent),
+    radial-gradient(1px 1px at 151px 73px, #ded1ffb3 58%, transparent);
+  background-size: 149px 163px, 277px 241px, 113px 129px, 203px 191px;
+}
+.spiral-poster {
+  position: absolute; left: var(--sky-x,46%); top: var(--sky-y,49%); width: var(--poster-width,max(138%,212vh));
+  aspect-ratio: 1040 / 760; pointer-events: none; mix-blend-mode: screen;
+  background: url("assets/brand/hh-spiral-galaxy.webp?v=2") center / 100% 100% no-repeat;
+  transform: translate(-50%,-50%) rotate(var(--sky-roll,0rad)) var(--map-poster,scale(1)); opacity: var(--map-mist,1);
+}
+#authGate:has(.spiral-view[data-renderer="three"]) .spiral-poster,
+#authGate:has(.spiral-view[data-renderer="three"]) .spiral-backdrop::before { visibility: hidden; }
 .spiral-layout {
+  position: relative; z-index: 1; pointer-events: none;
   --side: clamp(22px, 4.4vw, 80px);
   width: min(100%, 1610px);
   min-height: 100vh;
@@ -41,6 +68,7 @@
   gap: 12px clamp(24px, 4vw, 76px);
   align-items: center;
 }
+.spiral-mast,.spiral-view,.spiral-card,.spiral-tools,.orrery-controls { pointer-events: auto; }
 .spiral-mast { grid-area: mast; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding-bottom: 12px; border-bottom: 1px solid #b1a5cf26; }
 .spiral-wordmark { display: inline-flex; align-items: center; gap: 0; color: var(--ink); font-size: 23px; font-weight: 730; line-height: 1; letter-spacing: -.055em; }
 .spiral-wordmark img { display: block; margin-right: 9px; width: 34px; height: 34px; }
@@ -61,22 +89,19 @@
   aspect-ratio: 1.37;
   border-radius: 18px;
   cursor: grab;
-  touch-action: pan-y pinch-zoom;
+  touch-action: none;
   user-select: none;
 }
-.spiral-view::before { content: ""; position: absolute; inset: 0; background: url("assets/brand/hh-spiral-galaxy.webp") center / contain no-repeat; mix-blend-mode: screen; pointer-events: none; }
-.spiral-view[data-renderer="three"]::before { visibility: hidden; }
-.spiral-view[data-renderer="poster"] { cursor: default; }
 .spiral-view:active { cursor: grabbing; }
 .spiral-canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; opacity: 0; pointer-events: none; }
-.spiral-view[data-renderer="three"] .spiral-canvas { opacity: 1; }
+#authGate:has(.spiral-view[data-renderer="three"]) .spiral-canvas { opacity: 1; }
 .spiral-tools { display: flex; align-items: center; justify-content: center; gap: 12px; color: var(--muted); font-size: 12px; }
 .spiral-motion { display: inline-grid; place-items: center; min-width: 44px; padding: 0; }
 .spiral-motion span { font: 650 15px/1 system-ui, sans-serif; }
 .spiral-card {
   grid-area: form; width: 100%; max-width: 447px; justify-self: center; min-width: 0;
   padding: clamp(20px, 2.65vw, 44px);
-  color: var(--ink); background: linear-gradient(146deg, #1a1927, #10111b 64%);
+  color: var(--ink); background: linear-gradient(146deg, #1a1927ed, #10111bf1 64%);
   border: 1px solid #403c50; border-radius: 22px; box-shadow: 0 20px 70px #03030a4d;
 }
 .spiral-heading h1 { margin: 0 0 18px; color: var(--ink); font-size: clamp(31px, 2.75vw, 47px); line-height: 1.15; font-weight: 610; letter-spacing: -.05em; text-transform: none; text-shadow: none; }
@@ -195,6 +220,8 @@ body.home-neon.auth-locked:has(>.hh-spiral-gate) > aside[data-privacy-banner] bu
   body.home-neon.auth-locked:has(>.hh-spiral-gate) > aside.hh-consent-banner[data-privacy-banner]:not([hidden]) { left: 18px; right: auto; bottom: 14px; max-width: min(405px,41vw); }
 }
 @media (max-width: 850px) {
+  .spiral-backdrop { cursor: auto; }
+  .spiral-poster { left: var(--sky-x,50%); top: var(--sky-y,21%); }
   .spiral-layout { grid-template: "mast" auto "sky" auto "form" 1fr / minmax(0,1fr); align-items: start; gap: 12px; padding: max(12px,env(safe-area-inset-top)) clamp(16px,4vw,32px) max(20px,env(safe-area-inset-bottom)); }
   .spiral-mast { padding-bottom: 8px; }
   .spiral-sky { width: min(100%, 580px); justify-self: center; position: relative; }
@@ -204,6 +231,9 @@ body.home-neon.auth-locked:has(>.hh-spiral-gate) > aside[data-privacy-banner] bu
   .spiral-heading h1 { font-size: 32px; margin-bottom: 12px; }
   .hh-spiral-gate:is([data-auth-view="register"],[data-auth-view="recovery"],[data-auth-view="qr"],[data-auth-view="verify-email"]) .spiral-sky { display: none; }
   body.auth-locked:has(>aside[data-privacy-banner]:not([hidden])) .spiral-layout { padding-bottom: calc(min(44vh,350px) + 20px); }
+}
+@media (orientation: portrait) {
+  .spiral-poster { --sky-roll:.95rad; width:var(--poster-width,max(138%,146.3vh)); }
 }
 @media (max-width: 430px) {
   .spiral-wordmark { font-size: 21px; }
@@ -221,9 +251,7 @@ body.home-neon.auth-locked:has(>.hh-spiral-gate) > aside[data-privacy-banner] bu
 }
 
 /* The projected buttons and orbit paths use the same CSS-pixel map as the GPU. */
-.spiral-view { overflow: hidden; isolation: isolate; touch-action: none; }
-.spiral-view[data-renderer="poster"] { cursor: grab; }
-.spiral-view::before { transform: var(--map-poster, none); opacity: var(--map-mist, 1); }
+.spiral-view { overflow: hidden; isolation: isolate; }
 .orrery-paths,.orrery-targets { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .orrery-paths circle { fill: none; stroke: #bab2e0; stroke-width: .8px; vector-effect: non-scaling-stroke; }
 .orrery-paths circle.is-active { stroke: #ffcd9e; stroke-width: 1.65px; }
@@ -246,8 +274,9 @@ body.home-neon.auth-locked:has(>.hh-spiral-gate) > aside[data-privacy-banner] bu
 .orrery-open { background:linear-gradient(115deg,#3d2935,#2b243b); border-color:#946d73; }
 .orrery-open span { font-size:22px; line-height:1; color:#ffca9f; }
 .spiral-tools b { font-weight:570; }
-.spiral-tools .spiral-motion { background:transparent; color:#d9d2e3; }
+.spiral-tools .spiral-motion { background:#161423dc; color:#d9d2e3; }
 .spiral-tools button:hover,.orrery-actions button:hover,.spiral-facts button:hover { border-color:#e5add0; }
+#spiral-drag-hint { text-shadow: 0 1px 4px #080811, 0 0 9px #080811; }
 #spiral-drag-hint,.orrery-controls p { margin:6px 0 0; color:#b8b2c6; text-align:center; font-size:11px; line-height:1.5; }
 .spiral-sky[data-expanded] .spiral-view { height:clamp(255px,45vh,480px); aspect-ratio:auto; }
 .orrery-controls { max-width:660px; margin:10px auto 0; padding:14px 16px; background:linear-gradient(122deg,#242030ee,#141420f5); color:var(--ink); border:1px solid #4a4056; border-radius:16px; }

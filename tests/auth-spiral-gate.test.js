@@ -21,7 +21,11 @@ const find = (nodes, key, value) => nodes.find(node => attr(node, key) === value
 test("the live login owns one spiral canvas and only opens the previous galaxy on demand", () => {
   const live = descendants(gate);
   assert.equal(live.filter(node => node.tagName === "canvas").length, 1);
-  assert.ok(find(live, "class", "spiral-view"));
+  const backdrop = find(live, "class", "spiral-backdrop");
+  assert.equal(backdrop.parentNode, gate);
+  assert.equal(live.find(node => node.tagName === "canvas").parentNode, backdrop);
+  assert.equal(find(live, "class", "spiral-poster").parentNode, backdrop);
+  assert.ok(find(descendants(find(live, "class", "spiral-view")), "class", "orrery-targets"));
   assert.ok(find(live, "data-spiral-motion", ""));
   assert.ok(find(live, "data-spiral-explore", ""));
   assert.ok(live.some(node => node.tagName === "dialog"));
@@ -58,7 +62,9 @@ test("the shipped worker installs the same spiral assets as the shell and a real
     assert.ok(core.includes('"./' + url + '"'), url);
   }
   const poster = "assets/brand/hh-spiral-galaxy.webp";
-  assert.ok(core.includes('"./' + poster + '"'));
+  const css = fs.readFileSync(path.join(root, "auth-spiral.css"), "utf8");
+  const posterUrl = css.match(/url\("(assets\/brand\/hh-spiral-galaxy\.webp\?v=\d+)"\)/)[1];
+  assert.ok(core.includes('"./' + posterUrl + '"'));
   const bytes = fs.readFileSync(path.join(root, poster));
   assert.equal(bytes.toString("ascii", 0, 4), "RIFF");
   assert.equal(bytes.toString("ascii", 8, 12), "WEBP");

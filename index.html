@@ -85,7 +85,7 @@
   <link rel="stylesheet" href="brand-galaxy-logo.css?v=1">
   <link rel="stylesheet" href="galaxy-design-system.css?v=1">
   <link rel="stylesheet" href="galaxy-shell.css?v=9">
-  <link rel="stylesheet" href="auth-spiral.css?v=3">
+  <link rel="stylesheet" href="auth-spiral.css?v=4">
   <!-- Lazy workspace assets are loaded by performance-loader.js. HH School v1 owns /learn; HH English and HH Japanese remain independent routes. -->
   <script src="vercel-observability.js?v=2" defer></script>
   <!-- Compatibility: config.js?v=8 config.js?v=9 -->
@@ -99,6 +99,7 @@
   <script src="all-game-exp-catalog-story.js?v=1" defer></script>
   <script src="all-game-expansion-catalog.js?v=1" defer></script>
   <script src="all-game-catalog.js?v=3" defer></script>
+  <!-- Release v1086: edge-to-edge galaxy on the sign-in surface. -->
   <!-- Release v1085: return directly from planetary exploration to the sign-in form. -->
   <!-- Release v1084: explorable planetary systems on the spiral sign-in. -->
   <!-- Release v1083: spiral-galaxy sign-in and on-demand HH explorer. -->
@@ -309,6 +310,10 @@
   <div class="cursor-glow" aria-hidden="true"></div>
 
   <section id="authGate" class="auth-gate hh-spiral-gate" aria-label="Tài khoản hoang8.com">
+    <div class="spiral-backdrop" aria-hidden="true">
+      <div class="spiral-poster"></div>
+      <canvas class="spiral-canvas" aria-hidden="true"></canvas>
+    </div>
     <div class="spiral-layout">
       <header class="spiral-mast">
         <span class="spiral-wordmark"><img src="assets/brand/hh-galaxy-star-static.svg?v=2" width="36" height="36" alt="">hoang8<span>.com</span></span>
@@ -316,7 +321,6 @@
       </header>
       <section class="spiral-sky" aria-label="Thiên hà xoắn ốc ba nhánh">
         <div class="spiral-view" tabindex="0" role="group" aria-label="Bản đồ thiên hà tương tác" aria-describedby="spiral-drag-hint">
-          <canvas class="spiral-canvas" aria-hidden="true"></canvas>
           <svg class="orrery-paths" aria-hidden="true"></svg>
           <div class="orrery-targets"></div>
         </div>
@@ -455,7 +459,7 @@
     <link rel="stylesheet" href="auth-h-galaxy.css?v=13">
     <link rel="stylesheet" href="auth-living-galaxy-3d.css?v=13">
     <link rel="stylesheet" href="auth-solar-secret.css?v=8">
-    <link rel="stylesheet" href="auth-spiral.css?v=3">
+    <link rel="stylesheet" href="auth-spiral.css?v=4">
     <main id="authGate" class="spiral-atlas">
     <div class="auth-spectrum" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
     <div class="auth-motion-field" aria-hidden="true">
@@ -1374,7 +1378,7 @@
   <!-- Test/offline contract aliases only; these files are not loaded twice:
        performance-loader.js?v=53 auth-platform.js?v=12 script.js?v=144 -->
   <script src="auth-experience.js?v=10" defer></script>
-  <script type="module" src="auth-spiral.js?v=3"></script>
+  <script type="module" src="auth-spiral.js?v=4"></script>
   <!-- Deferred auth effects: auth-creative-universe.js?v=8 auth-living-background.js?v=1 auth-identity-constellation.js?v=2 auth-universe-memory.js?v=4 auth-logo-motion.js?v=1 auth-emotional-logo.js?v=1 auth-form-motion.js?v=3 auth-transition-runtime.js?v=2 auth-quantum-flow.js?v=2 auth-trust-director.js?v=2 auth-spatial-aurora.js?v=1 auth-cosmic-prism-background.js?v=3 auth-cosmic-prism-form.js?v=3 auth-cosmic-prism-interactions.js?v=3 -->
   <script src="auth-zoom-resilience.js?v=4" defer></script>
   <script src="privacy-consent-center.js?v=3" defer></script>

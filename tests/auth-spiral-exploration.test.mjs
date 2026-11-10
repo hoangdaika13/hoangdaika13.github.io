@@ -6,6 +6,7 @@ import {
   SYSTEMS,
   newMap,
   projection,
+  galaxyFrame,
   screen,
   entries,
   visit,
@@ -136,6 +137,25 @@ test("pan moves by CSS pixels, pointer-anchored zoom fixes its point, and pause 
   advance(s, 1, true);
   near(s.elapsed, 1);
   assert.notDeepEqual(groups(s, w, h)[0].planets[5].pt, zoomed);
+});
+
+test("the distant galaxy spans the full login even at minimum map zoom", () => {
+  for (const [width, height] of [
+    [1727, 847],
+    [2560, 1080],
+    [375, 812],
+    [712, 402]
+  ]) {
+    const camera = { ...newMap().camera, zoom: 0.15, panX: -50, panY: 50 };
+    const sky = galaxyFrame(camera, width, height);
+    assert.ok(sky.scale * 11.85 > width && sky.scale * 11.85 > height);
+    assert.ok(sky.x > width * 0.3 && sky.x < width * 0.65 && sky.y > 0 && sky.y < height);
+    assert.equal(sky.roll !== 0, height > width);
+    const close = galaxyFrame({ ...camera, zoom: 26, detail: 1 }, width, height);
+    assert.ok(close.scale / sky.scale < 1.5);
+    assert.ok(close.light < sky.light);
+    assert.equal(galaxyFrame({ ...camera, detail: 1 }, width, height, false).light, 1);
+  }
 });
 
 test("login can install the small map offline while the GPU, fact catalog and illustrations load on demand", () => {
