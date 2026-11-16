@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1086";
+const CACHE = "hh-identity-portal-v1087";
+// Previous release: hh-identity-portal-v1086.
 // Previous release: hh-identity-portal-v1085.
 // Previous release: hh-identity-portal-v1084.
 // Previous release: hh-identity-portal-v1083.
@@ -291,7 +292,7 @@ const RUNTIME_ASSETS = [
   "./",
   "./index.html",
   "./auth-spiral.css?v=4",
-  "./auth-spiral.js?v=4",
+  "./auth-spiral.js?v=5",
   "./auth-spiral-map.mjs?v=2",
   "./auth-spiral-facts.mjs?v=1",
   "./auth-spiral-space.mjs?v=2",
@@ -983,7 +984,7 @@ const CORE = [
   "./all-game-catalog.js?v=3",
   "./index.html",
   "./auth-spiral.css?v=4",
-  "./auth-spiral.js?v=4",
+  "./auth-spiral.js?v=5",
   "./auth-spiral-map.mjs?v=2",
   "./auth-spiral-facts.mjs?v=1",
   "./assets/brand/hh-spiral-galaxy.webp?v=2",

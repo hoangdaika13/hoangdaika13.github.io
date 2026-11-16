@@ -344,11 +344,12 @@ function install(gate) {
     if (!gateVisible()) {
       if (facts.open) cards.close();
       if (dialog.open) dialog.close();
-      pointers.clear();
+      cancelGesture();
       release();
       return;
     }
     if (!canDraw()) {
+      cancelGesture();
       stopFrame();
       return;
     }
@@ -555,6 +556,15 @@ function install(gate) {
     const [a, b] = pointers.values();
     return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, d: Math.hypot(a.x - b.x, a.y - b.y) };
   }
+  function cancelGesture() {
+    const captured = [...pointers.keys()];
+    pointers.clear();
+    pendingHit = null;
+    state.pointed = null;
+    for (const id of captured) if (view.hasPointerCapture(id)) view.releasePointerCapture(id);
+    previous = 0;
+    requestDraw();
+  }
   function startDrag(event) {
     const outsideMap = event.currentTarget === backdrop;
     if (outsideMap && (event.pointerType !== "mouse" || !surface.map.visible)) return;
@@ -568,6 +578,7 @@ function install(gate) {
       startY: p.y,
       moved: false,
       hit: outsideMap ? null : nearest(p),
+      primary: event.button === 0 && !outsideMap,
       pan: panning || event.shiftKey || event.button !== 0
     });
     if (pointers.size > 1) for (const finger of pointers.values()) finger.moved = true;
@@ -620,7 +631,7 @@ function install(gate) {
       id = nearest(p);
     if (
       event.type === "pointerup" &&
-      !finger.pan &&
+      finger.primary &&
       !finger.moved &&
       Math.hypot(p.x - finger.startX, p.y - finger.startY) <= 5 &&
       id &&
@@ -631,14 +642,30 @@ function install(gate) {
     requestDraw();
   }
   for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) view.addEventListener(name, end);
+  // A tab switch can consume pointerup elsewhere. Release the old gesture so
+  // the sky resumes on return and a later click cannot open its stale target.
+  window.addEventListener("blur", cancelGesture);
   view.addEventListener("contextmenu", (e) => e.preventDefault());
   view.addEventListener("pointerleave", () => {
     state.pointed = null;
     previous = 0;
     requestDraw();
   });
-  // Open on the final click so a touchscreen's compatibility mouse events
-  // cannot move focus behind a newly opened dialog.
+  // Browsers can suppress click immediately after a touch pan. Commit a
+  // stationary tap at touchend and cancel its compatibility mouse events,
+  // which would otherwise move focus behind the new dialog.
+  view.addEventListener(
+    "touchend",
+    (event) => {
+      if (!pendingHit) return;
+      event.preventDefault();
+      const id = pendingHit;
+      pendingHit = null;
+      choose(id);
+    },
+    { passive: false }
+  );
+  // Mouse and keyboard activation share the same selection path.
   view.addEventListener("click", (event) => {
     const keyboard = event.detail === 0;
     const id = keyboard ? event.target.closest("[data-hit]")?.dataset.hit : pendingHit;

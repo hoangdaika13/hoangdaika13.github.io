@@ -38,6 +38,90 @@ function disableWebGL() {
   };
 }
 
+function observeSkyFrames() {
+  window.skyFrameCount = 0;
+  if (!window.WebGL2RenderingContext) return;
+  const draw = WebGL2RenderingContext.prototype.drawArrays;
+  WebGL2RenderingContext.prototype.drawArrays = function (...args) {
+    if (this.canvas.classList.contains("spiral-canvas")) window.skyFrameCount++;
+    return draw.apply(this, args);
+  };
+}
+
+async function checkInterruptedDrag(page) {
+  await page.locator(".spiral-view[data-renderer=three]").waitFor();
+  await page.waitForFunction(() => window.skyFrameCount > 2);
+  const rect = await page.locator(".spiral-view").boundingBox();
+  await page.mouse.move(rect.x + 30, rect.y + 30);
+  await page.mouse.down();
+  // Headless Chromium does not emit OS focus changes when switching tabs.
+  // Deliver that lifecycle event while a real pointer is still captured.
+  await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+  const before = await page.evaluate(() => window.skyFrameCount);
+  await page.waitForFunction((count) => window.skyFrameCount > count + 1, before);
+  await page.mouse.up();
+  assert.equal(await page.locator(".spiral-facts").isVisible(), false);
+}
+
+async function checkPanSelection(page, context, mobile) {
+  const pan = page.locator("[data-space-pan]");
+  const stage = page.locator(".spiral-view");
+  const saturn = page.locator("[data-hit=saturn]");
+  await pan.click();
+  await stage.scrollIntoViewIfNeeded();
+  const rect = await stage.boundingBox();
+  const [sx, sy] = await center(saturn);
+  const x = rect.x + 30, y = rect.y + rect.height * 0.6;
+  const touch = mobile ? await context.newCDPSession(page) : null;
+  try {
+    if (touch) {
+      await touch.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
+      await touch.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: x + 20, y: y - 10 }] });
+      await touch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    } else {
+      await page.mouse.move(x, y);
+      await page.mouse.down();
+      await page.mouse.move(x + 20, y - 10, { steps: 5 });
+      await page.mouse.up();
+    }
+    await page.waitForFunction(([sx, sy]) => {
+      const r = document.querySelector("[data-hit=saturn]").getBoundingClientRect();
+      return Math.abs(r.x + r.width / 2 - sx - 20) < 1 && Math.abs(r.y + r.height / 2 - sy + 10) < 1;
+    }, [sx, sy]);
+    assert.equal(await page.locator(".spiral-facts").isVisible(), false, "panning must not select a body");
+    const at = await center(saturn);
+    if (mobile) await page.touchscreen.tap(...at);
+    else await page.mouse.click(...at);
+    await page.locator("[data-fact-content]:visible").waitFor();
+    assert.equal(await page.locator("#space-fact-title").textContent(), "Sao Thổ");
+    assert.equal(await pan.getAttribute("aria-pressed"), "true", "tap still selects in pan mode");
+    await page.keyboard.press("Escape");
+    await page.waitForFunction(() => document.activeElement?.dataset.hit === "saturn");
+    if (touch) {
+      await stage.focus();
+      const box = await stage.boundingBox();
+      const cx = box.x + box.width / 2, cy = box.y + box.height / 2;
+      const positions = () => page.locator("[data-hit=saturn],[data-hit=neptune]").evaluateAll((items) => {
+        const [a, b] = items.map((item) => item.getBoundingClientRect());
+        return Math.hypot(a.x - b.x, a.y - b.y);
+      });
+      const before = await positions();
+      await touch.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: cx - 40, y: cy, id: 1 }, { x: cx + 40, y: cy, id: 2 }] });
+      await touch.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: cx - 48, y: cy, id: 1 }, { x: cx + 48, y: cy, id: 2 }] });
+      await touch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      await page.waitForFunction(() => !document.querySelector(".spiral-facts").open);
+      await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      const ratio = (await positions()) / before;
+      assert.ok(ratio > 1.15 && ratio < 1.25, "pinch should zoom by about 1.2, got " + ratio);
+      assert.equal(await page.locator("[data-space-spread]").inputValue(), "2.4", "zoom must keep orbit spread");
+    }
+    await pan.click();
+    await page.locator("[data-space-fit]").click();
+  } finally {
+    await touch?.detach();
+  }
+}
+
 async function check(browser, { mobile, reduced, poster }) {
   const context = await browser.newContext({
     viewport: mobile ? { width: 375, height: 812 } : { width: 1440, height: 900 },
@@ -57,7 +141,10 @@ async function check(browser, { mobile, reduced, poster }) {
       return route.continue();
     });
     if (poster) await context.addInitScript(disableWebGL);
+    if (!mobile && !reduced && !poster) await context.addInitScript(observeSkyFrames);
     const page = await context.newPage();
+    page.setDefaultTimeout(15000);
+    page.setDefaultNavigationTimeout(30000);
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto(new URL("/index.html?api=local", origin).href, { waitUntil: "domcontentloaded" });
@@ -65,6 +152,7 @@ async function check(browser, { mobile, reduced, poster }) {
     await page.locator("[data-banner-refuse]").click();
     await page.locator("[data-privacy-banner]").waitFor({ state: "hidden" });
     await assertFullSky(page);
+    if (!mobile && !reduced && !poster) await checkInterruptedDrag(page);
     const email = page.locator("#gateLoginForm [name=email]");
     await email.fill("orbital-qa@example.test");
     assert.equal(
@@ -126,6 +214,7 @@ async function check(browser, { mobile, reduced, poster }) {
       await page.keyboard.press("Escape");
       await page.waitForFunction((id) => document.activeElement?.dataset.hit === id, id);
     }
+    await checkPanSelection(page, context, mobile);
     await stage.focus();
     await page.keyboard.press("ArrowRight");
     await page.locator("[data-space-planet]").selectOption("saturn");
