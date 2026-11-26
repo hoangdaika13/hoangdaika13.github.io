@@ -5,6 +5,9 @@
   const LAST_PROFILE_KEY = "hh.auth.last-profile";
   const STREAK_KEY = "hh.auth.login-streak";
   // Only a valid, explicit Study Together invitation survives the guest/login entry.
+  const rubikLearningRoute = () =>
+    /^#\/rubik(?:\/(?:hoc|cong-thuc|mo-phong|giai-khoi|luyen-tap|dong-ho|tien-trinh)(?:\/[a-z0-9-]{1,60})?)?(?:\?[a-z0-9=&_%+.-]*)?$/i.test(location.hash)
+      ? location.hash : "";
   const studyInviteRoute = () => {
     const raw=location.hash.replace(/^#/,"");
     if(raw.split("?")[0]!=="/learn/study-together")return "";
@@ -723,7 +726,7 @@
       const streak = recordLoginStreak();
       gate.classList.add("auth-success");
       setStatus(`${message} · Chuỗi hoạt động ${streak} ngày`, "success");
-      const pendingRoute = sessionStorage.getItem("hh.auth.pending-route") || studyInviteRoute() || "#/platform";
+      const pendingRoute = sessionStorage.getItem("hh.auth.pending-route") || studyInviteRoute() || rubikLearningRoute() || "#/platform";
       sessionStorage.removeItem("hh.auth.pending-route");
       finishSessionCheck();
       if (location.hash !== pendingRoute) history.replaceState({}, document.title, `${location.pathname}${location.search}${pendingRoute}`);
@@ -1123,8 +1126,9 @@
       sessionStorage.setItem(GUEST_KEY, "1");
       sessionStorage.setItem("hh.auth.guest-user", JSON.stringify(guestUser));
       user = guestUser;
-      const guestDestination=studyInviteRoute()||"#/platform";
-      setStatus(studyInviteRoute()?"Đã mở lời mời phòng học. Nhập tên khách để yêu cầu tham gia.":"Đã mở workspace local. Tính năng đồng bộ cần tài khoản.", "info");
+      const invite = studyInviteRoute();
+      const guestDestination = invite || rubikLearningRoute() || "#/platform";
+      setStatus(invite ? "Đã mở lời mời phòng học. Nhập tên khách để yêu cầu tham gia." : "Đã mở workspace local. Tính năng đồng bộ cần tài khoản.", "info");
       finishSessionCheck();
       if (location.hash !== guestDestination) history.replaceState({}, document.title, `${location.pathname}${location.search}${guestDestination}`);
       setGateState();

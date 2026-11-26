@@ -40,13 +40,13 @@ test("the canonical Platform home is directly accessible without a second naviga
   assert.equal(gateway.resolveRoute("/galaxy/learning", { storage }).allowed, true);
 });
 
-test("catalog mirrors all nine registry groups and all 42 functions without duplicate routes", () => {
+test("catalog mirrors all nine registry groups and all 43 functions without duplicate routes", () => {
   const groups = catalog();
   assert.equal(groups.length, 9);
-  assert.deepEqual(groups.map((group) => group.items.length), [1, 7, 5, 10, 6, 8, 1, 1, 3]);
+  assert.deepEqual(groups.map((group) => group.items.length), [1, 7, 5, 11, 6, 8, 1, 1, 3]);
   const entries = groups.flatMap((group) => group.items);
-  assert.equal(entries.length, 42);
-  assert.equal(new Set(entries.map((item) => item.route)).size, 42);
+  assert.equal(entries.length, 43);
+  assert.equal(new Set(entries.map((item) => item.route)).size, 43);
   assert.ok(entries.every((item) => gateway.isCoreRoute(item.route) || gateway.isGalaxyRoute(item.route)));
   assert.ok(entries.every((item) => item.description.length > 30));
   const admin = entries.find((item) => item.id === "admin");
@@ -78,7 +78,8 @@ test("search supports Vietnamese diacritics, multiword descriptions, aliases and
   const groups = catalog();
   assert.equal(home.filterCatalog(groups, "han tu").some((item) => item.id === "chinese"), true);
   assert.deepEqual(home.filterCatalog(groups, "Đọc truyện").map((item) => item.id), ["comic-reader"]);
-  assert.equal(home.filterCatalog(groups, "sample child").length, 42);
+  assert.equal(home.filterCatalog(groups, "sample child").length, 43);
+  assert.deepEqual(home.filterCatalog(groups, "giai rubik", "entertainment").map((item) => item.route), ["/rubik"]);
   assert.equal(home.filterCatalog(groups, "", "learning").length, 8);
   assert.deepEqual(home.filterCatalog(groups, "mathcore").map(item=>item.id), ["mathcore"]);
   assert.deepEqual(home.filterCatalog(groups, "học cùng nhau").map(item=>item.id), ["study-together"]);
@@ -91,7 +92,7 @@ test("search supports Vietnamese diacritics, multiword descriptions, aliases and
 
 test("cards escape metadata and never expose Admin links to ordinary users", () => {
   const html = home.markup(catalog(), { userName: '<img src=x onerror="bad">' });
-  assert.equal((html.match(/data-php-card=/g) || []).length, 42);
+  assert.equal((html.match(/data-php-card=/g) || []).length, 43);
   assert.match(html, /&lt;img/);
   assert.doesNotMatch(html, /<img src=x|data-php-route="\/admin/);
   assert.match(html, /Chỉ dành cho Admin/);
@@ -149,7 +150,7 @@ test("brand, sidebar, command search and mobile home target the new route withou
 test("home is lazy-loaded, cache-aligned, scoped and has lifecycle/accessibility guards", () => {
   const loader = read("performance-loader.js"), worker = read("sw.js");
   assert.match(loader, /if \(value === "\/platform"\) return \["platform-home"\]/);
-  for (const asset of ["platform-home.css?v=9", "platform-home.js?v=24"]) { assert.ok(loader.includes(asset)); assert.ok(worker.includes(asset)); }
+  for (const asset of ["platform-home.css?v=9", "platform-home.js?v=25"]) { assert.ok(loader.includes(asset)); assert.ok(worker.includes(asset)); }
   const css = read("platform-home.css");
   for (const token of ["@container (max-width: 600px)", "prefers-reduced-motion", "forced-colors", ":focus-visible", "data-paused", "data-motion", "data-contrast"]) assert.ok(css.includes(token));
   const source = read("platform-home.js");

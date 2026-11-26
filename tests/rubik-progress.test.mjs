@@ -1,0 +1,42 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { averageOf, changeReview, formatTime, inspectionPenalty, loadProgress, mergeRecords, solveScore } from "../rubik-progress.mjs";
+
+test("Rubik learning, favorites and review schedules stay within a guest or account profile", () => {
+  const data = new Map();
+  const storage = { getItem: (key) => data.get(key), setItem: (key, value) => data.set(key, value) };
+  const guest = loadProgress(null, storage);
+  guest.value.lessons.notation = 10000;
+  const wrong = changeReview(guest.value, "oll-27", { correct: false, favorite: true }, 10000);
+  assert.equal(wrong.due, 10000);
+  const right = changeReview(guest.value, "oll-27", { correct: true, status: "known" }, 20000);
+  assert.equal(right.due, 86420000);
+  assert.equal(guest.save(), true);
+  const person = loadProgress({ id: "abc" }, storage);
+  assert.deepEqual(person.value.reviews, {});
+  person.value.last["2x2x2"] = "2x2-beginner";
+  person.save();
+  const restored = loadProgress(null, storage);
+  assert.equal(restored.value.lessons.notation, 10000);
+  assert.equal(restored.value.reviews["oll-27"].correct, 1);
+  assert.equal(restored.value.reviews["oll-27"].wrong, 1);
+  assert.equal(restored.value.reviews["oll-27"].favorite, true);
+  assert.equal(restored.value.last["2x2x2"], undefined);
+});
+test("timed solves honor penalty, DNF and trimmed averages without duplicate imports", () => {
+  const base = { puzzle: "3x3x3", scramble: "R U", penalty: "ok" };
+  const rows = [8000, 9000, 10000, 11000, 12000].map((ms, i) => ({ ...base, id: "r"+i, time: i+1, ms }));
+  rows[1].penalty = "+2";
+  rows[4].penalty = "DNF";
+  const merged = mergeRecords(rows, [{ ...rows[1], ms: 5 }, { invalid: true }]);
+  assert.equal(merged.length, 5);
+  assert.equal(solveScore(rows[1]), 11000);
+  assert.equal(averageOf(merged, 5), 32000 / 3);
+  assert.equal(averageOf(merged, 12), null);
+  rows[3].penalty = "DNF";
+  assert.equal(averageOf(rows, 5), Infinity);
+  assert.equal(inspectionPenalty(14999), "ok");
+  assert.equal(inspectionPenalty(15000), "+2");
+  assert.equal(inspectionPenalty(17000), "DNF");
+  assert.equal(formatTime(65400), "1:05,40 s");
+});

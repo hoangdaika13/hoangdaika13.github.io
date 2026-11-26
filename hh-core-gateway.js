@@ -59,6 +59,7 @@
     "/cosmic-observatory",
     "/play",
     "/all-game",
+    "/rubik",
     "/game",
     "/entertainment",
     "/character-3d",

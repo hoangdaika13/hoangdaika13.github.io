@@ -5850,6 +5850,15 @@ function initAppShell() {
       { id: "journal", title: "Nhật ký tập Patin", route: "/patin/journal" },
       { id: "resources", title: "Tra cứu Patin", route: "/patin/resources" }
     ] },
+    { id: "rubik", label: "Giải Rubik", icon: "▦", accent: "#78e3c0", route: "/rubik", items: [], pages: [
+      { id: "hoc", title: "Bắt đầu học", route: "/rubik/hoc" },
+      { id: "cong-thuc", title: "Thư viện công thức", route: "/rubik/cong-thuc" },
+      { id: "mo-phong", title: "Rubik 3D", route: "/rubik/mo-phong" },
+      { id: "giai-khoi", title: "Giải khối của tôi", route: "/rubik/giai-khoi" },
+      { id: "luyen-tap", title: "Luyện tập", route: "/rubik/luyen-tap" },
+      { id: "dong-ho", title: "Đồng hồ", route: "/rubik/dong-ho" },
+      { id: "tien-trinh", title: "Tiến trình", route: "/rubik/tien-trinh" }
+    ] },
     { id: "fortune", label: "Xem bói", icon: "☾", accent: "#a983ff", route: "/fortune", items: [] },
     {
       id: "system",
@@ -5886,7 +5895,7 @@ function initAppShell() {
       icon: "▶",
       accent: "#ff6f82",
       accentSecondary: "#ffc65c",
-      groupIds: ["cosmic-observatory", "play-center", "all-game", "multiverse", "eonwild-game", "comic-reader", "cinema", "music-library", "patin", "fortune"]
+      groupIds: ["cosmic-observatory", "play-center", "all-game", "rubik", "multiverse", "eonwild-game", "comic-reader", "cinema", "music-library", "patin", "fortune"]
     },
     {
       id: "work-tech",
@@ -5947,6 +5956,7 @@ function initAppShell() {
     "eonwild-game": "game eonwild động vật muôn loài khủng long sinh tồn thế giới mở cổ sinh trung sinh tân sinh hiện đại không con người ecology survival",
     "all-game": "all game arcade chiến thuật phòng thủ rts cờ vua cờ vây pinball drift mô tô lập trình drone factory nhà máy hành động niệm lực 2d snake rắn phá gạch breakout bắn tàu ghép số 2048 dò mìn mines lật thẻ trí nhớ xếp khối đẩy thùng sokoban platformer runner trò chơi",
     patin: "patin trượt inline roller skating rollerblade quad giày bảo hộ phanh rẽ slalom freestyle fitness speed slide double push soul acid magic parallel ufo nelson crazy luồn cọc nhật ký tập video tua chậm lặp a b học trực quan performance arena thi đấu matrix classic battle bản đồ tổ hợp checklist",
+    rubik: "giải rubik rubix rubic cube 3x3 2x2 speedcubing F2L OLL PLL CFOP Roux ZZ xếp khối đồng hồ công thức puzzle mô phỏng 3D",
     fortune: "xem bói tarot tử vi chiêm tinh kinh dịch",
     work: "công việc dự án task ghi chú lịch",
     "davinci-resolve": "tool công cụ video media batch youtube facebook tiktok",
@@ -6004,10 +6014,11 @@ function initAppShell() {
     japanese: '<rect x="3" y="4" width="18" height="16" rx="5"/><text class="sidebar-icon-label sidebar-icon-label--cjk" x="12" y="15">日</text>',
     chinese: '<rect x="3" y="4" width="18" height="16" rx="5"/><text class="sidebar-icon-label sidebar-icon-label--cjk" x="12" y="15">中</text>',
     dharma: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.7"/><path d="M12 3v6m0 6v6M3 12h6m6 0h6M5.6 5.6l4.2 4.2m4.4 4.4 4.2 4.2m0-12.8-4.2 4.2m-4.4 4.4-4.2 4.2"/>',
-    timer: '<circle cx="12" cy="13" r="8.5"/><path d="M9 2h6M12 5v2m0 6 3.5-2.5M18.5 6.5l1.5-1.5"/><circle class="sidebar-icon-fill" cx="12" cy="13" r="1.3"/>'
+    timer: '<circle cx="12" cy="13" r="8.5"/><path d="M9 2h6M12 5v2m0 6 3.5-2.5M18.5 6.5l1.5-1.5"/><circle class="sidebar-icon-fill" cx="12" cy="13" r="1.3"/>',
+    cube: '<path d="m12 2.5 8.5 4.8v9.4L12 21.5l-8.5-4.8V7.3L12 2.5Zm-8.5 4.8 8.5 4.8 8.5-4.8M12 12.1v9.4M7.75 4.9l8.5 4.8v9.4m-8.5 0V9.7l8.5-4.8M3.5 12l8.5 4.8 8.5-4.8"/>'
   });
   const sidebarIconNames = Object.freeze({
-    multiverse: "orbit", "hh-multiverse": "orbit",
+    multiverse: "orbit", "hh-multiverse": "orbit", rubik: "cube",
     home: "home", search: "search", "ai-creative": "sparkles", "web-community": "orbit", entertainment: "play", "work-tech": "cpu", learning: "book", "system-admin": "shield",
     "chat-ai": "bot", create: "wand", draw: "brush", "music-ai": "music", "comic-motion": "panels", "media-design": "image", "graphic-design": "pen",
     google: "search", "youtube-main": "video", discord: "messages", communication: "send", remote: "monitor", "cosmic-observatory": "orbit", "play-center": "gamepad", "eonwild-game": "paw", "comic-reader": "reader", cinema: "clapper", "music-library": "headphones", patin: "orbit", fortune: "moon",
@@ -6919,6 +6930,7 @@ function initAppShell() {
       if (["universe", "shared"].includes(crumbs[1]) && crumbs[2]) crumbLabels[crumbs[2]] = "Thực tại";
     }
     if (crumbs[0] === "all-game") { crumbLabels["all-game"] = "All Game"; (groups.find(item => item.id === "all-game")?.pages || []).forEach(item => { crumbLabels[item.id] = item.title; }); }
+    if (crumbs[0] === "rubik") { crumbLabels.rubik = "Giải Rubik"; (groups.find(item => item.id === "rubik")?.pages || []).forEach(item => { crumbLabels[item.id] = item.title; }); }
     if (crumbs[0] === "patin") Object.assign(crumbLabels, { patin: "Patin", videos: "Học qua video", map: "Bản đồ nền tảng", competition: "Thi đấu", routine: "Tổ hợp & chuẩn bị", skills: "Kỹ năng", disciplines: "Bộ môn", speed: "Speed", slide: "Slide", slalom: "Slalom", studio: "Minh họa", path: "Lộ trình", gear: "Giày & an toàn", journal: "Nhật ký tập", resources: "Tra cứu" });
     const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIAllPageItems, ...workGalaxyPageItems, ...davinciResolvePages];
     const routeTools = crumbs[0] === "patin" ? (groups.find((item) => item.id === "patin")?.pages || []) : crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIAllPageItems : crumbs[0] === "davinci-resolve" ? davinciResolvePages : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "graphic-design" ? graphicDesignPages : crumbs[0] === "dev-tools" ? developerAllToolItems : crumbs[0] === "work" ? workGalaxyPageItems : knownTools;
@@ -7012,6 +7024,7 @@ function initAppShell() {
     fortune: "Đang mở không gian Tarot, cung hoàng đạo và nhật ký suy ngẫm...",
     "play-center": "Đang mở HH Play, khôi phục điểm số và chuẩn bị trải nghiệm giải trí cục bộ...",
     "all-game": "Đang mở All Game và thư viện trò chơi 2D cục bộ...",
+    rubik: "Đang mở bài học và thư viện công thức Rubik…",
     "eonwild-game": "Đang tái tạo Trái Đất Muôn Thời, lưới sinh thái và vòng đời động vật...",
     draw: "Đang mở Chromatic Studio và chuẩn bị 16 brush engine đa sắc...",
     remote: "Đang thiết lập không gian Remote, WebRTC và kết nối thiết bị P2P...",
@@ -7456,6 +7469,7 @@ function initAppShell() {
     if (route !== "/fortune" && !route.startsWith("/fortune/")) window.HHFortuneHub?.unmount?.();
     if (route !== "/play" && !route.startsWith("/play/")) window.HHPlay?.unmount?.();
     window.HHAllGame?.unmount?.();
+    window.HHRubik?.unmount?.();
     if (route !== "/universe" && !route.startsWith("/universe/")) window.HHUniverse?.unmount?.();
     window.HHEonWild?.unmount?.();
     if (route !== "/draw" && !route.startsWith("/draw/")) window.HHDrawStudio?.unmount?.();
@@ -7885,6 +7899,12 @@ function initAppShell() {
       });
       else mountSimpleView("Vũ trụ HH", "Đang tải trung tâm dữ liệu thiên văn và renderer…", "");
       remember("cosmic-observatory");
+    } else if (routePath === "/rubik" || routePath.startsWith("/rubik/")) {
+      updatePageHeader("Giải Rubik", "Học từng nước xoay, tra cứu công thức và luyện giải.", route);
+      workspace.innerHTML = '<div data-rubik-host></div>';
+      if (window.HHRubik?.mount) window.HHRubik.mount(workspace.firstElementChild, { route, currentUser: readCurrentAuthUser() });
+      else mountSimpleView("Giải Rubik", "Chưa tải được Giải Rubik. Hãy thử tải lại trang.", "");
+      remember("rubik");
     } else if (route === "/all-game" || route.startsWith("/all-game/")) {
       const gameId = parts[1] || "";
       const gameMeta = groups.find(item => item.id === "all-game")?.pages?.find(item => item.id === gameId);

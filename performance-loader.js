@@ -28,7 +28,7 @@
   const groups = Object.freeze({
     brand: {
       styles: [],
-      scripts: ["brand-galaxy-logo.js?v=2", "galaxy-favicon-controller.js?v=2", "hh-core-gateway.js?v=13", "galaxy-shell.js?v=11"]
+      scripts: ["brand-galaxy-logo.js?v=2", "galaxy-favicon-controller.js?v=2", "hh-core-gateway.js?v=14", "galaxy-shell.js?v=11"]
     },
     "auth-effects": {
       /*
@@ -65,7 +65,7 @@
     },
     "platform-home": {
       styles: ["platform-home.css?v=9", "home-cosmos-motion.css?v=5"],
-      scripts: ["home-cosmos-motion.js?v=3", "platform-home.js?v=24"]
+      scripts: ["home-cosmos-motion.js?v=3", "platform-home.js?v=25"]
     },
     "galaxy-home-ai": {
       styles: ["galaxy-home-ai.css?v=25", "home-cosmos-motion.css?v=5"],
@@ -307,6 +307,7 @@
       styles: ["cosmic-observatory.css?v=4", "cosmic-solar-system-3d.css?v=3"],
       scripts: ["vendor/astronomy-engine-2.1.19.min.js?v=1", "cosmic-solar-system-3d.js?v=3", "cosmic-observatory.js?v=5"]
     },
+    rubik: { styles: ["rubik.css?v=1"], scripts: ["rubik-entry.js?v=1"] },
     "all-game": { styles: ["all-game.css?v=6"], scripts: ["all-game-studio-core.js?v=3", "all-game-studio-art.js?v=1", "all-game-exp-art-play.js?v=2", "all-game-exp-art-lab.js?v=1", "all-game-exp-art-story.js?v=1", "all-game-expansion-art.js?v=1", "all-game-audio.js?v=1", "all-game-scenes.js?v=5", "all-game-campaign-catalog.js?v=1", "all-game-campaign-core.js?v=1", "all-game-campaign-store.js?v=2", "all-game-campaign-ui.js?v=2", "all-game-view-3d.js?v=2", "all-game.js?v=6"] },
     play: {
       styles: ["hh-play.css?v=8&build=4"],
@@ -451,6 +452,7 @@
     if (value.startsWith("/phat-phap")) return ["dharma"];
     if (value === "/universe" || value.startsWith("/universe/") || value === "/cosmic-observatory" || value.startsWith("/cosmic-observatory/")) return ["cosmic"];
     if (value === "/all-game" || value.startsWith("/all-game/")) return ["all-game"];
+    if (value === "/rubik" || value.startsWith("/rubik/")) return ["rubik"];
     if (value.startsWith("/play")) return ["play"];
     if (value === "/game" || value.startsWith("/game/")) return ["game"];
     if (value === "/patin" || value.startsWith("/patin/")) return ["patin"];

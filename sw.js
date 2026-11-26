@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1087";
+const CACHE = "hh-identity-portal-v1088";
+// Previous release: hh-identity-portal-v1087.
 // Previous release: hh-identity-portal-v1086.
 // Previous release: hh-identity-portal-v1085.
 // Previous release: hh-identity-portal-v1084.
@@ -245,6 +246,18 @@ const RUNTIME_ASSETS = [
   "./all-game-pack-arcade.js?v=5",
   "./all-game-pack-casual.js?v=5",
   "./all-game.css?v=6",
+  "./rubik.css?v=1",
+  "./rubik-entry.js?v=1",
+  "./rubik.mjs?v=1",
+  "./rubik-lessons.mjs?v=1",
+  "./rubik-cases.mjs?v=1",
+  "./rubik-progress.mjs?v=1",
+  "./rubik-player.mjs?v=1",
+  "./rubik-engine.mjs?v=1",
+  "./rubik-special.mjs?v=1",
+  "./rubik-special-cases.mjs?v=1",
+  "./rubik-tools.mjs?v=1",
+  "./rubik-media.mjs?v=1",
   "./all-game-scenes.js?v=5",
   "./all-game.js?v=6",
   "./all-game-arcade.js?v=5",
@@ -286,7 +299,7 @@ const RUNTIME_ASSETS = [
   "./home-cosmos-motion.css?v=5",
   "./home-cosmos-motion.js?v=3",
   "./platform-home.css?v=9",
-  "./platform-home.js?v=24",
+  "./platform-home.js?v=25",
   "./focus-study-room.css?v=2",
   "./focus-study-room.js?v=1",
   "./",
@@ -373,7 +386,7 @@ const RUNTIME_ASSETS = [
   "./settings-studio.css?v=7",
   "./settings-studio.js?v=9",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=306",
+  "./script.js?v=307",
   "./graphic-design-project-context.js?v=1",
   "./graphic-design-capabilities.js?v=2",
   "./vendor/polygon-clipping-0.15.7.umd.min.js?v=0.15.7",
@@ -530,7 +543,7 @@ const RUNTIME_ASSETS = [
   "./galaxy-design-system.css?v=1",
   "./galaxy-shell.css?v=9",
   "./galaxy-shell.js?v=11",
-  "./hh-core-gateway.js?v=13",
+  "./hh-core-gateway.js?v=14",
   "./galaxy-home-ai.css?v=23",
   "./galaxy-home-ai.css?v=24",
   "./galaxy-home-ai.css?v=25",
@@ -620,7 +633,7 @@ const RUNTIME_ASSETS = [
   "./assets/brand/hh-galaxy-star-share.png?v=1",
   "./manifest.webmanifest?v=3",
   "./realtime-core.js?v=1",
-  "./auth-platform.js?v=23",
+  "./auth-platform.js?v=24",
   "./auth-experience.js?v=10",
   "./auth-neon-gateway.js?v=35",
   "./auth-h-galaxy.js?v=15",
@@ -1000,12 +1013,12 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=743",
+  "./performance-loader.js?v=744",
   "./auth-experience.js?v=10",
   "./auth-login-repair.css?v=4",
   "./auth-zoom-resilience.js?v=4",
-  "./auth-platform.js?v=23",
-  "./script.js?v=306"
+  "./auth-platform.js?v=24",
+  "./script.js?v=307"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime
