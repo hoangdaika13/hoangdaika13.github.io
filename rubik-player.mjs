@@ -1,4 +1,4 @@
-import * as engine from "./rubik-engine.mjs?v=2";
+import * as engine from "./rubik-engine.mjs?v=3";
 
 export const defaultPuzzle = "3x3x3";
 export const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
@@ -54,9 +54,19 @@ export function diagram(facelets, size, { labels = false, focusLayer = false, de
           const dim = focusLayer && (face === "D" || (face !== "U" && tile >= size));
           const styles = [dim && "rb-dim", changed?.has(start + tile) && "rb-changed"].filter(Boolean);
           const display = whiteBottom ? whiteBottomSticker(color) : color;
-          return '<i class="' + styles.join(" ") + '" data-color="' + esc(display) + '">' + (labels ? esc(display) : "") + '</i>';
+          return '<i class="' + styles.join(" ") + '" data-color="' + esc(display) + '">' + (labels ? esc(engine.COLOR_LABELS[display]) : "") + '</i>';
         }).join("") + '</span>';
     }).join("") + '</span>';
+}
+
+export function mountFormulaPreview(host, item, { labels = false, fallback } = {}) {
+  const size = cubeSize(item.puzzle);
+  if (!size) return engine.mountSpecialPreview(host, { ...item, fallback });
+  const mirror = item.puzzle === "mirror";
+  const state = snapshot(item.puzzle, item.setup || "");
+  const facelets = !mirror && !item.nativePalette ? whiteBottomState(state) : state;
+  const view = engine.renderCube3D(host, facelets, size, { labels, mirror });
+  return () => view.destroy();
 }
 
 function control(text, action, label = "") {
@@ -99,7 +109,7 @@ export function mountPlayer(host, { puzzle, setup = "", algorithm = "", facelets
   const abort = new AbortController();
   const keyHelp = "Chọn nút mặt để xoay. Có thể dùng phím U, R, F, D, L, B. Giữ Shift để đảo chiều.";
   host.innerHTML = '<div class="rb-board" tabindex="0" aria-label="' + esc(free ? keyHelp : "Mô hình Rubik") + '"></div>' +
-    '<p class="rb-note" data-rb-view-help></p><div class="rb-controls">' + control(twoD ? "Xem 3D" : "Xem 2D", "mode") + control(labels ? "Ẩn ký hiệu" : "Hiện ký hiệu", "labels") +
+    '<p class="rb-note" data-rb-view-help></p><div class="rb-controls">' + control(twoD ? "Xem 3D" : "Xem 2D", "mode") + control(mirror ? "Ký hiệu viên" : "Ký hiệu màu", "labels") +
     (free && !goal ? control("Xáo khối", "shuffle") : "") + '</div>' +
     '<div class="rb-controls">' + control("Đặt lại", "reset") + control("Lùi", "back", free ? "Hoàn tác" : "Lùi một nước") +
     (!free ? control("Phát", "play") : "") + control(free ? "Làm lại" : "Tiến một nước", "next") +
@@ -149,8 +159,10 @@ export function mountPlayer(host, { puzzle, setup = "", algorithm = "", facelets
       twoD = true;
     }
     find('[data-player="mode"]').textContent = twoD ? "Xem 3D" : "Xem 2D";
-    find('[data-player="labels"]').textContent = labels ? "Ẩn ký hiệu" : "Hiện ký hiệu";
-    find("[data-rb-view-help]").textContent = twoD ? "Sơ đồ mở phẳng sáu mặt." : "Kéo trên khối hoặc dùng phím mũi tên để đổi góc nhìn.";
+    find('[data-player="labels"]').setAttribute("aria-pressed", String(labels));
+    const viewHelp = twoD ? "Sơ đồ mở phẳng sáu mặt." : "Kéo trên khối hoặc dùng phím mũi tên để đổi góc nhìn.";
+    const colorKey = labels && !mirror ? " Tr là trắng, V là vàng, Đ là đỏ, Ca là cam, Xl là xanh lá, Xd là xanh dương." : "";
+    find("[data-rb-view-help]").textContent = viewHelp + colorKey;
   }
 
   function update(move) {
@@ -158,7 +170,7 @@ export function mountPlayer(host, { puzzle, setup = "", algorithm = "", facelets
     find('[data-player="back"]').disabled = index === 0;
     find('[data-player="next"]').disabled = index === states.length - 1;
     if (free) {
-      const solved = states[index] === engine.solvedFaces(size);
+      const solved = engine.isSolved(states[index], size);
       const meetsGoal = goal && [...goal].every((color, i) => color === "." || color === states[index][i]);
       status.textContent = meetsGoal ? "Đã hoàn thành mục tiêu." : solved ? "Khối đã về trạng thái giải." : index + " nước đã xoay.";
       if (meetsGoal && !reachedGoal && index > 0) {

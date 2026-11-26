@@ -1,9 +1,9 @@
-import { CASES, CASE_GROUPS } from "./rubik-cases.mjs?v=2";
-import { SPECIAL_DIAGRAMS } from "./rubik-media.mjs?v=2";
+import { CASES, CASE_GROUPS } from "./rubik-cases.mjs?v=3";
+import { SPECIAL_DIAGRAMS } from "./rubik-media.mjs?v=3";
 import { changeReview } from "./rubik-progress.mjs?v=1";
-import { applyMoves, parseMoves } from "./rubik-engine.mjs?v=2";
-import { loadSpecialPractice } from "./rubik-special.mjs?v=2";
-import { cubeSize, diagram, esc, mountPlayer, snapshot } from "./rubik-player.mjs?v=2";
+import { applyMoves, parseMoves } from "./rubik-engine.mjs?v=3";
+import { loadSpecialPractice } from "./rubik-special.mjs?v=3";
+import { cubeSize, diagram, esc, mountPlayer, snapshot } from "./rubik-player.mjs?v=3";
 
 const STEP_CHOICES = {
   pyraminx: ["U", "R'", "L", "u'"],

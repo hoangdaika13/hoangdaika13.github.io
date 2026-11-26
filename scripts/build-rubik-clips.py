@@ -35,7 +35,8 @@ EXPORT_FRAMES = r"""
 import { CASES } from './rubik-cases.mjs';
 import { COLORS, solvedFaces, applyMoves, parseMoves } from './rubik-engine.mjs';
 const selections = process.argv.slice(1);
-const cases = CASES.filter(c => /^([2-9])x\1x\1$/.test(c.puzzle) &&
+// The dedicated large-cube builder renders native-palette cases.
+const cases = CASES.filter(c => !c.nativePalette && /^([2-9])x\1x\1$/.test(c.puzzle) &&
   (!selections.length || selections.includes(c.id) || selections.includes(c.group)));
 const frames = cases.map(c => {
   const size = Number(c.puzzle[0]);

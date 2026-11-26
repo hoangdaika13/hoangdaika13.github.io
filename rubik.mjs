@@ -1,7 +1,7 @@
-import { PUZZLES as BASE_PUZZLES, LESSONS as BASE_LESSONS } from "./rubik-lessons.mjs?v=2";
-import { LARGE_PUZZLES, LARGE_LESSONS } from "./rubik-large-lessons.mjs?v=1";
-import { CASES, CASE_GROUPS, getCaseCoverage } from "./rubik-cases.mjs?v=2";
-import { CASE_CLIPS, SPECIAL_DIAGRAMS } from "./rubik-media.mjs?v=2";
+import { PUZZLES as BASE_PUZZLES, LESSONS as BASE_LESSONS } from "./rubik-lessons.mjs?v=3";
+import { LARGE_PUZZLES, LARGE_LESSONS } from "./rubik-large-lessons.mjs?v=2";
+import { CASES, CASE_GROUPS, getCaseCoverage } from "./rubik-cases.mjs?v=3";
+import { CASE_CLIPS, SPECIAL_DIAGRAMS } from "./rubik-media.mjs?v=3";
 import { changeReview, loadProgress } from "./rubik-progress.mjs?v=1";
 
 const NAV = [
@@ -23,7 +23,7 @@ const sections = {
 };
 const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 const search = (value) => String(value || "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/đ/g, "d").replace(/’/g, "'").trim();
-const bootPlayer = () => import("./rubik-player.mjs?v=2");
+const bootPlayer = () => import("./rubik-player.mjs?v=3");
 const lessonPath = (id) => "/rubik/hoc/" + encodeURIComponent(id);
 const casePath = (id) => "/rubik/cong-thuc/" + encodeURIComponent(id);
 const puzzleName = (id) => puzzleById.get(id)?.name || id;
@@ -183,7 +183,8 @@ function lessonPage(container, context, lesson) {
     guide.map((part, i) => '<article class="rb-panel"><h3>' + esc(part.title) + '</h3><p>' + esc(part.text) + '</p>' +
       (part.algorithm ? '<code class="rb-notation">' + esc(part.algorithm) + '</code>' : "") +
       (part.comparison?.length ? '<div class="rb-comparisons" data-rb-compare="' + i + '"></div>' : "") +
-      (part.algorithm ? '<button type="button" class="rb-btn" aria-pressed="false" data-rb-step="' + i + '">Làm theo từng nước</button>' : "") + '</article>'
+      (part.algorithm || part.setup != null ? '<button type="button" class="rb-btn" aria-pressed="false" data-rb-step="' + i + '">' +
+        (part.algorithm ? "Làm theo từng nước" : "Xem khối mẫu") + '</button>' : "") + '</article>'
     ).join("") +
     (lesson.mistake ? '<p class="rb-note"><strong>Lỗi thường gặp</strong> ' + esc(lesson.mistake) + '</p>' : "") +
     (quiz ? '<article class="rb-panel rb-quiz"><h3>' + esc(quiz.prompt) + '</h3><div class="rb-stack">' +
@@ -246,7 +247,8 @@ function lessonPage(container, context, lesson) {
         const still = found?.puzzle === lesson.puzzle && SPECIAL_DIAGRAMS.has(found.id)
           ? specialDiagram(found, "before")
           : diagram(snapshot(lesson.puzzle, part.setup || ""), size, { labels: context.value.labels, mirror: lesson.puzzle === "mirror", description: part.label });
-        return '<figure>' + still + (part.arrow ? '<span class="rb-turn-arrow" aria-hidden="true">' + esc(part.arrow) + '</span>' : '') +
+        const arrow = { clockwise: "↻", counterclockwise: "↺" }[part.arrow];
+        return '<figure>' + still + (arrow ? '<span class="rb-turn-arrow" aria-hidden="true">' + esc(arrow) + '</span>' : '') +
           '<figcaption>' + esc(part.label) + '</figcaption>' +
           (part.algorithm || (!still && part.setup != null) ? '<button type="button" data-rb-compare-move="' + esc(part.algorithm || "") +
             '" data-setup="' + esc(part.setup || "") + '" data-label="' + esc(part.label) + '">' +
@@ -289,7 +291,7 @@ function libraryPage(container, context) {
   const groups = CASE_GROUPS.filter((group) => group.puzzle === context.puzzle);
   const puzzleCases = CASES.filter((item) => item.puzzle === context.puzzle);
   const group = context.params.get("group") || "";
-  container.innerHTML = '<section class="rb-section">' + header("Thư viện công thức", "Nhìn hình để nhận ra trường hợp và đối chiếu hướng cầm.") +
+  container.innerHTML = '<section class="rb-section">' + header("Thư viện công thức", "Kéo chuột hoặc dùng phím mũi tên trên khối 3D để xem các mặt. Chọn tên công thức để làm theo từng nước.") +
     '<div class="rb-filters">' + selectPuzzle(context.puzzle) +
     '<label class="rb-field">Bộ công thức<select data-filter="group"><option value="">Tất cả</option>' + groups.map((item) =>
       '<option value="' + esc(item.id) + '"' + (item.id === group ? " selected" : "") + '>' + esc(item.name) + '</option>'
@@ -306,47 +308,109 @@ function libraryPage(container, context) {
     '<p class="rb-note" role="status" data-rb-count></p><div class="rb-case-grid" data-rb-results></div>' +
     '<button type="button" class="rb-btn" data-rb-more hidden>Xem thêm trường hợp</button></section>';
   let limit = 18;
-  let helpers;
+  let playerModule;
+  const tracked = new Map();
+  const placeholder = '<span class="rb-model-loading" aria-hidden="true">Đang tải khối 3D…</span>';
   const field = (key) => container.querySelector('[data-filter="' + key + '"]').value;
   const results = container.querySelector("[data-rb-results]");
   const count = container.querySelector("[data-rb-count]");
   const more = container.querySelector("[data-rb-more]");
-  function render() {
+  function load(node) {
+    const entry = tracked.get(node);
+    if (!entry || entry.loading || entry.dispose) return;
+    const token = {};
+    entry.loading = token;
+    playerModule ??= context.player();
+    playerModule.then(({ mountFormulaPreview }) => {
+      if (!context.alive() || entry.loading !== token) return;
+      const item = caseById.get(node.dataset.rbCaseModel);
+      entry.dispose = mountFormulaPreview(node, item, {
+        labels: context.value.labels,
+        fallback() {
+          if (SPECIAL_DIAGRAMS.has(item.id)) node.innerHTML = specialDiagram(item, "before");
+          else node.textContent = "Chưa mở được khối 3D.";
+        }
+      });
+      entry.loading = null;
+    }).catch(() => {
+      if (!context.alive() || entry.loading !== token) return;
+      entry.loading = null;
+      node.textContent = "Chưa mở được khối 3D.";
+    });
+  }
+
+  function unload(node) {
+    const entry = tracked.get(node);
+    if (!entry) return;
+    entry.dispose?.();
+    entry.dispose = null;
+    entry.loading = null;
+    node.innerHTML = placeholder;
+  }
+
+  const observer = typeof IntersectionObserver === "function" ? new IntersectionObserver((entries) => {
+    for (const { target, isIntersecting } of entries) {
+      const entry = tracked.get(target);
+      if (!entry) continue;
+      entry.visible = isIntersecting;
+      if (isIntersecting) load(target);
+      else if (!target.contains(document.activeElement)) unload(target);
+    }
+  }, { rootMargin: "160px 0px" }) : null;
+
+  results.addEventListener("focusout", (event) => {
+    const node = event.target.closest("[data-rb-case-model]");
+    if (node && !tracked.get(node)?.visible && !node.contains(event.relatedTarget)) unload(node);
+  }, { signal: context.signal });
+  context.cleanups.push(() => {
+    observer?.disconnect();
+    for (const node of tracked.keys()) unload(node);
+    tracked.clear();
+  });
+
+  function render(append = false) {
     const query = search(field("query"));
+    const groupFilter = field("group");
+    const difficulty = field("difficulty");
+    const shape = field("shape");
+    const status = field("status");
     const filtered = puzzleCases.filter((item) => {
       const row = context.value.reviews[item.id] || {};
-      const status = field("status");
       const matchesStatus = !status || (status === "favorite" ? row.favorite : (row.status || "new") === status);
-      return (!field("group") || item.group === field("group")) && (!field("difficulty") || item.difficulty === field("difficulty")) &&
-        (!field("shape") || item.shape === field("shape")) &&
+      return (!groupFilter || item.group === groupFilter) && (!difficulty || item.difficulty === difficulty) &&
+        (!shape || item.shape === shape) &&
         matchesStatus && search([item.id.replace(/-/g, " "), item.name, item.shape, item.algorithm].join(" ")).includes(query);
     });
     count.textContent = filtered.length + " trường hợp" + (filtered.length > limit ? " · đang hiện " + limit : "");
-    const visible = filtered.slice(0, limit);
-    results.innerHTML = visible.map((item) => {
-      const groupName = groupById.get(item.group)?.name || "";
-      const art = '<span class="rb-mini-diagram" data-rb-mini="' + esc(item.id) + '">' +
-        (SPECIAL_DIAGRAMS.has(item.id) ? specialDiagram(item, "before") : "") + '</span>';
-      return '<article class="rb-panel rb-case-card"><a class="rb-case" href="#' + casePath(item.id) + '">' + art +
-        '<span class="rb-eyebrow">' + esc(groupName) + '</span><strong>' + esc(item.name) + '</strong><code>' + esc(item.algorithm) +
-        '</code></a><button type="button" data-rb-preview-case="' + esc(item.id) + '" aria-label="Xem mô hình ' + esc(item.name) + '">' +
-        (["clock", "square1"].includes(item.puzzle) ? "Xem mô hình" : "Xem 3D") + '</button></article>';
-    }).join("") || '<p>Chưa tìm thấy công thức phù hợp.</p>';
-    more.hidden = filtered.length <= limit;
-    if (helpers) for (const node of results.querySelectorAll("[data-rb-mini]")) {
-      const item = caseById.get(node.dataset.rbMini);
-      if (SPECIAL_DIAGRAMS.has(item.id)) continue;
-      try {
-        node.innerHTML = helpers.diagram(helpers.snapshot(item.puzzle, item.setup || ""), helpers.cubeSize(item.puzzle), {
-          focusLayer: ["oll", "pll"].includes(item.group), labels: context.value.labels, description: "Nhận diện " + item.name, whiteBottom: !item.nativePalette
-        });
-      } catch { /* The case can still be opened and read. */ }
+    if (!append) {
+      for (const node of tracked.keys()) {
+        observer?.unobserve(node);
+        unload(node);
+      }
+      tracked.clear();
+      results.replaceChildren();
     }
+    const previous = append ? tracked.size : 0;
+    const next = filtered.slice(previous, limit);
+    results.insertAdjacentHTML("beforeend", next.map((item) => {
+      const groupName = groupById.get(item.group)?.name || "";
+      return '<article class="rb-panel rb-case-card"><div class="rb-case-model" data-rb-case-model="' + esc(item.id) + '">' +
+        placeholder + '</div><span class="rb-eyebrow">' + esc(groupName) + '</span><a class="rb-case" href="#' + casePath(item.id) + '">' +
+        '<strong>' + esc(item.name) + '</strong><code>' + esc(item.algorithm) + '</code></a></article>';
+    }).join(""));
+    if (!filtered.length) results.innerHTML = '<p>Chưa tìm thấy công thức phù hợp.</p>';
+    for (const card of Array.from(results.children).slice(previous)) {
+      const node = card.querySelector("[data-rb-case-model]");
+      if (!node) continue;
+      tracked.set(node, { visible: !observer });
+      if (observer) observer.observe(node);
+      else load(node);
+    }
+    more.hidden = filtered.length <= limit;
   }
   container.addEventListener("input", (event) => { if (event.target.matches("[data-filter]")) { limit = 18; render(); } }, { signal: context.signal });
-  more.addEventListener("click", () => { limit += 18; render(); }, { signal: context.signal });
+  more.addEventListener("click", () => { limit += 18; render(true); }, { signal: context.signal });
   render();
-  context.player().then((module) => { if (context.alive()) { helpers = module; render(); } }).catch(() => {});
 }
 
 function casePage(container, context, item) {
@@ -361,7 +425,10 @@ function casePage(container, context, item) {
   let { algorithm, setup } = variants[0];
   container.innerHTML = '<section class="rb-section">' + header(item.name, item.tip || item.description,
     '<p>' + link(groupRoute, group?.name || "Thư viện công thức") + '</p>') +
-    '<div class="rb-study"><div class="rb-stack"><article class="rb-panel"><p class="rb-eyebrow">' + esc(puzzleName(item.puzzle) + " · " + (item.difficulty || group?.name || "")) +
+    '<div class="rb-study rb-case-study"><aside class="rb-panel rb-visual"><h3>Làm theo từng nước</h3><div data-rb-case-player>' +
+    '<p class="rb-note">Đang tải khối 3D…</p></div>' +
+    (CASE_CLIPS.has(item.id) ? '<p><button class="rb-btn" type="button" data-rb-local-clip="' + esc(item.id) + '">Xem video công thức chính</button></p>' : "") +
+    '</aside><div class="rb-stack"><article class="rb-panel"><p class="rb-eyebrow">' + esc(puzzleName(item.puzzle) + " · " + (item.difficulty || group?.name || "")) +
     '</p><h3>Nhận diện và hướng cầm</h3><p>' + esc(item.recognition || item.orientation ||
       "Đối chiếu mặt trên U và mặt trước F với sơ đồ. Sau khi đã căn đúng trạng thái, mới chạy công thức.") + '</p>' +
     (isColoredCube(item.puzzle) ? '<p class="rb-note rb-orientation">Hướng chuẩn: giữ trắng ở dưới (D), vàng ở trên (U) và xanh dương ở trước (F). Các ca đang giải tầng cuối có thể chưa phẳng màu vàng.</p>' : "") +
@@ -377,9 +444,7 @@ function casePage(container, context, item) {
     '</select></label>' + (source ? '<p class="rb-source">' + source + '</p>' : "") +
     '</article>' + (similar.length ? '<article class="rb-panel"><h3>So sánh trường hợp tương tự</h3><div class="rb-controls">' +
       similar.map((other) => link(casePath(other.id), other.name)).join("") + '</div></article>' : "") +
-    '</div><aside class="rb-panel rb-visual"><h3>Làm theo từng nước</h3><div data-rb-case-player></div>' +
-    (CASE_CLIPS.has(item.id) ? '<p><button class="rb-btn" type="button" data-rb-local-clip="' + esc(item.id) + '">Xem video công thức chính</button></p>' : "") +
-    '</aside></div></section>';
+    '</div></div></section>';
 
   function draw() {
     const token = ++context.playerVersion;
@@ -404,7 +469,10 @@ function casePage(container, context, item) {
       context.inlinePlayer = mountPlayer(target, {
         puzzle: item.puzzle, setup: setup || "", algorithm, labels: context.value.labels, whiteBottom: !item.nativePalette
       });
-    }).catch(() => context.say("Chưa mở được minh họa cho biến thể này."));
+    }).catch(() => {
+      if (!context.alive() || token !== context.playerVersion) return;
+      container.querySelector("[data-rb-case-player]").textContent = "Chưa mở được khối 3D cho biến thể này.";
+    });
   }
 
   draw();
@@ -482,9 +550,7 @@ export function mountRubik(host, { route = "/rubik", currentUser } = {}) {
       return '<a href="#' + destination + suffix + '"' + (page === id ? ' aria-current="page"' : "") + '>' + title + '</a>';
     }).join("") + '</nav><div data-rb-body></div><p class="rb-live" role="status" data-rb-live></p>' +
     '<dialog class="rb-dialog" aria-label="Hình nhận diện phóng to"><form method="dialog"><button class="rb-btn">Đóng</button></form>' +
-    '<div data-rb-enlarged></div></dialog><dialog class="rb-dialog rb-preview-dialog" aria-labelledby="rb-preview-caption" data-rb-preview-dialog>' +
-    '<header class="rb-preview-head"><h3 id="rb-preview-caption"></h3><form method="dialog"><button class="rb-btn">Đóng</button></form></header>' +
-    '<div data-rb-preview-player></div></dialog></section>';
+    '<div data-rb-enlarged></div></dialog></section>';
   const root = host.firstElementChild;
   const body = root.querySelector("[data-rb-body]");
   const context = {
@@ -496,42 +562,12 @@ export function mountRubik(host, { route = "/rubik", currentUser } = {}) {
       live.textContent = message;
     }
   };
-  const previewDialog = root.querySelector("[data-rb-preview-dialog]");
-  const previewHost = previewDialog.querySelector("[data-rb-preview-player]");
-  let disposePreview;
-  let previewGeneration = 0;
-  function closePreview() {
-    previewGeneration++;
-    disposePreview?.();
-    disposePreview = undefined;
-    previewHost.replaceChildren();
-  }
-  previewDialog.addEventListener("close", closePreview, { signal: abort.signal });
   root.addEventListener("change", (event) => {
     if (!event.target.matches("[data-rb-puzzle]")) return;
     const destination = NAV.some(([id]) => id === page) && page ? "/rubik/" + page : "/rubik";
     location.hash = "#" + destination + "?puzzle=" + encodeURIComponent(event.target.value);
   }, { signal: abort.signal });
   root.addEventListener("click", (event) => {
-    const previewButton = event.target.closest("[data-rb-preview-case]");
-    if (previewButton) {
-      const item = caseById.get(previewButton.dataset.rbPreviewCase);
-      if (!item) return;
-      closePreview();
-      const token = previewGeneration;
-      previewDialog.querySelector("h3").textContent = item.name;
-      previewHost.textContent = "Đang mở mô hình…";
-      previewDialog.showModal();
-      context.player().then(({ mountPlayer }) => {
-        if (!previewDialog.open || token !== previewGeneration || !context.alive()) return;
-        disposePreview = mountPlayer(previewHost, {
-          puzzle: item.puzzle, setup: item.setup, algorithm: item.algorithm, labels: context.value.labels, whiteBottom: !item.nativePalette
-        });
-      }).catch(() => {
-        if (previewDialog.open && token === previewGeneration) previewHost.textContent = "Chưa mở được mô hình. Hãy thử lại.";
-      });
-      return;
-    }
     const button = event.target.closest("[data-rb-video], [data-rb-local-clip]");
     if (!button) return;
     if (button.hasAttribute("data-rb-local-clip")) {
@@ -571,7 +607,7 @@ export function mountRubik(host, { route = "/rubik", currentUser } = {}) {
     visualization(body.querySelector("[data-rb-free]"), { puzzle, free: true, whiteBottom: true }, context);
   } else if (sections[page]) {
     body.innerHTML = '<section class="rb-section">' + header(...sections[page]) + '<div data-rb-tool role="status">Đang mở công cụ…</div></section>';
-    import("./rubik-tools.mjs?v=2").then(({ mountTool }) => {
+    import("./rubik-tools.mjs?v=3").then(({ mountTool }) => {
       if (!context.alive()) return;
       const panel = body.querySelector("[data-rb-tool]");
       panel.removeAttribute("role");
@@ -583,7 +619,6 @@ export function mountRubik(host, { route = "/rubik", currentUser } = {}) {
   return {
     destroy() {
       abort.abort();
-      closePreview();
       context.inlinePlayer?.();
       for (const dispose of context.cleanups) dispose();
       host.replaceChildren();

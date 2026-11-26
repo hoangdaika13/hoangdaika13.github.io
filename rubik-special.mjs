@@ -139,6 +139,64 @@ function canDraw3D() {
   return webGLAvailable;
 }
 
+const nativeVolume = (puzzle) => puzzle === "clock" || puzzle === "square1";
+
+function createTwistyViewer(TwistyPlayer, { puzzle, setup, isFlat = () => false, signal }) {
+  const home = { latitude: 26, longitude: -29 };
+  const player = new TwistyPlayer({
+    puzzle, experimentalSetupAlg: setup, background: "none",
+    cameraLatitude: home.latitude, cameraLongitude: home.longitude,
+    visualization: isFlat() ? "2D" : "3D", controlPanel: "none", viewerLink: "none",
+    hintFacelets: "none", experimentalDragInput: "auto"
+  });
+  player.setAttribute("aria-label", "Mô phỏng " + NAMES[puzzle]);
+  player.tabIndex = 0;
+  player.addEventListener("keydown", async (event) => {
+    const key = event.key;
+    if (isFlat() || event.altKey || event.ctrlKey || event.metaKey ||
+      !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home"].includes(key)) return;
+    event.preventDefault();
+    const scene = player.experimentalModel.twistySceneModel;
+    if (key === "Home") {
+      scene.orbitCoordinatesRequest.set(home);
+      return;
+    }
+    const { latitude, longitude } = await scene.orbitCoordinates.get();
+    if (signal.aborted) return;
+    const dy = key === "ArrowUp" ? 12 : key === "ArrowDown" ? -12 : 0;
+    const dx = key === "ArrowRight" ? 12 : key === "ArrowLeft" ? -12 : 0;
+    scene.orbitCoordinatesRequest.set({ latitude: Math.max(-85, Math.min(85, latitude + dy)), longitude: longitude + dx });
+  }, { signal });
+  return player;
+}
+
+export function mountSpecialPreview(host, { puzzle, setup = "", fallback }) {
+  const lifecycle = new AbortController();
+  const { signal } = lifecycle;
+  let view;
+  async function mount() {
+    const { Alg, puzzles, TwistyPlayer } = await import("./vendor/rubik-cubing/special.mjs?v=1");
+    if (signal.aborted) return;
+    if (nativeVolume(puzzle)) {
+      const [{ mountVariantVolume }, model] = await Promise.all([
+        import("./rubik-variant-volume.mjs?v=1"), puzzles[puzzle].kpuzzle()
+      ]);
+      if (signal.aborted) return;
+      view = mountVariantVolume(host, puzzle, applyPuzzle(model.defaultPattern(), notationMoves(Alg, setup), puzzle));
+      return;
+    }
+    if (!canDraw3D()) { fallback(); return; }
+    const viewer = createTwistyViewer(TwistyPlayer, { puzzle, setup, signal });
+    host.replaceChildren(viewer);
+    view = { destroy: () => viewer.remove() };
+  }
+  mount().catch(() => { if (!signal.aborted) fallback(); });
+  return () => {
+    lifecycle.abort();
+    view?.destroy();
+  };
+}
+
 export function mountSpecialPuzzle(host, {
   puzzle, setup = "", algorithm = "", free = false, twoD = false, goalAlgorithm, onGoal
 } = {}) {
@@ -154,6 +212,7 @@ export function mountSpecialPuzzle(host, {
     return () => lifecycle.abort();
   }
   let player;
+  let volume;
   let timer = 0;
   let play;
   function stop() {
@@ -166,13 +225,14 @@ export function mountSpecialPuzzle(host, {
   async function mount() {
     const { Alg, puzzles, TwistyPlayer } = await import("./vendor/rubik-cubing/special.mjs?v=1");
     const model = await puzzles[puzzle].kpuzzle();
+    const native = nativeVolume(puzzle) ? await import("./rubik-variant-volume.mjs?v=1") : null;
     if (signal.aborted) return;
     const solved = model.defaultPattern();
     let setupMoves = notationMoves(Alg, setup);
     let initial = applyPuzzle(solved, setupMoves, puzzle);
     let moves = free ? [] : notationMoves(Alg, algorithm);
     let patterns = [initial];
-    if (!free) applyPuzzle(initial, moves, puzzle);
+    for (const move of moves) patterns.push(applyPuzzle(patterns.at(-1), [move], puzzle));
     const goalMoves = free && goalAlgorithm != null ? notationMoves(Alg, goalAlgorithm) : [];
     const goal = free && goalAlgorithm != null
       ? applyPuzzle(initial, goalMoves, puzzle)
@@ -180,26 +240,28 @@ export function mountSpecialPuzzle(host, {
     let reachedGoal = false;
     let index = 0;
     let speed = 1;
-    const has3D = puzzle !== "clock" && puzzle !== "square1" && canDraw3D();
+    const has3D = !native && canDraw3D();
     let show2D = twoD || !has3D;
-    player = new TwistyPlayer({
-      puzzle, experimentalSetupAlg: setupMoves.join(" "), background: "none",
-      visualization: show2D ? "2D" : "3D", controlPanel: "none", viewerLink: "none",
-      hintFacelets: "none", experimentalDragInput: "auto"
-    });
-    player.style.width = "100%";
-    player.style.maxWidth = "27rem";
-    player.style.height = "clamp(12rem,55vw,22rem)";
-    player.style.marginInline = "auto";
-    player.setAttribute("aria-label", "Mô phỏng " + NAMES[puzzle]);
+    const viewerHost = document.createElement("div");
+    if (!native) {
+      player = createTwistyViewer(TwistyPlayer, { puzzle, setup: setupMoves.join(" "), isFlat: () => show2D, signal });
+      player.style.width = "100%";
+      player.style.maxWidth = "27rem";
+      player.style.height = "clamp(12rem,55vw,22rem)";
+      player.style.marginInline = "auto";
+      viewerHost.append(player);
+    }
     const actions = document.createElement("div");
     actions.className = "rb-controls";
     const tokens = document.createElement("div");
     tokens.className = "rb-token-list";
     tokens.setAttribute("aria-label", "Các nước đi");
     function refresh() {
-      player.alg = moves.slice(0, index).join(" ");
-      player.jumpToEnd();
+      if (volume) volume.update(patterns[index]);
+      else {
+        player.alg = moves.slice(0, index).join(" ");
+        player.jumpToEnd();
+      }
       back.disabled = index === 0;
       next.disabled = index >= moves.length;
       if (!free && play) play.disabled = moves.length === 0;
@@ -252,7 +314,7 @@ export function mountSpecialPuzzle(host, {
         stop();
         setupMoves = notationMoves(Alg, scramblePuzzle(puzzle));
         initial = applyPuzzle(solved, setupMoves, puzzle);
-        player.experimentalSetupAlg = setupMoves.join(" ");
+        if (player) player.experimentalSetupAlg = setupMoves.join(" ");
         index = 0;
         moves = [];
         patterns = [initial];
@@ -310,7 +372,11 @@ export function mountSpecialPuzzle(host, {
       label.append("Tốc độ ", options);
       actions.append(play, label);
     }
-    host.replaceChildren(player, actions, ...additions, tokens, status);
+    const hint = document.createElement("p");
+    hint.className = "rb-note";
+    if (native || has3D) hint.textContent = "Kéo trên khối hoặc dùng phím mũi tên để đổi góc nhìn.";
+    host.replaceChildren(viewerHost, hint, actions, ...additions, tokens, status);
+    if (native) volume = native.mountVariantVolume(viewerHost, puzzle, initial);
     refresh();
   }
   mount().catch(() => {
@@ -319,6 +385,7 @@ export function mountSpecialPuzzle(host, {
   return () => {
     lifecycle.abort();
     stop();
+    volume?.destroy();
     player?.remove();
   };
 }

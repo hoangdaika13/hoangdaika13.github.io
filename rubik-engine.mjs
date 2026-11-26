@@ -1,5 +1,5 @@
 export const FACE_ORDER = "URFDLB";
-export { mountSpecialPuzzle, scramblePuzzle } from "./rubik-special.mjs?v=2";
+export { mountSpecialPreview, mountSpecialPuzzle, scramblePuzzle } from "./rubik-special.mjs?v=3";
 export const COLORS = Object.freeze({
   U: "#f6f5ec", R: "#ee4256", F: "#1ec589",
   D: "#f8cf45", L: "#ff8544", B: "#3b83ee"
@@ -324,7 +324,8 @@ export function solve3x3(input, { signal, timeout = 30000 } = {}) {
 }
 
 const NET = { U: [1, 2], L: [2, 1], F: [2, 2], R: [2, 3], B: [2, 4], D: [3, 2] };
-const COLOR_NAMES = { U: "trắng", R: "đỏ", F: "lục", D: "vàng", L: "cam", B: "lam" };
+const COLOR_NAMES = { U: "trắng", R: "đỏ", F: "xanh lá", D: "vàng", L: "cam", B: "xanh dương" };
+export const COLOR_LABELS = Object.freeze({ U: "Tr", R: "Đ", F: "Xl", D: "V", L: "Ca", B: "Xd" });
 const FACE_ANGLES = {
   U: "rotateX(90deg)", D: "rotateX(-90deg)", R: "rotateY(90deg)",
   L: "rotateY(-90deg)", F: "", B: "rotateY(180deg)"
@@ -376,10 +377,10 @@ function element(tag, className, style = {}) {
   return node;
 }
 
-function paintCell(node, color, labels) {
+function paintCell(node, color, labels, mirror = false) {
   node.style.background = COLORS[color] || "#696e82";
   node.dataset.color = color || "";
-  node.textContent = labels ? color : "";
+  node.textContent = labels ? (mirror ? color : COLOR_LABELS[color]) || "" : "";
 }
 
 function describe(root, state, size, mirror) {
@@ -439,7 +440,7 @@ export function renderCube2D(container, initial, size = 3, options = {}) {
     const { stickers } = board(size);
     const parts = mirror ? mirrorStickerMap(state) : null;
     cells.forEach((cell, i) => {
-      paintCell(cell, state[i], labels);
+      paintCell(cell, state[i], labels, mirror);
       if (parts) {
         const face = stickers[i].face;
         const { low, high } = parts[i];

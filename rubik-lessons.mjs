@@ -96,7 +96,9 @@ const BEGINNER = [
     example("Nửa vòng và cách đọc nhóm nước", "Số 2 là 180°, từ hai chiều đều cho cùng kết quả. Đọc từ trái sang phải. Sau hai lượt R2, mặt phải trở lại khởi đầu. Bốn nước cuối là nhóm đưa một số góc trắng vào khe trước–phải.", whiteDown, "R2 R2 " + turn),
     example("Lớp giữa M, E, S", "M nằm giữa L và R, lấy chiều L. E nằm giữa D và U, lấy chiều D. S nằm giữa F và B, lấy chiều F. Các lớp ngoài đứng yên trong từng nước. Sau mỗi cặp, kiểm tra lại tâm trắng ở D.", whiteDown, "M M' E E' S S'"),
     example("Xoay hai lớp cùng lúc", "Rw xoay lớp phải và lớp sát nó theo chiều R. Tương tự, Uw/Dw, Fw/Bw và Lw lấy tên theo mặt ngoài. Tua từng nước để so sánh số lớp di chuyển với một nước mặt ngoài.", whiteDown, "Rw Rw' Lw Lw' Uw Uw' Dw Dw' Fw Fw' Bw Bw'"),
-    example("Xoay toàn khối theo x, y, z", "x cùng chiều R, y cùng chiều U, z cùng chiều F. Cả khối đổi góc cầm và các tên mặt được đọc lại từ góc mới. Dùng y hoặc y' nếu muốn đổi mặt trước mà vẫn giữ trắng dưới. Chạy hết từng cặp để trở lại góc cầm ban đầu.", whiteDown, "x x' y y' z z'")
+    example("Xoay toàn khối theo x, y, z", "x cùng chiều R, y cùng chiều U, z cùng chiều F. Cả khối đổi góc cầm và các tên mặt được đọc lại từ góc mới. Dùng y hoặc y' nếu muốn đổi mặt trước mà vẫn giữ trắng dưới. Chạy hết từng cặp để trở lại góc cầm ban đầu.", whiteDown, "x x' y y' z z'"),
+    example("Chữ thường trong công thức", "Nhiều tài liệu dùng r, u, f, l, d, b để viết ngắn cho Rw, Uw, Fw, Lw, Dw, Bw. Quan sát r và u xoay hai lớp. Hai nước cuối dùng chữ w để hoàn tác.", whiteDown, "r u Uw' Rw'"),
+    example("Đọc dấu ngoặc trong công thức", "Số sau ngoặc tròn cho biết số lần lặp cả cụm. Nếu cả cụm có dấu nháy, hãy đọc ngược thứ tự và đảo chiều từng nước. Với [A:B], thực hiện A, B rồi A'. Với [A,B], thêm B' ở cuối. Trong mẫu, mỗi cụm đi kèm cụm đảo ngược.", whiteDown, "(R U R' U')2 (R U R' U')2' [R:U] [R:U]' [R,U] [R,U]'")
   ], {
     mistake: "Lấy chiều quay theo góc nhìn trước cho mọi mặt. Hãy tưởng tượng nhìn trực diện từng mặt đang xoay.",
     exercise: { goal: "Mặt phải đã xoay một phần tư vòng. Hãy chọn nước ngược để đưa nó về vị trí ban đầu.", setup: "x2 R", algorithm: "R'" },
@@ -129,7 +131,7 @@ const BEGINNER = [
   tutorial("white-corners", CUBE, "Góc trắng và tầng đầu", "Hoàn thành bốn góc trắng. Cả hàng sát mặt trắng của mỗi mặt bên phải cùng màu.", [
     example("Giữ nguyên dấu cộng ở đáy", "Tiếp tục cầm trắng ở D, vàng ở U. Tìm một góc trắng ở tầng trên. Hai màu còn lại cho biết hai tâm bên cạnh ô đích. Căn U để đưa góc lên trên ô đó, rồi đổi mặt trước bằng y nếu cần đưa khe về phía trước–phải.", whiteDown, ""),
     example("Đưa góc xuống khe phải", "Đưa góc vào vị trí trên–trước–phải, ngay trên ô đích. Dùng trọn bộ R U R' U' rồi kiểm tra. Lặp theo hướng của miếng góc đến khi trắng nằm dưới.", "x2 U R U' R'", turn),
-    example("Lấy góc mắc ở đáy", "Đặt góc sai tại dưới–trước–phải, dùng một bộ bốn nước để đưa lên. Sau đó tìm hai tâm đúng, đưa nó đến phía trên khe cần lắp rồi thử lại.", "x2 R U R' U'", "U R U' R'")
+    example("Lấy góc mắc ở đáy", "Góc dưới–trước–phải đang có một viên không mang màu trắng. Dùng R U R' U' để đẩy viên đó lên trên–trước–phải. Dấu cộng trắng vẫn khớp. Góc trắng cần lắp đang ở trên–sau–phải. Hãy nhận diện nó bằng hai màu bên rồi căn U cho nó vào vị trí chèn.", "x2 R U2 R'", turn)
   ], {
     prerequisite: "white-cross",
     mistake: "Đúng mặt trắng nhưng sai hàng màu bên. Hãy kiểm tra đủ ba màu trên từng góc.",
@@ -175,7 +177,7 @@ const BEGINNER = [
   tutorial("place-corners", CUBE, "Đưa góc vàng về đúng vị trí", "Xác định và đặt đúng bộ ba màu cho mỗi ô góc, trước khi xoay hướng viên.", [
     example("Nhìn bộ ba màu", "Góc đúng vị trí khi ba màu của nó là ba màu tâm liền kề. Màu vàng có thể hướng sang bên. Tìm đủ ba màu trước khi đánh giá viên góc.", "x2 L' U R U' L U R' U'", ""),
     example("Giữ góc đúng ở trên–trước–phải", "Nếu đã có một góc đúng vị trí, đổi hướng cầm cả khối quanh trục đứng để góc đó nằm trên–trước–phải rồi thực hiện chuỗi. Có thể cần lặp một lượt nữa.", "x2 L' U R U' L U R' U'", placeCorners),
-    example("Khi chưa có góc nào đúng", "Thực hiện chuỗi từ một hướng bất kỳ để tạo góc đúng, sau đó chuyển góc đó đến vị trí giữ cố định. Các cạnh phải khớp trước khi làm bước này.", "x2 L' U R U' L U R' U' y2 L' U R U' L U R' U' y2", "")
+    example("Khi chưa có góc nào đúng", "Các cạnh đã khớp tâm. Chạy công thức một lần rồi kiểm tra bộ ba màu của từng góc. Trong mẫu, góc trên–sau–phải đã đúng vị trí. Xoay cả khối bằng y để đưa góc đó sang trên–trước–phải và giữ tâm trắng ở đáy. Chạy công thức lần nữa rồi kiểm tra cả bốn góc.", [whiteDown, placeCorners, "y", placeCorners, "y'"].join(" "), [placeCorners, "y", placeCorners].join(" "))
   ], {
     prerequisite: "yellow-edges",
     mistake: "Đánh giá chỉ theo hướng vàng. Bước này xét vị trí theo bộ ba màu, chưa xét hướng.",

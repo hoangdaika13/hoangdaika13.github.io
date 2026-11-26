@@ -1,7 +1,7 @@
 import { SPECIAL_CASE_ROWS, SPECIAL_GROUP_ROWS } from "./rubik-special-cases.mjs?v=1";
-import { MIRROR_CASE_ROWS, MIRROR_GROUP_ROWS } from "./rubik-mirror-cases.mjs?v=1";
-import { LARGE_CASE_ROWS, LARGE_GROUP_ROWS } from "./rubik-large-cases.mjs?v=1";
-import { SPECIAL_DIAGRAMS } from "./rubik-media.mjs?v=2";
+import { MIRROR_CASE_ROWS, MIRROR_GROUP_ROWS } from "./rubik-mirror-cases.mjs?v=2";
+import { LARGE_CASE_ROWS, LARGE_GROUP_ROWS } from "./rubik-large-cases.mjs?v=2";
+import { SPECIAL_DIAGRAMS } from "./rubik-media.mjs?v=3";
 
 // Rubik curriculum algorithms. See rubik-ALGORITHM-LICENSES.txt for source and license details.
 // Each row records a real setup and the sequence used for that setup.

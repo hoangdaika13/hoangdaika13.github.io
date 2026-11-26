@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { LESSONS, LESSON_MOVIES, PUZZLES } from "../rubik-lessons.mjs";
-import { applyMoves, FACE_ORDER, isSolved, mirrorBounds, solvedFaces } from "../rubik-engine.mjs";
+import { applyMoves, FACE_ORDER, isSolved, mirrorBounds, parseMoves, solvedFaces } from "../rubik-engine.mjs";
 import { SPECIAL_CASE_ROWS } from "../rubik-special-cases.mjs";
 import { Alg, puzzles } from "../vendor/rubik-cubing/special.mjs";
 
@@ -24,6 +24,17 @@ const bottom = (state) => [...face(state, "D")].every((sticker) => sticker === c
   rowMatches(state, [6, 7, 8]);
 const firstTwo = (state) => bottom(state) && rowMatches(state, [3, 5]);
 const snapshot = (setup) => applyMoves(solvedFaces(), setup);
+const corners = {
+  UFR: [["U", 8], ["F", 2], ["R", 0]],
+  UFL: [["U", 6], ["F", 0], ["L", 2]],
+  UBL: [["U", 0], ["B", 2], ["L", 0]],
+  UBR: [["U", 2], ["B", 0], ["R", 2]],
+  DFR: [["D", 2], ["F", 8], ["R", 6]]
+};
+const cornerColors = (state, name) => corners[name].map(([side, index]) => face(state, side)[index]).sort().join("");
+const correctTopCorners = (state) => ["UFR", "UFL", "UBL", "UBR"].filter((name) =>
+  cornerColors(state, name) === [...name].map((side) => color(state, side)).sort().join("")
+);
 
 test("lesson IDs, references, video boundaries and source labels are valid", () => {
   const puzzleIds = PUZZLES.map((item) => item.id);
@@ -75,7 +86,7 @@ test("notation examples show real movement for all move families, and white-cros
     const state = snapshot(entry.setup);
     assert.equal(color(state, "D"), "U", entry.title);
     let current = state;
-    for (const move of entry.algorithm.split(" ")) {
+    for (const move of parseMoves(entry.algorithm)) {
       moves.add(move);
       const next = applyMoves(current, move);
       assert.notEqual(next, current, entry.title + " · " + move);
@@ -91,6 +102,37 @@ test("notation examples show real movement for all move families, and white-cros
     assert.equal(color(state, "D"), "U", part.title);
     assert.equal(color(state, "U"), "D", part.title);
     assert.ok(crossDown(applyMoves(state, part.algorithm)), part.title);
+  }
+});
+
+test("the corner extraction raises the wrong piece and preserves the white cross", () => {
+  const extraction = lesson("white-corners").guide[2];
+  const before = snapshot(extraction.setup);
+  const after = applyMoves(before, extraction.algorithm);
+  const wrongCorner = cornerColors(before, "DFR");
+  const whiteCorner = cornerColors(snapshot("x2"), "DFR");
+  assert.ok(!wrongCorner.includes("U"));
+  assert.equal(cornerColors(before, "UBL"), whiteCorner);
+  assert.equal(cornerColors(after, "UFR"), wrongCorner);
+  assert.equal(cornerColors(after, "UBR"), whiteCorner);
+  assert.equal(color(after, "D"), "U");
+  assert.ok(crossDown(before) && crossDown(after));
+  assert.ok(!isSolved(after));
+});
+
+test("the no-corner match example creates one correct corner and keeps it during placement", () => {
+  const [, keepOne, none] = lesson("place-corners").guide;
+  const before = snapshot(none.setup);
+  const firstPass = applyMoves(before, keepOne.algorithm);
+  const aligned = applyMoves(firstPass, "y");
+  const after = applyMoves(before, none.algorithm);
+  assert.deepEqual(correctTopCorners(before), []);
+  assert.deepEqual(correctTopCorners(firstPass), ["UBR"]);
+  assert.deepEqual(correctTopCorners(aligned), ["UFR"]);
+  assert.deepEqual(correctTopCorners(after), ["UFR", "UFL", "UBL", "UBR"]);
+  for (const state of [before, firstPass, aligned, after]) {
+    assert.equal(color(state, "D"), "U");
+    assert.ok(firstTwo(state) && crossUp(state));
   }
 });
 
