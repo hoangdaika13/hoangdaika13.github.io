@@ -270,11 +270,12 @@ async function check(browser, mobile) {
     await page.locator("[data-rb-answer-review] figure").first().waitFor();
 
     await go(page, "/rubik/cong-thuc/mirror-align-top", "[data-rb-case-compare] img");
-    const mirrorStills = await page.locator("[data-rb-case-compare] img").evaluateAll(async (images) => {
-      await Promise.all(images.map((image) => image.decode()));
-      return images.map((image) => image.naturalWidth);
+    const compare = page.locator("[data-rb-case-compare]");
+    await compare.scrollIntoViewIfNeeded();
+    await page.waitForFunction(() => {
+      const stills = [...document.querySelectorAll("[data-rb-case-compare] img")];
+      return stills.length === 2 && stills.every((image) => image.complete && image.naturalWidth >= 320);
     });
-    assert.ok(mirrorStills.length === 2 && mirrorStills.every((width) => width >= 320));
     await page.locator("[data-rb-enlarge]").first().click();
     await page.locator(".rb-dialog[open] img").waitFor();
     await page.keyboard.press("Escape");
