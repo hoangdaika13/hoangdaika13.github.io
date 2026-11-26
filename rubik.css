@@ -169,8 +169,10 @@ html[data-theme="light"] .rb {
 .rb-panel { display: grid; gap: .7rem; align-content: start; min-width: 0; padding: clamp(.85rem, 2vw, 1.25rem); color: var(--rb-text); background: var(--rb-panel); border-radius: 1rem; border: 1px solid var(--rb-line); }
 .rb-feature-grid, .rb-case-grid { display: grid; gap: .85rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .rb-case-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.rb-case { text-decoration: none; color: var(--rb-text) !important; grid-template-rows: auto auto auto 1fr; min-width: 0; }
-.rb-case:hover { background: var(--rb-hover); text-decoration: none; }
+.rb-case-card { align-content: stretch; grid-template-rows: 1fr auto; }
+.rb-case { display: grid; align-content: start; gap: .4rem; text-decoration: none; color: var(--rb-text) !important; min-width: 0; }
+.rb-case:hover strong { text-decoration: underline; text-underline-offset: .18em; }
+.rb-case-card > button { justify-self: start; }
 .rb-case > strong { line-height: 1.3; }
 .rb-case > code { color: var(--rb-muted); overflow-wrap: anywhere; font-size: .8rem; }
 .rb-eyebrow { font-size: .76rem; color: var(--rb-accent); letter-spacing: .055em; font-weight: 700; }
@@ -242,6 +244,13 @@ html[data-theme="light"] .rb {
 .rb-dialog { width: min(32rem, calc(100vw - 2rem)); max-height: 90dvh; padding: 1rem; border-radius: .8rem; border: 1px solid var(--rb-line); background: var(--rb-panel); color: var(--rb-text); }
 .rb-dialog::backdrop { background: #050b17b5; }
 .rb-dialog form { display: flex; justify-content: end; margin-bottom: .75rem; }
+.rb-preview-dialog { width: min(40rem, calc(100vw - 2rem)); }
+.rb-preview-head { display: flex; align-items: center; justify-content: space-between; gap: .7rem; margin-bottom: .65rem; }
+.rb-preview-head form { margin: 0; }
+.rb-preview-head h3 { margin: 0; }
+.rb-orientation { border-inline-start: 3px solid var(--rb-accent); padding-inline-start: .65rem; }
+.rb-move-controls { margin-top: .7rem; padding: .6rem; border: 1px solid var(--rb-line); border-radius: .65rem; }
+.rb-move-controls [data-rb-move-extra] { margin-top: .6rem; }
 .rb-dialog .rb-net { margin: 0 auto; width: min(100%, 25rem); }
 .rb-palette { display: flex; flex-wrap: wrap; gap: .35rem; margin: .65rem 0; }
 .rb-palette button { gap: .4rem; }
@@ -257,6 +266,19 @@ html[data-theme="light"] .rb {
 .rb-live:empty { display: none; }
 .rb-quiz .rb-stack { gap: .55rem; }
 .rb-practice-net { display: grid; place-items: center; padding: .75rem; background: var(--rb-bg); border-radius: .8rem; margin: .6rem 0; }
+.rb-practice-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: .55rem; }
+.rb-practice-options > button { justify-content: start; text-align: left; width: 100%; }
+.rb-practice-options [data-result] { opacity: 1; }
+.rb [data-result="correct"] { color: var(--rb-accent); border-color: var(--rb-accent); }
+.rb [data-result="incorrect"] { color: #ff9fac; border-color: #ff9fac; }
+.rb-step-stills { border: 1px solid var(--rb-line); border-radius: .65rem; padding: .6rem .75rem; }
+.rb-step-stills summary { font-size: .88rem; }
+.rb-dialog .rb-puzzle-image { display: block; width: 100%; max-width: 100%; }
+.rb-face .rb-changed { outline: 1px solid #172b41; outline-offset: -1px; box-shadow: inset 0 0 0 2px #fff; }
+body:is([data-app-theme="light"], [data-app-theme="basic-light"], [data-app-theme="warm"]) .rb [data-result="incorrect"] {
+  color: #9d2039;
+  border-color: #9d2039;
+}
 .rb-clock { text-align: center; font: 650 clamp(2.8rem, 10vw, 7rem)/1.15 ui-monospace, Consolas, monospace; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; padding: .6rem; }
 .rb-timer-list { padding: 0 !important; list-style: none; display: grid; gap: .5rem; }
 .rb-timer-list li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .55rem; padding: .65rem; background: var(--rb-bg); border-radius: .65rem; }

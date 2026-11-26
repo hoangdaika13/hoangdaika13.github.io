@@ -35,7 +35,7 @@ EXPORT_FRAMES = r"""
 import { CASES } from './rubik-cases.mjs';
 import { COLORS, solvedFaces, applyMoves, parseMoves } from './rubik-engine.mjs';
 const selections = process.argv.slice(1);
-const cases = CASES.filter(c => /^([2-7])x\1x\1$/.test(c.puzzle) &&
+const cases = CASES.filter(c => /^([2-9])x\1x\1$/.test(c.puzzle) &&
   (!selections.length || selections.includes(c.id) || selections.includes(c.group)));
 const frames = cases.map(c => {
   const size = Number(c.puzzle[0]);
@@ -45,7 +45,10 @@ const frames = cases.map(c => {
   for (const move of moves) states.push(applyMoves(states.at(-1), move, size));
   return { id: c.id, name: c.name, puzzle: c.puzzle, size, moves, states };
 });
-console.log(JSON.stringify({ colors: COLORS, frames }));
+// Keep the notation tied to the viewer's axes. Reorienting the color
+// scheme by x2 puts white underneath while preserving adjacent colors.
+const colors = { ...COLORS, U: COLORS.D, D: COLORS.U, F: COLORS.B, B: COLORS.F };
+console.log(JSON.stringify({ colors, frames }));
 """
 
 
@@ -199,6 +202,7 @@ def main():
     parser.add_argument("cases", nargs="*", help="Case or group IDs. Default renders all cases.")
     parser.add_argument("--workers", type=int, default=min(8, os.cpu_count() or 1))
     parser.add_argument("--force", action="store_true")
+    parser.add_argument("--skip-manifest", action="store_true", help="Keep the current media manifest when another build will refresh it.")
     args = parser.parse_args()
 
     raw = subprocess.check_output(
@@ -211,7 +215,8 @@ def main():
         for i, name in enumerate(pool.map(lambda item: encode(item, data["colors"], args.force), data["frames"]), 1):
             if i == 1 or i % 50 == 0 or i == len(data["frames"]):
                 print(f"{i}/{len(data['frames'])}: {name}", flush=True)
-    update_manifest()
+    if not args.skip_manifest:
+        update_manifest()
 
 
 if __name__ == "__main__":

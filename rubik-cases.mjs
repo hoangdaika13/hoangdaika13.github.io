@@ -1,5 +1,7 @@
 import { SPECIAL_CASE_ROWS, SPECIAL_GROUP_ROWS } from "./rubik-special-cases.mjs?v=1";
-import { SPECIAL_DIAGRAMS } from "./rubik-media.mjs?v=1";
+import { MIRROR_CASE_ROWS, MIRROR_GROUP_ROWS } from "./rubik-mirror-cases.mjs?v=1";
+import { LARGE_CASE_ROWS, LARGE_GROUP_ROWS } from "./rubik-large-cases.mjs?v=1";
+import { SPECIAL_DIAGRAMS } from "./rubik-media.mjs?v=2";
 
 // Rubik curriculum algorithms. See rubik-ALGORITHM-LICENSES.txt for source and license details.
 // Each row records a real setup and the sequence used for that setup.
@@ -934,7 +936,7 @@ const rows = [
   ["wings-7-2","Cạnh cuối 7×7 · lớp 2","wings-7","parity4","Cặp mảnh bị lật","2R2 B2 U2 2L U2 2R' U2 2R U2 F2 2R F2 2L' B2 2R2","2R2 B2 2L F2 2R' F2 U2 2R' U2 2R U2 2L' U2 B2 2R2","Đặt cặp mảnh cạnh bị lật ở trên–trước. Ký hiệu 2R và 2L chỉ lớp thứ 2 tính từ mặt tương ứng.",0,1],
   ["wings-7-3","Cạnh cuối 7×7 · lớp 3","wings-7","parity4","Cặp mảnh bị lật","3R2 B2 U2 3L U2 3R' U2 3R U2 F2 3R F2 3L' B2 3R2","3R2 B2 3L F2 3R' F2 U2 3R' U2 3R U2 3L' U2 B2 3R2","Đặt cặp mảnh cạnh bị lật ở trên–trước. Ký hiệu 3R và 3L chỉ lớp thứ 3 tính từ mặt tương ứng.",0,1],
 ];
-export const CASE_GROUPS = Object.freeze([...groups, ...SPECIAL_GROUP_ROWS].map(([id, name, puzzle, expected, description, source]) =>
+export const CASE_GROUPS = Object.freeze([...groups, ...SPECIAL_GROUP_ROWS, ...MIRROR_GROUP_ROWS, ...LARGE_GROUP_ROWS].map(([id, name, puzzle, expected, description, source]) =>
   Object.freeze({ id, name, puzzle, expected, description, source })));
 const groupsById = new Map(CASE_GROUPS.map(item => [item.id, item]));
 const cubeCases = rows.map(([id, name, group, goal, shape, algorithm, setup, tip, variants, verified]) => {
@@ -947,11 +949,14 @@ const cubeCases = rows.map(([id, name, group, goal, shape, algorithm, setup, tip
     verified: Boolean(verified)
   });
 });
-const specialCases = SPECIAL_CASE_ROWS.filter(({ id }) => SPECIAL_DIAGRAMS.has(id)).map((item) => {
+const specialCases = [...SPECIAL_CASE_ROWS, ...MIRROR_CASE_ROWS].filter(({ id }) => SPECIAL_DIAGRAMS.has(id)).map((item) => {
   const { puzzle, source } = groupsById.get(item.group);
   return Object.freeze({ puzzle, source, difficulty: "Cơ bản", variants: Object.freeze([]), verified: true, ...item });
 });
-export const CASES = Object.freeze([...cubeCases, ...specialCases]);
+const largeCases = LARGE_CASE_ROWS.map((item) => Object.freeze({
+  verified: true, variants: Object.freeze([]), nativePalette: true, ...item
+}));
+export const CASES = Object.freeze([...cubeCases, ...specialCases, ...largeCases]);
 export const byCaseId = new Map(CASES.map(item => [item.id, item]));
 export function getCaseCoverage() {
   return CASE_GROUPS.map(group => {

@@ -39,7 +39,8 @@ function tutorial(id, puzzle, title, objective, guide, options) {
     mistake: options.mistake,
     exercise: options.exercise || { goal: "Thực hành theo ví dụ và đối chiếu kết quả được mô tả trong bài." },
     sources: options.sources,
-    video: options.video
+    video: options.video,
+    caseGroups: options.caseGroups?.slice()
   };
 }
 
@@ -52,9 +53,11 @@ const cfopSources = [
   source("J Perm · CFOP", "https://jperm.net/3x3/cfop"),
   source("CubeSkills · Lớp cuối bốn lượt", CUBESKILLS + "4-look-last-layer")
 ];
+const rouxTutorial = source("Kian Mansour · Hướng dẫn Roux", "https://sites.google.com/view/kianroux/roux-tutorial");
 
-// The setup is relative to a solved cube unless stated. x2 puts yellow up
-// and white down after the first stage. Source clips may use a different front.
+// The 3×3 demos start from engine colors with x2 applied: white on D, yellow on U.
+// Compare other sources by face position; they sometimes use a different grip.
+const whiteDown = "x2";
 const turn = "R U R' U'";
 const insertRight = "U R U' R' U' F' U F";
 const insertLeft = "U' L' U L U F U' F'";
@@ -64,6 +67,9 @@ const placeCorners = "U R U' L' U R' U' L";
 const twist = "R' D' R D";
 const sune = "R U R' U R U2 R'";
 const tperm = "R U R' U' R' F R2 U' R' U' R U R' F'";
+const f2lSeparated = "U' R U R' U2 R U' R'";
+const rouxLastEdges = "U M' U' M";
+const zzBlocks = "L' U L R U' R'";
 const edgeLine = "F U R U' R' F'";
 const edgeElbow = edgeLine + " " + edgeLine;
 const edgeDot = edgeElbow + " U2 " + edgeLine;
@@ -71,12 +77,12 @@ const cornerTwistSetup = "x2 U D' R' D R D' R' D R D' R' D R D' R' D R U' D' R' 
 const finishCornerTwists = [twist, twist, "U", twist, twist, twist, twist, "U'"].join(" ");
 
 const BEGINNER = [
-  tutorial("notation", CUBE, "Cầm khối và đọc ký hiệu", "Phân biệt tâm, cạnh và góc. Thực hiện đúng một lượt R, R' và R2.", [
-    example("Nhận diện viên", "Tâm có một màu và nằm giữa mặt. Cạnh có hai màu. Góc có ba màu. Hãy giữ một mặt quay về phía bạn để làm mặt trước F.", "", ""),
-    example("Mặt phải R và R'", "Đánh dấu góc phía trên, trước và phải. Nhìn thẳng vào mặt phải: R là một phần tư vòng theo chiều kim đồng hồ, R' theo chiều ngược lại. Hai mũi tên dùng cùng góc nhìn.", "", "R", {
+  tutorial("notation", CUBE, "Cầm khối trắng dưới và đọc ký hiệu", "Tập sáu mặt, dấu nháy, nước 180°, lớp giữa, hai lớp và xoay toàn khối.", [
+    example("Đặt tâm trắng ở đáy", "Đặt tâm trắng ở mặt D, tâm vàng ở mặt U và quay một mặt bên về phía bạn làm F. Tâm có một màu, cạnh có hai màu, góc có ba màu. Nhớ rằng U và D chỉ vị trí mặt theo tay cầm; tên đó có thể đổi khi xoay cả khối.", whiteDown, ""),
+    example("Mặt phải R và R'", "Theo dõi góc trên–trước–phải. Nhìn thẳng vào mặt phải để xác định chiều quay. R đi 90° thuận chiều kim đồng hồ, R' đi 90° ngược chiều. Hai hình dùng cùng một góc nhìn.", whiteDown, "R", {
       comparison: [
-        { label: "R · thuận chiều", setup: "", algorithm: "R", marker: { face: "R", cell: 0 }, arrow: "clockwise" },
-        { label: "R' · ngược chiều", setup: "", algorithm: "R'", marker: { face: "R", cell: 0 }, arrow: "counterclockwise" }
+        { label: "R · thuận chiều", setup: whiteDown, algorithm: "R", marker: { face: "R", cell: 0 }, arrow: "clockwise" },
+        { label: "R' · ngược chiều", setup: whiteDown, algorithm: "R'", marker: { face: "R", cell: 0 }, arrow: "counterclockwise" }
       ],
       quiz: {
         prompt: "Khi nhìn thẳng vào mặt phải, ký hiệu nào xoay ngược chiều kim đồng hồ?",
@@ -84,36 +90,44 @@ const BEGINNER = [
         feedback: "Dấu nháy đổi chiều quay. R2 là nửa vòng, theo chiều nào cũng đến cùng vị trí."
       }
     }),
-    example("Đọc một chuỗi", "U là mặt trên, D là mặt dưới, L là trái, R là phải, F là trước, B là sau. Thực hiện từ trái sang phải. Số 2 nghĩa là xoay 180°. x, y, z đổi hướng cả khối, còn M, E, S là lớp giữa.", "", turn)
+    example("Mặt trên U và mặt đáy D", "Nhìn từ phía trên để đọc U và từ dưới đáy nhìn lên để đọc D. Cùng dấu nhưng hai mặt có hướng quay ngược nhau khi nhìn từ mặt trước. Từng cặp nước trong mô phỏng trả lớp về chỗ cũ.", whiteDown, "U U' D D'"),
+    example("Mặt trước F và mặt sau B", "Đọc F khi nhìn vào mặt trước. Để đọc B, tưởng tượng đứng đối diện mặt sau rồi mới xác định chiều kim đồng hồ. Theo dõi một góc ở mỗi lần quay.", whiteDown, "F F' B B'"),
+    example("Mặt phải R và mặt trái L", "Đọc mỗi nước từ góc nhìn trực diện mặt đang xoay. Trong lượt R, hai lớp bên trái đứng yên. Trong lượt L, hai lớp bên phải đứng yên.", whiteDown, "R R' L L'"),
+    example("Nửa vòng và cách đọc nhóm nước", "Số 2 là 180°, từ hai chiều đều cho cùng kết quả. Đọc từ trái sang phải. Sau hai lượt R2, mặt phải trở lại khởi đầu. Bốn nước cuối là nhóm đưa một số góc trắng vào khe trước–phải.", whiteDown, "R2 R2 " + turn),
+    example("Lớp giữa M, E, S", "M nằm giữa L và R, lấy chiều L. E nằm giữa D và U, lấy chiều D. S nằm giữa F và B, lấy chiều F. Các lớp ngoài đứng yên trong từng nước. Sau mỗi cặp, kiểm tra lại tâm trắng ở D.", whiteDown, "M M' E E' S S'"),
+    example("Xoay hai lớp cùng lúc", "Rw xoay lớp phải và lớp sát nó theo chiều R. Tương tự, Uw/Dw, Fw/Bw và Lw lấy tên theo mặt ngoài. Tua từng nước để so sánh số lớp di chuyển với một nước mặt ngoài.", whiteDown, "Rw Rw' Lw Lw' Uw Uw' Dw Dw' Fw Fw' Bw Bw'"),
+    example("Xoay toàn khối theo x, y, z", "x cùng chiều R, y cùng chiều U, z cùng chiều F. Cả khối đổi góc cầm và các tên mặt được đọc lại từ góc mới. Dùng y hoặc y' nếu muốn đổi mặt trước mà vẫn giữ trắng dưới. Chạy hết từng cặp để trở lại góc cầm ban đầu.", whiteDown, "x x' y y' z z'")
   ], {
     mistake: "Lấy chiều quay theo góc nhìn trước cho mọi mặt. Hãy tưởng tượng nhìn trực diện từng mặt đang xoay.",
-    exercise: { goal: "Thực hiện R rồi R'. Đối chiếu với trạng thái ban đầu.", setup: "", algorithm: "R R'" },
-    sources: [source("J Perm · Ký hiệu", "https://jperm.net/3x3/moves"), ...mainSources],
+    exercise: { goal: "Mặt phải đã xoay một phần tư vòng. Hãy chọn nước ngược để đưa nó về vị trí ban đầu.", setup: "x2 R", algorithm: "R'" },
+    sources: [source("WCA · Quy ước ký hiệu", "https://www.worldcubeassociation.org/regulations/#article-12-notation"), source("J Perm · Ký hiệu", "https://jperm.net/3x3/moves"), ...mainSources],
     video: youtube("emOpNhejJXo", "CubeSkills · Ký hiệu", 0, 212, "Đổi góc cầm để nhìn trực diện mặt đang xoay. Đọc dấu nháy và số 2 trước khi xoay.")
   }),
   tutorial("white-cross", CUBE, "Dấu cộng trắng", "Đưa đủ bốn cạnh trắng vào mặt trắng và khớp bốn màu bên với tâm.", [
-    example("Tìm cạnh đúng", "Giữ tâm trắng phía trên. Chọn một cạnh có trắng và một màu bên. Nhìn màu thứ hai để biết tâm bên nào đón viên đó.", "F2", "F2"),
-    example("Đưa từng cạnh vào dấu cộng", "Khi trắng đang hướng xuống, xoay D để màu bên của cạnh khớp tâm bên rồi xoay mặt đó 180°. Nếu cạnh mắc ở tầng giữa hoặc bị lật, đưa nó xuống trước và chọn lại mặt cần xoay. Dùng U tạm thời để nhường chỗ cho cạnh đã khớp rồi hoàn tác.", "F2 R2", "R2 F2"),
-    example("So sánh màu cạnh với tâm", "Cả hai hình đều có bốn cạnh trắng hướng lên. Chỉ hình có đủ bốn màu bên khớp các tâm mới là kết quả cần đạt.", "U", "U'", {
+    example("Tìm cạnh đúng", "Giữ tâm trắng ở D. Cạnh trắng trên mặt U có thêm một màu bên. Căn U cho màu bên trùng với tâm ngay dưới nó. Trong mẫu, cạnh đã khớp tâm F; xoay F2 để đưa trắng xuống đáy.", "x2 F2", "F2"),
+    example("Lắp hai cạnh trực tiếp", "Trong mẫu hai cạnh trắng đã ở trên mặt F và R, mỗi cạnh khớp tâm bên của mình. Đưa cạnh phải xuống bằng R2, rồi cạnh trước bằng F2. Nếu cạnh mới chưa khớp, căn lớp U trước khi xoay 180°. Chọn mặt xoay sao cho không kéo cạnh trắng đã giải ra khỏi đáy.", "x2 F2 R2", "R2 F2"),
+    example("So sánh màu cạnh với tâm", "Cả hai hình đều có bốn cạnh trắng ở đáy. Dùng hàng dưới của mỗi mặt bên để kiểm tra. Hình đúng có màu cạnh giữa khớp tâm ở cả bốn phía.", "x2 D", "D'", {
       comparison: [
-        { label: "Cạnh trắng đã lên, màu bên lệch tâm", setup: "U" },
-        { label: "Dấu cộng đúng, đủ bốn màu bên khớp tâm", setup: "" }
+        { label: "Cạnh trắng ở đáy, màu bên lệch tâm", setup: "x2 D" },
+        { label: "Dấu cộng đúng, đủ bốn màu bên khớp tâm", setup: whiteDown }
       ],
       quiz: {
         prompt: "Hình nào đã hoàn thành dấu cộng trắng?",
         options: ["Hình có màu bên lệch tâm", "Hình đủ bốn màu bên khớp tâm"], answer: 1,
         feedback: "Bốn cạnh trắng cần đúng cả hướng lẫn vị trí. Kiểm tra từng mặt bên trước khi chuyển bài."
       }
-    })
+    }),
+    example("Cách bông hoa quanh tâm vàng", "Nếu mới tập, gom bốn cạnh trắng quanh tâm vàng U trước. Với từng cánh hoa, căn U cho màu bên khớp tâm cùng màu rồi xoay mặt bên 180°. Trong mẫu bốn cánh đã được căn, thử làm lần lượt L2 B2 R2 F2. Cuối bước, dấu cộng nằm quanh tâm trắng ở đáy.", "x2 F2 R2 B2 L2", "L2 B2 R2 F2"),
+    example("Đặt lại một cạnh ở tầng giữa", "Cạnh trắng đích đang ở khe trước–trái. Quan sát màu bên của nó, rồi thử xoay F để đưa cạnh về giữa mặt trước và đáy. Tua để phân biệt cạnh ở giữa với góc kề nó.", "x2 F'", "F")
   ], {
     prerequisite: "notation",
-    mistake: "Dừng ngay khi thấy hình dấu cộng trắng. Hãy nhìn bốn viên cạnh cạnh tâm bên, thay vì chỉ nhìn mặt trên.",
-    exercise: { goal: "Khớp cạnh trắng của mặt trước và mặt phải.", setup: "F2 R2", algorithm: "R2 F2" },
+    mistake: "Dừng khi vừa thấy dấu cộng trắng. Kiểm tra màu ô cạnh ở hàng dưới với tâm trên cả bốn mặt bên.",
+    exercise: { goal: "Khớp cạnh trắng của mặt trước và mặt phải.", setup: "x2 F2 R2", algorithm: "R2 F2" },
     sources: mainSources,
-    video: mainVideo("Dấu cộng trắng", 20, 104, "Đưa cạnh trắng lên mặt trên và kiểm tra màu cạnh bên trùng với tâm.")
+    video: mainVideo("Dấu cộng trắng", 20, 104, "Video nguồn minh họa dấu cộng ở trên. Đối chiếu cách khớp màu bên với tâm; mô phỏng của bài giữ tâm trắng ở đáy.")
   }),
   tutorial("white-corners", CUBE, "Góc trắng và tầng đầu", "Hoàn thành bốn góc trắng. Cả hàng sát mặt trắng của mỗi mặt bên phải cùng màu.", [
-    example("Đổi hướng sau dấu cộng", "Lật cả khối để trắng ở đáy và vàng ở trên. Tìm góc có trắng trên tầng trên. Hai màu còn lại phải khớp hai tâm ở hai bên ô góc đích.", "x2", ""),
+    example("Giữ nguyên dấu cộng ở đáy", "Tiếp tục cầm trắng ở D, vàng ở U. Tìm một góc trắng ở tầng trên. Hai màu còn lại cho biết hai tâm bên cạnh ô đích. Căn U để đưa góc lên trên ô đó, rồi đổi mặt trước bằng y nếu cần đưa khe về phía trước–phải.", whiteDown, ""),
     example("Đưa góc xuống khe phải", "Đưa góc vào vị trí trên–trước–phải, ngay trên ô đích. Dùng trọn bộ R U R' U' rồi kiểm tra. Lặp theo hướng của miếng góc đến khi trắng nằm dưới.", "x2 U R U' R'", turn),
     example("Lấy góc mắc ở đáy", "Đặt góc sai tại dưới–trước–phải, dùng một bộ bốn nước để đưa lên. Sau đó tìm hai tâm đúng, đưa nó đến phía trên khe cần lắp rồi thử lại.", "x2 R U R' U'", "U R U' R'")
   ], {
@@ -186,14 +200,14 @@ const BEGINNER = [
 // These teaching arrangements cover the line, elbow and dot in separate
 // examples. Each step has a fixed checkpoint derived from the whole solve.
 const sampleMoves = [
-  ["R2 F2", "x2 " + turn, insertRight, orientEdges, swapEdges, placeCorners, finishCornerTwists],
-  ["L2 U2 B2 U2", "x2 L' U' L U", insertLeft, orientEdges + " " + orientEdges, swapEdges, placeCorners, finishCornerTwists],
-  ["U F2 U' L2", "x2 " + turn + " " + turn, insertRight + " y2 " + insertRight + " y2",
+  ["R2 B2", turn, insertRight, orientEdges, swapEdges, placeCorners, finishCornerTwists],
+  ["L2 D2 F2 D2", "L' U' L U", insertLeft, orientEdges + " " + orientEdges, swapEdges, placeCorners, finishCornerTwists],
+  ["D B2 D' L2", turn + " " + turn, insertRight + " y2 " + insertRight + " y2",
    [orientEdges, "U2", orientEdges, orientEdges].join(" "), swapEdges, placeCorners, finishCornerTwists]
 ];
 const checkpoints = [
-  ["Dấu cộng trắng", "Mặt trắng hướng lên. Sau bước này cả bốn màu cạnh bên cần khớp các tâm."],
-  ["Tầng đầu", "Lật khối cho trắng xuống dưới. Đưa góc qua khe đúng và kiểm tra dải màu ở cả bốn mặt bên."],
+  ["Dấu cộng trắng dưới đáy", "Giữ tâm trắng ở D và tâm vàng ở U. Kiểm tra các cạnh trắng bằng bốn ô giữa của hàng dưới: màu từng ô phải khớp tâm bên."],
+  ["Tầng đầu", "Giữ trắng ở đáy. Đưa góc qua khe đúng và kiểm tra cả hàng dưới ở bốn mặt bên."],
   ["Cạnh tầng giữa", "Giữ nguyên tầng trắng đã giải. Căn cạnh đích theo tâm trước rồi chèn sang đúng khe bên trái hoặc phải."],
   ["Dấu cộng vàng", "Nhận diện bốn cạnh quanh tâm vàng trước khi chọn hướng cầm. Kiểm tra hai tầng đầu vẫn giữ nguyên."],
   ["Khớp cạnh vàng", "Chọn cặp cạnh đúng, rồi đổi vị trí các cạnh còn lại. So màu ở cả bốn mặt bên."],
@@ -231,7 +245,7 @@ const WALKTHROUGHS = exampleVideos.map((video, index) => {
     example(title, text, [setup, ...sequence.slice(0, step)].join(" "), sequence[step])
   );
   guide.unshift(example("Một lượt giải trọn khối",
-    "Đây là mẫu thực hành dựng riêng để có đủ các điểm kiểm tra. Video nguồn có lượt xáo khác, dùng để quan sát cách cầm khối thật.",
+    "Bắt đầu với trắng ở đáy và vàng ở trên. Ba lượt mẫu dùng các trạng thái xáo khác nhau để luyện đường ngang, chữ L và chấm vàng. Video nguồn có lượt xáo và có thể dùng góc cầm khác; hãy đối chiếu mục tiêu từng bước.",
     setup, algorithm
   ));
   return tutorial(index ? "walkthrough-" + (index + 1) : "walkthrough", CUBE,
@@ -246,30 +260,35 @@ const WALKTHROUGHS = exampleVideos.map((video, index) => {
 
 const ADVANCED = [
   tutorial("cfop-cross", CUBE, "CFOP · Lập kế hoạch dấu cộng", "Tự dự đoán vị trí bốn cạnh và giải dấu cộng ở mặt dưới.", [
-    example("Đọc vị trí tương đối", "Tìm bốn cạnh có màu nền và theo dõi thứ tự các màu bên quanh tâm. Chọn cạnh có thể giải cùng một nước với cạnh khác."),
-    example("Giữ các cạnh đã lắp", "Căn D tạm thời để dành đúng chỗ rồi đưa cạnh xuống. Trả D về vị trí khớp bốn tâm. Khi quen, thử nhìn trước vị trí cặp F2L đầu tiên.", "x2 F2 R2", "R2 F2")
+    example("Từ cách theo tầng đến CFOP", "Vẫn làm dấu cộng trắng ở D. Sau đó ghép từng cặp góc–cạnh (F2L) để giải hai tầng cùng lúc. Đến mặt vàng, làm OLL để đổi hướng và PLL để đổi vị trí. Tập 2-look OLL và 2-look PLL trước khi học trọn các nhóm."),
+    example("Đọc bốn cạnh trước khi xoay", "Tìm cả bốn cạnh trắng và theo dõi thứ tự màu bên quanh tâm. Trong mẫu, cạnh trước và phải đang ở U và đã khớp tâm; lên kế hoạch R2 F2 rồi thực hiện liên tục.", "x2 F2 R2", "R2 F2"),
+    example("Căn đáy giữa một nhóm nước", "Trong thế này cần xoay D2 để trả hai cạnh trắng đã xuống về đúng tâm bên. Sau đó giải hai cạnh còn ở U bằng B2 và R2. Nhìn màu bên ở hàng dưới để xác nhận cả bốn cạnh.", "x2 R2 B2 D2", "D2 B2 R2")
   ], {
     level: NEXT, prerequisite: "white-cross", sources: cfopSources,
-    exercise: { goal: "Lập kế hoạch cho hai cạnh rồi thực hiện mà vẫn nhìn thấy cặp kế tiếp.", setup: "x2 F2 R2" },
+    exercise: { goal: "Căn đáy, sau đó hoàn thành hai cạnh trắng còn thiếu.", setup: "x2 R2 B2 D2", algorithm: "D2 B2 R2" },
     mistake: "Dừng sau mỗi cạnh để tìm lại vị trí của các cạnh vừa di chuyển.",
     video: youtube("IWXpkfwimo0", "J Perm · Luyện dấu cộng", 0, undefined, "Theo dõi quan hệ giữa bốn cạnh trước khi lập kế hoạch.")
   }),
   tutorial("cfop-f2l", CUBE, "CFOP · Ghép cặp F2L", "Tìm đúng cạnh và góc, ghép chúng thành một cặp rồi đưa vào khe.", [
-    example("Tìm cặp", "Chọn một góc đáy và tìm cạnh có hai màu bên của góc đó. Đưa cả hai lên tầng trên; dùng một khe trống làm vùng thao tác."),
-    example("Ghép rồi lắp", "Tạo một cặp có các mặt bên đúng màu tương đối. Đặt cặp phía trên khe và đưa vào bằng một nhóm ngắn, trả mặt bên về vị trí ban đầu.", "x2 R U R' U'", "U R U' R'"),
-    example("Theo dõi cặp khác", "Khi tay đã quen với thao tác chèn, giảm tốc để mắt theo vị trí cặp kế tiếp trong lúc tay đang hoàn tất cặp hiện tại.")
+    example("Tìm đúng cặp và khe đích", "Giữ dấu cộng trắng ở D. Chọn góc có trắng và tìm cạnh mang hai màu bên của góc đó. Hai màu bên cũng cho biết khe đích. Khi cả hai viên nằm trên, dùng U và một khe còn trống để ghép chúng."),
+    example("Chèn cặp trước–phải", "Căn U để đưa cặp tới vị trí chèn. Mở khe bằng R, đưa cặp qua khe bằng U' rồi đóng khe bằng R'. Kiểm tra cả góc dưới lẫn cạnh giữa đã khớp hai tâm bên.", "x2 R U R' U'", "U R U' R'"),
+    example("Ghép hai viên đang tách rời", "Theo dõi góc trắng và cạnh đích riêng rẽ cho đến khi chúng nằm cạnh nhau. Tua sau từng nước để thấy nhóm U' R U R' đổi vị trí tương đối. Nhóm U2 R U' R' đưa cặp qua khe trước–phải.", whiteDown + " " + reverseSequence(f2lSeparated), f2lSeparated),
+    example("Giữ dấu cộng khi tìm cặp kế tiếp", "Mỗi lần ghép xong, kiểm tra hai ô của khe và bốn cạnh dấu cộng. Giảm tốc ở cặp đang chèn để quan sát cặp sau. Nếu cần đổi mặt trước, dùng y để giữ tâm trắng ở đáy.")
   ], {
     level: NEXT, prerequisite: "white-corners", sources: [source("J Perm · F2L", "https://jperm.net/3x3/cfop/f2l"), ...cfopSources],
+    caseGroups: ["f2l"],
     mistake: "Xoay nhiều mặt để đuổi theo hai viên. Đưa chúng về vùng trên bằng một khe chưa giải.",
-    exercise: { goal: "Chọn và ghép một cặp ở khe trước–phải.", setup: "x2 R U R' U'" },
+    exercise: { goal: "Ghép góc và cạnh đang tách rời, chèn vào khe trước–phải.", setup: whiteDown + " " + reverseSequence(f2lSeparated), algorithm: f2lSeparated },
     video: youtube("aKM5AqKyrX8", "Bullet Cubing · F2L trực quan", 0, undefined, "Quan sát cách ghép cạnh với góc trước khi chèn.")
   }),
   tutorial("cfop-oll", CUBE, "CFOP · Định hướng lớp cuối", "Từ dấu cộng vàng và Sune đến nhận diện toàn bộ OLL.", [
-    example("Hai lượt OLL", "Lượt đầu làm dấu cộng vàng. Ở lượt thứ hai, đếm góc có vàng phía trên, rồi nhìn thêm các dải vàng ở bên để phân biệt các ca.", "x2 F U R U' R' F'", orientEdges),
+    example("2-look OLL · Làm dấu cộng vàng", "Giữ hai tầng dưới đã giải và chỉ nhìn bốn cạnh lớp U. Đặt đường ngang theo trục trái–phải rồi chạy công thức. Với hình chữ L hoặc chấm, học hướng cầm riêng ở bài dấu cộng vàng.", "x2 F U R U' R' F'", orientEdges),
     example("Nhận diện Sune", "Ở mẫu này cạnh đã hướng đúng và một góc đã có vàng trên mặt. Căn đúng hướng mẫu trước khi chạy công thức.", "x2 R U2 R' U' R U' R'", sune),
-    example("Luyện bộ đầy đủ", "Nhóm các ca theo hình mặt trên, sau đó phân biệt bằng ô vàng ở mặt bên. Kiểm tra hai tầng đầu được bảo toàn sau mỗi công thức.")
+    example("Phân biệt Sune và Anti-Sune", "Cả hai đều có một góc vàng hướng lên. Nhìn thêm màu vàng ở mặt bên sau khi căn đúng hình. Chọn công thức theo vị trí góc và dải bên. Ví dụ này dùng Anti-Sune đảo chiều tác dụng của Sune.", whiteDown + " " + sune, reverseSequence(sune)),
+    example("Tiến tới OLL một lượt", "Khi nhận ra ba mẫu cạnh và bảy mẫu góc của 2-look OLL, học tiếp từng nhóm trong 57 mẫu OLL. Đối chiếu mặt trên và ô vàng trên các mặt bên. Từng mẫu phải giữ hai tầng đầu.")
   ], {
     level: NEXT, prerequisite: "cfop-f2l", sources: [source("CubeSkills · OLL", CUBESKILLS + "oll-algorithms"), ...cfopSources],
+    caseGroups: ["oll2", "oll"],
     mistake: "Nhận diện chỉ bằng mặt trên ở những ca có cùng hình nhưng khác dải màu bên.",
     exercise: { goal: "Chạy Sune từ đúng hướng và xác nhận cả mặt vàng đồng màu.", setup: "x2 R U2 R' U' R U' R'", algorithm: sune },
     video: youtube("sEhKsFCmRU4", "Bullet Cubing · 2-look OLL", 0, undefined, "Nhận diện mẫu cạnh và mẫu góc ở hai lượt riêng.")
@@ -277,30 +296,35 @@ const ADVANCED = [
   tutorial("cfop-pll", CUBE, "CFOP · Hoán vị lớp cuối", "Nhận diện dải góc và cạnh, thực hiện PLL và căn lớp trên.", [
     example("Nhìn các dải ở bên", "Sau OLL, nhìn qua ít nhất hai mặt bên. Cặp ô góc cùng màu trên một mặt giúp nhận diện nhóm. Kiểm tra cả ô giữa hai góc để phân biệt cạnh đã đúng."),
     example("T-perm", "Mô hình cho ví dụ một cặp góc và một cặp cạnh đổi chỗ. Giữ đúng hướng trước khi chạy chuỗi; căn U sau công thức nếu cần.", "x2 F R U' R' U R U R2 F' R U R U' R'", tperm),
-    example("Hai lượt và một lượt", "Khi mới học, xử lý góc rồi cạnh. Khi đã nhận diện vững, dùng nhóm 21 PLL để hoàn thành hoán vị cả hai loại viên trong một lượt.")
+    example("2-look PLL · Làm góc trước rồi đến cạnh", "Dùng nhóm đổi góc ở lượt đầu. Khi bốn góc đã đúng vị trí, xem hướng đổi vòng của ba cạnh. Trong mẫu Ua, giữ một cạnh đúng theo hướng trước khi thực hiện chuỗi.", "x2 R2 U R U R' U' R' U' R' U R'", "R U' R U R U R U' R' U' R2"),
+    example("Căn U sau công thức", "Khi lớp vàng đã đồng màu và mỗi hàng trên ở mặt bên đồng màu, thử U, U' hoặc U2 để các hàng thẳng màu tâm. Mẫu này cần U'. Luyện chắc 2-look PLL rồi học các nhóm trong bộ 21 PLL.", "x2 U", "U'")
   ], {
     level: NEXT, prerequisite: "cfop-oll", sources: [source("CubeSkills · PLL", CUBESKILLS + "pll-algorithms"), ...cfopSources],
+    caseGroups: ["pll2", "pll"],
     mistake: "Thực hiện đúng công thức nhưng cầm sai mặt trước hoặc bỏ qua bước căn U.",
-    exercise: { goal: "Đọc vị trí cặp góc, nhận diện mẫu T và kiểm tra khối sau PLL." },
+    exercise: { goal: "Đọc vị trí các góc và cạnh của mẫu T rồi hoàn thành PLL.", setup: whiteDown + " " + reverseSequence(tperm), algorithm: tperm },
     video: youtube("J8p6JVLyGHo", "Bullet Cubing · 2-look PLL", 0, undefined, "Nhìn dấu hiệu bên ngoài trước khi chọn phép đổi góc hoặc cạnh.")
   }),
   tutorial("roux", CUBE, "Roux · Hai khối bên và sáu cạnh", "Hiểu trật tự khối trái, khối phải, CMLL và LSE.", [
-    example("Khối 1×2×3 bên trái", "Dùng tâm trái, cạnh dưới–trái và hai cặp góc–cạnh tạo thành một dải 1×2×3. Tập ghép khối vuông 1×2×2 nhỏ trước, rồi nối cặp còn lại."),
-    example("Khối bên phải", "Đặt khối đã giải bên trái. Tận dụng U, R, Rw và lớp giữa để ghép khối bên kia mà không phá khối trái. Quan sát hai dải bên liền mạch."),
-    example("Bốn góc, sau đó sáu cạnh", "CMLL xử lý bốn góc lớp trên. Sau khi góc hoàn chỉnh, dùng M và U để định hướng sáu cạnh còn lại; bố trí hai cạnh trái/phải tầng trên rồi sắp bốn cạnh lớp giữa.")
+    example("Khối 1×2×3 bên trái", "Lấy trắng dưới làm mốc. Dùng tâm trái, cạnh dưới–trái và hai cặp góc–cạnh để tạo khối. Trong mẫu còn thiếu một cặp, xoay L rồi đặt lại để nối cặp vào khối.", "x2 L' U' L U", "U' L' U L"),
+    example("Khối bên phải", "Giữ khối trái và tận dụng U, R, Rw hoặc M để dựng khối phải. Mẫu này luyện một cặp của khối phải. Sau khi chèn, kiểm tra hai dải bên liền mạch. Hai khe trước và sau của đáy vẫn có thể dành cho lớp giữa.", "x2 R U' R'", "R U R'"),
+    example("CMLL · Giải cả hướng và vị trí góc", "Khi hai khối bên đã xong, đọc bốn góc lớp U và chọn ca CMLL. Mẫu này có bốn góc giải được bằng Sune. Hãy xem lại sáu cạnh còn lại sau bước CMLL.", whiteDown + " " + reverseSequence(rouxLastEdges) + " " + reverseSequence(sune), sune),
+    example("LSE · Dùng M và U cho sáu cạnh", "Giữ hai khối và bốn góc đã giải. LSE thường chia thành định hướng sáu cạnh, đặt hai cạnh UL/UR, rồi sắp bốn cạnh còn lại. Nước M có thể tạm di chuyển tâm trắng. Trong mẫu ngắn, quan sát bốn góc sau khi hoàn thành cả nhóm.", whiteDown + " " + reverseSequence(rouxLastEdges), rouxLastEdges)
   ], {
-    level: EXPERT, prerequisite: "cfop-f2l", sources: [source("Kian Mansour · Hướng dẫn Roux", "https://sites.google.com/view/kianroux/roux-tutorial")],
-    exercise: { goal: "Hoàn thành hai khối mà vẫn có thể xoay M. Quan sát các cạnh còn tự do." },
+    level: EXPERT, prerequisite: "cfop-f2l", sources: [rouxTutorial],
+    caseGroups: ["cmll"],
+    exercise: { goal: "Giải thế sáu cạnh mẫu bằng M và U, giữ hai khối bên.", setup: whiteDown + " " + reverseSequence(rouxLastEdges), algorithm: rouxLastEdges },
     mistake: "Cố ghép dấu cộng đáy như CFOP ngay từ đầu, hạn chế các nước lớp giữa hữu ích.",
     video: youtube("pj_IsOCJS3k", "Kian Mansour · Khối đầu tiên", 0, undefined, "Ghép một khối nhỏ rồi nối cạnh–góc còn lại để hoàn thành khối bên.")
   }),
   tutorial("zz", CUBE, "ZZ · Định hướng cạnh từ đầu", "Hiểu cách định hướng cạnh trước khi xây hai khối F2L.", [
-    example("Chọn hệ quy chiếu", "Giữ cố định mặt trên và mặt trước. Một cạnh được coi là đúng hướng khi có thể về ô đích bằng các mặt U, D, R, L với quy ước đã chọn. Mục tiêu là tìm mọi cạnh lệch hướng trước."),
-    example("EO và EOLine", "Đưa các cạnh lệch hướng đến F hoặc B theo nhóm chẵn. Xoay mặt trước/sau để đổi hướng cả nhóm. Khi mọi cạnh đã đúng hướng, đặt DF và DB khớp tâm tạo đường ở đáy."),
-    example("Dựng hai khối", "Giữ đường ở đáy. Dùng U/R/L để xây hai bên. Nếu đã định hướng đúng, mặt cuối chỉ cần định hướng góc rồi thực hiện PLL, hoặc dùng nhóm thuật toán phù hợp hơn.")
+    example("Chọn hệ quy chiếu cố định", "Giữ trắng dưới, vàng trên và giữ một mặt trước cố định. Cạnh đúng hướng khi có thể đưa về ô đích bằng U, D, R, L với góc cầm đó. Bốn mặt này giữ hướng cạnh; một nước 90° ở F hoặc B đổi hướng bốn cạnh trên mặt vừa xoay.", "x2 F", "F'"),
+    example("EOLine · Hai cạnh đúng ở đáy", "Đưa cạnh lệch về F hoặc B để sửa hướng. Khi đủ 12 cạnh đã đúng hướng, đặt DF và DB tạo đường trước–sau dưới đáy. Trong mẫu, F' sửa bốn cạnh và trả DF về cạnh DB đã đúng.", "x2 R2 L2 F", "F'"),
+    example("EOCross · Bốn cạnh đúng ở đáy", "Nếu theo biến thể EOCross, hoàn thành cả bốn cạnh của dấu cộng trắng sau khi bảo đảm hướng cạnh. Từ thế EOLine mẫu, L2 và R2 đưa hai cạnh bên về đáy và giữ hướng của cả 12 cạnh.", "x2 R2 L2", "L2 R2"),
+    example("Ghép hai khối sau EO", "Giữ DF và DB ở đáy. Dùng U, R và L để giải hai bên và giữ hướng cạnh. Tua thử nửa đầu để quan sát bên trái rồi nửa sau để quan sát bên phải. Khi hai tầng dưới hoàn thành, mặt vàng đã có dấu cộng; tiếp tục định hướng góc rồi làm PLL.", whiteDown + " " + reverseSequence(zzBlocks), zzBlocks)
   ], {
     level: EXPERT, prerequisite: "cfop-f2l", sources: [source("Conrad Rider · ZZ", "https://cube.crider.co.uk/zz.php")],
-    exercise: { goal: "Đánh dấu các cạnh bị đổi hướng sau F rồi chuyển chúng về đúng hướng.", setup: "x2 F", algorithm: "F'" },
+    exercise: { goal: "Sửa bốn cạnh lệch để trả lại đường DF–DB ở đáy.", setup: "x2 R2 L2 F", algorithm: "F'" },
     mistake: "Đổi mặt trước giữa lúc phân loại cạnh. Giữ khối cố định trong cả bước EO.",
     video: { ...youtube("4Wrm2MGrRS8", "Joseph Hale · Học ZZ", 44), chapters: [
       { label: "EO và đường đáy", time: 44, caption: "Định hướng cạnh và giữ một mặt trước cố định." },
@@ -310,8 +334,8 @@ const ADVANCED = [
     ] }
   }),
   tutorial("finger-tricks", CUBE, "Kỹ thuật ngón tay và giải một tay", "Tập các nhóm nước ngắn với thế cầm ổn định.", [
-    example("Đẩy U bằng ngón trỏ", "Đỡ đáy bằng các ngón còn lại. Dùng ngón trỏ đẩy lớp trên thay vì xoay cả cổ tay. Tập chậm để hai lớp bên dưới đứng yên.", "", "U U' U2"),
-    example("Giảm đổi thế cầm", "Tập R U R' U' thành một nhịp, chỉ tăng tốc khi mỗi nước đều dừng đúng vị trí. Khi giải một tay, dùng ngón trỏ hoặc ngón út theo thế cầm thoải mái thay vì rướn ngón.", "", turn),
+    example("Đẩy U bằng ngón trỏ", "Đỡ đáy bằng các ngón còn lại. Dùng ngón trỏ đẩy lớp trên, giữ hai lớp bên dưới đứng yên và tập ở tốc độ vừa phải.", whiteDown, "U U' U2"),
+    example("Giảm đổi thế cầm", "Tập R U R' U' thành một nhịp, chỉ tăng tốc khi mỗi nước đều dừng đúng vị trí. Khi giải một tay, dùng ngón trỏ hoặc ngón út theo thế cầm thoải mái.", whiteDown, turn),
     example("Theo dõi trong lúc xoay", "Đặt mục tiêu hạn chế thời gian dừng. Giảm tốc độ khi chưa nhận ra cặp tiếp theo rồi giữ nhịp đều.")
   ], {
     level: NEXT, prerequisite: "notation", sources: [source("J Perm · Finger tricks", "https://jperm.net/3x3/fingertricks"), source("J Perm · Giải một tay", "https://jperm.net/oh")],
@@ -320,7 +344,7 @@ const ADVANCED = [
     video: youtube("mUF3aPDTO-4", "J Perm · Xoay và giải một tay", 0, undefined, "Quan sát ngón nào giữ khối và ngón nào thực hiện nước xoay.")
   }),
   tutorial("commutators-bld", CUBE, "Làm quen commutator và giải bịt mắt", "Hiểu tác dụng của A B A' B' và cách nhớ đường đi của viên.", [
-    example("Thử một commutator", "Chọn A = R, B = U. Dùng A rồi B, sau đó hoàn tác từng nhóm theo thứ tự A', B'. So sánh viên nào trở về và viên nào còn thay đổi.", "", turn),
+    example("Thử một commutator", "Chọn A = R, B = U. Dùng A rồi B, sau đó hoàn tác từng nhóm theo thứ tự A', B'. So sánh viên nào trở về và viên nào còn thay đổi.", whiteDown, turn),
     example("Lập mã ghi nhớ", "Chọn một ô đệm. Nhìn viên đang nằm ở ô đó, tìm ô đích của nó và tiếp tục theo viên ở ô đích. Gắn cùng một chữ cho mỗi vị trí qua mọi lượt."),
     example("Tập dưới sự quan sát", "Vừa nhìn vừa tập một chu trình ngắn. Nói đúng các vị trí theo thứ tự rồi chạy chuỗi đã học. Khi đổi chu trình, xử lý mọi viên còn sai trước khi kiểm tra toàn khối.")
   ], {
@@ -429,7 +453,7 @@ const MORE = [
     example("Cạnh năm mảnh", "Tìm mảnh cạnh giữa, ghép cặp mảnh trong đối xứng quanh nó rồi ghép tiếp cặp mảnh ngoài. Chọn mảnh theo cả hai màu và khoảng cách từ điểm giữa cạnh."),
     example("Cạnh cuối và lớp ngoài", "Nếu còn vài mảnh cạnh sai, xử lý theo đúng lớp chứa mảnh đó và trả lớp trong sau mỗi lần. Kiểm tra từng cạnh nhìn từ hai phía; khi đủ cạnh mới giải như 3×3.")
   ], {
-    prerequisite: "5x5-reduction", sources: [...largerSources, source("QiYi · Khối lớn", "https://theqiyi.com/blog/how-to-solve-qiyi-2x2.html")],
+    prerequisite: "5x5-reduction", sources: largerSources,
     exercise: { goal: "Ghép một cụm cạnh giữa ba mảnh rồi thêm hai mảnh ngoài mà không phá cụm đã có." },
     mistake: "Đổi hai mảnh có cùng màu nhưng thuộc hai vòng cạnh khác nhau.",
     video: youtube("Uzqo_L-1BMM", "Thinkable · Hướng dẫn 7×7", 0, undefined, "Dừng sau mỗi cụm tâm hoặc cạnh để đối chiếu cách chọn lớp trong.")
@@ -459,7 +483,7 @@ const MORE = [
   tutorial("skewb-basic", "skewb", "Skewb · Góc, tâm và lớp cuối", "Giải một mặt, xử lý bốn góc bên kia rồi hoàn tất vị trí tâm.", [
     example("Cầm trục qua góc", "Để một góc quay về phía mình. Mỗi lượt xoay là 120° quanh một trục đi qua góc. Quan sát các viên đi cùng nhau khi đưa trục phải về vị trí cũ.", "R", "R'"),
     example("Mặt đầu", "Chọn tâm trắng và lắp bốn góc sao cho dải màu bên khớp. Khi dùng nhóm bốn nước, giữ đúng trục rồi kiểm tra sự thay đổi của các góc. Mẫu giúp luyện nhóm thao tác trước khi dùng nó trong lượt giải.", "L R' L' R", "R' L R L'"),
-    example("Tâm còn lại", "Sau các góc, đếm số mặt đúng. Mẫu nhóm bốn nước, lật cả khối và lặp nhóm đó giúp đổi các tâm theo chu kỳ. Hãy đối chiếu hướng cầm trong video khi áp dụng cho khối thật.", "L R' L' R x2 L R' L' R", "R' L R L' x2 R' L R L'")
+    example("Tâm còn lại", "Sau các góc, đếm số mặt đúng rồi vào bài chu kỳ tâm. Ở ví dụ này, hai lượt Sledgehammer cho thấy màu tâm có thể đổi chỗ trong khi vị trí góc giữ nguyên. Kiểm tra thêm hướng các góc trước khi kết luận chỉ còn tâm.", "L R' L' R L R' L' R", "R' L R L' R' L R L'")
   ], {
     sources: [skewbSource, source("Sarah Strong · Skewb cơ bản", "https://sarah.cubing.net/skewb/my-method")],
     exercise: { goal: "Xếp một mặt đúng cả màu tâm lẫn các dải màu góc ở bên." },
@@ -481,7 +505,7 @@ const MORE = [
     example("Lắp cạnh và góc", "Hai mặt của một cạnh phải phẳng với hai tâm liền kề. Góc cần khớp đủ ba kích thước. Đưa góc qua khe và quan sát mặt phẳng được khôi phục.", "x2 U R U' R'", turn),
     example("Lớp cuối theo hình dáng", "Nhận dấu cộng và góc đã định hướng bằng các bề mặt ngang bằng. Áp dụng thứ tự giải 3×3, rồi soi mặt bên để kiểm tra cả khối trở lại dạng lập phương.", "x2 " + edgeLine, orientEdges)
   ], {
-    prerequisite: "twist-corners", sources: [source("Bullet Cubing · Mirror Blocks", "https://www.bulletcubing.com/video-courses")],
+    prerequisite: "twist-corners", sources: [source("Bullet Cubing · Mirror Blocks", "https://www.bulletcubing.com/video-courses")], caseGroups: ["mirror-foundation"],
     exercise: { goal: "Tìm đúng một cạnh, lắp và kiểm tra hai bề mặt phẳng với hai tâm." },
     mistake: "Chọn viên chỉ theo một chiều cao. Kiểm tra kích thước của cả hai mặt cạnh hoặc ba mặt góc.",
     video: youtube("REs39blP02U", "Bullet Cubing · Giải Mirror Blocks", 0, undefined, "Quan sát cách dùng độ cao và độ rộng thay cho màu.")
@@ -503,7 +527,231 @@ const MORE = [
   })
 ];
 
-export const LESSONS = [...BEGINNER, ...WALKTHROUGHS, ...ADVANCED, ...MORE];
+const notationSource = source("WCA · Quy ước ký hiệu", "https://www.worldcubeassociation.org/regulations/#article-12-notation");
+const minxLast = CUBESKILLS + "intermediate-megaminx-techniques";
+const pyLast = source("Speedcubing.org · Các cạnh cuối", "https://speedcubing.org/pages/pyraminx-written-tutorial");
+const skewbMethod = source("Sarah Strong · Xếp tâm Skewb", "https://sarah.cubing.net/skewb/my-method");
+const squareEdges = source("Sarah Strong · Hoán vị cạnh Square-1", "https://sarah.cubing.net/square-1/ep");
+const clockSource = source("The Duke of Cubes · Giải Clock", "https://www.youtube.com/watch?v=n5We_sCjBOc");
+const mirrorSource = source("Bullet Cubing · Mirror Blocks", "https://www.bulletcubing.com/video-courses");
+const wingFlip = "2R2 B2 U2 2L U2 2R' U2 2R U2 F2 2R F2 2L' B2 2R2";
+const wingFlipSetup = "2R2 B2 2L F2 2R' F2 U2 2R' U2 2R U2 2L' U2 B2 2R2";
+const deeperWingFlip = wingFlip.replaceAll("2R", "3R").replaceAll("2L", "3L");
+const deeperWingSetup = wingFlipSetup.replaceAll("2R", "3R").replaceAll("2L", "3L");
+const pyrCycleA = "R U R' U R U R'";
+const pyrCycleB = "R U' R' U' R U' R'";
+const pyrFlip = "R' L R L' U L' U' L";
+const pyrFlipSetup = "L' U L U' L R' L' R";
+const sledge = "R' L R L'";
+const hedge = "L R' L' R";
+const skewbCenters = ["x", sledge, "x' y", sledge, sledge, "y' x'", sledge, "x"].join(" ");
+const skewbCenterSetup = ["x'", hedge, "x y", hedge, hedge, "y' x", hedge, "x'"].join(" ");
+const squareCycle = "/ (0,3) / (1,0) / (-3,0) / (-1,0) / (0,-3) / (1,0) / (3,0) / (-1,0)";
+const squareCycleSetup = "(1,0) / (-3,0) / (-1,0) / (0,3) / (1,0) / (3,0) / (-1,0) / (0,-3) /";
+const squareParity = "/ (3,3) / (-1,0) / (2,0) / (-4,0) / (4,0) / (2,0) / (1,0) / (-3,-3) /";
+const squareParitySetup = "/ (3,3) / (-1,0) / (-2,0) / (-4,0) / (4,0) / (-2,0) / (1,0) / (-3,-3) /";
+
+const WORKSHOPS = [
+  tutorial("4x4-inner-turns", "4x4x4", "4×4 · Đọc lớp ngoài và lớp trong", "Phân biệt nước R, 2R và Rw trước khi ghép tâm hoặc xử lý parity.", [
+    example("So sánh hai dải", "Nhìn mặt trước. Sau 2R chỉ dải thứ hai từ phải đổi màu; sau Rw cả dải ngoài cùng và dải kế bên đổi màu. Các bài trên trang dùng 2R cho đúng một lớp trong, còn Rw theo quy ước xoay rộng.", "2R", "2R'", {
+      comparison: [
+        { label: "2R · một lớp trong", setup: "2R" },
+        { label: "Rw · hai lớp liền nhau", setup: "Rw" }
+      ],
+      quiz: {
+        prompt: "Muốn chỉ trả lớp thứ hai tính từ bên phải, nên xoay nước nào?",
+        options: ["R'", "Rw'", "2R'"], answer: 2, feedback: "Đếm từ mặt phải vào. 2R' chỉ trả đúng một lớp; Rw' quay cả hai lớp liền nhau."
+      }
+    }),
+    example("Tách một nước xoay rộng", "Xoay R và 2R theo cùng chiều tương đương một lượt Rw. Hai lớp không chạm nhau nên đổi thứ tự vẫn được. Thử gỡ nước xoay rộng bằng hai lượt trả.", "Rw", "R' 2R'")
+  ], {
+    prerequisite: "4x4-reduction", sources: [notationSource, yauSource], caseGroups: ["parity4"],
+    mistake: "Đọc 2R như R2. Số đứng trước chỉ vị trí lớp. Số đứng sau chỉ xoay 180°.",
+    exercise: { goal: "Trả khối bị lệch hai dải về dạng đã giải bằng R' và 2R'.", setup: "Rw", algorithm: "R' 2R'" }
+  }),
+  tutorial("4x4-reduction-check", "4x4x4", "4×4 · Tâm đúng, cạnh đã ghép chưa?", "Kiểm tra từng điều kiện thu gọn trước khi giải như 3×3.", [
+    example("Hai phép kiểm tra riêng", "Tâm mỗi mặt cần tạo ô 2×2 đồng màu và theo đúng thứ tự quanh một góc chuẩn. Sau đó nhìn hai mặt của từng cặp cạnh. Mẫu này có đủ tâm nhưng hai mảnh của cạnh trên–trước bị lật. Theo dõi dải đang đổi hướng, rồi xác nhận ô tâm trở lại nguyên vẹn.", wingFlipSetup, wingFlip),
+    example("Hoán vị sau khi đã định hướng", "Khi mặt trên có cùng màu với tâm nhưng hai cạnh ghép đối diện lệch vị trí, xác định mẫu khác với một cạnh bị lật. Chạy chuỗi rồi đối chiếu màu bên trên cả hai cạnh.", "U2 Uw2 2R2 Uw2 2R2 U2 2R2", "2R2 U2 2R2 Uw2 2R2 Uw2 U2", {
+      quiz: { prompt: "Chỉ quan sát mặt trên đã đủ để xác nhận PLL parity chưa?", options: ["Đủ, nếu mặt trên đồng màu", "Cần xem vị trí cạnh và màu các mặt bên"], answer: 1, feedback: "PLL parity là vấn đề vị trí. Màu bên mới chỉ ra cặp cạnh cần đổi chỗ." }
+    })
+  ], {
+    level: NEXT, prerequisite: "4x4-inner-turns", sources: [largerIntro, yauSource], caseGroups: ["parity4"],
+    mistake: "Bắt đầu giải theo 3×3 khi một cạnh chưa ghép đủ hai mảnh. Hãy kiểm tra theo vòng quanh khối.",
+    exercise: { goal: "Thử khôi phục cạnh trên–trước theo mẫu một cạnh bị lật.", setup: wingFlipSetup, algorithm: wingFlip }
+  }),
+  tutorial("5x5-last-edge", "5x5x5", "5×5 · Cánh cạnh cuối bị đảo", "Đọc cạnh ba mảnh và giữ mảnh giữa khi sửa hai cánh của mẫu.", [
+    example("Đọc hai mặt của cạnh", "Tìm cạnh trên–trước. Mảnh giữa đã khớp tâm, còn hai cánh hiện hai màu đổi phía. Quan sát từ trên và trước để khỏi nhầm một cánh bị lệch với cả cụm cạnh chưa ghép.", wingFlipSetup, wingFlip, {
+      quiz: { prompt: "Ở ví dụ này, mảnh nào làm mốc khi tìm hai cánh?", options: ["Góc gần nhất", "Mảnh giữa cạnh", "Tâm của mặt đáy"], answer: 1, feedback: "Mảnh giữa cho biết bộ hai màu của cạnh và vị trí hai cánh ở hai bên." }
+    }),
+    example("Kiểm tra khi kết thúc", "Sau chuỗi, ba ô trên cạnh cùng khớp mỗi mặt liền kề. Chỉ rời bước ghép cạnh khi cả sáu tâm và mười hai cạnh đều đúng. Sau đó dùng nước lớp ngoài như khi giải 3×3.")
+  ], {
+    level: NEXT, prerequisite: "5x5-reduction", sources: largerSources, caseGroups: ["wings-5"],
+    mistake: "Chạy công thức khi cạnh giữa nằm sai vị trí. Căn mảnh giữa đúng trước rồi so hai cánh theo mẫu.",
+    exercise: { goal: "Sửa đúng hai cánh trên–trước. Giữ mảnh giữa khớp như ban đầu.", setup: wingFlipSetup, algorithm: wingFlip }
+  }),
+  tutorial("6x6-edge-orbits", "6x6x6", "6×6 · So hai vị trí cánh cạnh", "Chọn lớp thứ hai hoặc thứ ba theo hai mảnh lệch của cạnh bốn mảnh.", [
+    example("Cặp xa giữa", "Đặt cạnh cần sửa ở trên–trước. Ở mẫu thứ nhất, hai mảnh sát góc bị đảo và hai mảnh gần giữa đã đúng. Đọc vị trí lớp từ mặt ngoài rồi thử công thức dành cho cặp này.", wingFlipSetup, wingFlip, {
+      comparison: [{ label: "Hai mảnh sát góc · lớp thứ hai", setup: wingFlipSetup }, { label: "Hai mảnh gần giữa · lớp thứ ba", setup: deeperWingSetup }]
+    }),
+    example("Cặp gần giữa", "Mẫu thứ hai đổi cặp mảnh gần giữa. Công thức có cấu trúc tương tự nhưng thay nước lớp 2R/2L bằng 3R/3L. Đối chiếu dải cạnh sau khi sửa.", deeperWingSetup, deeperWingFlip, {
+      quiz: { prompt: "Cặp mảnh gần giữa thuộc ví dụ nào?", options: ["Lớp thứ hai", "Lớp thứ ba"], answer: 1, feedback: "Đếm từ trái hoặc phải của cạnh. Hai mảnh trong cùng của cạnh 6×6 thuộc hai lớp thứ ba đối diện nhau." }
+    })
+  ], {
+    level: NEXT, prerequisite: "6x6-reduction", sources: largerSources, caseGroups: ["wings-6"],
+    mistake: "Chọn lớp theo màu thay vì vị trí của mảnh. Hai cặp có cùng bộ màu nhưng nằm ở khoảng cách khác nhau tới góc.",
+    exercise: { goal: "Sửa cặp gần giữa ở cạnh trên–trước. Kiểm tra cả cặp ngoài sau khi kết thúc.", setup: deeperWingSetup, algorithm: deeperWingFlip }
+  }),
+  tutorial("7x7-edge-orbits", "7x7x7", "7×7 · Sửa cánh ngoài và cánh trong", "Tách năm mảnh cạnh thành mảnh giữa, hai cánh trong và hai cánh ngoài.", [
+    example("Tách ba vị trí", "Nhìn dọc cạnh trên–trước. Mảnh chính giữa là mốc của cạnh. Hai mảnh sát mốc là cánh trong, hai mảnh giáp góc là cánh ngoài. Hãy so cả mặt trước và mặt trên trước khi chọn lớp.", deeperWingSetup, deeperWingFlip, {
+      comparison: [{ label: "Đảo hai cánh ngoài", setup: wingFlipSetup }, { label: "Đảo hai cánh trong", setup: deeperWingSetup }]
+    }),
+    example("Khôi phục cánh ngoài", "Mẫu này cần nước lớp thứ hai. Mảnh chính giữa và hai cánh trong đã khớp. Chạy từng nước, sau đó kiểm tra cả năm mảnh từ hai mặt.", wingFlipSetup, wingFlip, {
+      quiz: { prompt: "Khi đọc vị trí cánh trên cạnh 7×7, nên lấy viên nào làm mốc?", options: ["Một trong hai góc", "Mảnh chính giữa cạnh", "Cánh có màu sáng hơn"], answer: 1, feedback: "Mảnh chính giữa chia hai phía đối xứng. Từ đó phân được cánh trong và cánh ngoài." }
+    })
+  ], {
+    level: NEXT, prerequisite: "7x7-reduction", sources: largerSources, caseGroups: ["wings-7"],
+    mistake: "Nối cả hai cặp cánh vào nhầm thứ tự. Mỗi cánh phải đúng bộ màu và đúng khoảng cách tới mảnh giữa.",
+    exercise: { goal: "Khôi phục cả năm mảnh trên–trước trong mẫu đảo cánh ngoài.", setup: wingFlipSetup, algorithm: wingFlip }
+  }),
+  tutorial("pyraminx-edge-cycles", "pyraminx", "Pyraminx · Hai chiều đổi vòng ba cạnh", "Đọc màu bên của ba cạnh cuối để chọn đúng chiều chu kỳ.", [
+    example("Nhận ba cạnh cần đổi chỗ", "Giữ mặt đã giải ở đáy. Các đỉnh và trục đã đúng, còn ba cạnh quanh đỉnh trên ở sai vị trí. Theo dõi một cạnh có hai màu dễ nhận rồi dự đoán vị trí đúng của nó.", pyrCycleB, pyrCycleA, {
+      comparison: [{ label: "Chu kỳ ba cạnh · chiều A", setup: pyrCycleB, caseId: "py-cycle-a" }, { label: "Chu kỳ ba cạnh · chiều B", setup: pyrCycleA, caseId: "py-cycle-b" }]
+    }),
+    example("Đảo chiều chu kỳ", "Hai mẫu có cùng ba vị trí chưa đúng. So thứ tự hai màu của từng cạnh quanh đỉnh rồi dùng mẫu khớp chiều di chuyển. Sau khi chạy, kiểm tra lại cả ba dải màu bên.", pyrCycleA, pyrCycleB, {
+      quiz: { prompt: "Hai hình chu kỳ có thể giống nhau nếu chỉ đếm cạnh sai. Cần quan sát gì thêm?", options: ["Thứ tự màu bên của ba cạnh", "Màu của đỉnh nhỏ đã khớp"], answer: 0, feedback: "Hai chiều tác động lên cùng ba vị trí. Thứ tự của từng cạnh mới chỉ ra chiều chuyển." }
+    })
+  ], {
+    level: NEXT, prerequisite: "pyraminx-basic", sources: [pyLast], caseGroups: ["py-basics"],
+    mistake: "Chọn chiều theo số cạnh sai. Đánh dấu một cạnh và đọc chính xác nơi hai màu của nó phải đến.",
+    exercise: { goal: "Đổi vòng đúng chiều và khôi phục cả ba cạnh quanh đỉnh.", setup: pyrCycleB, algorithm: pyrCycleA }
+  }),
+  tutorial("pyraminx-edge-flip", "pyraminx", "Pyraminx · Cạnh đúng chỗ nhưng sai hướng", "Nhận ra hai cạnh cần lật và phân biệt với chu kỳ ba cạnh.", [
+    example("Kiểm tra đúng chỗ", "Hai cạnh đều nằm cạnh đúng hai tâm nhưng hai màu trên từng cạnh đổi phía. Cạnh còn lại trùng hướng. Xem hình mẫu, giữ đúng hướng rồi theo dõi cách chuỗi đưa màu về mặt tương ứng.", pyrFlipSetup, pyrFlip, {
+      comparison: [{ label: "Cạnh đúng chỗ, hai cạnh sai hướng", setup: pyrFlipSetup, caseId: "py-flip" }, { label: "Cạnh sai chỗ, cần đổi vòng", setup: pyrCycleB, caseId: "py-cycle-a" }]
+    }),
+    example("Đối chiếu kết quả", "Quan sát từng cạnh từ hai mặt tam giác kề nhau. Các đỉnh nhỏ vẫn khớp phần trục. Chỉ chỉnh riêng đỉnh nhỏ nếu còn lệch; chữ thường dùng cho đỉnh.")
+  ], {
+    level: NEXT, prerequisite: "pyraminx-edge-cycles", sources: [pyLast], caseGroups: ["py-basics"],
+    mistake: "Đổi vòng cạnh khi các viên đã nằm đúng vị trí. So bộ hai màu trước rồi mới kiểm tra hướng.",
+    exercise: { goal: "Lật đúng hai cạnh, khôi phục màu ở cả hai mặt của mỗi cạnh.", setup: pyrFlipSetup, algorithm: pyrFlip }
+  }),
+  tutorial("megaminx-4look", "megaminx", "Megaminx · Đọc lớp cuối theo bốn lượt", "Đọc dấu ngôi sao, góc và hoán vị theo thứ tự của lộ trình bốn lượt.", [
+    example("Lượt một · hướng cạnh", "Đếm năm cạnh cùng màu tâm trên để đọc hình ngôi sao. Mẫu này có hai cạnh chưa hướng đúng. Giữ vị trí các cạnh đó giống hình rồi theo dõi màu nào chuyển lên mặt trên.", "F U R U' R' F'", "F R U R' U' F'", {
+      comparison: [{ label: "Hai cạnh lệch · mẫu A", setup: "F U R U' R' F'", caseId: "minx-eo-1" }, { label: "Hai cạnh lệch · mẫu B", setup: "F R U R' U' F'", caseId: "minx-eo-2" }]
+    }),
+    example("Lượt hai · hướng góc", "Khi ngôi sao đã đúng, nhìn mặt trên và dải màu của các góc ở năm mặt kề. Ví dụ dưới là một thế tập định hướng góc: các cạnh đã hướng đúng, còn ba góc cần đưa màu về trên.", "R U2 R' U' R U' R'", "R U R' U R U2' R'", {
+      comparison: [{ label: "Mẫu góc 5", setup: "R U2 R' U' R U' R'", caseId: "minx-co-5" }, { label: "Mẫu góc 6", setup: "R' U2' R U R' U R", caseId: "minx-co-6" }]
+    }),
+    example("Lượt ba và bốn · đổi vị trí", "Khi mặt trên đồng màu, so màu bên của từng cạnh với tâm ở dưới. Dùng lượt hoán vị cạnh trước, rồi kiểm tra hai màu bên của từng góc và dùng lượt hoán vị góc. Hai mục tương ứng nằm trong bộ video CubeSkills bên dưới.")
+  ], {
+    level: NEXT, prerequisite: "megaminx-basic", sources: [source("CubeSkills · Bốn lượt lớp cuối Megaminx", minxLast)], caseGroups: ["minx-eo", "minx-co"],
+    mistake: "Coi mặt trên đồng màu là đã giải xong lớp cuối. Kiểm tra màu bên của năm cạnh và năm góc.",
+    exercise: { goal: "Thực hành thế ba góc lệch hướng. Kiểm tra ngôi sao vẫn đúng khi kết thúc.", setup: "R U2 R' U' R U' R'", algorithm: "R U R' U R U2' R'" }
+  }),
+  tutorial("skewb-center-cycle", "skewb", "Skewb · Đổi ba tâm, giữ nguyên góc", "Phân biệt thế chỉ còn ba tâm sai với thế có góc xoắn.", [
+    example("Đọc tâm qua bốn góc", "Khi bốn ô góc của mỗi mặt đã cùng màu, chúng cho biết màu của tâm cần đặt. So sáu tâm với bốn góc xung quanh. Trong thế mẫu, ba tâm đổi vòng, toàn bộ góc đúng cả vị trí lẫn hướng.", skewbCenterSetup, skewbCenters, {
+      comparison: [{ label: "Ba tâm lệch, các góc đã đúng", setup: skewbCenterSetup }, { label: "Tâm lệch kèm góc xoắn", setup: "L R' L' R L R' L' R", caseId: "skewb-double" }]
+    }),
+    example("Đọc phần xoay cả khối", "Ký hiệu x và y đổi cách định hướng khối. Giữ một mặt làm mốc khi đổi hướng. Chia công thức thành bốn nhóm tay bốn nước, rồi xem lại sáu tâm và tám góc ở kết quả. Chuỗi mẫu dùng ký hiệu của mô phỏng; nguồn tham khảo có thể chọn tên trục khác."),
+    example("Kiểm tra trước khi chạy", "So cả các ô góc của mặt kề. Nếu một góc đã đúng vị trí nhưng vẫn xoắn, xử lý nó trước khi dùng mẫu chỉ đổi tâm.", "", "", {
+      quiz: { prompt: "Làm sao biết mẫu này chỉ còn tâm sai?", options: ["So màu bốn góc trên từng mặt", "Nhìn riêng màu tâm trên", "Đếm tổng số mặt lệch"], answer: 0, feedback: "Bốn góc cho biết màu trung tâm cần có. Tất cả góc phải đúng cả vị trí và hướng." }
+    })
+  ], {
+    level: NEXT, prerequisite: "skewb-basic", sources: [skewbMethod, notationSource], caseGroups: ["skewb-basics"],
+    mistake: "Bỏ quên x hoặc y ở giữa chuỗi. Những nước đổi hướng này xác định trục cho nhóm xoay kế tiếp.",
+    exercise: { goal: "Đưa ba tâm lệch về đúng mặt và vẫn giữ nguyên vị trí, hướng của tám góc.", setup: skewbCenterSetup, algorithm: skewbCenters }
+  }),
+  tutorial("square1-align-cut", "square1", "Square-1 · Tìm khe trước khi cắt", "Nhìn ra mặt bị chắn và chọn một nấc xoay để mở cả hai khe.", [
+    example("Đếm độ rộng", "Nhìn tầng trên và tầng dưới từ cạnh. Góc rộng hai nấc nên có thể nằm vắt qua đường cắt. Trước mỗi dấu /, đường cắt phải đi qua ranh giới giữa hai viên trên cả hai tầng.", "/ (1,0)", "(-1,0) /", {
+      comparison: [
+        { label: "Tầng trên lệch một nấc dương", setup: "/ (1,0)", caseId: "sq1-cut-right" },
+        { label: "Tầng trên lệch một nấc âm", setup: "/ (-1,0)", caseId: "sq1-cut-left" }
+      ],
+      quiz: { prompt: "Nếu đường cắt còn đi qua giữa một góc ở tầng dưới, cần làm gì?", options: ["Xoay tầng dưới tới khi khe thông", "Cắt ngay khi tầng trên đã thông"], answer: 0, feedback: "Cả tầng trên lẫn tầng dưới cần có khe đúng vị trí mới cắt được." }
+    }),
+    example("Luyện phía đối diện", "Ở thế lệch âm, xoay tầng trên một nấc dương để đưa khe thẳng hàng. Giữ số thứ hai bằng 0 để nguyên tầng dưới.", "/ (-1,0)", "(1,0) /")
+  ], {
+    prerequisite: "square1-basic", sources: [notationSource], caseGroups: ["sq1-basics"],
+    mistake: "Cố vặn khi còn vướng. Trên khối thật, dừng và căn lại hai tầng để tránh làm hỏng cơ cấu.",
+    exercise: { goal: "Từ tầng trên lệch một nấc, tìm nước căn và thực hiện lát cắt hợp lệ.", setup: "/ (1,0)", algorithm: "(-1,0) /" }
+  }),
+  tutorial("square1-edge-permutation", "square1", "Square-1 · Đổi vị trí cạnh sau khi về hình vuông", "Phân biệt thế đổi vòng ba cạnh và thế cần tra cứu parity.", [
+    example("Đổi vòng ba cạnh", "Kiểm tra hình vuông của hai tầng và xác định ba mảnh cạnh ở tầng trên chưa đúng vị trí. Dùng các góc đã đúng làm mốc. Chia chuỗi thành các cặp xoay tầng và lát cắt, đọc từng dấu /.", squareCycleSetup, squareCycle, {
+      comparison: [{ label: "Ba cạnh cần đổi vòng", setup: squareCycleSetup, caseId: "sq1-edge-cycle" }, { label: "Thế hoán vị có parity", setup: squareParitySetup, caseId: "sq1-corner-parity" }]
+    }),
+    example("Không bỏ qua dải giữa", "Trong thế có parity, xem thêm hướng dải giữa và trạng thái góc. Ví dụ thứ hai là một thế riêng đã căn đúng. Sau chuỗi, kiểm tra hình vuông, màu tầng và màu giữa từ các mặt bên.", squareParitySetup, squareParity)
+  ], {
+    level: EXPERT, prerequisite: "square1-align-cut", sources: [squareEdges, notationSource], caseGroups: ["sq1-basics"],
+    mistake: "Chạy chuỗi đổi vòng ba cạnh khi thế thực tế là hoán vị khác. Xác nhận đủ ba cạnh theo hình trước khi chạy.",
+    exercise: { goal: "Đổi vòng đúng ba cạnh của mẫu rồi xác nhận hai tầng đã khớp.", setup: squareCycleSetup, algorithm: squareCycle }
+  }),
+  tutorial("clock-front-groups", "clock", "Clock · Các nhóm kim ở mặt trước", "Dự đoán vùng giao của hai nhóm nút và đọc hướng kim.", [
+    example("Theo dõi vùng giao", "Quan sát UR gồm nhóm phía trên–phải và DR gồm nhóm dưới–phải. Sau hai lượt cùng chiều, kim tâm và kim giữa bên phải dịch nhiều hơn các kim ở riêng từng nhóm. Thử đưa từng nhóm về 12 giờ bằng thứ tự ngược.", "UR1+ DR1+", "DR1- UR1-", {
+      comparison: [{ label: "Hai nhóm trên–phải và dưới–phải chồng nhau", setup: "UR1+ DR1+" }, { label: "Chỉ tác động một nhóm trên–phải", setup: "UR1-", caseId: "clock-ur" }],
+      quiz: { prompt: "Kim ở phần giao của hai nhóm sẽ dịch bao nhiêu nấc nếu mỗi nhóm xoay dương một nấc?", options: ["Không dịch", "Một nấc", "Hai nấc"], answer: 2, feedback: "Kim chung nhận cả hai lượt. So góc trên–phải và kim tâm để thấy khác biệt." }
+    }),
+    example("Đưa nhóm đã khớp về mốc", "Mẫu này có hai nhóm trên và dưới lệch khác nhau. Đưa từng phần về chung hướng và kiểm tra cả mặt sau, vì một số kim góc cũng bị ảnh hưởng.", "D1+ U2-", "U2+ D1-")
+  ], {
+    prerequisite: "clock-basic", sources: [clockSource, notationSource], caseGroups: ["clock-basics"],
+    video: youtube("n5We_sCjBOc", "The Duke of Cubes · Dấu cộng mặt trước", 60, 155, "Theo dõi cách đọc kim giữa và căn các vùng kề của dấu cộng trước."),
+    mistake: "Giả sử các nhóm hoàn toàn độc lập. Kiểm tra những kim ở phần giao sau mỗi lượt.",
+    exercise: { goal: "Trả hai nhóm đang chồng nhau về đúng mốc, kiểm tra cả kim tâm.", setup: "UR1+ DR1+", algorithm: "DR1- UR1-" }
+  }),
+  tutorial("clock-back-groups", "clock", "Clock · Đổi mặt và kiểm tra cả 18 kim", "Nhận ra y2 đổi mặt quan sát và đưa hai mặt về 12 giờ.", [
+    example("Xoay cùng nhóm từ mặt sau", "Trong mô phỏng, bấm y2 để thấy mặt đang nhìn trở thành mặt đối diện. Ở thế mẫu, cả chín kim mặt sau lệch đồng đều. Khi nhìn đúng mặt đó, xoay ALL để đưa chúng về mốc.", "y2 ALL3- y2", "y2 ALL3+ y2", {
+      comparison: [{ label: "Nhóm ALL ở mặt đang nhìn", setup: "ALL3-", caseId: "clock-align" }, { label: "Nhóm ALL được xoay từ mặt sau", setup: "y2 ALL3- y2", caseId: "clock-back" }]
+    }),
+    example("Kiểm tra hai mặt", "Sau khi sửa nhóm giữa, kiểm tra bốn góc của cả hai mặt. Các kim góc có liên hệ qua hai mặt, vì thế khi chỉnh một nhóm cần lật lại để xác nhận kết quả.", "", "", {
+      quiz: { prompt: "Lệnh y2 tự nó có làm lệch thêm kim nào không?", options: ["Có, nó xoay toàn bộ kim nửa vòng", "Không, nó đổi mặt quan sát"], answer: 1, feedback: "y2 lật khung. Sau khi lật, hãy đọc lại tên nhóm theo mặt đang nhìn." }
+    })
+  ], {
+    level: NEXT, prerequisite: "clock-front-groups", sources: [clockSource, notationSource], caseGroups: ["clock-basics"],
+    video: { ...youtube("n5We_sCjBOc", "The Duke of Cubes · Mặt sau và bốn góc", 155, undefined, "Lật khối, căn dấu cộng sau rồi đối chiếu bốn góc."), chapters: [
+      { label: "Lật sang mặt sau", time: 155, caption: "Ghi nhớ hướng lật để đọc đúng vị trí nút." },
+      { label: "Dấu cộng sau", time: 192, caption: "Hoàn thành phần năm kim ở giữa." },
+      { label: "Hoàn tất các góc", time: 260, caption: "Kiểm tra toàn bộ 18 kim về 12 giờ." }
+    ] },
+    mistake: "Lật khối theo hướng khác giữa hai bước làm tên vị trí nút không còn khớp với công thức.",
+    exercise: { goal: "Xoay đúng mặt sau về mốc rồi trở lại hướng ban đầu kiểm tra cả hai mặt.", setup: "y2 ALL3- y2", algorithm: "y2 ALL3+ y2" }
+  }),
+  tutorial("mirror-first-layer", "mirror", "Mirror Cube · Dấu cộng phẳng và góc đáy", "Chọn một tâm làm mốc và kiểm tra hai mặt của cạnh, ba mặt của góc.", [
+    example("Một cạnh nằm đúng", "Mặt trên trông gần phẳng nhưng cạnh trước có thể vẫn sai tầng hoặc xoay lệch. So bề mặt của viên với tâm trên và tâm trước. Xoay F2 để trả cạnh trong mẫu, rồi nhìn nghiêng để xác nhận hai mặt cùng phẳng.", "F2", "F2", {
+      comparison: [{ label: "Cạnh trước chưa khớp độ dày", setup: "F2" }, { label: "Cạnh khớp với hai tâm", setup: "" }]
+    }),
+    example("Kiểm tra đủ ba chiều ở góc", "Chọn góc gần khe phải, cho mặt cần hoàn thành nằm dưới. Theo dõi cách nhóm bốn nước đưa viên góc về khe. Hãy kiểm tra viên có phẳng với ba bề mặt kề, kể cả mặt khó nhìn phía dưới.", "x2 U R U' R'", turn, {
+      quiz: { prompt: "Góc đã khớp với mặt trên. Cần xem gì trước khi coi góc đúng?", options: ["Hai mặt kề còn lại", "Chỉ cần nhìn tiếp mặt trên"], answer: 0, feedback: "Góc Mirror Cube có ba kích thước. Cả ba bề mặt phải khớp."
+      }
+    })
+  ], {
+    prerequisite: "mirror-basic", sources: [mirrorSource, ...mainSources], caseGroups: ["mirror-foundation"],
+    mistake: "Chọn góc bằng chiều cao của một mặt. Đổi góc nhìn để kiểm tra đủ ba kích thước.",
+    exercise: { goal: "Lắp góc của mẫu vào khe. Nhìn ba bề mặt liền kề để kiểm tra.", setup: "x2 U R U' R'", algorithm: turn }
+  }),
+  tutorial("mirror-middle-layer", "mirror", "Mirror Cube · Chèn cạnh vào tầng giữa", "Đọc chiều dày của cạnh, mở đúng khe và giữ nguyên mặt đã giải.", [
+    example("Chọn khe phải", "Giữ mặt đầu đã giải ở dưới. Tìm một cạnh tầng trên có hai kích thước đúng với hai tâm của khe giữa. Căn một bề mặt thẳng với tâm phía trước rồi mở khe phải. Sau chuỗi hãy nhìn nghiêng, kiểm tra bề mặt trước và phải đều phẳng.", "x2 F' U' F U R U R' U'", insertRight, {
+      comparison: [{ label: "Thế chèn cạnh vào khe phải", setup: "x2 F' U' F U R U R' U'" }, { label: "Thế chèn cạnh vào khe trái", setup: "x2 F U F' U' L' U' L U" }]
+    }),
+    example("Chọn khe trái", "Đọc cạnh từ mặt trước theo cùng cách, rồi xác định bề mặt còn lại phải khớp tâm bên trái. Thao tác chèn đổi phía. Kiểm tra mặt dưới vẫn phẳng khi chuỗi kết thúc.", "x2 F U F' U' L' U' L U", insertLeft, {
+      quiz: { prompt: "Sau khi chèn cạnh vào tầng giữa, nên kiểm tra thêm phần nào đã giải?", options: ["Mặt dưới và dải bên của tầng đầu", "Chỉ nhìn tâm trên"], answer: 0, feedback: "Góc nhìn nghiêng giúp kiểm tra cả mặt dưới và dải bên sát đáy. Mặt trên vẫn có các viên chưa giải." }
+    })
+  ], {
+    level: NEXT, prerequisite: "mirror-first-layer", sources: [mirrorSource, ...mainSources], caseGroups: ["mirror-middle"],
+    mistake: "Chọn khe theo viên cạnh đang gần bên nào. Căn với tâm trước, rồi so chiều dày còn lại để xác định khe đích.",
+    exercise: { goal: "Chèn cạnh mẫu vào khe phải rồi kiểm tra hai bề mặt bên.", setup: "x2 F' U' F U R U R' U'", algorithm: insertRight }
+  }),
+  tutorial("mirror-last-layer", "mirror", "Mirror Cube · Dấu cộng và tầng cuối", "Phân biệt cạnh chưa ngang mặt trên với tầng trên đã phẳng nhưng sai vị trí.", [
+    example("Định hướng cạnh bằng mặt phẳng", "Sau khi hoàn thành hai tầng đầu, nhìn nghiêng mặt trên. Chỉ đếm bốn ô cạnh nằm cùng mức với tâm. Ở mẫu đường thẳng, cầm đường theo hướng trong mô phỏng rồi thực hiện chuỗi định hướng cạnh.", "x2 " + edgeLine, orientEdges, {
+      comparison: [{ label: "Hai cạnh đã ngang mặt trên", setup: "x2 " + edgeLine }, { label: "Cả bốn cạnh ngang tâm", setup: "x2" }]
+    }),
+    example("Hoán vị khi đã phẳng", "Sau định hướng, tầng trên có thể đã phẳng ở một góc nhìn nhưng các bề mặt bên còn bậc. Ví dụ dưới đây dùng thế T-perm. Căn đúng hướng, chạy và quan sát bậc ở cạnh bên biến mất.", "x2 " + tperm, tperm)
+  ], {
+    level: NEXT, prerequisite: "mirror-middle-layer", sources: [mirrorSource, ...mainSources], caseGroups: ["mirror-last"],
+    mistake: "Xác nhận đã giải chỉ bằng mặt trên. Kiểm tra cả bốn mặt bên và mặt đáy.",
+    exercise: { goal: "Đưa cạnh mẫu về đúng hướng và kiểm tra mặt trên cùng bề mặt bên.", setup: "x2 " + edgeLine, algorithm: orientEdges }
+  })
+];
+
+export const LESSONS = [...BEGINNER, ...WALKTHROUGHS, ...ADVANCED, ...MORE, ...WORKSHOPS];
 
 // Local clips complement the source videos and can be played without an embed.
 // Guide indices for the three corner/edge lessons show a single teaching case.
@@ -518,7 +766,12 @@ const clipExamples = [
   ["twist-corners", "Xoay góc và hoàn thành", 1],
   ["walkthrough", "Giải mẫu · đường ngang", 0],
   ["walkthrough-2", "Giải mẫu · chữ L", 0],
-  ["walkthrough-3", "Giải mẫu · chấm", 0]
+  ["walkthrough-3", "Giải mẫu · chấm", 0],
+  ["4x4-inner-turns", "4×4 · Nhận diện lớp thứ hai", 0],
+  ["4x4-reduction-check", "4×4 · Cạnh bị lật", 0],
+  ["5x5-last-edge", "5×5 · Giữ mảnh giữa", 0],
+  ["6x6-edge-orbits", "6×6 · Sửa cặp gần giữa", 1],
+  ["7x7-edge-orbits", "7×7 · Sửa cánh ngoài", 1]
 ];
 
 export const LESSON_MOVIES = clipExamples.map(([id, label, guideIndex, moves]) => {

@@ -1,5 +1,5 @@
 export const FACE_ORDER = "URFDLB";
-export { mountSpecialPuzzle, scramblePuzzle } from "./rubik-special.mjs?v=1";
+export { mountSpecialPuzzle, scramblePuzzle } from "./rubik-special.mjs?v=2";
 export const COLORS = Object.freeze({
   U: "#f6f5ec", R: "#ee4256", F: "#1ec589",
   D: "#f8cf45", L: "#ff8544", B: "#3b83ee"
@@ -14,8 +14,8 @@ const permutations = new Map();
 const MAX_MOVES = 1536;
 
 function checkSize(size) {
-  if (!Number.isInteger(size) || size < 2 || size > 7) {
-    throw new Error("Chọn khối từ 2×2 đến 7×7.");
+  if (!Number.isInteger(size) || size < 2 || size > 9) {
+    throw new Error("Chọn khối từ 2×2 đến 9×9.");
   }
 }
 
@@ -211,7 +211,7 @@ export function applyMoves(facelets, moves, size = 3) {
   return current.join("");
 }
 
-export function scramble(size = 3, length = [0, 0, 11, 25, 40, 60, 80, 100][size], random = Math.random) {
+export function scramble(size = 3, length = [0, 0, 11, 25, 40, 60, 80, 100, 120, 140][size], random = Math.random) {
   checkSize(size);
   const moves = [];
   let previousAxis = -1;

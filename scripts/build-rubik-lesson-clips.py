@@ -1,5 +1,6 @@
 """Build the self-hosted Rubik lesson videos and Vietnamese WebVTT tracks."""
 
+import argparse
 import json
 from pathlib import Path
 import runpy
@@ -11,8 +12,9 @@ DEST = ROOT / "assets" / "rubik" / "lessons"
 EXTRACT_FRAMES = """
 import { LESSON_MOVIES } from './rubik-lessons.mjs';
 import { COLORS, solvedFaces, applyMoves, parseMoves } from './rubik-engine.mjs';
-const items = LESSON_MOVIES.map(clip => {
-  const size = 3;
+const selected = new Set(process.argv.slice(1));
+const items = LESSON_MOVIES.filter(clip => !selected.size || selected.has(clip.id)).map(clip => {
+  const size = Number(clip.puzzle[0]);
   const moves = parseMoves(clip.algorithm, size);
   const states = [applyMoves(solvedFaces(size), clip.setup, size)];
   for (const move of moves) states.push(applyMoves(states.at(-1), move, size));
@@ -54,11 +56,17 @@ def write_track(item, frames_per_second):
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("lesson_ids", nargs="*", help="Render only these lessons. Omit to render all.")
+    args = parser.parse_args()
     renderer = runpy.run_path(ROOT / "scripts" / "build-rubik-clips.py")
     encode = renderer["encode"]
     encode.__globals__["DEST"] = DEST
-    payload = subprocess.check_output(["node", "--input-type=module", "-e", EXTRACT_FRAMES], cwd=ROOT)
+    payload = subprocess.check_output(["node", "--input-type=module", "-e", EXTRACT_FRAMES, "--", *args.lesson_ids], cwd=ROOT)
     data = json.loads(payload.decode("utf-8"))
+    missing = set(args.lesson_ids) - {item["id"] for item in data["items"]}
+    if missing:
+        parser.error("Unknown lesson IDs: " + ", ".join(sorted(missing)))
     DEST.mkdir(parents=True, exist_ok=True)
     for item in data["items"]:
         encode(item, data["colors"], force=True)

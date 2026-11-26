@@ -1,12 +1,11 @@
-import * as engine from "./rubik-engine.mjs?v=1";
-import { CASES, CASE_GROUPS } from "./rubik-cases.mjs?v=1";
-import { averageOf, changeReview, formatTime, inspectionPenalty, mergeRecords, solveScore, validRecord } from "./rubik-progress.mjs?v=1";
-import { cubeSize, defaultScramble, diagram, mountPlayer, snapshot } from "./rubik-player.mjs?v=1";
+import * as engine from "./rubik-engine.mjs?v=2";
+import { mountTrainer } from "./rubik-trainer.mjs?v=1";
+import { averageOf, formatTime, inspectionPenalty, mergeRecords, solveScore, validRecord } from "./rubik-progress.mjs?v=1";
+import { cubeSize, defaultScramble, mountPlayer, whiteBottomSticker } from "./rubik-player.mjs?v=2";
 
-const RANDOM = (length) => Math.floor(Math.random() * length);
 const scramblePuzzles = new Set(["pyraminx", "megaminx", "skewb", "square1", "square-1", "clock"]);
 const paintFaces = { U: "Trên", R: "Phải", F: "Trước", D: "Dưới", L: "Trái", B: "Sau" };
-const colorNames = { U: "Trắng", R: "Đỏ", F: "Xanh lá", D: "Vàng", L: "Cam", B: "Xanh dương" };
+const colorNames = { U: "Vàng", R: "Đỏ", F: "Xanh dương", D: "Trắng", L: "Cam", B: "Xanh lá" };
 const paintOrder = ["F", "R", "B", "L", "U", "D"];
 
 function solver(container, context) {
@@ -17,15 +16,15 @@ function solver(container, context) {
   let rendered;
   container.innerHTML = '<div class="rb-study"><form class="rb-panel rb-stack"><label class="rb-field">Cách nhập<select data-which>' +
     '<option value="color">Tô màu sáu mặt</option><option value="scramble">Dán chuỗi xáo</option></select></label>' +
-    '<div data-paint><p>Đặt tâm trắng ở trên và tâm xanh lá ở trước. Nhìn trực diện khi tô từng mặt. Giữ trắng ở trên khi chuyển qua bốn mặt bên. ' +
+    '<div data-paint><p>Đặt tâm trắng ở dưới, tâm vàng ở trên và tâm xanh dương ở trước. Nhìn trực diện khi tô từng mặt. Giữ vàng ở trên khi chuyển qua bốn mặt bên. ' +
     'Khi nhìn mặt U hoặc D, giữ cạnh giáp mặt F tương ứng ở dưới hoặc ở trên sơ đồ. Các tâm cố định theo bảng màu này.</p>' +
     '<div class="rb-palette" role="group" aria-label="Chọn màu tô">' + [...engine.FACE_ORDER].map((face) =>
-      '<button type="button" aria-pressed="' + (face === palette) + '" data-palette="' + face + '"><i data-color="' + face +
+      '<button type="button" aria-pressed="' + (face === palette) + '" data-palette="' + face + '"><i data-color="' + whiteBottomSticker(face) +
       '" aria-hidden="true"></i>' + colorNames[face] + '</button>'
     ).join("") + '</div><div class="rb-paint-grid">' + paintOrder.map((face) => {
       const ix = engine.FACE_ORDER.indexOf(face) * 9;
       return '<fieldset><legend>' + paintFaces[face] + ' (' + face + ')</legend><div>' + Array.from({ length: 9 }, (_, j) =>
-        '<button type="button" data-tile="' + (ix + j) + '"' + (j === 4 ? ' disabled data-color="' + face + '"' : "") +
+        '<button type="button" data-tile="' + (ix + j) + '"' + (j === 4 ? ' disabled data-color="' + whiteBottomSticker(face) + '"' : "") +
         ' aria-label="' + paintFaces[face] + ', ô ' + (j + 1) + (j === 4 ? ": " + colorNames[face] : ": chưa tô") + '">' +
         (j === 4 ? face : "·") + '</button>'
       ).join("") + '</div></fieldset>';
@@ -51,7 +50,7 @@ function solver(container, context) {
       const i = Number(button.dataset.tile);
       const tile = tiles[i];
       button.textContent = tile || "·";
-      button.dataset.color = tile;
+      button.dataset.color = whiteBottomSticker(tile);
       button.setAttribute("aria-label", paintFaces[engine.FACE_ORDER[Math.floor(i / 9)]] + ", ô " + (1 + i % 9) + ": " + (colorNames[tile] || "chưa tô"));
     }
   }
@@ -154,7 +153,9 @@ function solver(container, context) {
       result.querySelector("[data-copy]")?.addEventListener("click", () => navigator.clipboard.writeText(solution).then(
         () => context.say("Đã sao chép lời giải."), () => context.say("Bạn có thể chọn và sao chép chuỗi nước đi.")
       ), { signal });
-      rendered = mountPlayer(get("[data-rb-solver-player]"), { puzzle: "3x3x3", facelets, algorithm: solution, labels: context.value.labels, twoD: context.value.twoD });
+      rendered = mountPlayer(get("[data-rb-solver-player]"), {
+        puzzle: "3x3x3", facelets, algorithm: solution, labels: context.value.labels, twoD: context.value.twoD, whiteBottom: true
+      });
     } catch (error) {
       if (!request.signal.aborted && !signal.aborted) note.textContent = error.message || "Chưa tìm được lời giải. Hãy thử lại.";
     } finally {
@@ -162,121 +163,6 @@ function solver(container, context) {
     }
   }, { signal });
   context.cleanups.push(() => { pending?.abort(); rendered?.(); });
-}
-
-function trainer(container, context) {
-  const { esc, selectPuzzle, signal, value, store } = context;
-  const cases = CASES.filter((row) => row.puzzle === context.puzzle && row.setup && cubeSize(row.puzzle));
-  const groups = CASE_GROUPS.filter((group) => cases.some((item) => group.id === item.group));
-  container.innerHTML = '<div class="rb-panel rb-stack"><div class="rb-filters">' + selectPuzzle(context.puzzle) +
-    '<label class="rb-field">Bộ công thức<select data-set><option value="">Tất cả</option>' +
-    groups.map((group) => '<option value="' + esc(group.id) + '">' + esc(group.name) + '</option>').join("") + '</select></label>' +
-    '<label class="rb-field">Chế độ<select data-exercise><option value="recognize">Nhìn hình đoán trường hợp</option>' +
-    '<option value="step">Chọn nước tiếp theo</option><option value="recall">Nhớ công thức</option>' +
-    '<option value="turn">Tự xoay để hoàn thành</option></select></label>' +
-    '<label class="rb-field">Ưu tiên<select data-priority><option value="due">Đến hạn hoặc hay sai</option><option value="all">Ngẫu nhiên</option>' +
-    '<option value="favorite">Yêu thích</option></select></label></div>' +
-    '<div data-trainer-body></div><p role="status" data-trainer-feedback></p><div class="rb-controls">' +
-    '<button type="button" data-new-exercise class="rb-primary">Đổi trường hợp</button><span data-trainer-source></span></div></div>';
-  let cleanup;
-  let selected;
-  let answered = false;
-  let moves = [];
-  let start = null;
-  let correctChoice = "";
-  let expected = "";
-  const body = container.querySelector("[data-trainer-body]");
-  const feedback = container.querySelector("[data-trainer-feedback]");
-  const source = container.querySelector("[data-trainer-source]");
-  const get = (selector) => container.querySelector(selector);
-  function check(correct) {
-    if (answered || !selected) return;
-    answered = true;
-    changeReview(value, selected.id, { correct });
-    store.save();
-    feedback.textContent = (correct ? "Đúng. " : "Hãy thử lại ở lượt sau. ") + selected.name + " · " + selected.algorithm +
-      (selected.tip ? " · " + selected.tip : "");
-    source.innerHTML = context.link(context.casePath(selected.id), "Xem ảnh và video");
-    for (const button of body.querySelectorAll("[data-answer], [data-check-recall]")) button.disabled = true;
-  }
-  function exercise() {
-    cleanup?.();
-    cleanup = undefined;
-    const set = get("[data-set]").value;
-    const mode = get("[data-exercise]").value;
-    const priority = get("[data-priority]").value;
-    let pool = cases.filter((item) => (!set || item.group === set) && (priority !== "favorite" || value.reviews[item.id]?.favorite));
-    if (priority === "due") {
-      const score = (caseId) => {
-        const row = value.reviews[caseId] || {};
-        return (row.due <= Date.now() ? 100 : 0) + (row.wrong || 0) * 2 - (row.streak || 0);
-      };
-      pool = pool.sort((a, b) => score(b.id) - score(a.id)).slice(0, Math.max(6, Math.ceil(pool.length / 4)));
-    }
-    const choices = pool.filter((item) => item.id !== selected?.id);
-    selected = choices.length ? choices[RANDOM(choices.length)] : pool[0];
-    feedback.textContent = "";
-    source.innerHTML = "";
-    answered = false;
-    if (!selected) {
-      body.textContent = "Chưa có trường hợp phù hợp với bộ lọc luyện tập này.";
-      return;
-    }
-    const size = cubeSize(selected.puzzle);
-    try {
-      start = snapshot(selected.puzzle, selected.setup);
-      moves = engine.parseMoves(selected.algorithm, size);
-      expected = snapshot(selected.puzzle, selected.algorithm, start);
-    } catch {
-      body.textContent = "Chưa dựng được trạng thái cho trường hợp này.";
-      return;
-    }
-    if (mode === "turn") {
-      body.innerHTML = '<h3>' + esc(selected.name) + '</h3><p>Đưa khối đến trạng thái mục tiêu. Bạn có thể dùng cách xoay khác để đạt cùng kết quả.</p>' +
-        '<details><summary>Xem hình mục tiêu</summary>' + diagram(expected, size) + '</details><div data-turn-practice></div>';
-      cleanup = mountPlayer(get("[data-turn-practice]"), {
-        puzzle: selected.puzzle, facelets: start, free: true, goal: expected,
-        labels: value.labels, twoD: value.twoD, onGoal: () => check(true)
-      });
-      return;
-    }
-    const net = diagram(start, size, { labels: value.labels, description: "Trạng thái khối cần nhận diện" });
-    if (mode === "recall") {
-      body.innerHTML = '<h3>Viết chuỗi nước đi cho ' + esc(selected.name) + '</h3><div class="rb-practice-net">' + net +
-        '</div><label class="rb-field">Công thức của bạn<input data-recall maxlength="600" autocomplete="off"></label>' +
-        '<button type="button" class="rb-btn" data-check-recall>Kiểm tra</button>';
-      return;
-    }
-    const names = mode === "step" ? [...new Set([moves[0], "R", "U'", "F", "R2", "U2"])] :
-      [...new Set([selected.name, ...cases.filter((item) => item.group === selected.group && item.id !== selected.id)
-        .sort(() => Math.random() - 0.5).slice(0, 3).map((row) => row.name)])];
-    correctChoice = mode === "step" ? moves[0] : selected.name;
-    const options = names.slice(0, 4);
-    for (let i = options.length - 1; i > 0; i--) {
-      const j = RANDOM(i + 1);
-      [options[i], options[j]] = [options[j], options[i]];
-    }
-    body.innerHTML = '<h3>' + (mode === "step" ? "Nước xoay đầu tiên là gì?" : "Đây là trường hợp nào?") +
-      '</h3><div class="rb-practice-net">' + net + '</div><div class="rb-controls">' + options.map((name) =>
-        '<button type="button" class="rb-btn" data-answer="' + esc(name) + '">' + esc(name) + '</button>'
-      ).join("") + '</div>';
-  }
-  container.addEventListener("change", (event) => { if (event.target.matches("[data-set], [data-exercise], [data-priority]")) exercise(); }, { signal });
-  container.addEventListener("click", (event) => {
-    const button = event.target.closest("button");
-    if (!button) return;
-    if (button.hasAttribute("data-new-exercise")) exercise();
-    else if (button.hasAttribute("data-answer")) check(button.dataset.answer === correctChoice);
-    else if (button.hasAttribute("data-check-recall")) {
-      try {
-        check(snapshot(selected.puzzle, get("[data-recall]").value, start) === expected);
-      } catch (error) {
-        feedback.textContent = error.message || "Chuỗi vừa nhập chưa hợp lệ.";
-      }
-    }
-  }, { signal });
-  exercise();
-  context.cleanups.push(() => cleanup?.());
 }
 
 function timer(container, context) {
@@ -431,6 +317,6 @@ function timer(container, context) {
 
 export function mountTool(container, page, context) {
   if (page === "giai-khoi") solver(container, context);
-  if (page === "luyen-tap") trainer(container, context);
+  if (page === "luyen-tap") mountTrainer(container, context);
   if (page === "dong-ho") timer(container, context);
 }

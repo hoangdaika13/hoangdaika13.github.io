@@ -1,6 +1,6 @@
 const SPECIAL_MOVES = {
   pyraminx: ["U", "R", "L", "B", "u", "r", "l", "b", "U'", "R'", "L'", "B'", "u'", "r'", "l'", "b'"],
-  megaminx: ["R++", "R--", "D++", "D--", "U", "U'", "F", "F'", "L", "L'"],
+  megaminx: ["U", "U'", "R", "R'", "F", "F'", "L", "L'", "R++", "R--", "D++", "D--"],
   skewb: ["R", "L", "U", "B", "R'", "L'", "U'", "B'"],
   square1: ["(1,0)", "(-1,0)", "(0,1)", "(0,-1)", "/"],
   clock: ["UR1+", "DR1+", "DL1+", "UL1+", "U1+", "R1+", "D1+", "L1+", "ALL1+", "UR1-", "DR1-", "DL1-", "UL1-", "U1-", "R1-", "D1-", "L1-", "ALL1-", "y2"]
@@ -98,6 +98,25 @@ function applyPuzzle(pattern, moves, puzzle) {
   return pattern;
 }
 
+export async function loadSpecialPractice(puzzle, setup = "", algorithm = "") {
+  if (!Object.hasOwn(SPECIAL_MOVES, puzzle)) throw new Error("Loại khối này chưa hỗ trợ luyện công thức.");
+  const { Alg, puzzles } = await import("./vendor/rubik-cubing/special.mjs?v=1");
+  const model = await puzzles[puzzle].kpuzzle();
+  const initial = applyPuzzle(model.defaultPattern(), notationMoves(Alg, setup), puzzle);
+  const moves = notationMoves(Alg, algorithm);
+  const goal = applyPuzzle(initial, moves, puzzle);
+  return {
+    moves,
+    matches(candidateNotation) {
+      try {
+        return applyPuzzle(initial, notationMoves(Alg, candidateNotation), puzzle).isIdentical(goal);
+      } catch {
+        return false;
+      }
+    }
+  };
+}
+
 function makeButton(text, onClick, signal) {
   const button = document.createElement("button");
   button.type = "button";
@@ -120,7 +139,9 @@ function canDraw3D() {
   return webGLAvailable;
 }
 
-export function mountSpecialPuzzle(host, { puzzle, setup = "", algorithm = "", free = false, twoD = false } = {}) {
+export function mountSpecialPuzzle(host, {
+  puzzle, setup = "", algorithm = "", free = false, twoD = false, goalAlgorithm, onGoal
+} = {}) {
   const lifecycle = new AbortController();
   const { signal } = lifecycle;
   const status = document.createElement("p");
@@ -150,7 +171,13 @@ export function mountSpecialPuzzle(host, { puzzle, setup = "", algorithm = "", f
     let setupMoves = notationMoves(Alg, setup);
     let initial = applyPuzzle(solved, setupMoves, puzzle);
     let moves = free ? [] : notationMoves(Alg, algorithm);
-    applyPuzzle(initial, moves, puzzle);
+    let patterns = [initial];
+    if (!free) applyPuzzle(initial, moves, puzzle);
+    const goalMoves = free && goalAlgorithm != null ? notationMoves(Alg, goalAlgorithm) : [];
+    const goal = free && goalAlgorithm != null
+      ? applyPuzzle(initial, goalMoves, puzzle)
+      : null;
+    let reachedGoal = false;
     let index = 0;
     let speed = 1;
     const has3D = puzzle !== "clock" && puzzle !== "square1" && canDraw3D();
@@ -176,15 +203,24 @@ export function mountSpecialPuzzle(host, { puzzle, setup = "", algorithm = "", f
       back.disabled = index === 0;
       next.disabled = index >= moves.length;
       if (!free && play) play.disabled = moves.length === 0;
-      status.textContent = free
-        ? (applyPuzzle(initial, moves.slice(0, index), puzzle).isIdentical(solved) ? "Khối đã về trạng thái giải." : index + " nước đã xoay.")
-        : index + "/" + moves.length + " nước" + (index ? " · Vừa xoay " + moves[index - 1] : "");
+      const meetsGoal = goal && patterns[index]?.isIdentical(goal);
+      if (meetsGoal) status.textContent = "Đã hoàn thành mục tiêu.";
+      else if (free) {
+        status.textContent = patterns[index].isIdentical(solved)
+          ? "Khối đã về trạng thái giải." : index + " nước đã xoay.";
+      } else {
+        status.textContent = index + "/" + moves.length + " nước" + (index ? " · Vừa xoay " + moves[index - 1] : "");
+      }
       tokens.replaceChildren(...moves.map((notation, offset) => {
         const span = document.createElement("span");
         span.textContent = notation;
         if (offset === index - 1) span.setAttribute("aria-current", "step");
         return span;
       }));
+      if (meetsGoal && !reachedGoal && index > 0) {
+        reachedGoal = true;
+        onGoal?.();
+      }
     }
     function advance(delta) {
       stop();
@@ -196,7 +232,10 @@ export function mountSpecialPuzzle(host, { puzzle, setup = "", algorithm = "", f
     actions.append(makeButton("Đặt lại", () => {
       stop();
       index = 0;
-      if (free) moves = [];
+      if (free) {
+        moves = [];
+        patterns = [initial];
+      }
       refresh();
     }, signal), back, next);
     if (has3D) {
@@ -209,31 +248,36 @@ export function mountSpecialPuzzle(host, { puzzle, setup = "", algorithm = "", f
     }
     const additions = [];
     if (free) {
-      actions.append(makeButton("Xáo khối", () => {
+      if (!goal) actions.append(makeButton("Xáo khối", () => {
         stop();
         setupMoves = notationMoves(Alg, scramblePuzzle(puzzle));
         initial = applyPuzzle(solved, setupMoves, puzzle);
         player.experimentalSetupAlg = setupMoves.join(" ");
         index = 0;
         moves = [];
+        patterns = [initial];
         refresh();
       }, signal));
       const keys = document.createElement("div");
       keys.className = "rb-controls";
+      keys.setAttribute("role", "group");
       keys.setAttribute("aria-label", "Nước xoay hợp lệ");
-      for (const notation of SPECIAL_MOVES[puzzle]) {
+      const available = new Set([...SPECIAL_MOVES[puzzle], ...goalMoves]);
+      for (const notation of available) {
         const move = makeButton(notation, () => {
           stop();
-          const candidate = moves.slice(0, index).concat(notation);
           try {
-            applyPuzzle(initial, candidate, puzzle);
-            moves = candidate;
+            const nextPattern = applyPuzzle(patterns[index], [notation], puzzle);
+            moves = moves.slice(0, index).concat(notation);
+            patterns = patterns.slice(0, index + 1).concat(nextPattern);
             index++;
-            refresh();
           } catch (error) {
             status.textContent = error?.message?.startsWith("Hai tầng") ? error.message : "Nước xoay này chưa thực hiện được.";
+            return;
           }
+          refresh();
         }, signal);
+        move.dataset.specialMove = notation;
         keys.append(move);
       }
       additions.push(keys);

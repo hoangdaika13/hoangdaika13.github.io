@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1088";
+const CACHE = "hh-identity-portal-v1089";
+// Previous release: hh-identity-portal-v1088.
 // Previous release: hh-identity-portal-v1087.
 // Previous release: hh-identity-portal-v1086.
 // Previous release: hh-identity-portal-v1085.
@@ -246,18 +247,22 @@ const RUNTIME_ASSETS = [
   "./all-game-pack-arcade.js?v=5",
   "./all-game-pack-casual.js?v=5",
   "./all-game.css?v=6",
-  "./rubik.css?v=1",
-  "./rubik-entry.js?v=1",
-  "./rubik.mjs?v=1",
-  "./rubik-lessons.mjs?v=1",
-  "./rubik-cases.mjs?v=1",
+  "./rubik.css?v=2",
+  "./rubik-entry.js?v=2",
+  "./rubik.mjs?v=2",
+  "./rubik-lessons.mjs?v=2",
+  "./rubik-cases.mjs?v=2",
   "./rubik-progress.mjs?v=1",
-  "./rubik-player.mjs?v=1",
-  "./rubik-engine.mjs?v=1",
-  "./rubik-special.mjs?v=1",
+  "./rubik-player.mjs?v=2",
+  "./rubik-engine.mjs?v=2",
+  "./rubik-special.mjs?v=2",
   "./rubik-special-cases.mjs?v=1",
-  "./rubik-tools.mjs?v=1",
-  "./rubik-media.mjs?v=1",
+  "./rubik-mirror-cases.mjs?v=1",
+  "./rubik-large-cases.mjs?v=1",
+  "./rubik-large-lessons.mjs?v=1",
+  "./rubik-trainer.mjs?v=1",
+  "./rubik-tools.mjs?v=2",
+  "./rubik-media.mjs?v=2",
   "./all-game-scenes.js?v=5",
   "./all-game.js?v=6",
   "./all-game-arcade.js?v=5",
@@ -1013,7 +1018,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=744",
+  "./performance-loader.js?v=745",
   "./auth-experience.js?v=10",
   "./auth-login-repair.css?v=4",
   "./auth-zoom-resilience.js?v=4",

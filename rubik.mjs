@@ -1,6 +1,7 @@
-import { PUZZLES, LESSONS } from "./rubik-lessons.mjs?v=1";
-import { CASES, CASE_GROUPS, getCaseCoverage } from "./rubik-cases.mjs?v=1";
-import { CASE_CLIPS, SPECIAL_DIAGRAMS } from "./rubik-media.mjs?v=1";
+import { PUZZLES as BASE_PUZZLES, LESSONS as BASE_LESSONS } from "./rubik-lessons.mjs?v=2";
+import { LARGE_PUZZLES, LARGE_LESSONS } from "./rubik-large-lessons.mjs?v=1";
+import { CASES, CASE_GROUPS, getCaseCoverage } from "./rubik-cases.mjs?v=2";
+import { CASE_CLIPS, SPECIAL_DIAGRAMS } from "./rubik-media.mjs?v=2";
 import { changeReview, loadProgress } from "./rubik-progress.mjs?v=1";
 
 const NAV = [
@@ -8,6 +9,8 @@ const NAV = [
   ["mo-phong", "Rubik 3D"], ["giai-khoi", "Giải khối của tôi"],
   ["luyen-tap", "Luyện tập"], ["dong-ho", "Đồng hồ"], ["tien-trinh", "Tiến trình"]
 ];
+const PUZZLES = [...BASE_PUZZLES, ...LARGE_PUZZLES];
+const LESSONS = [...BASE_LESSONS, ...LARGE_LESSONS];
 const lessonById = new Map(LESSONS.map((lesson) => [lesson.id, lesson]));
 const caseById = new Map(CASES.map((item) => [item.id, item]));
 const groupById = new Map(CASE_GROUPS.map((group) => [group.id, group]));
@@ -20,10 +23,12 @@ const sections = {
 };
 const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 const search = (value) => String(value || "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/đ/g, "d").replace(/’/g, "'").trim();
-const bootPlayer = () => import("./rubik-player.mjs?v=1");
+const bootPlayer = () => import("./rubik-player.mjs?v=2");
 const lessonPath = (id) => "/rubik/hoc/" + encodeURIComponent(id);
 const casePath = (id) => "/rubik/cong-thuc/" + encodeURIComponent(id);
 const puzzleName = (id) => puzzleById.get(id)?.name || id;
+const practicePath = (item) => linkPuzzle("luyen-tap", item.puzzle) + "&case=" + encodeURIComponent(item.id);
+const isColoredCube = (puzzle) => /^[2-9]x/.test(puzzle);
 
 function link(path, label, className = "") {
   return '<a class="rb-btn ' + className + '" href="#' + esc(path) + '">' + esc(label) + '</a>';
@@ -168,6 +173,7 @@ function lessonPage(container, context, lesson) {
   context.store.save();
   const guide = lesson.guide || [];
   const sources = (lesson.sources || []).map((source) => external(source.url, source.label)).filter(Boolean);
+  const related = (lesson.caseGroups || []).map((id) => groupById.get(id)).filter((item) => item?.puzzle === lesson.puzzle);
   const quiz = guide.find((item) => item.quiz)?.quiz;
   container.innerHTML = '<section class="rb-section">' + header(lesson.title, lesson.objective,
     '<div class="rb-controls">' + link(linkPuzzle("hoc", lesson.puzzle), "Tất cả bài " + puzzleName(lesson.puzzle)) +
@@ -177,7 +183,7 @@ function lessonPage(container, context, lesson) {
     guide.map((part, i) => '<article class="rb-panel"><h3>' + esc(part.title) + '</h3><p>' + esc(part.text) + '</p>' +
       (part.algorithm ? '<code class="rb-notation">' + esc(part.algorithm) + '</code>' : "") +
       (part.comparison?.length ? '<div class="rb-comparisons" data-rb-compare="' + i + '"></div>' : "") +
-      (part.algorithm ? '<button type="button" class="rb-btn" data-rb-step="' + i + '">Làm theo từng nước</button>' : "") + '</article>'
+      (part.algorithm ? '<button type="button" class="rb-btn" aria-pressed="false" data-rb-step="' + i + '">Làm theo từng nước</button>' : "") + '</article>'
     ).join("") +
     (lesson.mistake ? '<p class="rb-note"><strong>Lỗi thường gặp</strong> ' + esc(lesson.mistake) + '</p>' : "") +
     (quiz ? '<article class="rb-panel rb-quiz"><h3>' + esc(quiz.prompt) + '</h3><div class="rb-stack">' +
@@ -185,40 +191,66 @@ function lessonPage(container, context, lesson) {
       '</div><p role="status" data-rb-quiz-feedback></p></article>' : "") +
     '</div><aside class="rb-panel rb-visual"><h3>Xem và làm theo</h3>' + lessonFigure(lesson.figure) + localClipBlock(lesson.localClip) +
     videoBlock(lesson.video, lesson.title) +
-    '<div data-rb-lesson-player></div>' +
+    '<div class="rb-stack" data-rb-lesson-player></div>' +
     (lesson.exercise?.goal ? '<div class="rb-exercise"><h4>Tự luyện</h4><p>' + esc(lesson.exercise.goal) + '</p>' +
       (lesson.exercise.setup != null ? '<button type="button" class="rb-btn" data-rb-exercise>Thử trên khối mô phỏng</button>' : "") + '</div>' : "") +
+    (related.length ? '<div class="rb-exercise"><h4>Bộ công thức liên quan</h4><div class="rb-controls">' +
+      related.map((group) => link(linkPuzzle("cong-thuc", lesson.puzzle) + "&group=" + encodeURIComponent(group.id), group.name)).join("") + '</div></div>' : "") +
     (sources.length ? '<div class="rb-source">Nguồn tham khảo ' + sources.join(" · ") + '</div>' : "") + '</aside></div>' +
     '<div class="rb-controls rb-lesson-footer"><button type="button" class="rb-btn rb-primary" data-rb-complete aria-pressed="' + !!context.value.lessons[lesson.id] + '">' +
     (context.value.lessons[lesson.id] ? "Đã học bài này" : "Đánh dấu đã học") + '</button>' +
     (next ? link(lessonPath(next.id), "Bài tiếp theo") : link(linkPuzzle("hoc", lesson.puzzle), "Về lộ trình")) + '</div></section>';
 
-  function showStep(part, free = false) {
+  function showStep(part, free = false, index = -1) {
     const target = container.querySelector("[data-rb-lesson-player]");
+    for (const button of container.querySelectorAll("[data-rb-step]")) {
+      button.setAttribute("aria-pressed", String(Number(button.dataset.rbStep) === index));
+    }
     context.inlinePlayer?.();
     context.inlinePlayer = undefined;
     const thisView = ++context.playerVersion;
-    context.player().then(({ mountPlayer, snapshot }) => {
+    context.player().then(({ mountPlayer, snapshot, cubeSize, diagram }) => {
       if (!context.alive() || context.playerVersion !== thisView) return;
-      const goal = free && part.algorithm ? snapshot(lesson.puzzle, [part.setup, part.algorithm].filter(Boolean).join(" ")) : undefined;
-      context.inlinePlayer = mountPlayer(target, {
+      const size = cubeSize(lesson.puzzle);
+      const mediaCase = caseById.get(part.caseId);
+      const hasStill = mediaCase?.puzzle === lesson.puzzle && SPECIAL_DIAGRAMS.has(mediaCase.id);
+      let comparison = "";
+      if (part.algorithm && (size || hasStill)) {
+        const start = size ? snapshot(lesson.puzzle, setupOf(part)) : null;
+        const end = size ? snapshot(lesson.puzzle, part.algorithm, start) : null;
+        comparison = '<details class="rb-step-stills"><summary>So sánh trước và sau khi xoay</summary><div class="rb-comparisons">' +
+          ["before", "after"].map((side) => {
+            const caption = side === "before" ? "Trước bước này" : "Kết quả của bước";
+            return '<figure>' + (hasStill ? specialDiagram(mediaCase, side) : diagram(side === "before" ? start : end, size, {
+              labels: context.value.labels, mirror: lesson.puzzle === "mirror", description: caption
+            })) + '<figcaption>' + caption + '</figcaption></figure>';
+          }).join("") + '</div></details>';
+      }
+      target.innerHTML = '<h4>' + esc(part.title || (free ? "Tự luyện trên khối" : "Thử nước xoay")) + '</h4>' + comparison +
+        '<div data-rb-step-player></div>';
+      context.inlinePlayer = mountPlayer(target.querySelector("[data-rb-step-player]"), {
         puzzle: lesson.puzzle, setup: setupOf(part), algorithm: free ? "" : part.algorithm || "",
-        free, goal, labels: context.value.labels, twoD: context.value.twoD
+        free, goalAlgorithm: free ? part.algorithm : "", labels: context.value.labels, twoD: context.value.twoD
       });
     }).catch(() => { if (target.isConnected) target.textContent = "Chưa mở được mô phỏng cho bước này."; });
   }
-  const firstVisual = guide.find((part) => part.algorithm);
-  if (firstVisual) showStep(firstVisual);
+  const firstVisual = guide.findIndex((part) => part.algorithm);
+  if (firstVisual >= 0) showStep(guide[firstVisual], false, firstVisual);
   context.player().then(({ diagram, snapshot, cubeSize }) => {
     if (!context.alive()) return;
     for (const node of container.querySelectorAll("[data-rb-compare]")) {
       const comparison = guide[Number(node.dataset.rbCompare)].comparison;
       const size = cubeSize(lesson.puzzle);
       node.innerHTML = comparison.map((part) => {
-        const net = diagram(snapshot(lesson.puzzle, part.setup || ""), size, { labels: context.value.labels, description: part.label });
-        return '<figure>' + net + (part.arrow ? '<span class="rb-turn-arrow" aria-hidden="true">' + esc(part.arrow) + '</span>' : '') +
+        const found = caseById.get(part.caseId);
+        const still = found?.puzzle === lesson.puzzle && SPECIAL_DIAGRAMS.has(found.id)
+          ? specialDiagram(found, "before")
+          : diagram(snapshot(lesson.puzzle, part.setup || ""), size, { labels: context.value.labels, mirror: lesson.puzzle === "mirror", description: part.label });
+        return '<figure>' + still + (part.arrow ? '<span class="rb-turn-arrow" aria-hidden="true">' + esc(part.arrow) + '</span>' : '') +
           '<figcaption>' + esc(part.label) + '</figcaption>' +
-          (part.algorithm ? '<button type="button" data-rb-compare-move="' + esc(part.algorithm) + '" data-setup="' + esc(part.setup || "") + '">Thử nước ' + esc(part.algorithm) + '</button>' : '') + '</figure>';
+          (part.algorithm || (!still && part.setup != null) ? '<button type="button" data-rb-compare-move="' + esc(part.algorithm || "") +
+            '" data-setup="' + esc(part.setup || "") + '" data-label="' + esc(part.label) + '">' +
+            (part.algorithm ? "Thử nước " + esc(part.algorithm) : "Mở khối mẫu") + '</button>' : '') + '</figure>';
       }).join("");
     }
   }).catch(() => {});
@@ -232,7 +264,7 @@ function lessonPage(container, context, lesson) {
     const step = event.target.closest("[data-rb-step], [data-rb-exercise], [data-rb-complete], [data-rb-lesson-answer], [data-rb-compare-move]");
     if (!step) return;
     if (step.hasAttribute("data-rb-exercise")) showStep(lesson.exercise, true);
-    else if (step.hasAttribute("data-rb-compare-move")) showStep({ setup: step.dataset.setup, algorithm: step.dataset.rbCompareMove });
+    else if (step.hasAttribute("data-rb-compare-move")) showStep({ setup: step.dataset.setup, algorithm: step.dataset.rbCompareMove, title: step.dataset.label });
     else if (step.hasAttribute("data-rb-complete")) {
       context.value.lessons[lesson.id] = Date.now();
       const saved = context.store.save();
@@ -243,7 +275,10 @@ function lessonPage(container, context, lesson) {
       const chosen = Number(step.dataset.rbLessonAnswer);
       const correct = chosen === quiz.answer || quiz.options[chosen] === quiz.answer;
       container.querySelector("[data-rb-quiz-feedback]").textContent = (correct ? "Đúng. " : "Hãy quan sát lại. ") + (quiz.feedback || "");
-    } else showStep(guide[Number(step.dataset.rbStep)]);
+    } else {
+      const index = Number(step.dataset.rbStep);
+      showStep(guide[index], false, index);
+    }
     if (step.matches("[data-rb-step], [data-rb-exercise], [data-rb-compare-move]")) {
       container.querySelector("[data-rb-lesson-player]").scrollIntoView({ block: "nearest" });
     }
@@ -267,6 +302,7 @@ function libraryPage(container, context) {
       '<option>' + esc(shape) + '</option>').join("") + '</select></label>' +
     '<label class="rb-field">Đã học<select data-filter="status"><option value="">Tất cả</option><option value="new">Chưa học</option><option value="learning">Đang học</option>' +
     '<option value="known">Đã nhớ</option><option value="favorite">Yêu thích</option></select></label></div>' +
+    (isColoredCube(context.puzzle) ? '<p class="rb-note rb-orientation">Hướng chuẩn: D trắng ở dưới · U vàng ở trên · F xanh dương ở trước.</p>' : "") +
     '<p class="rb-note" role="status" data-rb-count></p><div class="rb-case-grid" data-rb-results></div>' +
     '<button type="button" class="rb-btn" data-rb-more hidden>Xem thêm trường hợp</button></section>';
   let limit = 18;
@@ -291,8 +327,10 @@ function libraryPage(container, context) {
       const groupName = groupById.get(item.group)?.name || "";
       const art = '<span class="rb-mini-diagram" data-rb-mini="' + esc(item.id) + '">' +
         (SPECIAL_DIAGRAMS.has(item.id) ? specialDiagram(item, "before") : "") + '</span>';
-      return '<a class="rb-case rb-panel" href="#' + casePath(item.id) + '">' + art + '<span class="rb-eyebrow">' + esc(groupName) +
-        '</span><strong>' + esc(item.name) + '</strong><code>' + esc(item.algorithm) + '</code></a>';
+      return '<article class="rb-panel rb-case-card"><a class="rb-case" href="#' + casePath(item.id) + '">' + art +
+        '<span class="rb-eyebrow">' + esc(groupName) + '</span><strong>' + esc(item.name) + '</strong><code>' + esc(item.algorithm) +
+        '</code></a><button type="button" data-rb-preview-case="' + esc(item.id) + '" aria-label="Xem mô hình ' + esc(item.name) + '">' +
+        (["clock", "square1"].includes(item.puzzle) ? "Xem mô hình" : "Xem 3D") + '</button></article>';
     }).join("") || '<p>Chưa tìm thấy công thức phù hợp.</p>';
     more.hidden = filtered.length <= limit;
     if (helpers) for (const node of results.querySelectorAll("[data-rb-mini]")) {
@@ -300,7 +338,7 @@ function libraryPage(container, context) {
       if (SPECIAL_DIAGRAMS.has(item.id)) continue;
       try {
         node.innerHTML = helpers.diagram(helpers.snapshot(item.puzzle, item.setup || ""), helpers.cubeSize(item.puzzle), {
-          focusLayer: ["oll", "pll"].includes(item.group), labels: context.value.labels, description: "Nhận diện " + item.name
+          focusLayer: ["oll", "pll"].includes(item.group), labels: context.value.labels, description: "Nhận diện " + item.name, whiteBottom: !item.nativePalette
         });
       } catch { /* The case can still be opened and read. */ }
     }
@@ -326,12 +364,14 @@ function casePage(container, context, item) {
     '<div class="rb-study"><div class="rb-stack"><article class="rb-panel"><p class="rb-eyebrow">' + esc(puzzleName(item.puzzle) + " · " + (item.difficulty || group?.name || "")) +
     '</p><h3>Nhận diện và hướng cầm</h3><p>' + esc(item.recognition || item.orientation ||
       "Đối chiếu mặt trên U và mặt trước F với sơ đồ. Sau khi đã căn đúng trạng thái, mới chạy công thức.") + '</p>' +
+    (isColoredCube(item.puzzle) ? '<p class="rb-note rb-orientation">Hướng chuẩn: giữ trắng ở dưới (D), vàng ở trên (U) và xanh dương ở trước (F). Các ca đang giải tầng cuối có thể chưa phẳng màu vàng.</p>' : "") +
     '<div class="rb-comparisons" data-rb-case-compare></div></article><article class="rb-panel"><h3>Công thức</h3>' +
     (variants.length > 1 ? '<label class="rb-field">Biến thể<select data-rb-variant>' +
       variants.map((variant, i) => '<option value="' + i + '">' + (i ? "Biến thể " + i : "Công thức chính") + '</option>').join("") + '</select></label>' : "") +
     '<code class="rb-notation" data-rb-formula>' + esc(algorithm) + '</code><div class="rb-controls">' +
     '<button type="button" class="rb-btn" data-rb-copy>Sao chép</button><button type="button" class="rb-btn" data-rb-favorite aria-pressed="' + !!row.favorite + '">' +
-    (row.favorite ? "Đã yêu thích" : "Yêu thích") + '</button></div><label class="rb-field">Tiến độ<select data-rb-review>' +
+    (row.favorite ? "Đã yêu thích" : "Yêu thích") + '</button>' + link(practicePath(item), "Tự xoay ca này") +
+    '</div><label class="rb-field">Tiến độ<select data-rb-review>' +
     [["", "Chưa học"], ["learning", "Đang học"], ["known", "Đã nhớ"]].map(([value, title]) =>
       '<option value="' + value + '"' + (value === (row.status || "") ? " selected" : "") + '>' + title + '</option>').join("") +
     '</select></label>' + (source ? '<p class="rb-source">' + source + '</p>' : "") +
@@ -351,16 +391,19 @@ function casePage(container, context, item) {
       const before = snapshot(item.puzzle, setup || "");
       const after = snapshot(item.puzzle, algorithm, before);
       const comparison = container.querySelector("[data-rb-case-compare]");
-      if (size) comparison.innerHTML = [
+      if (SPECIAL_DIAGRAMS.has(item.id)) comparison.innerHTML = ["before", "after"].map((side) =>
+        '<figure><button type="button" class="rb-diagram-open" data-rb-enlarge>' + specialDiagram(item, side) +
+        '<span>Phóng to hình</span></button><figcaption>' + (side === "before" ? "Trước khi xoay" : "Sau khi xoay") + '</figcaption></figure>'
+      ).join("");
+      else if (size) comparison.innerHTML = [
         [before, "Nhận diện trước khi xoay"], [after, "Sau khi áp dụng"]
       ].map(([state, caption]) => '<figure><button type="button" class="rb-diagram-open" data-rb-enlarge>' +
-        diagram(state, size, { description: caption + " – " + item.name, labels: context.value.labels }) +
+        diagram(state, size, { description: caption + " – " + item.name, labels: context.value.labels, whiteBottom: !item.nativePalette }) +
         '<span>Phóng to hình</span></button><figcaption>' + caption + '</figcaption></figure>').join("");
-      else if (SPECIAL_DIAGRAMS.has(item.id)) comparison.innerHTML = ["before", "after"].map((side) =>
-        '<figure>' + specialDiagram(item, side) + '<figcaption>' + (side === "before" ? "Trước khi xoay" : "Sau khi xoay") + '</figcaption></figure>'
-      ).join("");
       const target = container.querySelector("[data-rb-case-player]");
-      context.inlinePlayer = mountPlayer(target, { puzzle: item.puzzle, setup: setup || "", algorithm, labels: context.value.labels, twoD: context.value.twoD });
+      context.inlinePlayer = mountPlayer(target, {
+        puzzle: item.puzzle, setup: setup || "", algorithm, labels: context.value.labels, whiteBottom: !item.nativePalette
+      });
     }).catch(() => context.say("Chưa mở được minh họa cho biến thể này."));
   }
 
@@ -378,7 +421,7 @@ function casePage(container, context, item) {
     }
     if (button.hasAttribute("data-rb-enlarge")) {
       const dialog = context.root.querySelector("dialog");
-      dialog.querySelector("[data-rb-enlarged]").replaceChildren(button.querySelector(".rb-net").cloneNode(true));
+      dialog.querySelector("[data-rb-enlarged]").replaceChildren(button.querySelector(".rb-net, .rb-puzzle-image").cloneNode(true));
       dialog.showModal();
     }
   }, { signal: context.signal });
@@ -416,7 +459,7 @@ function progressPage(container, context) {
         (rows.length ? '<ul>' + rows.map((group) =>
           '<li>' + esc(group.name) + ' — ' + esc(group.loaded) + '/' + esc(group.expected ?? "đang thống kê") + ' trường hợp · ' +
           esc(group.verified) + ' kiểm chứng · ' + CASES.filter((item) => item.group === group.id &&
-            (SPECIAL_DIAGRAMS.has(item.id) || /^[2-7]x/.test(item.puzzle))).length + ' cặp hình · ' +
+            (SPECIAL_DIAGRAMS.has(item.id) || isColoredCube(item.puzzle))).length + ' cặp hình · ' +
           CASES.filter((item) => item.group === group.id && CASE_CLIPS.has(item.id)).length + ' clip</li>'
         ).join("") + '</ul>' : '<p>Đang xây dựng bộ công thức riêng cho khối này.</p>') +
         '<p>Bộ giải khi nhập màu: ' + (puzzle.id === "3x3x3" ? "có hỗ trợ" : "chưa hỗ trợ") + '.</p></details>';
@@ -439,7 +482,9 @@ export function mountRubik(host, { route = "/rubik", currentUser } = {}) {
       return '<a href="#' + destination + suffix + '"' + (page === id ? ' aria-current="page"' : "") + '>' + title + '</a>';
     }).join("") + '</nav><div data-rb-body></div><p class="rb-live" role="status" data-rb-live></p>' +
     '<dialog class="rb-dialog" aria-label="Hình nhận diện phóng to"><form method="dialog"><button class="rb-btn">Đóng</button></form>' +
-    '<div data-rb-enlarged></div></dialog></section>';
+    '<div data-rb-enlarged></div></dialog><dialog class="rb-dialog rb-preview-dialog" aria-labelledby="rb-preview-caption" data-rb-preview-dialog>' +
+    '<header class="rb-preview-head"><h3 id="rb-preview-caption"></h3><form method="dialog"><button class="rb-btn">Đóng</button></form></header>' +
+    '<div data-rb-preview-player></div></dialog></section>';
   const root = host.firstElementChild;
   const body = root.querySelector("[data-rb-body]");
   const context = {
@@ -451,12 +496,42 @@ export function mountRubik(host, { route = "/rubik", currentUser } = {}) {
       live.textContent = message;
     }
   };
+  const previewDialog = root.querySelector("[data-rb-preview-dialog]");
+  const previewHost = previewDialog.querySelector("[data-rb-preview-player]");
+  let disposePreview;
+  let previewGeneration = 0;
+  function closePreview() {
+    previewGeneration++;
+    disposePreview?.();
+    disposePreview = undefined;
+    previewHost.replaceChildren();
+  }
+  previewDialog.addEventListener("close", closePreview, { signal: abort.signal });
   root.addEventListener("change", (event) => {
     if (!event.target.matches("[data-rb-puzzle]")) return;
     const destination = NAV.some(([id]) => id === page) && page ? "/rubik/" + page : "/rubik";
     location.hash = "#" + destination + "?puzzle=" + encodeURIComponent(event.target.value);
   }, { signal: abort.signal });
   root.addEventListener("click", (event) => {
+    const previewButton = event.target.closest("[data-rb-preview-case]");
+    if (previewButton) {
+      const item = caseById.get(previewButton.dataset.rbPreviewCase);
+      if (!item) return;
+      closePreview();
+      const token = previewGeneration;
+      previewDialog.querySelector("h3").textContent = item.name;
+      previewHost.textContent = "Đang mở mô hình…";
+      previewDialog.showModal();
+      context.player().then(({ mountPlayer }) => {
+        if (!previewDialog.open || token !== previewGeneration || !context.alive()) return;
+        disposePreview = mountPlayer(previewHost, {
+          puzzle: item.puzzle, setup: item.setup, algorithm: item.algorithm, labels: context.value.labels, whiteBottom: !item.nativePalette
+        });
+      }).catch(() => {
+        if (previewDialog.open && token === previewGeneration) previewHost.textContent = "Chưa mở được mô hình. Hãy thử lại.";
+      });
+      return;
+    }
     const button = event.target.closest("[data-rb-video], [data-rb-local-clip]");
     if (!button) return;
     if (button.hasAttribute("data-rb-local-clip")) {
@@ -493,10 +568,10 @@ export function mountRubik(host, { route = "/rubik", currentUser } = {}) {
     progressPage(body, context);
   } else if (page === "mo-phong") {
     body.innerHTML = '<section class="rb-section">' + header(...sections[page]) + selectPuzzle(puzzle) + '<div class="rb-panel" data-rb-free></div></section>';
-    visualization(body.querySelector("[data-rb-free]"), { puzzle, free: true }, context);
+    visualization(body.querySelector("[data-rb-free]"), { puzzle, free: true, whiteBottom: true }, context);
   } else if (sections[page]) {
     body.innerHTML = '<section class="rb-section">' + header(...sections[page]) + '<div data-rb-tool role="status">Đang mở công cụ…</div></section>';
-    import("./rubik-tools.mjs?v=1").then(({ mountTool }) => {
+    import("./rubik-tools.mjs?v=2").then(({ mountTool }) => {
       if (!context.alive()) return;
       const panel = body.querySelector("[data-rb-tool]");
       panel.removeAttribute("role");
@@ -508,6 +583,7 @@ export function mountRubik(host, { route = "/rubik", currentUser } = {}) {
   return {
     destroy() {
       abort.abort();
+      closePreview();
       context.inlinePlayer?.();
       for (const dispose of context.cleanups) dispose();
       host.replaceChildren();

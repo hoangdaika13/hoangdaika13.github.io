@@ -83,8 +83,10 @@ async function check(browser, mobile) {
     await page.screenshot({ path: path.join(output, mobile ? "mobile.png" : "desktop.png") });
     await page.getByRole("link", { name: "Tôi chưa biết giải" }).click();
     await page.locator(".rb h2").filter({ hasText: "đọc ký hiệu" }).waitFor();
-    await page.locator(".rb-comparisons figure").first().waitFor();
-    assert.equal(await page.locator(".rb-comparisons figure").count(), 2);
+    await page.locator("[data-rb-compare] figure").first().waitFor();
+    assert.equal(await page.locator("[data-rb-compare] figure").count(), 2);
+    await page.locator(".rb-step-stills summary").click();
+    assert.equal(await page.locator(".rb-step-stills[open] figure").count(), 2);
     await clip(page.locator(".rb video").first());
     assert.equal(await page.locator('.rb video track[srclang="vi"]').count(), 1);
     await page.locator(".rb video").scrollIntoViewIfNeeded();
@@ -148,7 +150,46 @@ async function check(browser, mobile) {
 
     await go(page, "/rubik/luyen-tap", "[data-answer]");
     await page.locator("[data-answer]").first().click();
-    await page.locator("[data-trainer-feedback]").filter({ hasText: /Đúng|Hãy thử lại/ }).waitFor();
+    await page.locator("[data-trainer-feedback]").filter({ hasText: /Đúng|Chưa đúng/ }).waitFor();
+    await page.locator("[data-rb-answer-review] figure").first().waitFor();
+
+    await go(page, "/rubik/cong-thuc/mirror-align-top", "[data-rb-case-compare] img");
+    const mirrorStills = await page.locator("[data-rb-case-compare] img").evaluateAll(async (images) => {
+      await Promise.all(images.map((image) => image.decode()));
+      return images.map((image) => image.naturalWidth);
+    });
+    assert.ok(mirrorStills.length === 2 && mirrorStills.every((width) => width >= 320));
+    await page.locator("[data-rb-enlarge]").first().click();
+    await page.locator(".rb-dialog[open] img").waitFor();
+    await page.keyboard.press("Escape");
+    await page.locator("[data-rb-local-clip]").click();
+    await clip(page.locator(".rb video"));
+    await page.screenshot({ path: path.join(output, mobile ? "mirror-mobile.png" : "mirror-desktop.png") });
+
+    await go(page, "/rubik/cong-thuc/py-tip", "[data-rb-case-compare] img");
+    await page.getByRole("link", { name: "Tự xoay ca này" }).click();
+    await page.locator('[data-turn-practice] [data-special-move="u"]').click();
+    await page.locator("[data-trainer-feedback][data-result=correct]").waitFor();
+    assert.match(await page.locator("[data-rb-tally]").textContent(), /1\/1/);
+    await page.locator("[data-rb-demo]").click();
+    await page.locator("[data-rb-review-player] twisty-player").waitFor();
+    await page.locator("[data-exercise]").selectOption("recall");
+    await page.locator("[data-recall]").fill("u u u u");
+    await page.locator("[data-recall]").press("Enter");
+    await page.locator("[data-trainer-feedback][data-result=correct]").waitFor();
+    assert.match(await page.locator("[data-rb-tally]").textContent(), /2\/2/);
+    await page.locator("[data-recall]").press("Enter");
+    await noOverflow(page);
+
+    await go(page, "/rubik/luyen-tap?puzzle=square1&case=sq1-cut-right", "[data-turn-practice] [data-special-move]");
+    await page.locator('[data-turn-practice] [data-special-move="/"]').click();
+    await page.locator("[data-turn-practice] .rb-player-status").filter({ hasText: "chắn đường cắt" }).waitFor();
+    await page.locator('[data-turn-practice] [data-special-move="(-1,0)"]').click();
+    await page.locator('[data-turn-practice] [data-special-move="/"]').click();
+    await page.locator("[data-trainer-feedback][data-result=correct]").waitFor();
+
+    await go(page, "/rubik/luyen-tap?puzzle=4x4x4&case=parity4-pll", "[data-turn-practice] [data-move='2R2']");
+    assert.ok(await page.locator("[data-turn-practice] [data-move='Uw2']").isVisible());
 
     await go(page, "/rubik/dong-ho", "[data-clock]");
     await page.waitForFunction(() => !document.querySelector(".rb [data-start]").disabled);
