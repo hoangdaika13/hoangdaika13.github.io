@@ -1,7 +1,7 @@
-import * as engine from "./rubik-engine.mjs?v=4";
-import { mountTrainer } from "./rubik-trainer.mjs?v=3";
-import { averageOf, formatTime, inspectionPenalty, mergeRecords, solveScore, validRecord } from "./rubik-progress.mjs?v=2";
-import { cubeSize, defaultScramble, mountPlayer, whiteBottomSticker } from "./rubik-player.mjs?v=4";
+import * as engine from "./rubik-engine.mjs?v=5";
+import { mountTrainer } from "./rubik-trainer.mjs?v=4";
+import { averageOf, formatTime, inspectionPenalty, mergeRecords, solveScore, validRecord } from "./rubik-progress.mjs?v=3";
+import { cubeSize, defaultScramble, mountPlayer, whiteBottomSticker } from "./rubik-player.mjs?v=5";
 
 const scramblePuzzles = new Set(["pyraminx", "megaminx", "skewb", "square1", "square-1", "clock"]);
 const paintFaces = { U: "Trên", R: "Phải", F: "Trước", D: "Dưới", L: "Trái", B: "Sau" };

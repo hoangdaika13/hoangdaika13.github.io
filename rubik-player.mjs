@@ -1,5 +1,5 @@
-import * as engine from "./rubik-engine.mjs?v=4";
-import { createSpeedControl, createStepTimeline, createTurnGuide, turnTiming } from "./rubik-playback.mjs?v=1";
+import * as engine from "./rubik-engine.mjs?v=5";
+import { createAutoPlayback, createLoopControl, createSpeedControl, createStepTimeline, createTurnGuide, turnTiming } from "./rubik-playback.mjs?v=2";
 
 export const defaultPuzzle = "3x3x3";
 export const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
@@ -111,7 +111,6 @@ export function mountPlayer(host, {
   let states = [initial];
   if (!free) for (const move of moves) states.push(engine.applyMoves(states.at(-1), move, size));
   let index = 0;
-  let clock = 0;
   let view;
   let savedAngle;
   const history = [];
@@ -149,10 +148,22 @@ export function mountPlayer(host, {
   const info = find("[data-rb-playback-info]");
   const guide = createTurnGuide();
   const play = find('[data-player="play"]');
+  play?.setAttribute("aria-pressed", "false");
+  const playback = free ? null : createAutoPlayback(moves.length, {
+    position: () => index, range: () => loop?.range, speed: () => speed,
+    advance() { update(moves[index++]); },
+    rewind(destination) { index = destination; update(); },
+    onPlaying(playing) {
+      play.textContent = playing ? "Tạm dừng" : "Phát";
+      play.setAttribute("aria-pressed", String(playing));
+    }
+  });
   const timeline = !free && createStepTimeline(moves, seek, abort.signal);
+  const loop = playback && createLoopControl(moves, playback.setLoopStart, abort.signal);
   info.append(guide.guide);
   if (timeline) {
     info.append(timeline.timeline);
+    if (loop) info.append(loop.panel);
     find(".rb-player-controls").append(createSpeedControl((value) => { speed = value; }, abort.signal));
   }
 
@@ -214,12 +225,7 @@ export function mountPlayer(host, {
   }
 
   function stop() {
-    clearTimeout(clock);
-    clock = 0;
-    if (play) {
-      play.textContent = "Phát";
-      play.setAttribute("aria-pressed", "false");
-    }
+    playback?.stop();
   }
 
   function seek(nextIndex) {
@@ -237,12 +243,6 @@ export function mountPlayer(host, {
     update(notation);
   }
 
-  function tick() {
-    index++;
-    update(moves[index - 1]);
-    clock = setTimeout(index < moves.length ? tick : stop, turnTiming(speed).interval);
-  }
-
   host.addEventListener("click", (event) => {
     const turnButton = event.target.closest("[data-move]");
     if (turnButton) {
@@ -253,13 +253,7 @@ export function mountPlayer(host, {
     if (!button) return;
     const action = button.dataset.player;
     if (action === "play") {
-      if (clock) stop();
-      else if (moves.length) {
-        if (index === moves.length) seek(0);
-        play.textContent = "Tạm dừng";
-        play.setAttribute("aria-pressed", "true");
-        tick();
-      }
+      playback.toggle();
       return;
     }
     if (action === "camera") {

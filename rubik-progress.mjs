@@ -1,7 +1,38 @@
 const SLUG = /^[a-z0-9][a-z0-9-]{0,59}$/i;
 const STATUSES = ["learning", "known"];
 const DAY = 86_400_000;
-const empty = () => ({ version: 1, last: {}, lessons: {}, reviews: {}, records: [], labels: false, twoD: false });
+export const REVIEW_SESSION_SIZE = 5;
+const REVIEW_RESULTS = new Set(["correct", "incorrect", "skipped"]);
+const REVIEW_LAUNCH = /^[1-9a-z][0-9a-z]{0,9}$/;
+const validKey = (id) => typeof id === "string" && SLUG.test(id) && !Object.hasOwn(Object.prototype, id);
+const empty = () => ({ version: 1, last: {}, lessons: {}, reviews: {}, sessions: {}, records: [], labels: false, twoD: false });
+
+export function isReviewDue(review, now = Date.now()) {
+  return Boolean(review && Number.isFinite(review.due) && review.due <= now &&
+    (review.due > 0 || review.wrong > 0 || review.scheduled === true));
+}
+
+const validLaunch = (token) => typeof token === "string" && REVIEW_LAUNCH.test(token);
+
+export function isNewReviewLaunch(session, token) {
+  return validLaunch(token) && (!validLaunch(session?.launch) || parseInt(token, 36) > parseInt(session.launch, 36));
+}
+
+function validSession(session) {
+  return Boolean(session && Array.isArray(session.ids) && session.ids.length <= REVIEW_SESSION_SIZE &&
+    (session.ids.length > 0 || validLaunch(session.launch)) &&
+    session.ids.every(validKey) && new Set(session.ids).size === session.ids.length &&
+    Number.isInteger(session.index) && session.index >= 0 && session.index <= session.ids.length &&
+    Array.isArray(session.results) && session.results.length === session.index &&
+    session.results.every((result) => REVIEW_RESULTS.has(result)) && (session.group === "" || validKey(session.group)));
+}
+
+export function recordSessionResult(session, caseId, result) {
+  if (!validKey(caseId) || !REVIEW_RESULTS.has(result) || !validSession(session) || session.ids[session.index] !== caseId) return false;
+  session.results.push(result);
+  session.index++;
+  return true;
+}
 
 export function validRecord(record) {
   return record && typeof record.id === "string" && SLUG.test(record.id) &&
@@ -33,9 +64,16 @@ export function loadProgress(user, storage) {
     if (raw?.version === 1) {
       value.records = mergeRecords([], Array.isArray(raw.records) ? raw.records : []);
       for (const field of ["last", "lessons", "reviews"]) {
-        const valid = Object.entries(raw[field] || {}).filter(([id]) => SLUG.test(id) && !Object.hasOwn(Object.prototype, id));
+        const valid = Object.entries(raw[field] || {}).filter(([id]) => validKey(id));
         value[field] = Object.fromEntries(valid);
       }
+      value.sessions = Object.fromEntries(Object.entries(raw.sessions || {})
+        .filter(([id, session]) => validKey(id) && validSession(session))
+        .map(([id, { ids, index, results, group, launch }]) => {
+          const session = { ids, index, results, group };
+          if (validLaunch(launch)) session.launch = launch;
+          return [id, session];
+        }));
       value.labels = raw.labels === true;
       value.twoD = raw.twoD === true;
     }
@@ -60,6 +98,7 @@ export function changeReview(state, id, change, now = Date.now()) {
   if ("status" in change) entry.status = STATUSES.includes(change.status) ? change.status : "";
   if (typeof change.correct === "boolean") {
     entry.last = now;
+    delete entry.scheduled;
     if (change.correct) {
       entry.correct++;
       entry.streak++;
@@ -69,6 +108,10 @@ export function changeReview(state, id, change, now = Date.now()) {
       entry.streak = 0;
       entry.due = now;
     }
+  }
+  if (change.schedule === true && !isReviewDue(entry, now)) {
+    entry.due = now;
+    entry.scheduled = true;
   }
   state.reviews[id] = entry;
   return entry;

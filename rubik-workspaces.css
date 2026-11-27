@@ -95,6 +95,17 @@ html[data-theme="light"] .rb :is(.rb-tool-solver, .rb-tool-practice, .rb-tool-ti
 
 .rb-tool-practice .rb-practice-session { align-content: start; }
 .rb-practice-toolbar { padding-bottom: .5rem; border-bottom: 1px solid var(--rb-line); }
+.rb-session-header {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .7rem;
+  background: radial-gradient(ellipse at top right, var(--rb-work-glow), transparent 70%), var(--rb-panel);
+}
+.rb-session-position { display: grid; gap: .38rem; }
+.rb-session-position label { font-size: .87rem; font-weight: 650; color: var(--rb-muted); }
+.rb-session-position progress { width: 100%; height: .57rem; accent-color: var(--rb-accent); }
+.rb-session-summary { display: grid; gap: .9rem; }
+.rb .rb-session-results { display: flex; flex-wrap: wrap; gap: .5rem; padding: 0; margin: 0; list-style: none; }
+.rb-session-results li { padding: .58rem .8rem; border: 1px solid var(--rb-line); border-radius: .72rem; background: var(--rb-bg); color: var(--rb-muted); }
+.rb-session-results strong { color: var(--rb-text); font-variant-numeric: tabular-nums; }
 .rb-practice-challenge {
   display: grid;
   align-items: center;

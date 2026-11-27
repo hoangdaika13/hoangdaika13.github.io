@@ -288,6 +288,246 @@ async function formulaGallery(page, mobile) {
   return ollCamera;
 }
 
+const progressKey = "hh.rubik.v1.guest";
+const sessionCase = "[data-trainer-body][data-rb-session-case]";
+const progress = (page) => page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}"), progressKey);
+
+async function checkQuickLinks(page) {
+  for (const mode of ["recognize", "recall", "turn"]) {
+    const link = "[data-rb-practice-mode='" + mode + "']";
+    await go(page, "/rubik/cong-thuc/oll-27", link);
+    const destination = await page.locator(link).getAttribute("href");
+    assert.ok(destination.includes("case=oll-27"), destination);
+    assert.ok(destination.includes("mode=" + mode), destination);
+    await page.locator(link).click();
+    const challenge = page.locator("[data-trainer-body]");
+    if (mode === "recognize") {
+      await challenge.locator("[data-answer]").first().waitFor();
+      assert.ok((await challenge.locator("[data-answer='OLL 27']").count()) === 1, "the chosen recognition case should have OLL 27 as a possible answer");
+      assert.equal(await challenge.locator(".rubik-cube-cell").count(), 54);
+    } else if (mode === "recall") {
+      await challenge.locator("[data-recall]").waitFor();
+      assert.match(await challenge.locator("h3").innerText(), /OLL 27/);
+      assert.equal(await challenge.locator(".rubik-cube-cell").count(), 54);
+    } else {
+      await challenge.locator("[data-turn-practice] .rubik-cube-stage").waitFor();
+      assert.equal(await challenge.locator("[data-turn-practice] .rubik-cube-cell").count(), 54);
+      assert.match(await challenge.locator("h3").innerText(), /OLL 27/);
+    }
+    assert.equal(await page.locator("[data-exercise]").inputValue(), mode);
+    await noOverflow(page);
+  }
+}
+
+async function expectCase(page, id) {
+  const card = page.locator(sessionCase);
+  if (id) await page.locator(sessionCase + '[data-rb-session-case="' + id + '"]').waitFor();
+  else await card.waitFor();
+  await card.locator(".rubik-cube-stage").waitFor();
+  const selected = await card.getAttribute("data-rb-session-case");
+  if (id) assert.equal(selected, id);
+  assert.equal(await card.locator(".rubik-cube-cell").count(), 54);
+  return selected;
+}
+
+async function expectSession(page, expected) {
+  await page.waitForFunction(({ key, expected }) => {
+    const record = JSON.parse(localStorage.getItem(key) || "{}").sessions?.["3x3x3"];
+    return JSON.stringify(record?.results) === JSON.stringify(expected);
+  }, { key: progressKey, expected });
+  return (await progress(page)).sessions["3x3x3"];
+}
+
+async function checkScheduledReview(page) {
+  const schedule = page.locator("[data-rb-schedule-review]");
+  const status = page.locator("[data-rb-case-review]");
+  await go(page, "/rubik/cong-thuc/oll-27", "[data-rb-schedule-review]");
+  assert.equal(await status.textContent(), "Chưa có lịch ôn");
+  await schedule.click();
+  await status.filter({ hasText: "Đến hạn ôn" }).waitFor();
+  assert.equal(await schedule.getAttribute("aria-disabled"), "true");
+  assert.equal(await schedule.textContent(), "Đã xếp lịch ôn");
+  const queued = (await progress(page)).reviews["oll-27"];
+  assert.ok(queued.due > 0 && queued.due <= Date.now());
+  assert.equal(queued.correct + queued.wrong, 0, "scheduling alone must not grade the case");
+
+  await go(page, "/rubik/cong-thuc?group=oll", "[data-rb-session-launch]");
+  const launch = page.locator("[data-rb-session-launch]");
+  assert.equal(await launch.textContent(), "Ôn bộ OLL");
+  const href = await launch.getAttribute("href");
+  const route = href.slice(1);
+  const params = new URLSearchParams(route.split("?")[1]);
+  assert.equal(params.get("group"), "oll");
+  assert.ok(params.get("start"), "a library launch has a unique token");
+  await launch.click();
+  await expectCase(page, "oll-27");
+  const first = await expectSession(page, []);
+  assert.equal(first.group, "oll");
+  assert.equal(first.launch, params.get("start"));
+  for (const id of first.ids) {
+    await expectCase(page, id);
+    await page.locator("[data-rb-session-skip]").click();
+  }
+  const expected = first.ids.map(() => "skipped");
+  const completed = await expectSession(page, expected);
+  await page.locator("[data-rb-session-summary]").waitFor();
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.locator("[data-rb-session-summary]").waitFor();
+  assert.deepEqual(await expectSession(page, expected), completed, "reload must not restart a completed launch");
+  await go(page, "/rubik/cong-thuc?group=oll", "[data-rb-session-launch]");
+  await go(page, route, "[data-rb-session-summary]");
+  assert.deepEqual(await expectSession(page, expected), completed, "returning to the same link must keep its results");
+  await noOverflow(page);
+}
+
+async function checkSession(page, mobile) {
+  await page.evaluate((key) => {
+    const now = Date.now();
+    const row = (due, wrong, extra) => ({ due, wrong, correct: 0, streak: 0, ...extra });
+    const reviews = {
+      "oll-27": row(now - 7200000, 5),
+      "oll-28": row(now - 3600000, 3),
+      "oll-29": row(now + 3600000, 10),
+      "oll-30": row(0, 0, { favorite: true })
+    };
+    localStorage.setItem(key, JSON.stringify({ version: 1, reviews, last: {}, lessons: {}, records: [] }));
+  }, progressKey);
+
+  // Both entry points are real links so the normal router and profile storage are exercised.
+  if (mobile) {
+    await go(page, "/rubik", "[data-rb-session-launch]");
+  } else {
+    await go(page, "/rubik/tien-trinh", "[data-rb-review-dashboard]");
+  }
+  const launch = page.locator("[data-rb-session-launch]").filter({ visible: true }).first();
+  await launch.waitFor();
+  assert.match(await launch.getAttribute("href"), /[?&]session=due(?:&|$)/);
+  await launch.click();
+
+  await expectCase(page, "oll-27");
+  const start = await expectSession(page, []);
+  assert.ok(start.ids.length >= 2 && start.ids.length <= 5, "finite session size: " + start.ids);
+  assert.equal(new Set(start.ids).size, start.ids.length, "queue cannot repeat cases");
+  assert.deepEqual(start.ids.slice(0, 2), ["oll-27", "oll-28"], "due cases first");
+  assert.ok(!start.ids.includes("oll-29"), "future review must not fill the unseen slots");
+  assert.match(await page.locator("[data-rb-session-position]").innerText(), /1/);
+  const body = page.locator("[data-trainer-body]");
+  const answer = body.locator("[data-answer]").filter({ hasText: /^OLL 27$/ });
+  await answer.waitFor();
+  await answer.click();
+  await page.locator("[data-trainer-feedback][data-result='correct']").waitFor();
+  const graded = await expectSession(page, ["correct"]);
+  const firstRecord = (await progress(page)).reviews["oll-27"];
+  assert.equal(graded.index, 1);
+  assert.equal(firstRecord.correct, 1, "grade exactly once");
+  assert.ok(firstRecord.due > Date.now(), "successful review reschedules the due date");
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expectCase(page, "oll-28");
+  const current = await expectSession(page, ["correct"]);
+  assert.equal(current.index, 1, "reload resumes after the graded case");
+  assert.deepEqual(current.ids, start.ids);
+  assert.equal((await progress(page)).reviews["oll-27"].correct, 1, "reload must not grade the first case again");
+
+  const wrong = await body.locator("[data-answer]").evaluateAll((buttons, expected) =>
+    buttons.find((button) => button.dataset.answer !== expected)?.dataset.answer, "OLL 28");
+  assert.ok(wrong && wrong !== "OLL 28");
+  await body.getByRole("button", { name: wrong, exact: true }).click();
+  await page.locator("[data-trainer-feedback][data-result='incorrect']").waitFor();
+  await expectSession(page, ["correct", "incorrect"]);
+  assert.equal((await progress(page)).reviews["oll-28"].wrong, 4);
+  await page.locator("[data-new-exercise]").click();
+
+  const results = ["correct", "incorrect"];
+  for (const id of start.ids.slice(2)) {
+    await expectCase(page, id);
+    const before = (await progress(page)).reviews[id];
+    await page.locator("[data-rb-session-skip]").click();
+    results.push("skipped");
+    await expectSession(page, results);
+    assert.deepEqual((await progress(page)).reviews[id], before, "skipping must not schedule a grade");
+  }
+  const summary = page.locator("[data-rb-session-summary]");
+  await summary.waitFor();
+  const summaryText = await summary.innerText();
+  assert.match(summaryText, /đúng/i);
+  assert.match(summaryText, /sai|chưa đúng/i);
+  if (results.length > 2) assert.match(summaryText, /bỏ qua/i);
+  await noOverflow(page);
+
+  const retry = page.locator("[data-rb-session-retry]");
+  await retry.click();
+  await expectCase(page, "oll-28");
+  const retried = await expectSession(page, []);
+  assert.deepEqual(retried.ids, start.ids.slice(1), "retry queue contains incorrect and skipped cases without replaying the correct one");
+}
+
+async function checkLoop(page, variant) {
+  const route = variant ? "/rubik/cong-thuc/clock-back" : "/rubik/cong-thuc/oll-27";
+  const root = page.locator("[data-rb-case-player]");
+  const stage = root.locator(variant ? ".rb-variant-stage" : ".rubik-cube-stage");
+  const caster = root.locator(variant ? ".rb-variant-scene" : ".rubik-cube-volume");
+  await go(page, route, "[data-rb-case-player]");
+  await stage.waitFor();
+  await root.locator(".rb-loop summary").click();
+  const capture = () => caster.evaluate((node) => node.style.transform);
+  const original = await capture();
+  await stage.press("ArrowRight");
+  const adjusted = await capture();
+  assert.notEqual(adjusted, original);
+  const start = variant ? 2 : 3;
+  const end = start + 1;
+  await root.locator("[data-rb-loop-start]").selectOption(String(start));
+  await root.locator("[data-rb-loop-end]").selectOption(String(end));
+  await root.locator("[data-player-speed]").selectOption("1.5");
+  const enabled = root.locator("[data-rb-loop-toggle]");
+  await enabled.check();
+  assert.equal(Number(await root.locator("[data-player-step][aria-current=step]").getAttribute("data-player-step")), start - 1);
+  await root.evaluate((player) => {
+    const trace = [];
+    player.qaTrace = trace;
+    player.qaLoop = new MutationObserver(() => {
+      const button = player.querySelector("[data-player-step][aria-current='step']");
+      const current = Number(button?.dataset.playerStep);
+      if (Number.isFinite(current) && trace.at(-1) !== current) trace.push(current);
+    });
+    player.qaLoop.observe(player, { attributes: true, subtree: true, attributeFilter: ["aria-current"] });
+  });
+  const play = root.locator("[data-player=play]");
+  try {
+    await play.press("Space");
+    await page.waitForFunction(({ end }) => document.querySelector("[data-rb-case-player]").qaTrace.filter((step) => step === end).length >= 2, { end });
+    await play.press("Space");
+    const trace = await root.evaluate((player) => player.qaTrace);
+    assert.ok(trace.every((step) => step >= start - 1 && step <= end), "playback left loop: " + trace);
+    assert.deepEqual(trace.filter((step) => step !== start - 1).slice(0, 4), [start, end, start, end]);
+    assert.equal(await capture(), adjusted, "loop must preserve the user camera");
+    assert.equal(await play.getAttribute("aria-pressed"), "false");
+    const pausedAt = await root.locator("[data-player-step][aria-current=step]").getAttribute("data-player-step");
+    // Remain paused for longer than one turn at the selected 1.5× speed.
+    await page.waitForTimeout(850);
+    assert.equal(await root.locator("[data-player-step][aria-current=step]").getAttribute("data-player-step"), pausedAt);
+    await root.locator("[data-player-step='0']").click();
+    assert.equal(Number(await root.locator("[data-player-step][aria-current=step]").getAttribute("data-player-step")), 0, "manual seek outside the loop remains available");
+    await play.press("Space");
+    await root.locator("[data-rb-loop-end]").selectOption(String(start));
+    assert.equal(await play.getAttribute("aria-pressed"), "true", "editing the range preserves playback");
+    await enabled.uncheck();
+    assert.equal(await play.getAttribute("aria-pressed"), "true", "disabling the loop continues regular playback");
+    await page.waitForFunction((end) => Number(document.querySelector("[data-rb-case-player] [data-player-step][aria-current='step']")?.dataset.playerStep) > end, start);
+    if (await play.getAttribute("aria-pressed") === "true") await play.press("Space");
+    assert.equal(await capture(), adjusted, "manual seek and replay must preserve camera");
+    await noOverflow(page);
+  } finally {
+    await root.evaluate((player) => {
+      player.qaLoop.disconnect();
+      delete player.qaLoop;
+      delete player.qaTrace;
+    });
+  }
+}
+
 async function f2lGallery(page, ollCamera) {
   const model = page.locator("[data-rb-case-model='f2l-1']");
   await go(page, "/rubik/cong-thuc?group=f2l", "[data-rb-case-model='f2l-1']");
@@ -680,15 +920,45 @@ async function recordGuide(browser) {
   }
 }
 
+async function checkReviewAndLoops(browser, mobile) {
+  const context = await browser.newContext({
+    viewport: mobile ? { width: 375, height: 812 } : { width: 1440, height: 960 }, hasTouch: mobile, isMobile: mobile,
+    reducedMotion: mobile ? "reduce" : "no-preference", serviceWorkers: "block"
+  });
+  try {
+    await isolateRequests(context);
+    const page = await context.newPage();
+    page.setDefaultTimeout(20000);
+    const errors = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    await page.goto(site("/rubik"), { waitUntil: "domcontentloaded" });
+    await guest(page);
+    await checkQuickLinks(page);
+    await checkScheduledReview(page);
+    await checkSession(page, mobile);
+    await checkLoop(page, false);
+    if (!mobile) await checkLoop(page, true);
+    assert.deepEqual(errors, []);
+    console.log("PASS", mobile ? "mobile 375px reduced motion" : "desktop",
+      "practice modes, persistent review, A/B keyboard playback and contained layout");
+  } finally {
+    await context.close();
+  }
+}
+
 (async () => {
   const browser = await chromium.launch(browserOptions);
   try {
-    await check(browser, false);
-    await check(browser, true);
-    await tablet(browser);
-    if (process.env.HH_QA_VIDEO) await recordGuide(browser);
+    if (process.env.HH_QA_MODE !== "review") {
+      await check(browser, false);
+      await check(browser, true);
+      await tablet(browser);
+      if (process.env.HH_QA_VIDEO) await recordGuide(browser);
+    }
+    await checkReviewAndLoops(browser, false);
+    await checkReviewAndLoops(browser, true);
   } finally {
     await browser.close();
   }
-  await chromiumZoom();
+  if (process.env.HH_QA_MODE !== "review") await chromiumZoom();
 })().catch((error) => { console.error(error); process.exitCode = 1; });

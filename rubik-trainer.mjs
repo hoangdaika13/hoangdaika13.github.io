@@ -1,9 +1,9 @@
-import { CASES, CASE_GROUPS } from "./rubik-cases.mjs?v=4";
+import { CASES, CASE_GROUPS } from "./rubik-cases.mjs?v=5";
 import { SPECIAL_DIAGRAMS } from "./rubik-media.mjs?v=3";
-import { changeReview } from "./rubik-progress.mjs?v=2";
-import { applyMoves, parseMoves } from "./rubik-engine.mjs?v=4";
-import { loadSpecialPractice } from "./rubik-special.mjs?v=4";
-import { cubeSize, diagram, esc, mountFormulaPreview, mountPlayer, snapshot } from "./rubik-player.mjs?v=4";
+import { changeReview, isNewReviewLaunch, isReviewDue, recordSessionResult, REVIEW_SESSION_SIZE } from "./rubik-progress.mjs?v=3";
+import { applyMoves, parseMoves } from "./rubik-engine.mjs?v=5";
+import { loadSpecialPractice } from "./rubik-special.mjs?v=5";
+import { cubeSize, diagram, esc, mountFormulaPreview, mountPlayer, snapshot } from "./rubik-player.mjs?v=5";
 
 const STEP_CHOICES = {
   pyraminx: ["U", "R'", "L", "u'"],
@@ -31,13 +31,21 @@ export function practiceChoices(answer, alternatives, random = Math.random) {
 export function pickPracticeCase(pool, reviews, { previous, priority, now = Date.now(), random = Math.random } = {}) {
   const eligible = pool.length > 1 ? pool.filter((item) => item.id !== previous) : pool;
   if (!eligible.length) return undefined;
-  const due = priority === "due" && eligible.filter((item) => {
-    const review = reviews[item.id];
-    return review && (review.due > 0 || review.wrong > 0) && review.due <= now;
-  });
+  const due = priority === "due" && eligible.filter((item) => isReviewDue(reviews[item.id], now));
   const ordered = due?.length ? due.slice().sort((a, b) => reviews[b.id].wrong - reviews[a.id].wrong ||
     reviews[a.id].due - reviews[b.id].due).slice(0, 6) : eligible;
   return ordered[Math.floor(random() * ordered.length)];
+}
+
+export function reviewSessionCases(cases, reviews, now = Date.now()) {
+  const due = new Set();
+  const unseen = new Set();
+  for (const { id } of cases) {
+    const review = reviews[id];
+    if (isReviewDue(review, now)) due.add(id);
+    else if (!(review?.last > 0 || review?.correct > 0 || review?.wrong > 0 || review?.due > 0 || review?.status === "known")) unseen.add(id);
+  }
+  return [...[...due].sort((a, b) => reviews[a].due - reviews[b].due), ...unseen].slice(0, REVIEW_SESSION_SIZE);
 }
 
 async function exerciseModel(item) {
@@ -71,7 +79,36 @@ export function mountTrainer(container, context) {
   const groupParam = context.params.get("group");
   let requestedCase = cases.find((item) => item.id === context.params.get("case"));
   const groups = CASE_GROUPS.filter((group) => cases.some((item) => group.id === item.group));
-  container.innerHTML = '<div class="rb-stack rb-tool-practice"><section class="rb-panel rb-practice-filters" aria-label="Chọn bài luyện">' +
+  const caseById = new Map(cases.map((item) => [item.id, item]));
+  const requestedGroup = groups.find((group) => group.id === groupParam)?.id || "";
+  const sessionMode = !requestedCase && context.params.get("session") === "due";
+  let session = sessionMode ? value.sessions[context.puzzle] : null;
+  if (sessionMode) {
+    const launch = context.params.get("start");
+    const freshLaunch = isNewReviewLaunch(session, launch);
+    const hasSession = session?.ids.every((id) => caseById.has(id) && (!session.group || caseById.get(id).group === session.group));
+    if (!hasSession || (session.index === session.ids.length && freshLaunch)) {
+      beginSession(requestedGroup, undefined, freshLaunch ? launch : session?.launch);
+    } else if (freshLaunch) {
+      // Mark this link as visited without replacing the session already in progress.
+      session.launch = launch;
+      store.save();
+    }
+  }
+
+  function beginSession(group, ids = reviewSessionCases(cases.filter((item) => !group || item.group === group), value.reviews), launch = session?.launch) {
+    session = { ids, index: 0, results: [], group };
+    if (launch) session.launch = launch;
+    if (ids.length || launch) value.sessions[context.puzzle] = session;
+    else delete value.sessions[context.puzzle];
+    store.save();
+  }
+  const freeLink = context.link("/rubik/luyen-tap?puzzle=" + encodeURIComponent(context.puzzle), "Luyện tự do");
+  container.innerHTML = '<div class="rb-stack rb-tool-practice">' + (sessionMode ?
+    '<section class="rb-panel rb-session-header" aria-label="Buổi ôn"><div><h3>Buổi ôn 3D</h3>' +
+    '<p class="rb-note">' + esc(groups.find((group) => group.id === session.group)?.name || "Tất cả bộ công thức") +
+    ' · Ưu tiên ca đến hạn, sau đó là ca mới.</p></div>' + freeLink + '</section>' :
+    '<section class="rb-panel rb-practice-filters" aria-label="Chọn bài luyện">' +
     '<div class="rb-filters">' + selectPuzzle(context.puzzle) +
     '<label class="rb-field">Bộ công thức<select data-set><option value="">Tất cả</option>' +
     groups.map((group) => '<option value="' + esc(group.id) + '"' + (group.id === (requestedCase?.group || groupParam) ? " selected" : "") +
@@ -80,11 +117,14 @@ export function mountTrainer(container, context) {
     '<option value="step">Chọn nước mở đầu</option><option value="recall">Nhập công thức</option>' +
     '<option value="turn">Tự xoay đến mục tiêu</option></select></label>' +
     '<label class="rb-field">Ưu tiên<select data-priority><option value="due">Đến hạn ôn</option><option value="all">Ngẫu nhiên</option>' +
-    '<option value="favorite">Yêu thích</option></select></label></div></section>' +
+    '<option value="favorite">Yêu thích</option></select></label></div></section>') +
     '<section class="rb-panel rb-practice-session" aria-label="Buổi luyện">' +
     '<div class="rb-practice-toolbar"><p class="rb-tool-label rb-practice-tally" data-rb-tally></p>' +
     '<div class="rb-controls"><button type="button" data-rb-hint hidden>Gợi ý</button>' +
+    (sessionMode ? '<button type="button" data-rb-session-skip>Bỏ qua ca</button>' : '') +
     '<button type="button" data-new-exercise>Đổi trường hợp</button></div></div>' +
+    (sessionMode ? '<div class="rb-session-position"><label for="rb-review-track" data-rb-session-position></label>' +
+      '<progress id="rb-review-track" data-rb-session-track value="0" max="1"></progress></div>' : '') +
     '<div data-trainer-body class="rb-stack"></div><p class="rb-practice-feedback" role="status" data-trainer-feedback></p>' +
     '<div class="rb-stack rb-practice-review" data-rb-answer-review hidden></div></section></div>';
 
@@ -106,14 +146,46 @@ export function mountTrainer(container, context) {
   const tally = get("[data-rb-tally]");
   const modeControl = get("[data-exercise]");
   const nextButton = get("[data-new-exercise]");
-  if (requestedCase) modeControl.value = "turn";
+  const skipButton = get("[data-rb-session-skip]");
+  const position = get("[data-rb-session-position]");
+  const track = get("[data-rb-session-track]");
+  const modeParam = context.params.get("mode");
+  if (modeControl && ["recognize", "step", "recall", "turn"].includes(modeParam)) modeControl.value = modeParam;
+  else if (requestedCase) modeControl.value = "turn";
 
   function showTally() {
-    tally.textContent = attempts ? successes + "/" + attempts + " lượt đúng" : "Buổi luyện mới";
+    if (!sessionMode) {
+      tally.textContent = attempts ? successes + "/" + attempts + " lượt đúng" : "Buổi luyện mới";
+      return;
+    }
+    const total = session.ids.length;
+    const current = Math.min(total, session.index + (answered ? 0 : 1));
+    const correct = session.results.filter((result) => result === "correct").length;
+    tally.textContent = correct + " lượt đúng";
+    track.max = total || 1;
+    track.value = session.index;
+    position.textContent = total ? "Ca " + current + "/" + total + " · Đã xử lý " + session.index : "Chưa có ca cần ôn";
+  }
+
+  function showSummary(focus) {
+    const correct = session.results.filter((result) => result === "correct").length;
+    const skipped = session.results.filter((result) => result === "skipped").length;
+    const incorrect = session.index - correct - skipped;
+    body.innerHTML = '<section class="rb-session-summary" data-rb-session-summary><h3 tabindex="-1">' +
+      (session.ids.length ? "Đã hoàn thành buổi ôn" : "Chưa có ca đến hạn hoặc ca mới") + '</h3>' +
+      (session.ids.length ? '<ul class="rb-session-results"><li><strong>' + correct + '</strong> Đúng</li><li><strong>' +
+        incorrect + '</strong> Chưa đúng</li><li><strong>' + skipped + '</strong> Bỏ qua</li></ul>' : '') +
+      '<div class="rb-controls">' + (incorrect || skipped ? '<button class="rb-primary" type="button" data-rb-session-retry>' +
+        (skipped ? "Ôn lại ca chưa hoàn thành" : "Ôn lại ca sai") + '</button>' : '') +
+      '<button type="button" data-rb-session-restart>Bắt đầu buổi mới</button></div></section>';
+    nextButton.hidden = true;
+    skipButton.hidden = true;
+    if (focus) body.querySelector("h3").focus();
   }
 
   function check(correct, picked) {
     if (answered || !selected || !model) return;
+    if (sessionMode && !recordSessionResult(session, selected.id, correct ? "correct" : "incorrect")) return;
     answered = true;
     attempts++;
     if (correct) successes++;
@@ -121,7 +193,9 @@ export function mountTrainer(container, context) {
     const saved = store.save();
     showTally();
     hint.hidden = true;
-    nextButton.textContent = "Ca tiếp theo";
+    nextButton.textContent = sessionMode && session.index === session.ids.length ? "Xem kết quả" : "Ca tiếp theo";
+    nextButton.disabled = false;
+    if (skipButton) skipButton.hidden = true;
     nextButton.classList.add("rb-primary");
     feedback.dataset.result = correct ? "correct" : "incorrect";
     feedback.textContent = (correct ? "Đúng. " : "Chưa đúng. ") + selected.name +
@@ -145,8 +219,8 @@ export function mountTrainer(container, context) {
       '<figure>' + imageFor(selected, model, side, value.labels) + '<figcaption>' +
       (side === "before" ? "Khối lúc bắt đầu" : "Kết quả cần đạt") + '</figcaption></figure>').join("") + '</div>' +
       '<p>' + esc(selected.tip || "Đối chiếu kết quả với ảnh ban đầu.") + '</p><code class="rb-notation">' + esc(selected.algorithm) +
-      '</code><div class="rb-controls"><button type="button" data-rb-demo>Xem từng nước</button><button type="button" data-rb-retry>Thử lại ca này</button>' +
-      context.link(context.casePath(selected.id), "Xem công thức và video") + '</div><div data-rb-review-player hidden></div>';
+      '</code><div class="rb-controls"><button type="button" data-rb-demo>Xem từng nước</button>' +
+      (sessionMode ? "" : '<button type="button" data-rb-retry>Thử lại ca này</button>') + context.link(context.casePath(selected.id), "Xem công thức và video") + '</div><div data-rb-review-player hidden></div>';
     if (advanceFocus) nextButton.focus();
   }
 
@@ -158,11 +232,11 @@ export function mountTrainer(container, context) {
     disposeDemo = undefined;
     disposePreview?.();
     disposePreview = undefined;
-    const set = get("[data-set]").value;
-    const priority = get("[data-priority]").value;
-    const mode = modeControl.value;
-    const pool = cases.filter((item) => (!set || item.group === set) && (priority !== "favorite" || value.reviews[item.id]?.favorite));
-    if (!retry) {
+    if (sessionMode) selected = caseById.get(session.ids[session.index]);
+    else if (!retry) {
+      const set = get("[data-set]").value;
+      const priority = get("[data-priority]").value;
+      const pool = cases.filter((item) => (!set || item.group === set) && (priority !== "favorite" || value.reviews[item.id]?.favorite));
       selected = requestedCase || pickPracticeCase(pool, value.reviews, { previous: selected?.id, priority });
       requestedCase = null;
     }
@@ -172,13 +246,26 @@ export function mountTrainer(container, context) {
     answered = false;
     delete feedback.dataset.result;
     feedback.textContent = "";
-    nextButton.textContent = "Đổi trường hợp";
+    nextButton.textContent = sessionMode ? "Ca tiếp theo" : "Đổi trường hợp";
+    nextButton.hidden = false;
+    nextButton.disabled = sessionMode;
     nextButton.classList.remove("rb-primary");
     review.hidden = true;
     review.replaceChildren();
     hint.hidden = true;
+    if (sessionMode) {
+      showTally();
+      if (!item) {
+        delete body.dataset.rbSessionCase;
+        showSummary(focus);
+        return;
+      }
+      skipButton.hidden = false;
+      skipButton.disabled = true;
+      body.dataset.rbSessionCase = item.id;
+    }
     if (!item) {
-      body.textContent = priority === "favorite" ? "Chưa có công thức yêu thích trong bộ này." : "Bộ lọc hiện tại chưa có trường hợp để luyện.";
+      body.textContent = get("[data-priority]").value === "favorite" ? "Chưa có công thức yêu thích trong bộ này." : "Bộ lọc hiện tại chưa có trường hợp để luyện.";
       return;
     }
     body.innerHTML = '<p role="status">Đang dựng khối…</p>';
@@ -187,9 +274,15 @@ export function mountTrainer(container, context) {
       if (signal.aborted || generation !== token) return;
       model = next;
     } catch {
-      if (!signal.aborted && generation === token) body.textContent = "Chưa dựng được bài này. Hãy chọn trường hợp khác.";
+      if (!signal.aborted && generation === token) {
+        body.textContent = "Chưa dựng được bài này. Hãy chọn trường hợp khác.";
+        if (skipButton) skipButton.disabled = false;
+      }
       return;
     }
+    const related = cases.filter((candidate) => candidate.group === item.group && candidate.id !== item.id);
+    const hasRecognitionChoices = related.some((candidate) => candidate.name !== item.name);
+    const mode = sessionMode ? (hasRecognitionChoices ? "recognize" : "step") : modeControl.value;
     const before = imageFor(item, model, "before", value.labels);
     const modelStage = '<div class="rb-practice-preview"><div class="rb-case-model rb-practice-model" data-rb-practice-model>' +
       before + '</div><p class="rb-note" data-rb-practice-orbit>Kéo hoặc dùng phím mũi tên để quan sát khối.</p></div>';
@@ -211,7 +304,6 @@ export function mountTrainer(container, context) {
         '<div class="rb-controls"><button type="submit" class="rb-primary" data-check-recall>Kiểm tra</button></div></form>');
     } else {
       correctChoice = mode === "step" ? model.moves[0] : item.name;
-      const related = cases.filter((candidate) => candidate.group === item.group && candidate.id !== item.id);
       const options = practiceChoices(correctChoice, mode === "step" ? STEP_CHOICES[item.puzzle] || STEP_CHOICES.cube :
         related.map((candidate) => candidate.name));
       if (options.length < 2) {
@@ -234,6 +326,7 @@ export function mountTrainer(container, context) {
       catch { fallback(); }
     }
     hint.hidden = !item.tip;
+    if (skipButton) skipButton.disabled = false;
     if (focus) body.querySelector("h3")?.focus();
   }
 
@@ -261,7 +354,14 @@ export function mountTrainer(container, context) {
   container.addEventListener("click", (event) => {
     const button = event.target.closest("button");
     if (!button) return;
-    if (button.matches("[data-new-exercise], [data-rb-retry]")) newExercise({ retry: button.hasAttribute("data-rb-retry"), focus: true });
+    if (sessionMode && button === skipButton && selected && recordSessionResult(session, selected.id, "skipped")) {
+      store.save();
+      newExercise({ focus: true });
+    } else if (sessionMode && button.matches("[data-rb-session-restart], [data-rb-session-retry]")) {
+      const missed = session.ids.filter((_, i) => session.results[i] !== "correct");
+      beginSession(session.group, button.hasAttribute("data-rb-session-retry") ? missed : undefined);
+      newExercise({ focus: true });
+    } else if (button.matches("[data-new-exercise], [data-rb-retry]")) newExercise({ retry: button.hasAttribute("data-rb-retry"), focus: true });
     else if (button.hasAttribute("data-rb-single-step")) {
       modeControl.value = "step";
       newExercise({ retry: true, focus: true });

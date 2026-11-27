@@ -1,8 +1,8 @@
 import { PUZZLES as BASE_PUZZLES, LESSONS as BASE_LESSONS } from "./rubik-lessons.mjs?v=3";
-import { LARGE_PUZZLES, LARGE_LESSONS } from "./rubik-large-lessons.mjs?v=3";
-import { CASES, CASE_GROUPS, getCaseCoverage } from "./rubik-cases.mjs?v=4";
+import { LARGE_PUZZLES, LARGE_LESSONS } from "./rubik-large-lessons.mjs?v=4";
+import { CASES, CASE_GROUPS, getCaseCoverage } from "./rubik-cases.mjs?v=5";
 import { CASE_CLIPS, SPECIAL_DIAGRAMS } from "./rubik-media.mjs?v=3";
-import { changeReview, loadProgress } from "./rubik-progress.mjs?v=2";
+import { changeReview, isReviewDue, loadProgress } from "./rubik-progress.mjs?v=3";
 
 const NAV = [
   ["", "Tổng quan"], ["hoc", "Bắt đầu học"], ["cong-thuc", "Thư viện công thức"],
@@ -23,11 +23,16 @@ const sections = {
 };
 const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 const search = (value) => String(value || "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/đ/g, "d").replace(/’/g, "'").trim();
-const bootPlayer = () => import("./rubik-player.mjs?v=4");
+const bootPlayer = () => import("./rubik-player.mjs?v=5");
 const lessonPath = (id) => "/rubik/hoc/" + encodeURIComponent(id);
 const casePath = (id) => "/rubik/cong-thuc/" + encodeURIComponent(id);
 const puzzleName = (id) => puzzleById.get(id)?.name || id;
-const practicePath = (item) => linkPuzzle("luyen-tap", item.puzzle) + "&case=" + encodeURIComponent(item.id);
+const practicePath = (item, mode) => linkPuzzle("luyen-tap", item.puzzle) + "&case=" + encodeURIComponent(item.id) + (mode ? "&mode=" + mode : "");
+function reviewPath(puzzle, group, start) {
+  return linkPuzzle("luyen-tap", puzzle) + "&session=due" +
+    (group ? "&group=" + encodeURIComponent(group) : "") + (start ? "&start=" + start : "");
+}
+const practiceModes = [["recognize", "Nhận diện ca"], ["recall", "Nhập công thức"], ["turn", "Tự xoay ca này"]];
 const isColoredCube = (puzzle) => /^[2-9]x/.test(puzzle);
 const libraryFields = ["query", "group", "difficulty", "shape", "status"];
 const reviewLabels = { new: "Chưa học", learning: "Đang học", known: "Đã nhớ" };
@@ -92,17 +97,29 @@ function clickCopy(text, context) {
   );
 }
 
+function openSession(context, puzzle) {
+  const session = context.value.sessions?.[puzzle];
+  return session && session.index < session.ids.length && session.ids.every((id) => {
+    const item = caseById.get(id);
+    return item?.puzzle === puzzle && (!session.group || item.group === session.group);
+  }) ? session : undefined;
+}
+
+function reviewLink(puzzle, label, session, primary = false) {
+  const url = reviewPath(puzzle, session?.group, session ? "" : Date.now().toString(36));
+  return '<a class="rb-btn' + (primary ? ' rb-primary' : '') + '" href="#' + esc(url) + '" data-rb-session-launch>' +
+    esc(label) + '</a>';
+}
+
 function overview(container, context) {
   const puzzle = context.puzzle;
   const lessons = LESSONS.filter((item) => item.puzzle === puzzle);
   const last = lessons.find((lesson) => lesson.id === context.value.last[puzzle]);
   const resume = last && context.value.lessons[last.id] ? lessons[lessons.indexOf(last) + 1] || last : last || lessons[0];
   const now = Date.now();
-  const due = CASES.filter((item) => {
-    const date = context.value.reviews[item.id]?.due;
-    return item.puzzle === puzzle && date > 0 && date <= now;
-  }).sort((a, b) => context.value.reviews[a.id].due - context.value.reviews[b.id].due);
-  const training = due.length ? practicePath(due[0]) : linkPuzzle("luyen-tap", puzzle);
+  const dueCount = CASES.filter((item) => item.puzzle === puzzle && isReviewDue(context.value.reviews[item.id], now)).length;
+  const training = linkPuzzle("luyen-tap", puzzle);
+  const session = openSession(context, puzzle);
   const study = resume ? lessonPath(resume.id) : linkPuzzle("hoc", puzzle);
 
   container.innerHTML = '<section class="rb-hero"><div class="rb-hero-content">' +
@@ -115,16 +132,16 @@ function overview(container, context) {
     '<figure class="rb-hero-art"><div class="rb-hero-model" data-rb-hero-model><span class="rb-model-loading">Đang mở Rubik 3D…</span></div>' +
     '<figcaption>Kéo khối để nhìn cả sáu mặt</figcaption></figure></section>' +
     '<section class="rb-section rb-home-section"><div class="rb-section-bar">' +
-    header(last || due.length ? "Tiếp tục thực hành" : "Chọn khối bạn muốn tập") + selectPuzzle(puzzle) + '</div>' +
+    header(last || session || dueCount ? "Tiếp tục thực hành" : "Chọn khối bạn muốn tập") + selectPuzzle(puzzle) + '</div>' +
     '<div class="rb-feature-grid rb-home-grid"><article class="rb-panel rb-home-path">' +
     '<p class="rb-eyebrow">' + (last ? "Học tiếp" : "Bài học đầu tiên") + '</p><h3>' +
     esc(resume?.title || puzzleName(puzzle)) + '</h3><p>' +
     esc(resume?.objective || puzzleById.get(puzzle)?.description) + '</p>' +
     link(study, last ? "Học tiếp" : "Mở bài học") + '</article>' +
-    '<article class="rb-panel rb-home-path"><p class="rb-eyebrow">Luyện công thức</p><h3>' +
-    (due.length ? esc(due[0].name) : "Nhận diện và nhớ nước xoay") + '</h3><p>' +
-    (due.length ? due.length + " trường hợp đến hạn ôn." : "Tập nhận diện, nhớ công thức hoặc tự xoay để giải một ca.") + '</p>' +
-    link(training, due.length ? "Ôn ca này" : "Bắt đầu luyện") +
+    '<article class="rb-panel rb-home-path"><p class="rb-eyebrow">Luyện công thức</p><h3>Buổi ôn nhanh</h3><p>' +
+    (session ? "Tiếp tục ca " + (session.index + 1) + "/" + session.ids.length + "." :
+      dueCount ? dueCount + " công thức đến hạn. Ưu tiên các ca cần ôn." : "Ôn tối đa năm công thức bằng cách nhận diện trạng thái 3D.") + '</p>' +
+    reviewLink(puzzle, session ? "Tiếp tục buổi ôn" : "Bắt đầu buổi ôn", session) +
     '</article><article class="rb-panel rb-home-path"><p class="rb-eyebrow">Thực hành tự do</p><h3>Tự xoay và bấm giờ</h3><p>' +
     'Luyện trên khối 3D hoặc ghi thời gian giải Rubik thật.</p><div class="rb-controls">' +
     link(linkPuzzle("mo-phong", puzzle), "Mở mô phỏng") + link(linkPuzzle("dong-ho", puzzle), "Mở đồng hồ") +
@@ -343,7 +360,7 @@ function libraryPage(container, context) {
     '<button type="button" data-rb-clear-filters hidden>Xóa bộ lọc</button></div></div>' +
     '<div class="rb-library-summary"><p role="status" data-rb-count></p>' +
     (isColoredCube(context.puzzle) ? '<p class="rb-cube-orientation" aria-label="Hướng cầm chuẩn"><span data-swatch="white">D trắng</span><span data-swatch="yellow">U vàng</span><span data-swatch="blue">F xanh dương</span></p>' : '') +
-    '</div><div class="rb-case-grid" data-rb-results></div>' +
+    '<a class="rb-btn" data-rb-session-launch></a></div><div class="rb-case-grid" data-rb-results></div>' +
     '<button type="button" class="rb-btn rb-more" data-rb-more hidden>Xem thêm công thức</button></section>';
   let limit = returning?.limit || 18;
   let playerModule;
@@ -362,6 +379,9 @@ function libraryPage(container, context) {
   const results = container.querySelector("[data-rb-results]");
   const count = container.querySelector("[data-rb-count]");
   const more = container.querySelector("[data-rb-more]");
+  const reviewAction = container.querySelector("[data-rb-session-launch]");
+  const activeSession = openSession(context, context.puzzle);
+  const launchToken = Date.now().toString(36);
   function load(node) {
     const entry = tracked.get(node);
     if (!entry || entry.loading || entry.dispose) return;
@@ -421,6 +441,10 @@ function libraryPage(container, context) {
     const difficulty = field("difficulty");
     const shape = field("shape");
     const status = field("status");
+    const reviewGroup = activeSession ? activeSession.group : groupFilter;
+    const reviewGroupName = groupById.get(reviewGroup)?.name;
+    reviewAction.href = "#" + reviewPath(context.puzzle, reviewGroup, activeSession ? "" : launchToken);
+    reviewAction.textContent = activeSession ? "Tiếp tục buổi ôn" : reviewGroupName ? "Ôn bộ " + reviewGroupName : "Bắt đầu buổi ôn";
     const filtered = puzzleCases.filter((item) => {
       const row = context.value.reviews[item.id] || {};
       const matchesStatus = !status || (status === "favorite" ? row.favorite : (row.status || "new") === status);
@@ -532,12 +556,17 @@ function casePage(container, context, item) {
       variants.map((variant, i) => '<option value="' + i + '">' + (i ? "Biến thể " + i : "Công thức chính") + '</option>').join("") + '</select></label>' : "") +
     '<code class="rb-notation" data-rb-formula>' + esc(algorithm) + '</code><div class="rb-controls">' +
     '<button type="button" class="rb-btn" data-rb-copy>Sao chép</button><button type="button" class="rb-btn" data-rb-favorite aria-pressed="' + !!row.favorite + '">' +
-    (row.favorite ? "Đã yêu thích" : "Yêu thích") + '</button>' + link(practicePath(item), "Tự xoay ca này") +
+    (row.favorite ? "Đã yêu thích" : "Yêu thích") + '</button>' +
     '</div><label class="rb-field">Tiến độ<select data-rb-review>' +
     [["", "Chưa học"], ["learning", "Đang học"], ["known", "Đã nhớ"]].map(([value, title]) =>
       '<option value="' + value + '"' + (value === (row.status || "") ? " selected" : "") + '>' + title + '</option>').join("") +
     '</select></label>' + (source ? '<p class="rb-source">' + source + '</p>' : "") +
-    '</article>' + (similar.length ? '<article class="rb-panel"><h3>So sánh trường hợp tương tự</h3><div class="rb-controls">' +
+    '</article><article class="rb-panel rb-case-practice"><h3>Luyện công thức chính</h3><div class="rb-case-practice-links">' +
+    practiceModes.map(([mode, label]) => '<a class="rb-btn' + (mode === "turn" ? ' rb-primary' : '') + '" href="#' +
+      esc(practicePath(item, mode)) + '" data-rb-practice-mode="' + mode + '">' + label + '</a>').join("") +
+    '</div><div class="rb-case-review"><p class="rb-note" data-rb-case-review role="status"></p>' +
+    '<button type="button" data-rb-schedule-review>Đưa vào lịch ôn</button></div></article>' +
+    (similar.length ? '<article class="rb-panel"><h3>So sánh trường hợp tương tự</h3><div class="rb-controls">' +
       similar.map((other) => link(casePath(other.id), other.name)).join("") + '</div></article>' : "") +
     '</div></div></section>';
 
@@ -570,10 +599,33 @@ function casePage(container, context, item) {
     });
   }
 
+  const schedule = container.querySelector("[data-rb-schedule-review]");
+  const reviewNote = container.querySelector("[data-rb-case-review]");
+
+  function showCaseReview() {
+    const entry = context.value.reviews[item.id];
+    const due = isReviewDue(entry);
+    const correct = Math.max(0, Number(entry?.correct) || 0);
+    const attempts = correct + Math.max(0, Number(entry?.wrong) || 0);
+    const date = Number.isFinite(entry?.due) && entry.due > Date.now() && entry.due <= 8.64e15
+      ? new Intl.DateTimeFormat("vi-VN", { dateStyle: "short" }).format(entry.due) : "";
+    const plan = due ? "Đến hạn ôn" : date ? "Lần ôn tiếp theo " + date : "Chưa có lịch ôn";
+    reviewNote.textContent = attempts ? plan + " · Đúng " + correct + "/" + attempts + " lượt" : plan;
+    schedule.setAttribute("aria-disabled", String(due));
+    schedule.textContent = due ? "Đã xếp lịch ôn" : "Đưa vào lịch ôn";
+  }
+
   draw();
+  showCaseReview();
   container.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-rb-copy], [data-rb-favorite], [data-rb-enlarge]");
+    const button = event.target.closest("[data-rb-copy], [data-rb-favorite], [data-rb-enlarge], [data-rb-schedule-review]");
     if (!button) return;
+    if (button === schedule && !isReviewDue(context.value.reviews[item.id])) {
+      changeReview(context.value, item.id, { schedule: true });
+      const saved = context.store.save();
+      showCaseReview();
+      context.say(saved ? "Công thức đã được xếp vào hàng đợi ôn." : "Lịch ôn chỉ được giữ trong phiên này.");
+    }
     if (button.hasAttribute("data-rb-copy")) clickCopy(algorithm, context);
     if (button.hasAttribute("data-rb-favorite")) {
       const favorite = !context.value.reviews[item.id]?.favorite;
@@ -600,6 +652,34 @@ function casePage(container, context, item) {
   }, { signal: context.signal });
 }
 
+function reviewDashboard(context) {
+  const now = Date.now();
+  const dueByPuzzle = new Map();
+  let soonest;
+  for (const item of CASES) {
+    const review = context.value.reviews[item.id];
+    if (isReviewDue(review, now)) {
+      dueByPuzzle.set(item.puzzle, (dueByPuzzle.get(item.puzzle) || 0) + 1);
+    } else if (review?.due > now && review.due <= 8.64e15 && (!soonest || review.due < soonest.due)) {
+      soonest = { item, due: review.due };
+    }
+  }
+  const rows = PUZZLES.map((puzzle) => ({
+    puzzle, due: dueByPuzzle.get(puzzle.id) || 0, session: openSession(context, puzzle.id)
+  })).filter(({ due, session }) => due || session)
+    .sort((a, b) => Number(Boolean(b.session)) - Number(Boolean(a.session)) || b.due - a.due);
+  const dueCount = [...dueByPuzzle.values()].reduce((sum, count) => sum + count, 0);
+  const nextDate = soonest ? new Intl.DateTimeFormat("vi-VN", { dateStyle: "short" }).format(soonest.due) : "";
+  return '<article class="rb-panel rb-review-dashboard" data-rb-review-dashboard><div class="rb-review-heading"><div>' +
+    '<h3>Lịch ôn công thức</h3><p>' + (dueCount ? dueCount + " công thức đến hạn." : "Chưa có công thức đến hạn.") +
+    '</p></div>' + (!rows.length ? reviewLink(context.puzzle, "Bắt đầu buổi ôn", undefined, true) : '') + '</div>' +
+    (rows.length ? '<ul class="rb-review-queue">' + rows.map(({ puzzle, due, session }) => '<li><div><strong>' + esc(puzzle.name) +
+      '</strong><p>' + (session ? "Ca " + (session.index + 1) + "/" + session.ids.length : due + " công thức đến hạn") +
+      '</p></div>' + reviewLink(puzzle.id, session ? "Tiếp tục" : "Ôn ngay", session) + '</li>').join("") + '</ul>' : '') +
+    (soonest ? '<p class="rb-note">Đến hạn sau vào ' + esc(nextDate) + ' · ' +
+      '<a href="#' + casePath(soonest.item.id) + '">' + esc(soonest.item.name) + '</a>' + '</p>' : '') + '</article>';
+}
+
 function progressPage(container, context) {
   const covered = getCaseCoverage();
   const review = Object.values(context.value.reviews);
@@ -607,7 +687,7 @@ function progressPage(container, context) {
     '<div class="rb-stats"><div><strong>' + Object.keys(context.value.lessons).length + '</strong><span>Bài đã học</span></div><div><strong>' +
     review.filter((item) => item.status === "known").length + '</strong><span>Công thức đã nhớ</span></div><div><strong>' +
     context.value.records.length + '</strong><span>Lượt bấm giờ</span></div></div>' +
-    '<article class="rb-panel rb-progress-favorites"><h3>Yêu thích</h3><div class="rb-controls">' +
+    reviewDashboard(context) + '<article class="rb-panel rb-progress-favorites"><h3>Yêu thích</h3><div class="rb-controls">' +
     (CASES.filter((item) => context.value.reviews[item.id]?.favorite).map((item) => link(casePath(item.id), item.name)).join("") || '<p>Chưa lưu công thức yêu thích.</p>') +
     '</div></article><h3>Độ phủ nội dung</h3><div class="rb-progress-grid" data-rb-coverage></div>' +
     '<p class="rb-note">Số có clip được đếm riêng. Bảng này phản ánh dữ liệu đang có trong bản hiện tại.</p></section>';
@@ -704,7 +784,7 @@ export function mountRubik(host, { route = "/rubik", currentUser } = {}) {
     visualization(body.querySelector("[data-rb-free]"), { puzzle, free: true, whiteBottom: true }, context);
   } else if (sections[page]) {
     body.innerHTML = '<section class="rb-section">' + header(...sections[page]) + '<div data-rb-tool role="status">Đang mở công cụ…</div></section>';
-    import("./rubik-tools.mjs?v=4").then(({ mountTool }) => {
+    import("./rubik-tools.mjs?v=5").then(({ mountTool }) => {
       if (!context.alive()) return;
       const panel = body.querySelector("[data-rb-tool]");
       panel.removeAttribute("role");

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { pickPracticeCase, practiceChoices } from "../rubik-trainer.mjs";
+import { pickPracticeCase, practiceChoices, reviewSessionCases } from "../rubik-trainer.mjs";
 import { describeCubeMove, whiteBottomState } from "../rubik-player.mjs";
 import { applyMoves, solvedFaces } from "../rubik-engine.mjs";
 
@@ -32,4 +32,17 @@ test("review picks overdue work first without immediately repeating another avai
   assert.equal(pick({ previous: "wrong", priority: "all", random: () => 0.9 }), "new");
   assert.equal(pickPracticeCase([pool[0]], progress, { previous: "first" })?.id, "first");
   assert.equal(pickPracticeCase([], progress), undefined);
+});
+
+test("a review session fixes an ordered set of at most five due and unseen cases", () => {
+  const pool = ["unseen", "late", "early", "future", "favorite", "known", "new", "extra", "extra", "overflow"].map((id) => ({ id }));
+  const reviews = {
+    late: { due: 90, wrong: 2 },
+    early: { due: 10, correct: 1 },
+    future: { due: 120, correct: 1 },
+    favorite: { due: 0, favorite: true },
+    known: { due: 0, status: "known" }
+  };
+  assert.deepEqual(reviewSessionCases(pool, reviews, 100), ["early", "late", "unseen", "favorite", "new"]);
+  assert.deepEqual(reviewSessionCases(pool.slice(0, 4), reviews, 0), ["unseen"]);
 });

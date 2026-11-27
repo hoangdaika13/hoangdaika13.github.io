@@ -1,4 +1,4 @@
-import { createSpeedControl, createStepTimeline, createTurnGuide, turnTiming } from "./rubik-playback.mjs?v=1";
+import { createAutoPlayback, createLoopControl, createSpeedControl, createStepTimeline, createTurnGuide, turnTiming } from "./rubik-playback.mjs?v=2";
 
 const SPECIAL_MOVES = {
   pyraminx: ["U", "R", "L", "B", "u", "r", "l", "b", "U'", "R'", "L'", "B'", "u'", "r'", "l'", "b'"],
@@ -260,19 +260,14 @@ export function mountSpecialPuzzle(host, {
   }
   let player;
   let volume;
-  let timer;
+  let playback;
   let frame;
   let revision = 0;
   let play;
   let finishTurn = () => {};
 
   function stop() {
-    clearTimeout(timer);
-    timer = undefined;
-    if (play) {
-      play.textContent = "Phát";
-      play.setAttribute("aria-pressed", "false");
-    }
+    playback?.stop();
   }
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) { stop(); finishTurn(); }
@@ -366,7 +361,21 @@ export function mountSpecialPuzzle(host, {
     const settings = document.createElement("div");
     settings.className = "rb-controls rb-player-settings";
     const guide = createTurnGuide();
+    playback = free ? null : createAutoPlayback(moves.length, {
+      position: () => index, range: () => loop?.range, speed: () => speed,
+      advance() {
+        const previous = index++;
+        refresh(previous, moves[previous]);
+      },
+      rewind(destination) { index = destination; refresh(); },
+      onPlaying(playing) {
+        if (!play) return;
+        play.textContent = playing ? "Tạm dừng" : "Phát";
+        play.setAttribute("aria-pressed", String(playing));
+      }
+    });
     const timeline = !free && createStepTimeline(moves, seek, signal);
+    const loop = playback && createLoopControl(moves, playback.setLoopStart, signal);
     const hint = document.createElement("p");
     hint.className = "rb-note";
 
@@ -422,20 +431,7 @@ export function mountSpecialPuzzle(host, {
     reset.dataset.player = "reset";
     actions.append(reset, back);
     if (!free) {
-      function tick() {
-        const previous = index++;
-        refresh(previous, moves[previous]);
-        timer = setTimeout(index < moves.length ? tick : stop, turnTiming(speed).interval);
-      }
-      play = makeButton("Phát", () => {
-        if (timer) stop();
-        else if (moves.length) {
-          if (index === moves.length) seek(0);
-          play.textContent = "Tạm dừng";
-          play.setAttribute("aria-pressed", "true");
-          tick();
-        }
-      }, signal);
+      play = makeButton("Phát", playback.toggle, signal);
       play.dataset.player = "play";
       play.setAttribute("aria-pressed", "false");
       actions.append(play);
@@ -499,7 +495,7 @@ export function mountSpecialPuzzle(host, {
       }
     }
     host.replaceChildren(viewerHost, actions, guide.guide, ...(timeline ? [timeline.timeline] : []),
-      ...(settings.children.length ? [settings] : []), hint, ...(keys ? [keys] : []), status);
+      ...(loop ? [loop.panel] : []), ...(settings.children.length ? [settings] : []), hint, ...(keys ? [keys] : []), status);
     if (native) volume = native.mountVariantVolume(viewerHost, puzzle, initial);
     updateViewHelp();
     refresh();

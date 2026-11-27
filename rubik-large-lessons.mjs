@@ -1,4 +1,4 @@
-import { LARGE_CASE_ROWS } from "./rubik-large-cases.mjs?v=3";
+import { LARGE_CASE_ROWS } from "./rubik-large-cases.mjs?v=4";
 
 export const LARGE_PUZZLES = [
   { id: "8x8x8", name: "Rubik 8×8", description: "Ghép tâm 6×6, cạnh sáu mảnh và xử lý hai dạng parity sau thu gọn." },

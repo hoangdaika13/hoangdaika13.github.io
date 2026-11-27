@@ -1,5 +1,5 @@
 export const FACE_ORDER = "URFDLB";
-export { mountSpecialPreview, mountSpecialPuzzle, scramblePuzzle } from "./rubik-special.mjs?v=4";
+export { mountSpecialPreview, mountSpecialPuzzle, scramblePuzzle } from "./rubik-special.mjs?v=5";
 export const COLORS = Object.freeze({
   U: "#f6f5ec", R: "#ee4256", F: "#1ec589",
   D: "#f8cf45", L: "#ff8544", B: "#3b83ee"
