@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1091";
+const CACHE = "hh-identity-portal-v1092";
+// Previous release: hh-identity-portal-v1091.
 // Previous release: hh-identity-portal-v1090.
 // Previous release: hh-identity-portal-v1089.
 // Previous release: hh-identity-portal-v1088.
@@ -249,7 +250,7 @@ const RUNTIME_ASSETS = [
   "./all-game-pack-arcade.js?v=5",
   "./all-game-pack-casual.js?v=5",
   "./all-game.css?v=6",
-  "./rubik.css?v=4",
+  "./rubik.css?v=5",
   "./rubik-workspaces.css?v=1",
   "./rubik-entry.js?v=4",
   "./rubik.mjs?v=4",
@@ -1023,7 +1024,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=747",
+  "./performance-loader.js?v=748",
   "./auth-experience.js?v=10",
   "./auth-login-repair.css?v=4",
   "./auth-zoom-resilience.js?v=4",

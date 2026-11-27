@@ -483,7 +483,20 @@ async function check(browser, mobile) {
     await page.locator("[data-scramble-form] textarea").fill("R U2 F' L D2 B");
     await page.getByRole("button", { name: "Tìm lời giải" }).click();
     await page.locator("[data-solver-note]").filter({ hasText: "Đã kiểm tra lời giải" }).waitFor({ timeout: 40000 });
-    await page.locator("[data-rb-solver-player] .rb-board").waitFor();
+    const solverPlayer = page.locator("[data-rb-solver-player]");
+    await solverPlayer.locator(".rb-board").waitFor();
+    await noOverflow(page);
+    const solverTimeline = solverPlayer.locator(".rb-token-list");
+    const solutionEnd = solverTimeline.locator("[data-player-step]").last();
+    await timelineStep(solverPlayer, 0).press("End");
+    assert.equal(await solutionEnd.getAttribute("aria-current"), "step");
+    const track = await solverTimeline.evaluate(({ clientWidth, scrollWidth, scrollLeft }) => ({ clientWidth, scrollWidth, scrollLeft }));
+    if (track.scrollWidth > track.clientWidth + 1) assert.ok(track.scrollLeft > 0, "long solver timeline scrolls to its final move");
+    assert.ok(await solverPlayer.locator(".rubik-cube-cell").evaluateAll((cells) => {
+      const colors = cells.map((cell) => cell.dataset.color);
+      return colors.length === 54 && [0, 9, 18, 27, 36, 45].every((start) =>
+        colors.slice(start, start + 9).every((color) => color === colors[start]));
+    }), "seeking to the final move solves all six faces");
     await noOverflow(page);
 
     await go(page, "/rubik/luyen-tap", "[data-answer]");
