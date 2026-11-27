@@ -1,3 +1,5 @@
+import { createSpeedControl, createStepTimeline, createTurnGuide, turnTiming } from "./rubik-playback.mjs?v=1";
+
 const SPECIAL_MOVES = {
   pyraminx: ["U", "R", "L", "B", "u", "r", "l", "b", "U'", "R'", "L'", "B'", "u'", "r'", "l'", "b'"],
   megaminx: ["U", "U'", "R", "R'", "F", "F'", "L", "L'", "R++", "R--", "D++", "D--"],
@@ -141,11 +143,12 @@ function canDraw3D() {
 
 const nativeVolume = (puzzle) => puzzle === "clock" || puzzle === "square1";
 
+const TWISTY_HOME = { latitude: 26, longitude: -29 };
+
 function createTwistyViewer(TwistyPlayer, { puzzle, setup, isFlat = () => false, signal }) {
-  const home = { latitude: 26, longitude: -29 };
   const player = new TwistyPlayer({
     puzzle, experimentalSetupAlg: setup, background: "none",
-    cameraLatitude: home.latitude, cameraLongitude: home.longitude,
+    cameraLatitude: TWISTY_HOME.latitude, cameraLongitude: TWISTY_HOME.longitude,
     visualization: isFlat() ? "2D" : "3D", controlPanel: "none", viewerLink: "none",
     hintFacelets: "none", experimentalDragInput: "auto"
   });
@@ -158,7 +161,7 @@ function createTwistyViewer(TwistyPlayer, { puzzle, setup, isFlat = () => false,
     event.preventDefault();
     const scene = player.experimentalModel.twistySceneModel;
     if (key === "Home") {
-      scene.orbitCoordinatesRequest.set(home);
+      scene.orbitCoordinatesRequest.set(TWISTY_HOME);
       return;
     }
     const { latitude, longitude } = await scene.orbitCoordinates.get();
@@ -179,7 +182,7 @@ export function mountSpecialPreview(host, { puzzle, setup = "", fallback }) {
     if (signal.aborted) return;
     if (nativeVolume(puzzle)) {
       const [{ mountVariantVolume }, model] = await Promise.all([
-        import("./rubik-variant-volume.mjs?v=1"), puzzles[puzzle].kpuzzle()
+        import("./rubik-variant-volume.mjs?v=2"), puzzles[puzzle].kpuzzle()
       ]);
       if (signal.aborted) return;
       view = mountVariantVolume(host, puzzle, applyPuzzle(model.defaultPattern(), notationMoves(Alg, setup), puzzle));
@@ -195,6 +198,50 @@ export function mountSpecialPreview(host, { puzzle, setup = "", fallback }) {
     lifecycle.abort();
     view?.destroy();
   };
+}
+
+export function describeSpecialMove(puzzle, move) {
+  if (puzzle === "square1") {
+    if (move === "/") return "Lật nửa khối qua lát cắt 180° để đổi mảnh giữa hai tầng.";
+    const angles = /^\((-?\d+),\s*(-?\d+)\)$/.exec(move);
+    if (angles) {
+      const layers = ["tầng trên", "tầng dưới"].flatMap((name, i) => {
+        const amount = Number(angles[i + 1]);
+        return amount ? [name + " " + Math.abs(amount) * 30 + "° theo chiều " + (amount > 0 ? "+" : "−")] : [];
+      });
+      return layers.length ? "Xoay " + layers.join(", ") + "." : "Giữ nguyên hai tầng.";
+    }
+  }
+  if (puzzle === "clock") {
+    if (/^y2'?$/u.test(move)) return "Lật Clock 180° quanh trục dọc để xem mặt kia.";
+    const dial = /^([A-Z]+)(\d+)([+-])$/u.exec(move);
+    if (dial) return "Xoay nhóm " + dial[1] + " " + dial[2] + " nấc " +
+      (dial[3] === "+" ? "thuận" : "ngược") + " chiều kim đồng hồ khi nhìn mặt trước.";
+  }
+  if (puzzle === "pyraminx" && /^[a-z]/u.test(move)) return "Xoay chóp " + move[0].toUpperCase() +
+    " theo ký hiệu " + move + ".";
+  return "Thực hiện nước " + move + " trên " + NAMES[puzzle] + ".";
+}
+
+export function movingStickerMask(model, pattern, move) {
+  try {
+    const { transformationData } = model.moveToTransformation(move);
+    let moved = false;
+    const masks = model.definition.orbits.map(({ orbitName, numPieces }) => {
+      const { permutation, orientationDelta } = transformationData[orbitName];
+      const { pieces } = pattern.patternData[orbitName];
+      const mask = Array(numPieces).fill("D");
+      for (const [position, piece] of pieces.entries()) {
+        if (permutation[position] === position && !orientationDelta[position]) continue;
+        mask[piece] = "-";
+        moved = true;
+      }
+      return orbitName + ":" + mask.join("");
+    });
+    return moved ? masks.join(",") : null;
+  } catch {
+    return null;
+  }
 }
 
 export function mountSpecialPuzzle(host, {
@@ -213,19 +260,28 @@ export function mountSpecialPuzzle(host, {
   }
   let player;
   let volume;
-  let timer = 0;
+  let timer;
+  let frame;
+  let revision = 0;
   let play;
+  let finishTurn = () => {};
+
   function stop() {
     clearTimeout(timer);
-    timer = 0;
-    if (play) play.textContent = "Phát";
-    player?.pause();
+    timer = undefined;
+    if (play) {
+      play.textContent = "Phát";
+      play.setAttribute("aria-pressed", "false");
+    }
   }
-  document.addEventListener("visibilitychange", () => { if (document.hidden) stop(); }, { signal });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) { stop(); finishTurn(); }
+  }, { signal });
+
   async function mount() {
     const { Alg, puzzles, TwistyPlayer } = await import("./vendor/rubik-cubing/special.mjs?v=1");
     const model = await puzzles[puzzle].kpuzzle();
-    const native = nativeVolume(puzzle) ? await import("./rubik-variant-volume.mjs?v=1") : null;
+    const native = nativeVolume(puzzle) ? await import("./rubik-variant-volume.mjs?v=2") : null;
     if (signal.aborted) return;
     const solved = model.defaultPattern();
     let setupMoves = notationMoves(Alg, setup);
@@ -234,15 +290,16 @@ export function mountSpecialPuzzle(host, {
     let patterns = [initial];
     for (const move of moves) patterns.push(applyPuzzle(patterns.at(-1), [move], puzzle));
     const goalMoves = free && goalAlgorithm != null ? notationMoves(Alg, goalAlgorithm) : [];
-    const goal = free && goalAlgorithm != null
-      ? applyPuzzle(initial, goalMoves, puzzle)
-      : null;
+    const goal = free && goalAlgorithm != null ? applyPuzzle(initial, goalMoves, puzzle) : null;
     let reachedGoal = false;
     let index = 0;
     let speed = 1;
+    let synced;
+    const motion = typeof matchMedia === "function" ? matchMedia("(prefers-reduced-motion: reduce)") : null;
     const has3D = !native && canDraw3D();
     let show2D = twoD || !has3D;
     const viewerHost = document.createElement("div");
+    viewerHost.className = "rb-board rb-variant-board";
     if (!native) {
       player = createTwistyViewer(TwistyPlayer, { puzzle, setup: setupMoves.join(" "), isFlat: () => show2D, signal });
       player.style.width = "100%";
@@ -251,140 +308,210 @@ export function mountSpecialPuzzle(host, {
       player.style.marginInline = "auto";
       viewerHost.append(player);
     }
-    const actions = document.createElement("div");
-    actions.className = "rb-controls";
-    const tokens = document.createElement("div");
-    tokens.className = "rb-token-list";
-    tokens.setAttribute("aria-label", "Các nước đi");
-    function refresh() {
-      if (volume) volume.update(patterns[index]);
-      else {
-        player.alg = moves.slice(0, index).join(" ");
-        player.jumpToEnd();
+
+    async function syncTwisty(previous, move = "") {
+      cancelAnimationFrame(frame);
+      const token = ++revision;
+      const destination = index;
+      const mask = move && !show2D ? movingStickerMask(model, patterns[previous], move) : null;
+      delete viewerHost.dataset.turnPhase;
+      player.experimentalStickeringMaskOrbits = null;
+      if (synced !== moves) {
+        player.alg = moves.join(" ");
+        synced = moves;
       }
+      try {
+        const indexer = await player.experimentalModel.indexer.get();
+        if (signal.aborted || token !== revision) return;
+        const end = indexer.indexToMoveStartTimestamp(destination);
+        const start = indexer.indexToMoveStartTimestamp(previous);
+        if (!move || motion?.matches || start === end) {
+          player.timestamp = end;
+          player.experimentalStickeringMaskOrbits = mask;
+          return;
+        }
+        player.experimentalStickeringMaskOrbits = mask;
+        const { duration, preview } = turnTiming(speed);
+        const startAt = performance.now() + preview;
+        player.timestamp = start;
+        viewerHost.dataset.turnPhase = "prepare";
+        function render(now) {
+          if (signal.aborted || token !== revision) return;
+          const distance = Math.max(0, Math.min(1, (now - startAt) / duration));
+          if (distance > 0) viewerHost.dataset.turnPhase = "moving";
+          player.timestamp = start + (end - start) * distance * distance * (3 - 2 * distance);
+          if (distance < 1) frame = requestAnimationFrame(render);
+          else {
+            delete viewerHost.dataset.turnPhase;
+            player.experimentalStickeringMaskOrbits = null;
+          }
+        }
+        frame = requestAnimationFrame(render);
+      } catch {
+        if (signal.aborted || token !== revision) return;
+        player.alg = moves.slice(0, destination).join(" ");
+        player.jumpToEnd();
+        synced = undefined;
+      }
+    }
+
+    finishTurn = () => {
+      if (volume) volume.finishTurn();
+      else void syncTwisty(index);
+    };
+    motion?.addEventListener?.("change", () => { if (motion.matches) finishTurn(); }, { signal });
+
+    const actions = document.createElement("div");
+    actions.className = "rb-controls rb-player-controls";
+    const settings = document.createElement("div");
+    settings.className = "rb-controls rb-player-settings";
+    const guide = createTurnGuide();
+    const timeline = !free && createStepTimeline(moves, seek, signal);
+    const hint = document.createElement("p");
+    hint.className = "rb-note";
+
+    function refresh(previous = index, move) {
+      if (volume) volume.update(patterns[index], { move, ...turnTiming(speed) });
+      else void syncTwisty(previous, move);
       back.disabled = index === 0;
       next.disabled = index >= moves.length;
-      if (!free && play) play.disabled = moves.length === 0;
-      const meetsGoal = goal && patterns[index]?.isIdentical(goal);
+      if (play) play.disabled = !moves.length;
+      const activeMove = move || moves[index - 1];
+      guide.show(activeMove || "", activeMove ? describeSpecialMove(puzzle, activeMove) :
+        free ? "Chọn một nước xoay để thực hành." : "Chọn một ký hiệu hoặc nút Tiến để xem nước đầu tiên.");
+      timeline?.select?.(index);
+
+      const meetsGoal = goal && patterns[index].isIdentical(goal);
       if (meetsGoal) status.textContent = "Đã hoàn thành mục tiêu.";
-      else if (free) {
-        status.textContent = patterns[index].isIdentical(solved)
-          ? "Khối đã về trạng thái giải." : index + " nước đã xoay.";
-      } else {
-        status.textContent = index + "/" + moves.length + " nước" + (index ? " · Vừa xoay " + moves[index - 1] : "");
-      }
-      tokens.replaceChildren(...moves.map((notation, offset) => {
-        const span = document.createElement("span");
-        span.textContent = notation;
-        if (offset === index - 1) span.setAttribute("aria-current", "step");
-        return span;
-      }));
+      else if (free) status.textContent = patterns[index].isIdentical(solved)
+        ? "Khối đã về trạng thái giải." : index + " nước đã xoay.";
+      else status.textContent = index + "/" + moves.length + " nước" +
+        (index ? " · " + moves[index - 1] : "");
       if (meetsGoal && !reachedGoal && index > 0) {
         reachedGoal = true;
         onGoal?.();
       }
     }
-    function advance(delta) {
+
+    function seek(destination) {
       stop();
-      index = Math.max(0, Math.min(moves.length, index + delta));
+      index = destination;
       refresh();
     }
-    const back = makeButton(free ? "Hoàn tác" : "Lùi một nước", () => advance(-1), signal);
-    const next = makeButton(free ? "Làm lại" : "Tiến một nước", () => advance(1), signal);
-    actions.append(makeButton("Đặt lại", () => {
+
+    function advance(delta) {
       stop();
-      index = 0;
+      const previous = index;
+      const move = delta > 0 ? moves[index]
+        : notationMoves(Alg, Alg.fromString(moves[index - 1]).invert().toString())[0];
+      index += delta;
+      refresh(previous, move);
+    }
+
+    const back = makeButton(free ? "Hoàn tác" : "Lùi một nước", () => advance(-1), signal);
+    back.dataset.player = "back";
+    const next = makeButton(free ? "Làm lại" : "Tiến một nước", () => advance(1), signal);
+    next.dataset.player = "next";
+    const reset = makeButton("Đặt lại", () => {
       if (free) {
         moves = [];
         patterns = [initial];
       }
-      refresh();
-    }, signal), back, next);
+      seek(0);
+    }, signal);
+    reset.dataset.player = "reset";
+    actions.append(reset, back);
+    if (!free) {
+      function tick() {
+        const previous = index++;
+        refresh(previous, moves[previous]);
+        timer = setTimeout(index < moves.length ? tick : stop, turnTiming(speed).interval);
+      }
+      play = makeButton("Phát", () => {
+        if (timer) stop();
+        else if (moves.length) {
+          if (index === moves.length) seek(0);
+          play.textContent = "Tạm dừng";
+          play.setAttribute("aria-pressed", "true");
+          tick();
+        }
+      }, signal);
+      play.dataset.player = "play";
+      play.setAttribute("aria-pressed", "false");
+      actions.append(play);
+    }
+    actions.append(next);
+    if (!free) actions.append(createSpeedControl((value) => { speed = value; }, signal));
+
+    const camera = makeButton("Về góc chuẩn", () => {
+      if (volume) volume.resetCamera();
+      else player.experimentalModel.twistySceneModel.orbitCoordinatesRequest.set(TWISTY_HOME);
+    }, signal);
+    camera.dataset.player = "camera";
+    function updateViewHelp() {
+      camera.hidden = !native && show2D;
+      hint.textContent = camera.hidden ? "Sơ đồ mở phẳng của khối."
+        : "Kéo trên khối hoặc dùng phím mũi tên để đổi góc nhìn.";
+    }
+    settings.append(camera);
     if (has3D) {
       const toggle = makeButton(show2D ? "Xem 3D" : "Xem 2D", () => {
+        stop();
+        finishTurn();
         show2D = !show2D;
         player.visualization = show2D ? "2D" : "3D";
         toggle.textContent = show2D ? "Xem 3D" : "Xem 2D";
+        updateViewHelp();
       }, signal);
-      actions.prepend(toggle);
+      toggle.dataset.player = "mode";
+      settings.append(toggle);
     }
-    const additions = [];
+    let keys;
     if (free) {
-      if (!goal) actions.append(makeButton("Xáo khối", () => {
-        stop();
+      if (!goal) settings.append(makeButton("Xáo khối", () => {
         setupMoves = notationMoves(Alg, scramblePuzzle(puzzle));
         initial = applyPuzzle(solved, setupMoves, puzzle);
         if (player) player.experimentalSetupAlg = setupMoves.join(" ");
-        index = 0;
         moves = [];
         patterns = [initial];
-        refresh();
+        seek(0);
       }, signal));
-      const keys = document.createElement("div");
+      keys = document.createElement("div");
       keys.className = "rb-controls";
       keys.setAttribute("role", "group");
       keys.setAttribute("aria-label", "Nước xoay hợp lệ");
-      const available = new Set([...SPECIAL_MOVES[puzzle], ...goalMoves]);
-      for (const notation of available) {
+      for (const notation of new Set([...SPECIAL_MOVES[puzzle], ...goalMoves])) {
         const move = makeButton(notation, () => {
           stop();
           try {
             const nextPattern = applyPuzzle(patterns[index], [notation], puzzle);
             moves = moves.slice(0, index).concat(notation);
             patterns = patterns.slice(0, index + 1).concat(nextPattern);
-            index++;
           } catch (error) {
             status.textContent = error?.message?.startsWith("Hai tầng") ? error.message : "Nước xoay này chưa thực hiện được.";
             return;
           }
-          refresh();
+          const previous = index++;
+          refresh(previous, notation);
         }, signal);
         move.dataset.specialMove = notation;
         keys.append(move);
       }
-      additions.push(keys);
-    } else {
-      function tick() {
-        index++;
-        refresh();
-        if (index < moves.length) timer = setTimeout(tick, 680 / speed);
-        else stop();
-      }
-      play = makeButton("Phát", () => {
-        if (timer) stop();
-        else if (moves.length) {
-          if (index >= moves.length) index = 0;
-          play.textContent = "Tạm dừng";
-          tick();
-        }
-      }, signal);
-      const label = document.createElement("label");
-      label.className = "rb-inline";
-      const options = document.createElement("select");
-      for (const [value, name] of [[0.25, "0,25×"], [0.5, "0,5×"], [1, "1×"], [1.5, "1,5×"]]) {
-        const option = document.createElement("option");
-        option.value = String(value);
-        option.textContent = name;
-        options.append(option);
-      }
-      options.value = "1";
-      options.addEventListener("change", () => { speed = Number(options.value); }, { signal });
-      label.append("Tốc độ ", options);
-      actions.append(play, label);
     }
-    const hint = document.createElement("p");
-    hint.className = "rb-note";
-    if (native || has3D) hint.textContent = "Kéo trên khối hoặc dùng phím mũi tên để đổi góc nhìn.";
-    host.replaceChildren(viewerHost, hint, actions, ...additions, tokens, status);
+    host.replaceChildren(viewerHost, actions, guide.guide, ...(timeline ? [timeline.timeline] : []),
+      ...(settings.children.length ? [settings] : []), hint, ...(keys ? [keys] : []), status);
     if (native) volume = native.mountVariantVolume(viewerHost, puzzle, initial);
+    updateViewHelp();
     refresh();
   }
+
   mount().catch(() => {
     if (!signal.aborted) status.textContent = "Chưa mở được mô phỏng. Bạn vẫn có thể làm theo hình và hướng dẫn.";
   });
   return () => {
     lifecycle.abort();
     stop();
+    cancelAnimationFrame(frame);
     volume?.destroy();
     player?.remove();
   };

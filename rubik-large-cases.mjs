@@ -1,4 +1,4 @@
-import { inverseMoves } from "./rubik-engine.mjs?v=3";
+import { inverseMoves } from "./rubik-engine.mjs?v=4";
 
 const format = (size) => size + "×" + size;
 const puzzleOf = (size) => size + "x" + size + "x" + size;

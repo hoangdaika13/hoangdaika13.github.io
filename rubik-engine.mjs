@@ -1,5 +1,5 @@
 export const FACE_ORDER = "URFDLB";
-export { mountSpecialPreview, mountSpecialPuzzle, scramblePuzzle } from "./rubik-special.mjs?v=3";
+export { mountSpecialPreview, mountSpecialPuzzle, scramblePuzzle } from "./rubik-special.mjs?v=4";
 export const COLORS = Object.freeze({
   U: "#f6f5ec", R: "#ee4256", F: "#1ec589",
   D: "#f8cf45", L: "#ff8544", B: "#3b83ee"
@@ -454,7 +454,7 @@ export function renderCube2D(container, initial, size = 3, options = {}) {
           height: (20 * (high[vertical] - low[vertical])) + "%"
         });
       }
-      cell.style.boxShadow = turning && inLayer(stickers[i], turning, size) ? "inset 0 0 0 2px #101523" : "";
+      cell.classList.toggle("rb-turn-target", Boolean(turning && inLayer(stickers[i], turning, size)));
     });
   }
   container.replaceChildren(root);
@@ -466,6 +466,14 @@ function spanLength(value, unit) {
   return "calc(" + value + " * " + unit + ")";
 }
 
+const CUBE_CAMERAS = {
+  standard: [-29, -33],
+  hero: [-27, -36],
+  top: [-53, -29],
+  pair: [-20, -39],
+  mirror: [-32, -41]
+};
+
 export function renderCube3D(container, initial, size = 3, options = {}) {
   checkSize(size);
   const mirror = options.mirror && size === 3;
@@ -476,6 +484,7 @@ export function renderCube3D(container, initial, size = 3, options = {}) {
   });
   root.tabIndex = 0;
   root.setAttribute("role", "img");
+  root.dataset.camera = Object.hasOwn(CUBE_CAMERAS, options.camera) ? options.camera : "standard";
   const scene = element("div", "rubik-cube-volume", {
     position: "relative", width: mirror ? "35%" : "46%", aspectRatio: "1",
     transformStyle: "preserve-3d", pointerEvents: "none"
@@ -511,64 +520,88 @@ export function renderCube3D(container, initial, size = 3, options = {}) {
   };
   const observer = typeof ResizeObserver === "function" ? new ResizeObserver(resize) : null;
   observer?.observe(root);
-  let pitch = -29;
-  let yaw = -33;
+  const home = CUBE_CAMERAS[root.dataset.camera];
+  let [pitch, yaw] = options.angle || home;
   let pointer = null;
   let previous = "";
-  let turn = null;
-  let spin = null;
+  let turn;
+  let spin;
+  let phaseTimer;
+  let finish;
+  let highlighted = [];
   const motion = typeof matchMedia === "function" ? matchMedia("(prefers-reduced-motion: reduce)") : null;
   function camera() {
     scene.style.transform = "rotateX(" + pitch + "deg) rotateY(" + yaw + "deg)";
   }
-  function stopTurn() {
-    if (!turn) return;
+  function resetCamera() {
+    [pitch, yaw] = home;
+    camera();
+  }
+  function clearTurn() {
+    clearTimeout(phaseTimer);
     if (spin) {
       spin.onfinish = null;
       spin.cancel();
     }
-    for (const { slot } of cells) scene.append(slot);
-    turn.remove();
-    spin = null;
-    turn = null;
+    if (turn) {
+      for (const { slot } of cells) scene.append(slot);
+      turn.remove();
+    }
+    highlighted.forEach(({ cell }) => cell.classList.remove("rb-turn-target"));
+    highlighted = [];
+    delete root.dataset.turnPhase;
+    spin = turn = finish = undefined;
   }
-  function update(state, { labels = options.labels, move = "", duration = 250 } = {}) {
-    stopTurn();
+  function finishTurn() {
+    finish?.();
+  }
+  function onMotionChange() {
+    if (motion.matches) finishTurn();
+  }
+  motion?.addEventListener?.("change", onMotionChange);
+  function update(state, { labels = options.labels, move = "", duration = 300, preview = 90 } = {}) {
+    finishTurn();
+    clearTurn();
     describe(root, state, size, mirror);
-    function paintAll(facelets) {
+    const paint = (facelets) => {
       if (mirror) paintMirrorSlots(cells, facelets, labels);
       else cells.forEach(({ cell }, i) => paintCell(cell, facelets[i], labels));
-    }
-    function settle() {
-      paintAll(state);
-      previous = state;
-    }
+    };
     try {
       const moves = move ? parseMoves(move, size) : [];
-      if (motion?.matches || !duration || moves.length !== 1 || !previous ||
+      const spec = moves.length === 1 && decodeMove(moves[0], size);
+      if (spec) {
+        highlighted = cells.filter(({ point }) => inLayer({ point }, spec, size));
+        highlighted.forEach(({ cell }) => cell.classList.add("rb-turn-target"));
+      }
+      if (!spec || motion?.matches || !duration || !previous ||
         applyMoves(previous, moves, size) !== state || typeof scene.animate !== "function") {
-        settle();
+        paint(state);
+        previous = state;
         return;
       }
-      const spec = decodeMove(moves[0], size);
       turn = element("div", "rubik-cube-turn", {
         position: "absolute", inset: "0", transformStyle: "preserve-3d"
       });
       scene.append(turn);
-      paintAll(previous);
-      cells.forEach(({ slot, point }) => {
-        if (inLayer({ point }, spec, size)) turn.append(slot);
-      });
-      const deg = -spec.sign * spec.amount * 90 * (spec.axis === 1 ? 1 : -1);
+      highlighted.forEach(({ slot }) => turn.append(slot));
+      const degrees = -spec.sign * spec.amount * 90 * (spec.axis === 1 ? 1 : -1);
       const axis = "XYZ"[spec.axis];
+      root.dataset.turnPhase = preview ? "prepare" : "moving";
+      if (preview) phaseTimer = setTimeout(() => { root.dataset.turnPhase = "moving"; }, preview);
       spin = turn.animate([{ transform: "rotate" + axis + "(0deg)" }, {
-        transform: "rotate" + axis + "(" + deg + "deg)"
-      }], { duration: Math.max(70, Math.min(900, duration)), easing: "ease-in-out", fill: "forwards" });
-      spin.onfinish = () => { stopTurn(); settle(); };
-      previous = state;
+        transform: "rotate" + axis + "(" + degrees + "deg)"
+      }], { delay: preview, duration, easing: "cubic-bezier(.32,.02,.24,1)", fill: "both" });
+      finish = () => {
+        clearTurn();
+        paint(state);
+        previous = state;
+      };
+      spin.onfinish = finish;
     } catch {
-      stopTurn();
-      settle();
+      clearTurn();
+      paint(state);
+      previous = state;
     }
   }
   root.addEventListener("pointerdown", (event) => {
@@ -596,7 +629,7 @@ export function renderCube3D(container, initial, size = 3, options = {}) {
   root.addEventListener("keydown", (event) => {
     if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home"].includes(event.key)) return;
     event.preventDefault();
-    if (event.key === "Home") { pitch = -29; yaw = -33; }
+    if (event.key === "Home") resetCamera();
     if (event.key === "ArrowLeft") yaw -= 12;
     if (event.key === "ArrowRight") yaw += 12;
     if (event.key === "ArrowUp") pitch = Math.max(-80, pitch - 12);
@@ -608,10 +641,12 @@ export function renderCube3D(container, initial, size = 3, options = {}) {
   camera();
   update(initial);
   return {
-    update,
+    update, resetCamera, finishTurn,
+    getCamera: () => [pitch, yaw],
     destroy() {
       observer?.disconnect();
-      stopTurn();
+      motion?.removeEventListener?.("change", onMotionChange);
+      clearTurn();
       root.remove();
     }
   };

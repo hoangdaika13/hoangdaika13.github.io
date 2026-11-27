@@ -1,4 +1,4 @@
-import { inverseMoves } from "./rubik-engine.mjs?v=3";
+import { inverseMoves } from "./rubik-engine.mjs?v=4";
 
 const guide = "https://www.youtube.com/watch?v=REs39blP02U";
 

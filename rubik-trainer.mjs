@@ -1,9 +1,9 @@
-import { CASES, CASE_GROUPS } from "./rubik-cases.mjs?v=3";
+import { CASES, CASE_GROUPS } from "./rubik-cases.mjs?v=4";
 import { SPECIAL_DIAGRAMS } from "./rubik-media.mjs?v=3";
-import { changeReview } from "./rubik-progress.mjs?v=1";
-import { applyMoves, parseMoves } from "./rubik-engine.mjs?v=3";
-import { loadSpecialPractice } from "./rubik-special.mjs?v=3";
-import { cubeSize, diagram, esc, mountPlayer, snapshot } from "./rubik-player.mjs?v=3";
+import { changeReview } from "./rubik-progress.mjs?v=2";
+import { applyMoves, parseMoves } from "./rubik-engine.mjs?v=4";
+import { loadSpecialPractice } from "./rubik-special.mjs?v=4";
+import { cubeSize, diagram, esc, mountFormulaPreview, mountPlayer, snapshot } from "./rubik-player.mjs?v=4";
 
 const STEP_CHOICES = {
   pyraminx: ["U", "R'", "L", "u'"],
@@ -31,7 +31,10 @@ export function practiceChoices(answer, alternatives, random = Math.random) {
 export function pickPracticeCase(pool, reviews, { previous, priority, now = Date.now(), random = Math.random } = {}) {
   const eligible = pool.length > 1 ? pool.filter((item) => item.id !== previous) : pool;
   if (!eligible.length) return undefined;
-  const due = priority === "due" && eligible.filter((item) => reviews[item.id]?.due <= now);
+  const due = priority === "due" && eligible.filter((item) => {
+    const review = reviews[item.id];
+    return review && (review.due > 0 || review.wrong > 0) && review.due <= now;
+  });
   const ordered = due?.length ? due.slice().sort((a, b) => reviews[b.id].wrong - reviews[a.id].wrong ||
     reviews[a.id].due - reviews[b.id].due).slice(0, 6) : eligible;
   return ordered[Math.floor(random() * ordered.length)];
@@ -68,7 +71,8 @@ export function mountTrainer(container, context) {
   const groupParam = context.params.get("group");
   let requestedCase = cases.find((item) => item.id === context.params.get("case"));
   const groups = CASE_GROUPS.filter((group) => cases.some((item) => group.id === item.group));
-  container.innerHTML = '<div class="rb-panel rb-stack"><div class="rb-filters">' + selectPuzzle(context.puzzle) +
+  container.innerHTML = '<div class="rb-stack rb-tool-practice"><section class="rb-panel rb-practice-filters" aria-label="Chọn bài luyện">' +
+    '<div class="rb-filters">' + selectPuzzle(context.puzzle) +
     '<label class="rb-field">Bộ công thức<select data-set><option value="">Tất cả</option>' +
     groups.map((group) => '<option value="' + esc(group.id) + '"' + (group.id === (requestedCase?.group || groupParam) ? " selected" : "") +
       '>' + esc(group.name) + '</option>').join("") + '</select></label>' +
@@ -76,15 +80,18 @@ export function mountTrainer(container, context) {
     '<option value="step">Chọn nước mở đầu</option><option value="recall">Nhập công thức</option>' +
     '<option value="turn">Tự xoay đến mục tiêu</option></select></label>' +
     '<label class="rb-field">Ưu tiên<select data-priority><option value="due">Đến hạn ôn</option><option value="all">Ngẫu nhiên</option>' +
-    '<option value="favorite">Yêu thích</option></select></label></div>' +
-    '<p class="rb-note rb-practice-tally" data-rb-tally aria-live="polite"></p><div data-trainer-body class="rb-stack"></div>' +
-    '<p role="status" data-trainer-feedback></p><div class="rb-stack" data-rb-answer-review hidden></div>' +
-    '<div class="rb-controls"><button type="button" data-new-exercise class="rb-primary">Đổi trường hợp</button>' +
-    '<button type="button" data-rb-hint hidden>Gợi ý</button></div></div>';
+    '<option value="favorite">Yêu thích</option></select></label></div></section>' +
+    '<section class="rb-panel rb-practice-session" aria-label="Buổi luyện">' +
+    '<div class="rb-practice-toolbar"><p class="rb-tool-label rb-practice-tally" data-rb-tally></p>' +
+    '<div class="rb-controls"><button type="button" data-rb-hint hidden>Gợi ý</button>' +
+    '<button type="button" data-new-exercise>Đổi trường hợp</button></div></div>' +
+    '<div data-trainer-body class="rb-stack"></div><p class="rb-practice-feedback" role="status" data-trainer-feedback></p>' +
+    '<div class="rb-stack rb-practice-review" data-rb-answer-review hidden></div></section></div>';
 
   let generation = 0;
   let disposePlayer;
   let disposeDemo;
+  let disposePreview;
   let selected;
   let model;
   let correctChoice;
@@ -98,10 +105,11 @@ export function mountTrainer(container, context) {
   const hint = get("[data-rb-hint]");
   const tally = get("[data-rb-tally]");
   const modeControl = get("[data-exercise]");
+  const nextButton = get("[data-new-exercise]");
   if (requestedCase) modeControl.value = "turn";
 
   function showTally() {
-    tally.textContent = attempts ? "Buổi này: " + successes + "/" + attempts + " lượt đúng" : "Buổi luyện mới";
+    tally.textContent = attempts ? successes + "/" + attempts + " lượt đúng" : "Buổi luyện mới";
   }
 
   function check(correct, picked) {
@@ -113,11 +121,17 @@ export function mountTrainer(container, context) {
     const saved = store.save();
     showTally();
     hint.hidden = true;
+    nextButton.textContent = "Ca tiếp theo";
+    nextButton.classList.add("rb-primary");
     feedback.dataset.result = correct ? "correct" : "incorrect";
     feedback.textContent = (correct ? "Đúng. " : "Chưa đúng. ") + selected.name +
       (saved ? "" : " Kết quả chỉ được giữ trong buổi này.");
+    const focused = document.activeElement;
+    const advanceFocus = body.contains(focused) && focused.matches(":focus-visible");
     for (const button of body.querySelectorAll("[data-answer], [data-check-recall]")) {
-      if (button.dataset.answer === correctChoice) {
+      const expected = button.hasAttribute("data-answer") && button.dataset.answer === correctChoice;
+      const submittedRecall = button === picked && button.hasAttribute("data-check-recall");
+      if (expected || (submittedRecall && correct)) {
         button.dataset.result = "correct";
         button.append(" ✓");
       } else if (button === picked) {
@@ -127,12 +141,13 @@ export function mountTrainer(container, context) {
       button.disabled = true;
     }
     review.hidden = false;
-    review.innerHTML = '<div class="rb-comparisons">' + ["before", "after"].map((side) =>
+    review.innerHTML = '<h3>Đối chiếu hai trạng thái</h3><div class="rb-comparisons">' + ["before", "after"].map((side) =>
       '<figure>' + imageFor(selected, model, side, value.labels) + '<figcaption>' +
       (side === "before" ? "Khối lúc bắt đầu" : "Kết quả cần đạt") + '</figcaption></figure>').join("") + '</div>' +
       '<p>' + esc(selected.tip || "Đối chiếu kết quả với ảnh ban đầu.") + '</p><code class="rb-notation">' + esc(selected.algorithm) +
       '</code><div class="rb-controls"><button type="button" data-rb-demo>Xem từng nước</button><button type="button" data-rb-retry>Thử lại ca này</button>' +
       context.link(context.casePath(selected.id), "Xem công thức và video") + '</div><div data-rb-review-player hidden></div>';
+    if (advanceFocus) nextButton.focus();
   }
 
   async function newExercise({ retry = false, focus = false } = {}) {
@@ -141,6 +156,8 @@ export function mountTrainer(container, context) {
     disposePlayer = undefined;
     disposeDemo?.();
     disposeDemo = undefined;
+    disposePreview?.();
+    disposePreview = undefined;
     const set = get("[data-set]").value;
     const priority = get("[data-priority]").value;
     const mode = modeControl.value;
@@ -155,6 +172,8 @@ export function mountTrainer(container, context) {
     answered = false;
     delete feedback.dataset.result;
     feedback.textContent = "";
+    nextButton.textContent = "Đổi trường hợp";
+    nextButton.classList.remove("rb-primary");
     review.hidden = true;
     review.replaceChildren();
     hint.hidden = true;
@@ -171,38 +190,51 @@ export function mountTrainer(container, context) {
       if (!signal.aborted && generation === token) body.textContent = "Chưa dựng được bài này. Hãy chọn trường hợp khác.";
       return;
     }
-    const image = '<div class="rb-practice-net">' + imageFor(item, model, "before", value.labels) + '</div>';
+    const before = imageFor(item, model, "before", value.labels);
+    const modelStage = '<div class="rb-practice-preview"><div class="rb-case-model rb-practice-model" data-rb-practice-model>' +
+      before + '</div><p class="rb-note" data-rb-practice-orbit>Kéo hoặc dùng phím mũi tên để quan sát khối.</p></div>';
     const title = (text) => '<h3 tabindex="-1">' + esc(text) + '</h3>';
+    const challenge = (text, actions) => title(text) + '<div class="rb-practice-challenge">' + modelStage +
+      '<div class="rb-practice-answer">' + actions + '</div></div>';
     if (mode === "turn") {
       body.innerHTML = title(item.name) + '<p>Tự xoay từ trạng thái mẫu. Mọi chuỗi nước đưa khối đến đúng hình mục tiêu đều được chấp nhận.</p>' +
         '<details><summary>Xem hình mục tiêu</summary><div class="rb-practice-net">' + imageFor(item, model, "after", value.labels) +
         '</div></details><div data-turn-practice></div>';
       disposePlayer = mountPlayer(get("[data-turn-practice]"), {
-        puzzle: item.puzzle, setup: item.setup, free: true, goal: model.end,
+        puzzle: item.puzzle, group: item.group, setup: item.setup, free: true, goal: model.end,
         goalAlgorithm: item.algorithm, labels: value.labels, twoD: value.twoD, whiteBottom: !item.nativePalette,
         onGoal: () => { if (generation === token) check(true); }
       });
     } else if (mode === "recall") {
-      body.innerHTML = title("Nhập công thức cho " + item.name) + image +
-        '<form class="rb-controls" data-rb-recall-form><label class="rb-field">Chuỗi nước đi<input data-recall maxlength="600" autocomplete="off"></label>' +
-        '<button type="submit" class="rb-btn" data-check-recall>Kiểm tra</button></form>';
+      body.innerHTML = challenge("Nhập công thức cho " + item.name,
+        '<form class="rb-stack" data-rb-recall-form><label class="rb-field">Chuỗi nước đi<input data-recall maxlength="600" autocomplete="off" autocapitalize="off" spellcheck="false"></label>' +
+        '<div class="rb-controls"><button type="submit" class="rb-primary" data-check-recall>Kiểm tra</button></div></form>');
     } else {
       correctChoice = mode === "step" ? model.moves[0] : item.name;
       const related = cases.filter((candidate) => candidate.group === item.group && candidate.id !== item.id);
       const options = practiceChoices(correctChoice, mode === "step" ? STEP_CHOICES[item.puzzle] || STEP_CHOICES.cube :
         related.map((candidate) => candidate.name));
       if (options.length < 2) {
-        body.innerHTML = title(item.name) + image + '<p>Bộ này có một hình mẫu. Hãy thử chọn nước mở đầu hoặc tự xoay.</p>' +
-          '<button type="button" class="rb-btn" data-rb-single-step>Thử chọn nước mở đầu</button>';
+        body.innerHTML = challenge(item.name, '<p>Bộ này có một hình mẫu. Hãy thử chọn nước mở đầu hoặc tự xoay.</p>' +
+          '<button type="button" class="rb-btn" data-rb-single-step>Thử chọn nước mở đầu</button>');
       } else {
-        body.innerHTML = title(mode === "step" ? "Nước mở đầu của công thức " + item.name + " là gì?" : "Đây là trường hợp nào?") +
-          image + '<div class="rb-practice-options">' + options.map((option) =>
+        body.innerHTML = challenge(mode === "step" ? "Nước mở đầu của " + item.name + " là gì?" : "Đây là trường hợp nào?",
+          '<div class="rb-practice-options">' + options.map((option) =>
             '<button type="button" class="rb-btn" data-answer="' + esc(option) + '">' + esc(option) + '</button>'
-          ).join("") + '</div>';
+          ).join("") + '</div>');
       }
     }
+    const stage = get("[data-rb-practice-model]");
+    if (stage) {
+      const fallback = () => {
+        stage.innerHTML = before;
+        get("[data-rb-practice-orbit]").hidden = true;
+      };
+      try { disposePreview = mountFormulaPreview(stage, item, { labels: value.labels, fallback }); }
+      catch { fallback(); }
+    }
     hint.hidden = !item.tip;
-    if (focus) body.querySelector("h3")?.focus({ preventScroll: true });
+    if (focus) body.querySelector("h3")?.focus();
   }
 
   container.addEventListener("change", (event) => {
@@ -220,7 +252,7 @@ export function mountTrainer(container, context) {
       return;
     }
     try {
-      check(model.matches(input.value.trim()));
+      check(model.matches(input.value.trim()), get("[data-check-recall]"));
     } catch (error) {
       feedback.textContent = error.message || "Chuỗi vừa nhập chưa hợp lệ.";
       input.focus();
@@ -240,7 +272,7 @@ export function mountTrainer(container, context) {
       const player = get("[data-rb-review-player]");
       player.hidden = false;
       disposeDemo = mountPlayer(player, {
-        puzzle: selected.puzzle, setup: selected.setup, algorithm: selected.algorithm,
+        puzzle: selected.puzzle, group: selected.group, setup: selected.setup, algorithm: selected.algorithm,
         labels: value.labels, twoD: value.twoD, whiteBottom: !selected.nativePalette
       });
       player.scrollIntoView({ block: "nearest" });
@@ -248,5 +280,5 @@ export function mountTrainer(container, context) {
   }, { signal });
   showTally();
   newExercise();
-  context.cleanups.push(() => { generation++; disposePlayer?.(); disposeDemo?.(); });
+  context.cleanups.push(() => { generation++; disposePlayer?.(); disposeDemo?.(); disposePreview?.(); });
 }

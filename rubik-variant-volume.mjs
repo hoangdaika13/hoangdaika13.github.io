@@ -97,7 +97,7 @@ function clockVolume(scene) {
         index.textContent = label;
         numbers.append(index);
       }
-      const hand = node("i", "rb-variant-hand");
+      const hand = node("i", "rb-variant-hand", { transition: "none" });
       dial.append(numbers, hand, node("i", "rb-variant-hand-hub"));
       face.append(dial);
       return { dial, numbers, hand, angle: null };
@@ -108,7 +108,7 @@ function clockVolume(scene) {
     scene.append(face);
     return { face, dials };
   });
-  return (pattern) => {
+  function paint(pattern) {
     const faces = clockProjection(pattern);
     for (const [side, { side: key, dials }] of faces.entries()) {
       const view = views[side];
@@ -124,7 +124,32 @@ function clockVolume(scene) {
     }
     return "Clock 3D. Mặt phía trước " + faces[0].side + ": " + faces[0].dials.map(({ hour }) => hour).join(", ") +
       " giờ. Mặt phía sau " + faces[1].side + ": " + faces[1].dials.map(({ hour }) => hour).join(", ") + " giờ.";
-  };
+  }
+  function plan(before, after, move) {
+    const from = clockProjection(before);
+    const to = clockProjection(after);
+    if (from[0].side !== to[0].side) {
+      return {
+        kind: "flip", targets: views.map(({ face }) => face),
+        animations: [[scene, "rotateY(0deg)", move.endsWith("'") ? "rotateY(-180deg)" : "rotateY(180deg)"]]
+      };
+    }
+    const targets = [];
+    const animations = [];
+    for (const [side, view] of views.entries()) {
+      for (const [i, { turn }] of to[side].dials.entries()) {
+        const old = from[side].dials[i].turn;
+        const delta = mod(turn - old + 6, 12) - 6;
+        const signed = delta === -6 && (move.endsWith("+") !== Boolean(side)) ? 6 : delta;
+        if (!signed) continue;
+        const { dial, hand, angle } = view.dials[i];
+        targets.push(dial);
+        animations.push([hand, "rotate(" + angle + "deg)", "rotate(" + (angle + signed * 30) + "deg)"]);
+      }
+    }
+    return { kind: "dial", targets, animations };
+  }
+  return { paint, plan };
 }
 
 const squareScale = 77;
@@ -183,40 +208,102 @@ function halfSquare(side) {
   });
 }
 
+function movingGroup(className = "rb-variant-moving") {
+  return node("div", className, { position: "absolute", inset: "0", transformStyle: "preserve-3d" });
+}
+
 function equatorVolume(container, parts) {
   const reflectionAxis = radial(ringStart + 90);
-  for (const [slot, { piece, turn }] of parts.entries()) {
+  return parts.map(({ piece, turn }, slot) => {
     const solid = halfSquare(slot === 0 ? 1 : -1).map(([x, z]) => {
       if (mod(turn, 6) !== 3) return [x, z];
       const scalar = 2 * (x * reflectionAxis[0] + z * reflectionAxis[1]);
       return [scalar * reflectionAxis[0] - x, scalar * reflectionAxis[1] - z];
     });
     const order = solid.concat([solid[0]]);
-    prism(container, solid, -10, 10, order, order.map((_, i) => halfTurnFront[piece][mod(turn + i, 6)]), null, null);
-  }
+    const part = movingGroup("rb-variant-square-equator");
+    prism(part, solid, -10, 10, order, order.map((_, i) => halfTurnFront[piece][mod(turn + i, 6)]), null, null);
+    container.append(part);
+    return part;
+  });
 }
 
 function squareVolume(scene) {
-  return (pattern) => {
+  let ringViews;
+  let equatorViews;
+  function paint(pattern) {
     const { layers, equator } = squareRings(pattern);
     const surfaces = document.createDocumentFragment();
-    equatorVolume(surfaces, equator);
-    for (const [ring, pieces] of layers.entries()) {
-      for (const { outer, colors, cap } of pieces) {
-        prism(surfaces, [[0, 0], ...outer], ring === 0 ? -44 : 12,
+    equatorViews = equatorVolume(surfaces, equator);
+    ringViews = layers.map((pieces, ring) => {
+      const layer = movingGroup("rb-variant-square-ring");
+      layer.dataset.ring = ring;
+      const piecesByKey = new Map();
+      for (const { key, outer, colors, cap } of pieces) {
+        const part = movingGroup("rb-variant-square-piece");
+        prism(part, [[0, 0], ...outer], ring === 0 ? -44 : 12,
           ring === 0 ? -12 : 44, outer, colors, ring === 0 ? cap : null, ring === 1 ? cap : null);
+        layer.append(part);
+        piecesByKey.set(key, part);
       }
-    }
+      surfaces.append(layer);
+      return { layer, piecesByKey };
+    });
     scene.replaceChildren(surfaces);
     return "Square-1 3D. Tầng trên có " + layers[0].length + " mảnh, tầng dưới có " +
       layers[1].length + " mảnh. Lát giữa " + (equator[1].turn ? "đã lật." : "đang thẳng.");
-  };
+  }
+
+  function plan(before, after, move, animate = true) {
+    const start = squareRings(before);
+    const end = squareRings(after);
+    if (move === "/") {
+      const changed = [];
+      for (const [ring, { piecesByKey }] of ringViews.entries()) {
+        const stays = new Set(end.layers[ring].map(({ key }) => key));
+        for (const [key, view] of piecesByKey) {
+          if (!stays.has(key)) changed.push(view);
+        }
+      }
+      start.equator.forEach((part, index) => {
+        if (part.turn !== end.equator[index].turn) changed.push(equatorViews[index]);
+      });
+      if (!changed.length) return null;
+      const targets = changed.flatMap((part) => [...part.children]);
+      if (!animate) return { kind: "slice", targets };
+      const half = movingGroup();
+      // The flip axis passes through the centre of the exchanged half.
+      const [x, z] = radial(ringStart + 90);
+      const axis = "rotate3d(" + x.toFixed(5) + ",0," + z.toFixed(5) + ",";
+      scene.append(half);
+      half.append(...changed);
+      return { kind: "slice", targets, animations: [[half, axis + "0deg)", axis + "180deg)"]] };
+    }
+    const amounts = /^\((-?\d+),(-?\d+)\)$/.exec(move);
+    if (!amounts) return null;
+    const targets = [];
+    const animations = [];
+    for (const [ring, { layer }] of ringViews.entries()) {
+      const first = start.layers[ring][0];
+      const target = end.layers[ring].find(({ key }) => key === first.key);
+      if (!target) continue;
+      const count = mod(target.slot - first.slot + 6, 12) - 6;
+      const signed = count === -6 && Number(amounts[ring + 1]) > 0 ? 6 : count;
+      if (!signed) continue;
+      targets.push(...[...layer.children].flatMap((part) => [...part.children]));
+      if (animate) animations.push([layer, "rotateY(0deg)", "rotateY(" + (signed * (ring ? 30 : -30)) + "deg)"]);
+    }
+    return { kind: "ring", targets, animations };
+  }
+  return { paint, plan };
 }
 
 export function mountVariantVolume(host, puzzle, pattern) {
   if (puzzle !== "clock" && puzzle !== "square1") throw new Error("Khối này chưa dùng trình xem 3D này.");
   const stage = node("div", "rb-variant-stage");
   const scene = node("div", "rb-variant-scene");
+  const body = movingGroup("rb-variant-motion");
+  scene.append(body);
   scene.setAttribute("aria-hidden", "true");
   stage.dataset.variant = puzzle;
   stage.tabIndex = 0;
@@ -235,15 +322,80 @@ export function mountVariantVolume(host, puzzle, pattern) {
   }
   const observer = typeof ResizeObserver === "function" ? new ResizeObserver(camera) : null;
   observer?.observe(stage);
-  const paint = puzzle === "clock" ? clockVolume(scene) : squareVolume(scene);
-  function update(current) {
-    const description = paint(current);
+  const projector = puzzle === "clock" ? clockVolume(body) : squareVolume(body);
+  const motion = typeof matchMedia === "function" ? matchMedia("(prefers-reduced-motion: reduce)") : null;
+  let shown;
+  let finish;
+  let phaseTimer;
+  let active = [];
+  let highlighted = [];
+
+  function show(current) {
+    const description = projector.paint(current);
+    shown = current;
     stage.setAttribute("aria-label", description + " Kéo hoặc dùng phím mũi tên để đổi góc. Home đặt lại góc nhìn, End xem mặt sau.");
+  }
+
+  function finishTurn() {
+    finish?.();
+  }
+
+  motion?.addEventListener?.("change", () => { if (motion.matches) finishTurn(); }, { signal });
+
+  function cancelMotion() {
+    clearTimeout(phaseTimer);
+    active.forEach((animation) => { animation.onfinish = null; animation.cancel(); });
+    active = [];
+    highlighted.forEach((target) => target.classList.remove("rb-turn-target"));
+    highlighted = [];
+    finish = undefined;
+    delete stage.dataset.turnPhase;
+    delete stage.dataset.variantMotion;
+  }
+
+  function update(current, { move, duration = 320, preview = 95 } = {}) {
+    finishTurn();
+    cancelMotion();
+    const previous = shown;
+    if (!previous || !move) {
+      if (previous !== current) show(current);
+      return;
+    }
+    if (motion?.matches || !duration || typeof body.animate !== "function") {
+      show(current);
+      highlighted = projector.plan(current, previous, move, false)?.targets || [];
+      highlighted.forEach((target) => target.classList.add("rb-turn-target"));
+      return;
+    }
+    const plan = projector.plan(previous, current, move);
+    if (!plan?.animations.length) {
+      show(current);
+      return;
+    }
+    stage.dataset.variantMotion = plan.kind;
+    stage.dataset.turnPhase = preview ? "prepare" : "moving";
+    highlighted = plan.targets;
+    highlighted.forEach((target) => target.classList.add("rb-turn-target"));
+    if (preview) phaseTimer = setTimeout(() => { stage.dataset.turnPhase = "moving"; }, preview);
+    active = plan.animations.map(([target, from, to]) => target.animate(
+      [{ transform: from }, { transform: to }],
+      { duration, delay: preview, easing: "cubic-bezier(.32,.02,.24,1)", fill: "both" }
+    ));
+    finish = () => {
+      cancelMotion();
+      show(current);
+    };
+    active[0].onfinish = finish;
+  }
+
+  function resetCamera() {
+    [pitch, yaw] = home;
+    camera();
   }
   stage.addEventListener("keydown", (event) => {
     if (!["Home", "End", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) return;
     event.preventDefault();
-    if (event.key === "Home") [pitch, yaw] = home;
+    if (event.key === "Home") resetCamera();
     if (event.key === "End") { pitch = home[0]; yaw = home[1] + 180; }
     if (event.key === "ArrowUp") pitch = Math.max(-84, pitch - 14);
     if (event.key === "ArrowDown") pitch = Math.min(84, pitch + 14);
@@ -276,5 +428,13 @@ export function mountVariantVolume(host, puzzle, pattern) {
   }
   camera();
   update(pattern);
-  return { update, destroy() { lifecycle.abort(); observer?.disconnect(); stage.remove(); } };
+  return {
+    update, finishTurn, resetCamera,
+    destroy() {
+      lifecycle.abort();
+      observer?.disconnect();
+      cancelMotion();
+      stage.remove();
+    }
+  };
 }

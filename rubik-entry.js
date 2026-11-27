@@ -15,7 +15,7 @@
     const expected = generation;
     host.innerHTML = '<p class="rb-loading" role="status">Đang mở Giải Rubik…</p>';
     try {
-      const { mountRubik } = await import("./rubik.mjs?v=3");
+      const { mountRubik } = await import("./rubik.mjs?v=4");
       if (expected === generation && host.isConnected) controller = mountRubik(host, options);
     } catch (error) {
       if (expected !== generation || !host.isConnected) return;

@@ -1,0 +1,197 @@
+/* Rubik practice, solver and timer share the board and feedback tokens. */
+.rb :is(.rb-tool-solver, .rb-tool-practice, .rb-tool-timer) {
+  --rb-work-glow: color-mix(in srgb, var(--rb-accent) 14%, transparent);
+  --rb-work-highlight: color-mix(in srgb, var(--rb-accent) 11%, var(--rb-bg));
+  --rb-work-error: #ffb6bb;
+}
+body:is([data-theme="light"], [data-app-theme="light"], [data-app-theme="basic-light"], [data-app-theme="warm"], .theme-light) .rb :is(.rb-tool-solver, .rb-tool-practice, .rb-tool-timer),
+html[data-theme="light"] .rb :is(.rb-tool-solver, .rb-tool-practice, .rb-tool-timer) { --rb-work-error: #902234; }
+
+.rb-tool-heading, .rb-practice-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: .7rem;
+}
+.rb-tool-heading > .rb-field { width: min(100%, 13rem); }
+.rb .rb-tool-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: .2rem .68rem;
+  border: 1px solid var(--rb-line);
+  border-radius: 999px;
+  background: var(--rb-bg);
+  color: var(--rb-muted);
+  font-weight: 700;
+  font-size: .82rem;
+  font-variant-numeric: tabular-nums;
+}
+.rb-solve-input :is(.rb-paint-orientation, .rb-paint-meter) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .4rem .66rem;
+}
+.rb-paint-orientation > span { display: inline-flex; align-items: center; gap: .35rem; font-size: .85rem; }
+.rb-paint-orientation b {
+  display: grid;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
+  place-items: center;
+  border-radius: .35rem;
+  background: var(--rb-bg);
+  border: 1px solid var(--rb-line);
+  color: var(--rb-text);
+  font: 700 .78rem/1 ui-monospace, Consolas, monospace;
+}
+.rb :is(.rb-paint-directions, .rb-timer-help) > summary { min-height: 2.75rem; align-content: center; color: var(--rb-text); }
+.rb-paint-directions > p { padding-bottom: .45rem; font-size: .88rem; }
+.rb-solve-input .rb-palette {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: .4rem 0 0;
+}
+.rb-solve-input .rb-palette > button { min-width: 0; padding-inline: .35rem; }
+.rb-solve-input .rb-palette i { flex: 0 0 1rem; width: 1rem; }
+.rb-solve-input .rb-palette [aria-pressed="true"] { background: var(--rb-work-highlight); }
+.rb-paint-meter { padding: .15rem 0; font-size: .82rem; color: var(--rb-muted); font-variant-numeric: tabular-nums; }
+.rb-paint-meter progress { flex: 1 1 8rem; min-width: 0; height: .55rem; accent-color: var(--rb-accent); }
+.rb-paint-meter[data-complete] { color: var(--rb-accent); }
+.rb-solve-input .rb-paint-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 147px), 1fr));
+  gap: .5rem;
+  margin: 0;
+}
+.rb-solve-input .rb-paint-grid fieldset {
+  padding: .24rem;
+  background: var(--rb-bg);
+  border-radius: .82rem;
+  border-color: var(--rb-line);
+}
+.rb-solve-input .rb-paint-grid legend { padding-inline: .4rem; }
+.rb-solve-input .rb-paint-grid fieldset > div { grid-template-columns: repeat(3, minmax(44px, 1fr)); }
+.rb-solve-input .rb-paint-grid [data-tile] { height: auto; aspect-ratio: 1; border-radius: .33rem; }
+.rb-solve-input .rb-paint-grid [data-color=""] { background: var(--rb-panel); color: var(--rb-muted); border: 1px dashed var(--rb-line); }
+.rb-solve-input .rb-paint-grid :disabled { opacity: 1; box-shadow: inset 0 0 0 2px #14213352; }
+.rb :is(.rb-solve-status, .rb-practice-feedback):empty { display: none; }
+.rb-solve-footer { display: grid; gap: .65rem; padding-top: .65rem; border-top: 1px solid var(--rb-line); }
+.rb-solve-empty {
+  display: grid;
+  justify-items: center;
+  place-content: center;
+  gap: .65rem;
+  min-height: 12rem;
+  padding: 1rem;
+  text-align: center;
+  color: var(--rb-text);
+  border: 1px solid var(--rb-line);
+  border-radius: .8rem;
+  background: radial-gradient(ellipse at 50% 15%, var(--rb-work-glow), transparent 75%), var(--rb-bg);
+}
+.rb-solve-empty p { max-width: 34ch; }
+.rb-solve-result[data-solved] { border-color: color-mix(in srgb, var(--rb-accent) 52%, var(--rb-line)); }
+
+.rb-tool-practice .rb-practice-session { align-content: start; }
+.rb-practice-toolbar { padding-bottom: .5rem; border-bottom: 1px solid var(--rb-line); }
+.rb-practice-challenge {
+  display: grid;
+  align-items: center;
+  grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr);
+  gap: clamp(.7rem, 2vw, 1.55rem);
+}
+.rb-practice-preview, .rb-practice-answer { display: grid; gap: .6rem; min-width: 0; }
+.rb-practice-preview .rb-practice-model { aspect-ratio: 1.36; }
+.rb-practice-model .rubik-cube-volume { max-width: 39%; }
+.rb-practice-preview .rb-net { width: min(90%, 15rem); }
+.rb-practice-preview .rb-puzzle-image { max-height: 100%; max-width: 90%; object-fit: contain; }
+.rb-practice-preview .rb-note { text-align: center; }
+.rb-practice-review { padding-top: .75rem; border-top: 1px solid var(--rb-line); }
+.rb-practice-review .rb-comparisons { max-width: 55rem; }
+.rb-practice-answer .rb-practice-options { gap: .55rem; }
+.rb .rb-practice-options > button[data-result] { opacity: 1; }
+.rb-practice-answer [data-recall] { font-family: ui-monospace, Consolas, monospace; }
+
+.rb-tool-timer {
+  display: grid;
+  align-items: start;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
+  gap: .95rem;
+}
+.rb-scramble { display: grid; gap: .45rem; }
+.rb-inspection-toggle { align-self: end; padding-inline: .65rem; border-radius: .55rem; background: var(--rb-bg); }
+.rb-clock-station {
+  display: grid;
+  position: relative;
+  align-content: center;
+  justify-items: stretch;
+  min-height: clamp(10.5rem, 20vw, 17.5rem);
+  padding: .8rem .55rem 1rem;
+  overflow: hidden;
+  border: 1px solid var(--rb-line);
+  border-radius: .9rem;
+  background: radial-gradient(ellipse at 50% 55%, var(--rb-work-glow), transparent 75%), var(--rb-bg);
+  transition: border-color .2s ease, background-color .2s ease;
+}
+.rb-clock-station[data-timer-state="running"] {
+  border-color: var(--rb-accent);
+  background-color: var(--rb-work-highlight);
+}
+.rb-clock-station .rb-clock { font-size: clamp(2.65rem, 7vw, 6rem); }
+.rb-clock-station .rb-clock:focus-visible { outline-offset: -2px; }
+.rb-clock-station > .rb-note { text-align: center; }
+.rb-inspection-track {
+  display: none;
+  position: absolute;
+  inset: auto 0 0;
+  height: .32rem;
+  transform: scaleX(var(--rb-time-remaining, 1));
+  transform-origin: left;
+  background: var(--rb-accent);
+}
+.rb-clock-station[data-timer-state="inspection"] .rb-inspection-track { display: block; }
+.rb-timer-history .rb-stats { gap: .4rem; margin: 0; }
+.rb-timer-history .rb-stats > div { padding: .58rem .6rem; }
+.rb-timer-history .rb-stats strong { font-size: clamp(.94rem, 2vw, 1.42rem); overflow-wrap: anywhere; }
+.rb-timer-history .rb-timer-list > li { border: 1px solid var(--rb-line); border-radius: .65rem; }
+.rb-timer-list li > div { flex: 1 1 11rem; min-width: 0; }
+.rb-timer-list .rb-field { min-width: 5.8rem; }
+.rb-history-empty { padding: .64rem .75rem; border-radius: .6rem; background: var(--rb-bg); font-size: .9rem; }
+
+.rb :is(.rb-solve-status, .rb-practice-feedback, .rb-timer-feedback) {
+  padding: .57rem .78rem;
+  border: 1px solid var(--rb-line);
+  border-inline-start: 3px solid var(--rb-line);
+  border-radius: .55rem;
+  background: var(--rb-bg);
+  font-size: .9rem;
+}
+.rb :is(.rb-solve-status, .rb-practice-feedback, .rb-timer-feedback):is([data-tone="success"], [data-tone="best"], [data-result="correct"]) {
+  border-inline-start-color: var(--rb-accent);
+  background: var(--rb-work-highlight);
+  color: var(--rb-accent);
+}
+.rb :is(.rb-solve-status, .rb-practice-feedback, .rb-timer-feedback):is([data-tone="error"], [data-result="incorrect"]) {
+  color: var(--rb-work-error);
+  border-inline-start-color: var(--rb-work-error);
+}
+.rb :is(.rb-timer-feedback[data-tone="best"], .rb-practice-feedback[data-result="correct"]) {
+  animation: rb-confirm 320ms ease-out both;
+}
+@keyframes rb-confirm { from { transform: translateY(.28rem); opacity: .6; } to { transform: none; opacity: 1; } }
+
+@media (max-width: 1080px) {
+  .rb-tool-timer { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  .rb-practice-challenge { grid-template-columns: minmax(0, 1fr); }
+  .rb-practice-preview .rb-practice-model { aspect-ratio: 1.48; }
+}
+@media (max-width: 375px) {
+  .rb-solve-input .rb-paint-grid { gap: .36rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rb :is(.rb-timer-feedback[data-tone="best"], .rb-practice-feedback[data-result="correct"]) { animation: none; }
+  .rb-clock-station { transition: none; }
+}

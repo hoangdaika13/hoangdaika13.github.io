@@ -1,4 +1,5 @@
-import * as engine from "./rubik-engine.mjs?v=3";
+import * as engine from "./rubik-engine.mjs?v=4";
+import { createSpeedControl, createStepTimeline, createTurnGuide, turnTiming } from "./rubik-playback.mjs?v=1";
 
 export const defaultPuzzle = "3x3x3";
 export const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
@@ -59,13 +60,20 @@ export function diagram(facelets, size, { labels = false, focusLayer = false, de
     }).join("") + '</span>';
 }
 
-export function mountFormulaPreview(host, item, { labels = false, fallback } = {}) {
+function cameraPreset(puzzle, group = "") {
+  if (puzzle === "mirror") return "mirror";
+  if (group.includes("oll")) return "top";
+  if (group === "f2l") return "pair";
+  return "standard";
+}
+
+export function mountFormulaPreview(host, item, { labels = false, fallback, camera = cameraPreset(item.puzzle, item.group) } = {}) {
   const size = cubeSize(item.puzzle);
   if (!size) return engine.mountSpecialPreview(host, { ...item, fallback });
   const mirror = item.puzzle === "mirror";
   const state = snapshot(item.puzzle, item.setup || "");
   const facelets = !mirror && !item.nativePalette ? whiteBottomState(state) : state;
-  const view = engine.renderCube3D(host, facelets, size, { labels, mirror });
+  const view = engine.renderCube3D(host, facelets, size, { labels, mirror, camera });
   return () => view.destroy();
 }
 
@@ -73,7 +81,10 @@ function control(text, action, label = "") {
   return '<button type="button" data-player="' + action + '"' + (label ? ' aria-label="' + label + '"' : "") + '>' + text + '</button>';
 }
 
-export function mountPlayer(host, { puzzle, setup = "", algorithm = "", facelets, free = false, labels = false, twoD = false, whiteBottom = false, onPreference, goal, goalAlgorithm, onGoal } = {}) {
+export function mountPlayer(host, {
+  puzzle, group, camera = cameraPreset(puzzle, group), setup = "", algorithm = "", facelets, free = false,
+  labels = false, twoD = false, whiteBottom = false, onPreference, goal, goalAlgorithm, onGoal
+} = {}) {
   const size = cubeSize(puzzle);
   if (!size) {
     if (typeof engine.mountSpecialPuzzle === "function") return engine.mountSpecialPuzzle(host, { puzzle, setup, algorithm, free, labels, twoD, goalAlgorithm, onGoal });
@@ -102,18 +113,21 @@ export function mountPlayer(host, { puzzle, setup = "", algorithm = "", facelets
   let index = 0;
   let clock = 0;
   let view;
+  let savedAngle;
+  const history = [];
   let speed = 1;
   let reachedGoal = false;
   const mirror = puzzle === "mirror";
   const displayState = (state) => whiteBottom && !mirror ? whiteBottomState(state) : state;
   const abort = new AbortController();
   const keyHelp = "Chọn nút mặt để xoay. Có thể dùng phím U, R, F, D, L, B. Giữ Shift để đảo chiều.";
-  host.innerHTML = '<div class="rb-board" tabindex="0" aria-label="' + esc(free ? keyHelp : "Mô hình Rubik") + '"></div>' +
-    '<p class="rb-note" data-rb-view-help></p><div class="rb-controls">' + control(twoD ? "Xem 3D" : "Xem 2D", "mode") + control(mirror ? "Ký hiệu viên" : "Ký hiệu màu", "labels") +
-    (free && !goal ? control("Xáo khối", "shuffle") : "") + '</div>' +
-    '<div class="rb-controls">' + control("Đặt lại", "reset") + control("Lùi", "back", free ? "Hoàn tác" : "Lùi một nước") +
-    (!free ? control("Phát", "play") : "") + control(free ? "Làm lại" : "Tiến một nước", "next") +
-    (!free ? '<label class="rb-inline">Tốc độ <select data-player-speed><option value="0.25">0,25×</option><option value="0.5">0,5×</option><option value="1" selected>1×</option><option value="1.5">1,5×</option></select></label>' : "") + '</div>' +
+  host.innerHTML = '<div class="rb-board"' + (free ? ' tabindex="0"' : '') + ' aria-label="' + esc(free ? keyHelp : "Mô hình Rubik") + '"></div>' +
+    '<div class="rb-controls rb-player-controls">' + control("Đặt lại", "reset") +
+    control("Lùi", "back", free ? "Hoàn tác" : "Lùi một nước") +
+    (!free ? control("Phát", "play") : "") + control(free ? "Làm lại" : "Tiến một nước", "next") + '</div>' +
+    '<div data-rb-playback-info></div><div class="rb-controls rb-player-settings">' + control("Về góc chuẩn", "camera") +
+    control(twoD ? "Xem 3D" : "Xem 2D", "mode") + control(mirror ? "Ký hiệu viên" : "Ký hiệu màu", "labels") +
+    (free && !goal ? control("Xáo khối", "shuffle") : "") + '</div><p class="rb-note" data-rb-view-help></p>' +
     (free ? '<div class="rb-move-pad" aria-label="Xoay mặt Rubik">' + [...engine.FACE_ORDER].map((face) =>
       '<span>' + [face, face + "'", face + "2"].map((move) => '<button type="button" data-move="' + move + '">' + move + '</button>').join("") + '</span>'
     ).join("") + '</div>' + (extraMoves.length ? '<div class="rb-controls" aria-label="Xoay nhiều lớp và đổi hướng">' +
@@ -124,7 +138,7 @@ export function mountPlayer(host, { puzzle, setup = "", algorithm = "", facelets
       (size % 2 === 1 ? '<option value="slice">Lớp giữa M / E / S</option>' : '') +
       '<option value="axis">Cả khối x / y / z</option></select></label><label class="rb-field">Mặt hoặc trục<select data-rb-move-face></select></label>' +
       '<label class="rb-field" data-rb-depth-label>Vị trí hoặc số lớp<select data-rb-move-depth></select></label></div>' +
-      '<div class="rb-controls" data-rb-move-extra></div></details>' : '<div class="rb-token-list" aria-label="Các nước đi"></div>') +
+      '<div class="rb-controls" data-rb-move-extra></div></details>' : "") +
     '<p class="rb-player-status" role="status"></p>';
   const find = (selector) => host.querySelector(selector);
   const board = find(".rb-board");
@@ -132,6 +146,15 @@ export function mountPlayer(host, { puzzle, setup = "", algorithm = "", facelets
   const type = find("[data-rb-move-kind]");
   const face = find("[data-rb-move-face]");
   const depth = find("[data-rb-move-depth]");
+  const info = find("[data-rb-playback-info]");
+  const guide = createTurnGuide();
+  const play = find('[data-player="play"]');
+  const timeline = !free && createStepTimeline(moves, seek, abort.signal);
+  info.append(guide.guide);
+  if (timeline) {
+    info.append(timeline.timeline);
+    find(".rb-player-controls").append(createSpeedControl((value) => { speed = value; }, abort.signal));
+  }
 
   function showExtra(kindChanged = false) {
     if (!type) return;
@@ -149,16 +172,18 @@ export function mountPlayer(host, { puzzle, setup = "", algorithm = "", facelets
   }
 
   function createView() {
+    savedAngle = view?.getCamera?.() || savedAngle;
     view?.destroy();
     board.replaceChildren();
     try {
       const render = twoD ? engine.renderCube2D : engine.renderCube3D;
-      view = render(board, displayState(states[index]), size, { labels, mirror });
+      view = render(board, displayState(states[index]), size, { labels, mirror, camera, angle: savedAngle });
     } catch {
       view = engine.renderCube2D(board, displayState(states[index]), size, { labels, mirror });
       twoD = true;
     }
     find('[data-player="mode"]').textContent = twoD ? "Xem 3D" : "Xem 2D";
+    find('[data-player="camera"]').hidden = twoD;
     find('[data-player="labels"]').setAttribute("aria-pressed", String(labels));
     const viewHelp = twoD ? "Sơ đồ mở phẳng sáu mặt." : "Kéo trên khối hoặc dùng phím mũi tên để đổi góc nhìn.";
     const colorKey = labels && !mirror ? " Tr là trắng, V là vàng, Đ là đỏ, Ca là cam, Xl là xanh lá, Xd là xanh dương." : "";
@@ -166,9 +191,13 @@ export function mountPlayer(host, { puzzle, setup = "", algorithm = "", facelets
   }
 
   function update(move) {
-    view.update(displayState(states[index]), { move });
+    view.update(displayState(states[index]), { move, ...turnTiming(speed) });
     find('[data-player="back"]').disabled = index === 0;
     find('[data-player="next"]').disabled = index === states.length - 1;
+    if (play) play.disabled = !moves.length;
+    const activeMove = move || (free ? history[index - 1] : moves[index - 1]);
+    const wait = free ? "Chọn một mặt để thử xoay." : "Chọn một ký hiệu hoặc nút Tiến để xem nước đầu tiên.";
+    guide.show(activeMove || "", activeMove ? describeCubeMove(activeMove) : wait);
     if (free) {
       const solved = engine.isSolved(states[index], size);
       const meetsGoal = goal && [...goal].every((color, i) => color === "." || color === states[index][i]);
@@ -180,34 +209,38 @@ export function mountPlayer(host, { puzzle, setup = "", algorithm = "", facelets
     } else {
       status.textContent = index + "/" + moves.length + " nước" + (index && moves.length ?
         " · " + moves[index - 1] + " · " + describeCubeMove(moves[index - 1]) : "");
-      const list = find(".rb-token-list");
-      list.innerHTML = moves.map((token, i) =>
-        '<span' + (i === index - 1 ? ' aria-current="step"' : "") + '>' + esc(token) + '</span>'
-      ).join("");
+      timeline.select(index);
     }
   }
 
   function stop() {
     clearTimeout(clock);
     clock = 0;
-    if (!free) find('[data-player="play"]').textContent = "Phát";
+    if (play) {
+      play.textContent = "Phát";
+      play.setAttribute("aria-pressed", "false");
+    }
+  }
+
+  function seek(nextIndex) {
+    stop();
+    index = nextIndex;
+    update();
   }
 
   function turn(notation) {
     stop();
     states = states.slice(0, index + 1);
     states.push(engine.applyMoves(states[index], notation, size));
+    history.splice(index, history.length - index, notation);
     index++;
     update(notation);
   }
 
   function tick() {
-    if (index < states.length - 1) {
-      index++;
-      update(moves[index - 1]);
-    }
-    if (index < states.length - 1) clock = setTimeout(tick, 680 / speed);
-    else stop();
+    index++;
+    update(moves[index - 1]);
+    clock = setTimeout(index < moves.length ? tick : stop, turnTiming(speed).interval);
   }
 
   host.addEventListener("click", (event) => {
@@ -222,23 +255,36 @@ export function mountPlayer(host, { puzzle, setup = "", algorithm = "", facelets
     if (action === "play") {
       if (clock) stop();
       else if (moves.length) {
-        if (index === moves.length) index = 0;
-        button.textContent = "Tạm dừng";
+        if (index === moves.length) seek(0);
+        play.textContent = "Tạm dừng";
+        play.setAttribute("aria-pressed", "true");
         tick();
       }
       return;
     }
+    if (action === "camera") {
+      view.resetCamera?.();
+      return;
+    }
     stop();
+    let move;
+    const sequence = free ? history : moves;
     if (action === "reset") {
       index = 0;
-      if (free) states = [initial];
+      if (free) {
+        states = [initial];
+        history.length = 0;
+      }
     } else if (action === "back" && index > 0) {
+      move = engine.inverseMoves(sequence[index - 1], size);
       index--;
     } else if (action === "next" && index + 1 < states.length) {
+      move = sequence[index];
       index++;
     } else if (action === "shuffle") {
       initial = snapshot(puzzle, defaultScramble(puzzle));
       states = [initial];
+      history.length = 0;
       index = 0;
     } else if (action === "mode" || action === "labels") {
       if (action === "mode") twoD = !twoD;
@@ -246,10 +292,9 @@ export function mountPlayer(host, { puzzle, setup = "", algorithm = "", facelets
       createView();
       onPreference?.({ labels, twoD });
     }
-    update(action === "next" && !free ? moves[index - 1] : undefined);
+    update(move);
   }, { signal: abort.signal });
   host.addEventListener("change", (event) => {
-    if (event.target.matches("[data-player-speed]")) speed = Number(event.target.value);
     if ([type, face, depth].includes(event.target)) showExtra(event.target === type);
   }, { signal: abort.signal });
   board.addEventListener("keydown", (event) => {
@@ -258,7 +303,9 @@ export function mountPlayer(host, { puzzle, setup = "", algorithm = "", facelets
     event.preventDefault();
     turn(letter + (event.shiftKey ? "'" : ""));
   }, { signal: abort.signal });
-  document.addEventListener("visibilitychange", () => { if (document.hidden) stop(); }, { signal: abort.signal });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) { stop(); view.finishTurn?.(); }
+  }, { signal: abort.signal });
 
   createView();
   showExtra(true);

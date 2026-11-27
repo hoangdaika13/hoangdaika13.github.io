@@ -51,7 +51,7 @@ export function loadProgress(user, storage) {
     }
     return persistent;
   }
-  return { value, save, get persistent() { return persistent; } };
+  return { key, value, save, get persistent() { return persistent; } };
 }
 
 export function changeReview(state, id, change, now = Date.now()) {

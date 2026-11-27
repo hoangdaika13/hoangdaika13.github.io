@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { loadSpecialPractice } from "../rubik-special.mjs";
+import { loadSpecialPractice, movingStickerMask } from "../rubik-special.mjs";
 import { SPECIAL_CASE_ROWS, SPECIAL_GROUP_ROWS } from "../rubik-special-cases.mjs";
 import { clockProjection, squareRings } from "../rubik-variant-volume.mjs";
 import { puzzles } from "../vendor/rubik-cubing/special.mjs";
@@ -48,6 +48,22 @@ test("Clock preview derives both sides and dial hours from the current pattern",
   assert.equal(turned[0].dials[4].hour, 3);
   assert.equal(turned[0].dials[8].hour, 12);
   assert.deepEqual(clockProjection(initial.applyAlg("y2")).map((face) => face.side), ["B", "A"]);
+});
+
+test("the special renderer highlights the pieces currently in the turning layer", async () => {
+  for (const [puzzle, setup, turn] of [["pyraminx", "R L", "U"], ["skewb", "R' U", "L"], ["megaminx", "R++ U", "D--"]]) {
+    const model = await puzzles[puzzle].kpuzzle();
+    const pattern = model.defaultPattern().applyAlg(setup);
+    const next = pattern.applyAlg(turn);
+    const mask = Object.fromEntries(movingStickerMask(model, pattern, turn).split(",").map((orbit) => orbit.split(":")));
+    for (const [orbit, before] of Object.entries(pattern.patternData)) {
+      const after = next.patternData[orbit];
+      const moved = new Set(before.pieces.filter((piece, position) =>
+        after.pieces[position] !== piece || after.orientation[position] !== before.orientation[position]
+      ));
+      assert.equal(mask[orbit], before.pieces.map((_piece, id) => moved.has(id) ? "-" : "D").join(""), puzzle + " " + orbit);
+    }
+  }
 });
 
 test("Square-1 preview keeps corners whole and renders the layer exchange after a slice", async () => {

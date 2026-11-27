@@ -1,7 +1,7 @@
-import * as engine from "./rubik-engine.mjs?v=3";
-import { mountTrainer } from "./rubik-trainer.mjs?v=2";
-import { averageOf, formatTime, inspectionPenalty, mergeRecords, solveScore, validRecord } from "./rubik-progress.mjs?v=1";
-import { cubeSize, defaultScramble, mountPlayer, whiteBottomSticker } from "./rubik-player.mjs?v=3";
+import * as engine from "./rubik-engine.mjs?v=4";
+import { mountTrainer } from "./rubik-trainer.mjs?v=3";
+import { averageOf, formatTime, inspectionPenalty, mergeRecords, solveScore, validRecord } from "./rubik-progress.mjs?v=2";
+import { cubeSize, defaultScramble, mountPlayer, whiteBottomSticker } from "./rubik-player.mjs?v=4";
 
 const scramblePuzzles = new Set(["pyraminx", "megaminx", "skewb", "square1", "square-1", "clock"]);
 const paintFaces = { U: "Trên", R: "Phải", F: "Trước", D: "Dưới", L: "Trái", B: "Sau" };
@@ -14,14 +14,21 @@ function solver(container, context) {
   const tiles = [...engine.solvedFaces(3)].map((color, i) => i % 9 === 4 ? color : "");
   let pending;
   let rendered;
-  container.innerHTML = '<div class="rb-study"><form class="rb-panel rb-stack"><label class="rb-field">Cách nhập<select data-which>' +
-    '<option value="color">Tô màu sáu mặt</option><option value="scramble">Dán chuỗi xáo</option></select></label>' +
-    '<div data-paint><p>Đặt tâm trắng ở dưới, tâm vàng ở trên và tâm xanh dương ở trước. Nhìn trực diện khi tô từng mặt. Giữ vàng ở trên khi chuyển qua bốn mặt bên. ' +
-    'Khi nhìn mặt U hoặc D, giữ cạnh giáp mặt F tương ứng ở dưới hoặc ở trên sơ đồ. Các tâm cố định theo bảng màu này.</p>' +
-    '<div class="rb-palette" role="group" aria-label="Chọn màu tô">' + [...engine.FACE_ORDER].map((face) =>
+  const resultHelp = '<div class="rb-solve-empty"><strong>Chuẩn bị khối để giải</strong>' +
+    '<p>Tô màu sáu mặt hoặc nhập chuỗi xáo để xem lời giải trên mô hình tương tác.</p>' +
+    link("/rubik/hoc/notation", "Học cách đọc ký hiệu") + '</div>';
+  const emptyResult = '<h3>Lời giải từng nước</h3>' + resultHelp;
+  container.innerHTML = '<div class="rb-study rb-tool-solver"><form class="rb-panel rb-stack rb-solve-input"><div class="rb-tool-heading">' +
+    '<h3>Nhập khối 3×3</h3><label class="rb-field">Cách nhập<select data-which>' +
+    '<option value="color">Tô màu sáu mặt</option><option value="scramble">Dán chuỗi xáo</option></select></label></div>' +
+    '<div class="rb-stack rb-paint-workspace" data-paint><p class="rb-paint-orientation"><span><b>D</b> Trắng dưới</span><span><b>U</b> Vàng trên</span><span><b>F</b> Xanh dương trước</span></p>' +
+    '<details class="rb-paint-directions"><summary>Cách cầm khối khi tô</summary><p>Nhìn trực diện vào từng mặt. Giữ vàng ở trên khi chuyển qua bốn mặt bên. ' +
+    'Khi nhìn mặt trên U, đặt cạnh giáp mặt F ở dưới sơ đồ. Khi nhìn mặt dưới D, đặt cạnh giáp mặt F ở trên sơ đồ. Các ô tâm đã có màu cố định.</p></details>' +
+    '<div><h4>Chọn màu rồi chạm vào ô</h4><div class="rb-palette" role="group" aria-label="Chọn màu tô">' + [...engine.FACE_ORDER].map((face) =>
       '<button type="button" aria-pressed="' + (face === palette) + '" data-palette="' + face + '"><i data-color="' + whiteBottomSticker(face) +
       '" aria-hidden="true"></i>' + colorNames[face] + '</button>'
-    ).join("") + '</div><div class="rb-paint-grid">' + paintOrder.map((face) => {
+    ).join("") + '</div></div><div class="rb-paint-meter" data-paint-meter><progress max="48" value="0" aria-label="Số ô đã tô"></progress><span data-paint-count>0/48 ô đã tô</span></div>' +
+    '<div class="rb-paint-grid">' + paintOrder.map((face) => {
       const ix = engine.FACE_ORDER.indexOf(face) * 9;
       return '<fieldset><legend>' + paintFaces[face] + ' (' + face + ')</legend><div>' + Array.from({ length: 9 }, (_, j) =>
         '<button type="button" data-tile="' + (ix + j) + '"' + (j === 4 ? ' disabled data-color="' + whiteBottomSticker(face) + '"' : "") +
@@ -30,12 +37,11 @@ function solver(container, context) {
       ).join("") + '</div></fieldset>';
     }).join("") + '</div><div class="rb-controls"><button class="rb-btn" type="button" data-fill>Xếp sẵn khối đã giải</button>' +
     '<button class="rb-btn" type="button" data-clear>Xóa màu đã tô</button></div></div>' +
-    '<div data-scramble-form hidden><label class="rb-field">Chuỗi xáo<textarea rows="3" maxlength="600" placeholder="R U R\' U\'"></textarea></label>' +
-    '<button class="rb-btn" type="button" data-sample>Tạo chuỗi xáo</button></div>' +
-    '<div class="rb-controls"><button type="submit" class="rb-primary">Tìm lời giải</button>' +
-    '<button type="button" data-cancel hidden>Hủy</button></div><p class="rb-result" role="status" data-solver-note></p>' +
-    '</form><aside class="rb-panel rb-stack" data-result><h3>Lời giải từng nước</h3><p>Kết quả hiện ở đây sau khi kiểm tra trạng thái khối.</p>' +
-    link("/rubik/hoc/notation", "Học phương pháp cơ bản") + '</aside></div>';
+    '<div class="rb-stack" data-scramble-form hidden><label class="rb-field">Chuỗi xáo<textarea rows="3" maxlength="600" autocapitalize="off" spellcheck="false" placeholder="R U R\' U\'"></textarea></label>' +
+    '<div class="rb-controls"><button class="rb-btn" type="button" data-sample>Tạo chuỗi xáo</button></div></div>' +
+    '<div class="rb-solve-footer"><div class="rb-controls"><button type="submit" class="rb-primary">Tìm lời giải</button>' +
+    '<button type="button" data-cancel hidden>Hủy</button></div><p class="rb-solve-status" role="status" data-solver-note></p></div>' +
+    '</form><aside class="rb-panel rb-stack rb-solve-result" data-result>' + emptyResult + '</aside></div>';
   const get = (selector) => container.querySelector(selector);
   const form = get("form");
   const note = get("[data-solver-note]");
@@ -44,13 +50,25 @@ function solver(container, context) {
   const submit = get("[type=submit]");
   const input = get("textarea");
   const which = get("[data-which]");
+  const meter = get("[data-paint-meter]");
+  const paintedCount = get("[data-paint-count]");
+  const paintProgress = meter.querySelector("progress");
+
+  function setNote(text, tone = "") {
+    note.textContent = text;
+    note.dataset.tone = tone;
+  }
 
   function repaint() {
+    paintProgress.value = tiles.filter(Boolean).length - 6;
+    paintedCount.textContent = paintProgress.value + "/48 ô đã tô";
+    meter.toggleAttribute("data-complete", paintProgress.value === 48);
     for (const button of container.querySelectorAll("[data-tile]")) {
       const i = Number(button.dataset.tile);
       const tile = tiles[i];
-      button.textContent = tile || "·";
-      button.dataset.color = whiteBottomSticker(tile);
+      const displayColor = whiteBottomSticker(tile);
+      button.textContent = i % 9 === 4 ? tile : engine.COLOR_LABELS[displayColor] || "·";
+      button.dataset.color = displayColor;
       button.setAttribute("aria-label", paintFaces[engine.FACE_ORDER[Math.floor(i / 9)]] + ", ô " + (1 + i % 9) + ": " + (colorNames[tile] || "chưa tô"));
     }
   }
@@ -67,12 +85,13 @@ function solver(container, context) {
   function clearResult() {
     rendered?.();
     rendered = undefined;
-    result.innerHTML = '<h3>Lời giải từng nước</h3><p>Kết quả sẽ hiện sau khi bạn bấm “Tìm lời giải”.</p>';
+    delete result.dataset.solved;
+    result.innerHTML = emptyResult;
   }
   function changed() {
     stop();
     clearResult();
-    note.textContent = "";
+    setNote("");
   }
 
   form.addEventListener("click", (event) => {
@@ -95,7 +114,7 @@ function solver(container, context) {
       changed();
     } else if (button === cancel) {
       stop();
-      note.textContent = "Đã hủy tính lời giải.";
+      setNote("Đã hủy tính lời giải.");
       submit.focus();
     }
   }, { signal });
@@ -115,14 +134,14 @@ function solver(container, context) {
       if (which.value === "color") {
         const blank = tiles.findIndex((color) => !color);
         if (blank >= 0) {
-          note.textContent = "Còn ô chưa tô ở mặt " + paintFaces[engine.FACE_ORDER[Math.floor(blank / 9)]].toLowerCase() + ".";
+          setNote("Còn ô chưa tô ở mặt " + paintFaces[engine.FACE_ORDER[Math.floor(blank / 9)]].toLowerCase() + ".", "error");
           get('[data-tile="' + blank + '"]').focus();
           return;
         }
         facelets = tiles.join("");
       } else {
         if (!input.value.trim()) {
-          note.textContent = "Hãy nhập chuỗi xáo để bắt đầu.";
+          setNote("Hãy nhập chuỗi xáo để bắt đầu.", "error");
           input.focus();
           return;
         }
@@ -130,26 +149,28 @@ function solver(container, context) {
       }
       const validity = engine.validateFacelets(facelets);
       if (!validity.ok) {
-        note.textContent = validity.error || "Khối không hợp lệ. Hãy kiểm tra cách tô và hướng cầm.";
+        setNote(validity.error || "Khối không hợp lệ. Hãy kiểm tra cách tô và hướng cầm.", "error");
         return;
       }
     } catch (error) {
-      note.textContent = error.message || "Chuỗi xáo chưa hợp lệ.";
+      setNote(error.message || "Chuỗi xáo chưa hợp lệ.", "error");
       return;
     }
     const request = new AbortController();
     pending = request;
     setBusy(true);
-    note.textContent = "Đang tính lời giải…";
+    setNote("Đang tính lời giải…");
     try {
       const solution = await engine.solve3x3(facelets, { signal: request.signal });
       if (pending !== request || signal.aborted) return;
       const moves = engine.parseMoves(solution, 3);
       if (engine.applyMoves(facelets, solution, 3) !== engine.solvedFaces(3)) throw new Error("Không thể xác nhận kết quả.");
-      note.textContent = moves.length ? "Đã kiểm tra lời giải trên trạng thái vừa nhập." : "Khối của bạn đã được giải.";
-      result.innerHTML = '<h3>Lời giải bộ giải 3×3</h3><p>' + moves.length + ' nước xoay</p>' +
-        (moves.length ? '<code class="rb-notation">' + esc(solution) + '</code><button type="button" class="rb-btn" data-copy>Sao chép lời giải</button>' : "") +
-        '<div data-rb-solver-player></div>' + link("/rubik/hoc/notation", "Học phương pháp cơ bản");
+      setNote(moves.length ? "Đã kiểm tra lời giải trên trạng thái vừa nhập." : "Khối của bạn đã được giải.", "success");
+      result.dataset.solved = "";
+      result.innerHTML = '<div class="rb-tool-heading"><h3>Lời giải từng nước</h3><span class="rb-tool-label">' + moves.length + ' nước xoay</span></div>' +
+        '<div data-rb-solver-player></div>' +
+        (moves.length ? '<code class="rb-notation">' + esc(solution) + '</code><div class="rb-controls"><button type="button" class="rb-btn" data-copy>Sao chép lời giải</button></div>' : "") +
+        '<div class="rb-controls">' + link("/rubik/hoc/notation", "Học cách đọc ký hiệu") + '</div>';
       result.querySelector("[data-copy]")?.addEventListener("click", () => navigator.clipboard.writeText(solution).then(
         () => context.say("Đã sao chép lời giải."), () => context.say("Bạn có thể chọn và sao chép chuỗi nước đi.")
       ), { signal });
@@ -157,7 +178,7 @@ function solver(container, context) {
         puzzle: "3x3x3", facelets, algorithm: solution, labels: context.value.labels, twoD: context.value.twoD, whiteBottom: true
       });
     } catch (error) {
-      if (!request.signal.aborted && !signal.aborted) note.textContent = error.message || "Chưa tìm được lời giải. Hãy thử lại.";
+      if (!request.signal.aborted && !signal.aborted) setNote(error.message || "Chưa tìm được lời giải. Hãy thử lại.", "error");
     } finally {
       if (pending === request) stop();
     }
@@ -168,15 +189,21 @@ function solver(container, context) {
 function timer(container, context) {
   const { esc, selectPuzzle, signal, value, store } = context;
   const puzzle = context.puzzle;
-  container.innerHTML = '<div class="rb-stack"><div class="rb-panel rb-stack"><div class="rb-filters">' + selectPuzzle(puzzle) +
-    '<label class="rb-check"><input type="checkbox" data-inspection> Có thời gian quan sát 15 giây</label></div>' +
-    '<span class="rb-eyebrow">Chuỗi xáo luyện tập</span><code class="rb-notation" data-timer-scramble></code>' +
-    '<div class="rb-clock" tabindex="0" aria-label="Đồng hồ. Dùng phím cách để bắt đầu hoặc dừng." data-clock>0,00 s</div><p class="rb-note" data-timer-phase>Bấm nút hoặc phím cách khi đặt tiêu điểm ở đồng hồ.</p>' +
-    '<div class="rb-controls"><button class="rb-primary" type="button" data-start>Bắt đầu</button><button type="button" data-new-scramble>Xáo mới</button></div></div>' +
-    '<section class="rb-panel rb-stack" data-history></section></div>';
+  container.innerHTML = '<div class="rb-tool-timer"><section class="rb-panel rb-stack rb-timer-session" aria-label="Lượt giải">' +
+    '<div class="rb-filters">' + selectPuzzle(puzzle) +
+    '<label class="rb-check rb-inspection-toggle"><input type="checkbox" data-inspection> Quan sát khối 15 giây</label></div>' +
+    '<div class="rb-scramble"><h3>Chuỗi xáo</h3><code class="rb-notation" data-timer-scramble></code></div>' +
+    '<div class="rb-clock-station" data-timer-state="idle"><div class="rb-clock" role="timer" tabindex="0" aria-label="Đồng hồ. Dùng phím cách để bắt đầu hoặc dừng." data-clock>0,00 s</div>' +
+    '<p class="rb-note" data-timer-phase>Bấm nút hoặc phím cách khi đặt tiêu điểm ở đồng hồ.</p>' +
+    '<div class="rb-inspection-track" aria-hidden="true"></div></div>' +
+    '<div class="rb-controls"><button class="rb-primary" type="button" data-start>Bắt đầu</button><button type="button" data-new-scramble>Xáo mới</button></div>' +
+    '<p class="rb-timer-feedback" role="status" data-timer-feedback hidden></p></section>' +
+    '<section class="rb-panel rb-stack rb-timer-history" data-history></section></div>';
   const get = (selector) => container.querySelector(selector);
   const readout = get("[data-clock]");
   const phase = get("[data-timer-phase]");
+  const station = get("[data-timer-state]");
+  const feedback = get("[data-timer-feedback]");
   const startButton = get("[data-start]");
   const refresh = get("[data-new-scramble]");
   const check = get("[data-inspection]");
@@ -186,6 +213,7 @@ function timer(container, context) {
   let penalty = "ok";
   let frame = 0;
   let request = 0;
+  let lastRecord;
   const supported = cubeSize(puzzle) || scramblePuzzles.has(puzzle);
 
   async function newScramble() {
@@ -207,19 +235,21 @@ function timer(container, context) {
   function history() {
     const rows = value.records.filter((row) => row.puzzle === puzzle);
     const best = rows.length ? Math.min(...rows.map(solveScore)) : null;
-    get("[data-history]").innerHTML = '<h3>Lịch sử lượt giải</h3><div class="rb-stats">' + [
+    get("[data-history]").innerHTML = '<div class="rb-tool-heading"><h3>Lịch sử lượt giải</h3>' +
+      '<span class="rb-tool-label">' + rows.length + ' lượt</span></div><div class="rb-stats">' + [
       ["Kỷ lục", best], ["ao5", averageOf(rows, 5)], ["ao12", averageOf(rows, 12)]
     ].map(([label, ms]) => '<div><strong>' + formatTime(ms) + '</strong><span>' + label + '</span></div>').join("") +
-      '</div><p class="rb-note">ao5 và ao12 lấy các lượt gần nhất, bỏ một lượt nhanh nhất và một lượt chậm nhất, rồi tính trung bình. ' +
-      '+2 cộng hai giây. DNF còn lại sau khi bỏ lượt tệ nhất làm trung bình thành DNF.</p><div class="rb-controls">' +
-      '<button type="button" data-export>Xuất lịch sử</button><label class="rb-file">Nhập lịch sử<input type="file" accept=".json,application/json" data-import></label></div>' +
+      '</div><details class="rb-timer-help"><summary>Cách tính ao5 và ao12</summary><p class="rb-note">Lấy 5 hoặc 12 lượt gần nhất, bỏ lượt nhanh nhất và chậm nhất, rồi tính trung bình. ' +
+      '+2 cộng hai giây. Nếu còn lượt DNF sau khi bỏ lượt chậm nhất, kết quả trung bình là DNF.</p></details>' +
       (rows.length ? '<ul class="rb-timer-list">' + rows.slice(0, 60).map((row) => (
         '<li><div><strong>' + formatTime(solveScore(row)) + '</strong> <time datetime="' + new Date(row.time).toISOString() + '">' +
         esc(new Date(row.time).toLocaleString("vi-VN")) + '</time><code>' + esc(row.scramble) + '</code></div>' +
-        '<label>Phạt <select data-penalty="' + esc(row.id) + '">' + [["ok", "Không"], ["+2", "+2"], ["DNF", "DNF"]].map(([key, label]) =>
+        '<label class="rb-field">Phạt<select data-penalty="' + esc(row.id) + '">' + [["ok", "Không"], ["+2", "+2"], ["DNF", "DNF"]].map(([key, label]) =>
           '<option value="' + key + '"' + (key === row.penalty ? " selected" : "") + '>' + label + '</option>'
         ).join("") + '</select></label></li>'
-      )).join("") + '</ul>' : '<p>Hoàn thành một lượt giải để có thống kê.</p>');
+      )).join("") + '</ul>' : '<p class="rb-history-empty">Hoàn thành một lượt giải để có thống kê.</p>') +
+      '<div class="rb-controls"><button type="button" data-export>Xuất lịch sử</button>' +
+      '<label class="rb-file">Nhập lịch sử<input type="file" accept=".json,application/json" data-import aria-label="Nhập lịch sử"></label></div>';
   }
 
   function tick(now) {
@@ -227,14 +257,34 @@ function timer(container, context) {
     if (status === "running") readout.textContent = formatTime(ms);
     else if (status === "inspection") {
       readout.textContent = ms >= 17000 ? "DNF" : ms >= 15000 ? "+2" : formatTime(15000 - ms);
+      station.style.setProperty("--rb-time-remaining", String(Math.max(0, 1 - ms / 15000)));
     }
     if (status !== "idle") frame = requestAnimationFrame(tick);
+  }
+
+  function refreshRecordFeedback(saved) {
+    if (status !== "idle" || feedback.hidden || !lastRecord) return;
+    const row = value.records.find((entry) => entry.id === lastRecord);
+    if (row) announceRecord(row, saved);
+  }
+
+  function announceRecord(row, saved) {
+    const score = solveScore(row);
+    const previous = value.records.filter((entry) => entry.id !== row.id && entry.puzzle === puzzle && Number.isFinite(solveScore(entry)));
+    const best = Number.isFinite(score) && previous.every((entry) => solveScore(entry) > score);
+    const title = best ? (previous.length ? "Kỷ lục mới" : "Lượt giải đầu tiên") : "Đã ghi lượt giải";
+    readout.textContent = formatTime(score);
+    feedback.dataset.tone = best ? "best" : "success";
+    feedback.textContent = title + " · " + formatTime(score) + (saved ? "" : ". Kết quả được giữ trong phiên này.");
+    feedback.hidden = false;
   }
 
   function action() {
     if (!scramble) return;
     const now = performance.now();
     if (status === "idle") {
+      feedback.hidden = true;
+      station.style.removeProperty("--rb-time-remaining");
       started = now;
       status = check.checked ? "inspection" : "running";
       penalty = "ok";
@@ -252,21 +302,26 @@ function timer(container, context) {
     } else {
       status = "idle";
       cancelAnimationFrame(frame);
+      lastRecord = undefined;
       const row = { id: crypto.randomUUID(), puzzle, ms: Math.round(now - started), time: Date.now(), scramble, penalty };
       if (validRecord(row)) {
+        lastRecord = row.id;
         value.records = mergeRecords(value.records, [row]);
-        store.save();
-        readout.textContent = formatTime(solveScore(row));
-        phase.textContent = "Đã ghi lượt giải.";
+        announceRecord(row, store.save());
+        phase.textContent = "Bắt đầu lượt giải tiếp theo khi sẵn sàng.";
         history();
       } else {
-        phase.textContent = "Lượt vừa rồi vượt thời lượng có thể lưu.";
+        phase.textContent = "Sẵn sàng cho lượt mới.";
+        feedback.dataset.tone = "error";
+        feedback.textContent = "Lượt vừa rồi vượt thời lượng có thể lưu.";
+        feedback.hidden = false;
       }
       startButton.textContent = "Bắt đầu";
       refresh.disabled = false;
       check.disabled = false;
       newScramble();
     }
+    station.dataset.timerState = status;
   }
   startButton.addEventListener("click", action, { signal });
   readout.addEventListener("keydown", (event) => {
@@ -281,7 +336,8 @@ function timer(container, context) {
       const row = value.records.find((item) => item.id === target.dataset.penalty);
       if (row && ["ok", "+2", "DNF"].includes(target.value)) {
         row.penalty = target.value;
-        store.save();
+        const saved = store.save();
+        refreshRecordFeedback(saved);
         history();
         [...container.querySelectorAll("[data-penalty]")].find((input) => input.dataset.penalty === row.id)?.focus();
       }
@@ -293,11 +349,11 @@ function timer(container, context) {
         if (!Array.isArray(data.records) || data.version !== 1 || !data.records.every(validRecord)) throw new Error("Dữ liệu lịch sử chưa hợp lệ.");
         if (signal.aborted) return;
         value.records = mergeRecords(value.records, data.records);
-        store.save();
+        refreshRecordFeedback(store.save());
         history();
         context.say("Đã nhập lịch sử.");
       } catch (error) {
-        context.say(error.message);
+        if (!signal.aborted) context.say(error.message);
       }
     }
   }, { signal });
